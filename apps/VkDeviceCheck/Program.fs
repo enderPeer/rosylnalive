@@ -48,20 +48,25 @@ let main _ =
         let instanceVersion, reports = checkAll loader
         printfn "loader instance version: %s" (VkVersion.toString instanceVersion)
         printfn "physical devices: %d" reports.Length
+
         for r in reports do
             let id = r.Identity
             printfn ""
             printfn "%s (%s, vendor 0x%04x device 0x%04x)" id.Name (deviceTypeName id.Type) id.VendorId id.DeviceId
             printfn "  Vulkan %s, driver %s %s" (VkVersion.toString id.ApiVersion) id.DriverName id.DriverInfo
+
             match r.Verdict with
             | Accepted caps ->
                 printfn "  verdict: ACCEPTED"
                 printHeap caps.DescriptorHeap
             | Rejected reasons ->
                 printfn "  verdict: REJECTED"
+
                 for reason in reasons do
                     printfn "    - %s" reason
+
             printOptional r.Optional
+
         let accepted = reports |> List.filter (fun r -> r.Verdict.IsAccepted) |> List.length
         printfn ""
         printfn "%d of %d device(s) accepted" accepted reports.Length
