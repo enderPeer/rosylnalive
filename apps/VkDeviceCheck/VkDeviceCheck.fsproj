@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Lrm.Gpu.Vulkan\Lrm.Gpu.Vulkan.fsproj" />
+    <ProjectReference Include="..\..\src\Lrm.Gpu.Vulkan.Interop\Lrm.Gpu.Vulkan.Interop.fsproj" />
   </ItemGroup>
 
 </Project>
