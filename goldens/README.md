@@ -33,10 +33,10 @@ The tiny set is `goldens/tiny/g1`. Its consumers are O2 (CpuRef per op), M2a (fo
 | `model/config.json` | The real Qwen3-0.6B key set (`rope_theta`, `torch_dtype`, explicit `head_dim`): 2 layers, hidden 64, 4 query and 2 KV heads of head_dim 32, intermediate 128, vocabulary 256, tied embeddings, `eos_token_id` 7 |
 | `model/model.safetensors` | 24 bf16 tensors in HF names; no `lm_head` (tied) |
 | `model/REVISION`, `model/SHA256SUMS` | `local:tiny-g1`, and `sha256sum` lines for the three other files |
-| `fwd_f32.<p>.safetensors` | torch32 `input_ids` (I32) and all 39 taps in F32, for prompts p0 (T=13) and p1 (T=1); only `logits` for p2 (T=70, which crosses a 64-key block) |
+| `fwd_f32.<p>.safetensors` | torch32 `input_ids` (I64) and all 39 taps in F32, for prompts p0 (T=13) and p1 (T=1); only `logits` for p2 (T=70, which crosses a 64-key block) |
 | `fwd_f64p.<p>.safetensors` | The same taps from torch64p, in F64 |
 | `rope.safetensors` | `inv_freq.bits` (U32 [16]), `t_spec.cos` and `t_spec.sin` (F32 [512, 16]) |
-| `greedy.safetensors` | `<p>.ids.<oracle>` (I32 [64]) and `<p>.margin.<oracle>` (F64 [64], top-1 minus top-2 logit), for p0 and p1 |
+| `greedy.safetensors` | `<p>.ids.<oracle>` (I64 [64]) and `<p>.margin.<oracle>` (F64 [64], top-1 minus top-2 logit), for p0 and p1 |
 | `grads_f32.safetensors`, `grads_f64p.safetensors` | `loss` and the gradient of every parameter, for the mean next-token cross-entropy on p0 |
 | `adamw_f32.safetensors` | One `torch.optim.AdamW` step (foreach=False) from the bf16 weights with the torch32 gradients. Holds `param/<name>`, `exp_avg/<name>` and `exp_avg_sq/<name>` |
 | `manifest.json` | Generator hashes, environment, guards, patches with diffs, tap methods, EOS setting, threads, double run, tie probe, self-tests, prompts, greedy checks, measured e_ref, and every file's size and SHA-256 |

@@ -35,7 +35,14 @@ TOOL_FILES = ["common.py", "make_tiny.py", "selftest.py", "tiny_model.py"]
 
 
 def _st_file(arrays: dict, meta: dict) -> bytes:
-    return c.safetensors_bytes({n: c.st(a) for n, a in arrays.items()}, meta)
+    """A golden tensor file; every tensor starts at a multiple of its element size (GoldenSet alignment rule)."""
+    tensors = {n: c.st(a) for n, a in arrays.items()}
+    offset = 0
+    for n in sorted(tensors):
+        if offset % c._ST_SIZES[tensors[n].dtype]:
+            raise c.GoldenError(f"tensor {n} would start at a misaligned offset {offset}")
+        offset += len(tensors[n].data)
+    return c.safetensors_bytes(tensors, meta)
 
 
 def _meta(**kw) -> dict:
@@ -88,7 +95,7 @@ def build(model_dir: str, prompts: list[dict], inv_bits: np.ndarray, tables) -> 
         taps, chk = c.forward_taps(m32, p["ids"])
         fwd32[p["name"]] = taps
         keep = taps if p["dumps"] == "taps" else {"logits": taps["logits"]}
-        arrays = {"input_ids": np.array(p["ids"], dtype=np.int32), **keep}
+        arrays = {"input_ids": np.array(p["ids"], dtype=np.int64), **keep}
         files[f"fwd_f32.{p['name']}.safetensors"] = _st_file(arrays, _meta(oracle="torch32", prompt=p["name"]))
         res["prompts"][p["name"]] = {"cache_check_torch32": chk}
     greedy = {}
@@ -119,7 +126,7 @@ def build(model_dir: str, prompts: list[dict], inv_bits: np.ndarray, tables) -> 
         for p in prompts:
             taps, chk = c.forward_taps(m64, p["ids"])
             keep = taps if p["dumps"] == "taps" else {"logits": taps["logits"]}
-            arrays = {"input_ids": np.array(p["ids"], dtype=np.int32), **keep}
+            arrays = {"input_ids": np.array(p["ids"], dtype=np.int64), **keep}
             files[f"fwd_f64p.{p['name']}.safetensors"] = _st_file(arrays, _meta(oracle="torch64p", prompt=p["name"]))
             res["prompts"][p["name"]]["cache_check_torch64p"] = chk
             res["e_ref"][p["name"]] = {n: c.rel_l2(fwd32[p["name"]][n], taps[n]) for n in keep}
@@ -145,7 +152,7 @@ def build(model_dir: str, prompts: list[dict], inv_bits: np.ndarray, tables) -> 
                                          _meta(theta=tm.CONFIG_BASE["rope_theta"], head_dim=tm.HEAD_DIM, max_pos=tm.MAX_POS))
     g_arrays = {}
     for (name, oracle), (ids, margins) in greedy.items():
-        g_arrays[f"{name}.ids.{oracle}"] = np.array(ids, dtype=np.int32)
+        g_arrays[f"{name}.ids.{oracle}"] = np.array(ids, dtype=np.int64)
         g_arrays[f"{name}.margin.{oracle}"] = np.array(margins, dtype=np.float64)
     files["greedy.safetensors"] = _st_file(g_arrays, _meta(steps=tm.GREEDY_STEPS, eos="ignored"))
     files["grads_f32.safetensors"] = _st_file({"loss": np.array([loss32], dtype=np.float32), **grads32},

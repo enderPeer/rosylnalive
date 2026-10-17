@@ -5,7 +5,8 @@
 
 For each goldens/<set>/g<N>/manifest.json it checks: the schema; that every listed repo file exists with the listed
 size and SHA-256; that nothing unlisted sits in the set folder; that committed files are at most 2 MiB; that a
-model folder's SHA256SUMS matches its files and REVISION is a local: revision; and the size budgets below. Files with
+model folder's SHA256SUMS matches its files and REVISION is a local: revision; that every safetensors file follows the
+GoldenSet rules (sorted names, padded header, contiguous and naturally aligned data); and the size budgets below. Files with
 location "data" live under LRM_DATA/golden and are checked only when --data is given.
 """
 
@@ -33,6 +34,46 @@ def sha256(path: str) -> str:
         for chunk in iter(lambda: f.read(1 << 20), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+_ST_SIZES = {"BF16": 2, "F16": 2, "F32": 4, "F64": 8, "I32": 4, "I64": 8, "U32": 4, "U8": 1}
+
+
+def check_safetensors(path: str, rel: str) -> list[str]:
+    """GoldenSet safetensors rules: header length a multiple of 8, __metadata__ first, names sorted, data contiguous
+    in name order with no holes or trailing bytes, and every tensor naturally aligned."""
+    import struct
+
+    out = []
+    with open(path, "rb") as f:
+        raw = f.read()
+    (n,) = struct.unpack("<Q", raw[:8])
+    if n % 8 or 8 + n > len(raw):
+        return [f"{rel}: header length {n} is not a multiple of 8 or overruns the file"]
+    text = raw[8:8 + n].decode("ascii")
+    pairs = json.loads(text, object_pairs_hook=list)
+    names = [k for k, _ in pairs if k != "__metadata__"]
+    if any(k == "__metadata__" for k, _ in pairs[1:]):
+        out.append(f"{rel}: __metadata__ is not first")
+    if names != sorted(names):
+        out.append(f"{rel}: tensor names are not sorted")
+    pos, data = 0, len(raw) - 8 - n
+    entries = dict(pairs)
+    for name in names:
+        e = dict(entries[name])
+        b, end = e["data_offsets"]
+        size = _ST_SIZES.get(e["dtype"])
+        count = 1
+        for d in e["shape"]:
+            count *= d
+        if size is None or b != pos or end - b != count * size:
+            out.append(f"{rel}: entry {name} is not contiguous or has the wrong size")
+        elif b % size:
+            out.append(f"{rel}: entry {name} at offset {b} is not aligned to {size}")
+        pos = end
+    if pos != data:
+        out.append(f"{rel}: {data - pos} trailing or missing data bytes")
+    return out
 
 
 def verify_set(set_dir: str, data_root: str | None) -> tuple[list[str], int]:
@@ -64,6 +105,8 @@ def verify_set(set_dir: str, data_root: str | None) -> tuple[list[str], int]:
                 problems.append(f"{path}: {size} bytes is over the 2 MiB limit for committed golden files")
             if sha256(full) != e["sha256"]:
                 problems.append(f"{path}: SHA-256 differs from the manifest")
+            if path.endswith(".safetensors"):
+                problems += check_safetensors(full, path)
         elif e["location"] == "data":
             if data_root:
                 full = os.path.join(data_root, "golden", *path.split("/"))

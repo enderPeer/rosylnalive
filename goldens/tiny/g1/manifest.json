@@ -19,13 +19,13 @@
   "double_run": {
     "attempts": [
       {
-        "digest_a": "411b41139e5d2404e87cb5b2eba949f9220c9e1865b2757329b4b912c425c31a",
-        "digest_b": "411b41139e5d2404e87cb5b2eba949f9220c9e1865b2757329b4b912c425c31a",
+        "digest_a": "f8ee88df8c156998b739b21823115bb46c65f11370d084b61fad6d5811774e1e",
+        "digest_b": "f8ee88df8c156998b739b21823115bb46c65f11370d084b61fad6d5811774e1e",
         "identical": true,
         "threads": 8
       }
     ],
-    "digest": "411b41139e5d2404e87cb5b2eba949f9220c9e1865b2757329b4b912c425c31a",
+    "digest": "f8ee88df8c156998b739b21823115bb46c65f11370d084b61fad6d5811774e1e",
     "identical": true,
     "threads": 8
   },
@@ -75,46 +75,46 @@
       "sha256": "02b9b9b51e64ef57b36414a58d9538986db183de156d0d2459abaa55d00cc3f2"
     },
     {
-      "bytes": 189732,
+      "bytes": 189784,
       "location": "repo",
       "path": "goldens/tiny/g1/fwd_f32.p0.safetensors",
       "role": "fwd_f32",
-      "sha256": "6aa6997b783e8e76b02422d7d4d7aa034571b581d8f35602ab361415d0252c6d"
+      "sha256": "dc6c5b228f825c0cd395926ca57db3f3fd811a9c05a1c5846e0178c6175102a1"
     },
     {
-      "bytes": 17524,
+      "bytes": 17528,
       "location": "repo",
       "path": "goldens/tiny/g1/fwd_f32.p1.safetensors",
       "role": "fwd_f32",
-      "sha256": "843e22311523aa671d537e2fc13f024754fa510ecd46871dd77731bd55bddde2"
+      "sha256": "48ccfe3fa489005663004a313f7640a6864d132ad4af5f6ab84748d819dd5963"
     },
     {
-      "bytes": 72176,
+      "bytes": 72456,
       "location": "repo",
       "path": "goldens/tiny/g1/fwd_f32.p2.safetensors",
       "role": "fwd_f32",
-      "sha256": "f8693061e493908dbe9ff229f2ceeab624140deb22975443218744ad01f36d48"
+      "sha256": "5166676083b3b89ede813828e7a81118c89c5544e7ac8189bde8348a65bf9723"
     },
     {
-      "bytes": 376124,
+      "bytes": 376176,
       "location": "repo",
       "path": "goldens/tiny/g1/fwd_f64p.p0.safetensors",
       "role": "fwd_f64p",
-      "sha256": "e0d8ccf3912f7ad65e755883da1b2eb291b5efdb83ed3a2766e8ae48e123c9ea"
+      "sha256": "f763f306f04db7d57baf26bff916ffd66388248d32f35313d95121fd9bd61543"
     },
     {
-      "bytes": 31892,
+      "bytes": 31896,
       "location": "repo",
       "path": "goldens/tiny/g1/fwd_f64p.p1.safetensors",
       "role": "fwd_f64p",
-      "sha256": "2a627cd2f2983985e540b8331cf98cc0b5d8da02017ea48a697988973aaef0da"
+      "sha256": "2398deda05014e71c1c009a39f328d7f4a8e53d3ba629beaf343c226b29bfd7f"
     },
     {
-      "bytes": 143864,
+      "bytes": 144144,
       "location": "repo",
       "path": "goldens/tiny/g1/fwd_f64p.p2.safetensors",
       "role": "fwd_f64p",
-      "sha256": "5c06075373bf4262ae215b3fc32060d8b0f1d09f8156d419c2bd8bd1e51edc1f"
+      "sha256": "a3e0e79cfcefe4049bd5a7057f7bb99ad4f536d1a95686c32be199183b950eb3"
     },
     {
       "bytes": 463156,
@@ -131,11 +131,11 @@
       "sha256": "510dfdb311eeac305e5c64c39bf9e6dfbcefc40bddc33f5e519eb6a3393dd3ba"
     },
     {
-      "bytes": 3744,
+      "bytes": 4776,
       "location": "repo",
       "path": "goldens/tiny/g1/greedy.safetensors",
       "role": "greedy",
-      "sha256": "f30c9696b4f4518a1611ac28f88b3d6a0e1c81bf1ca4abc20e8aad476e28ca53"
+      "sha256": "35e5c085445b67cafaba5d9d00be5f0152ac6fb0fdaf562de15f6ab0e2d126e5"
     },
     {
       "bytes": 14,
@@ -177,7 +177,7 @@
     "command": "pwsh tools/goldens/run.ps1 make_tiny.py",
     "files": {
       "tools/goldens/common.py": "5fe0a65ac2471fce76c086b1830160fd9fea23679fbabe9d14395ae7fd7ee2f0",
-      "tools/goldens/make_tiny.py": "5a6256141dc188492cc30fdfbf5821d20ad465674211c5000002b9e123848922",
+      "tools/goldens/make_tiny.py": "6c1b049cf6d169c82f363d8861e8d39b76f6cfbbac0806f9fdef8555c64518cd",
       "tools/goldens/selftest.py": "b1cdc002c6146855502436cc11c8a20a075518ad0f0596af9cb374ca43360af3",
       "tools/goldens/tiny_model.py": "2665abe710c4f31ace7132be33f08bc0ab09729d26df5dd7fed0886ae9b9b0b3"
     }
