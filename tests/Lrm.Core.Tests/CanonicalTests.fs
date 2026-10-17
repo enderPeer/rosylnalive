@@ -167,6 +167,9 @@ let tests =
                 rejects "02000000010000006201010000006102" (fun r -> r.Map(fun () -> r.U8()) |> ignore)
                 rejects "02000000010000006101010000006102" (fun r -> r.Map(fun () -> r.U8()) |> ignore)
                 rejects "0000" (fun r -> r.U32() |> ignore)
+                rejects "ffffff7f00" (fun r -> r.Seq(fun () -> r.U8()) |> ignore)
+                rejects "ffffff7f00" (fun r -> r.Map(fun () -> r.U8()) |> ignore)
+                rejects "ffffffff" (fun r -> r.Bytes() |> ignore)
 
                 Expect.throwsT<FormatException>
                     (fun () ->

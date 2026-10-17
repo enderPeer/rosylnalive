@@ -55,6 +55,7 @@ The canonical encoding is how structured values become bytes for hashing and con
   - a bool or option tag other than `0x00` or `0x01`;
   - invalid UTF-8;
   - map keys that are unsorted or duplicated;
+  - a sequence or map count larger than the bytes left, since every item takes at least one byte (so hostile input cannot force a huge allocation);
   - truncated input;
   - trailing bytes, when `ExpectEnd` is called.
 
