@@ -46,7 +46,10 @@ These are checked on the transitive closure of `refs` and `buildRefs`:
   - `Deterministic`;
   - `InvariantGlobalization=false`;
   - output under `artifacts/<bin|obj>/<project>/<config>/`.
-- **CI builds.** With `CI=true` the build sets `ContinuousIntegrationBuild`. Source and obj paths are then mapped to `/_/`, so one commit builds to identical binaries at any clone path.
+- **Reproducible builds.** With `CI=true` the build sets `ContinuousIntegrationBuild`, which maps source and obj paths to `/_/`.
+  - One commit then builds to identical binaries in every clone whose path has the same length.
+  - F# 10.0.402 sizes the PE CodeView entry from the full PDB path, so clones at other path lengths differ only in that zero padding. IL, metadata, resources and PDBs are identical.
+  - `-p:LrmReproducible=true` also turns PDBs off and gives byte-identical binaries at any path, for example to compare builds across nodes.
 - **Running apps.** Apps run as `dotnet <dll>`, x64 only. Every exe calls `Lrm.Core.Process.init ()` first.
 
 ## Packages
