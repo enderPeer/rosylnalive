@@ -1,0 +1,203 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 1125" width="760" height="1125" font-family="system-ui, sans-serif" font-size="11" fill="currentColor">
+<title>GPU time per dispatch (minimum of two runs), RTX 4080</title>
+<text x="0" y="16" font-size="13" font-weight="600">GPU time per dispatch, microseconds (min of 2 runs)</text>
+<text x="162" y="85" text-anchor="end">scale_f32</text>
+<rect x="170" y="40" width="303" height="8" fill="#4C78A8"><title>d3d12 scale_f32: 7.2 us</title></rect>
+<text x="477" y="47" font-size="9">7.2</text>
+<rect x="170" y="49" width="303" height="8" fill="#F58518"><title>vulkan/explicit/bar scale_f32: 7.2 us</title></rect>
+<text x="477" y="56" font-size="9">7.2</text>
+<rect x="170" y="58" width="303" height="8" fill="#54A24B"><title>vulkan/explicit/host scale_f32: 7.2 us</title></rect>
+<text x="477" y="65" font-size="9">7.2</text>
+<rect x="170" y="67" width="260" height="8" fill="#B279A2"><title>vulkan/explicit/copy scale_f32: 6.1 us</title></rect>
+<text x="434" y="74" font-size="9">6.1</text>
+<rect x="170" y="76" width="260" height="8" fill="#E45756"><title>vulkan/emulated/bar scale_f32: 6.1 us</title></rect>
+<text x="434" y="83" font-size="9">6.1</text>
+<rect x="170" y="85" width="260" height="8" fill="#72B7B2"><title>vulkan/emulated/host scale_f32: 6.1 us</title></rect>
+<text x="434" y="92" font-size="9">6.1</text>
+<rect x="170" y="94" width="260" height="8" fill="#9D755D"><title>vulkan/emulated/copy scale_f32: 6.1 us</title></rect>
+<text x="434" y="101" font-size="9">6.1</text>
+<rect x="170" y="103" width="249" height="8" fill="#BAB0AC"><title>vulkan/explicit/bar+offset512 scale_f32: 5.9 us</title></rect>
+<text x="423" y="110" font-size="9">5.9</text>
+<rect x="170" y="112" width="247" height="8" fill="#EECA3B"><title>vulkan/explicit/bar+stride32 scale_f32: 5.9 us</title></rect>
+<text x="421" y="119" font-size="9">5.9</text>
+<text x="162" y="176" text-anchor="end">scale_f32.grid2d</text>
+<rect x="170" y="131" width="260" height="8" fill="#4C78A8"><title>d3d12 scale_f32.grid2d: 6.1 us</title></rect>
+<text x="434" y="138" font-size="9">6.1</text>
+<rect x="170" y="140" width="216" height="8" fill="#F58518"><title>vulkan/explicit/bar scale_f32.grid2d: 5.1 us</title></rect>
+<text x="390" y="147" font-size="9">5.1</text>
+<rect x="170" y="149" width="238" height="8" fill="#54A24B"><title>vulkan/explicit/host scale_f32.grid2d: 5.6 us</title></rect>
+<text x="412" y="156" font-size="9">5.6</text>
+<rect x="170" y="158" width="260" height="8" fill="#B279A2"><title>vulkan/explicit/copy scale_f32.grid2d: 6.1 us</title></rect>
+<text x="434" y="165" font-size="9">6.1</text>
+<rect x="170" y="167" width="216" height="8" fill="#E45756"><title>vulkan/emulated/bar scale_f32.grid2d: 5.1 us</title></rect>
+<text x="390" y="174" font-size="9">5.1</text>
+<rect x="170" y="176" width="303" height="8" fill="#72B7B2"><title>vulkan/emulated/host scale_f32.grid2d: 7.2 us</title></rect>
+<text x="477" y="183" font-size="9">7.2</text>
+<rect x="170" y="185" width="216" height="8" fill="#9D755D"><title>vulkan/emulated/copy scale_f32.grid2d: 5.1 us</title></rect>
+<text x="390" y="192" font-size="9">5.1</text>
+<text x="162" y="267" text-anchor="end">scale_f32.page1gib</text>
+<rect x="170" y="222" width="260" height="8" fill="#4C78A8"><title>d3d12 scale_f32.page1gib: 6.1 us</title></rect>
+<text x="434" y="229" font-size="9">6.1</text>
+<rect x="170" y="231" width="253" height="8" fill="#F58518"><title>vulkan/explicit/bar scale_f32.page1gib: 6.0 us</title></rect>
+<text x="427" y="238" font-size="9">6.0</text>
+<rect x="170" y="240" width="303" height="8" fill="#54A24B"><title>vulkan/explicit/host scale_f32.page1gib: 7.2 us</title></rect>
+<text x="477" y="247" font-size="9">7.2</text>
+<rect x="170" y="249" width="236" height="8" fill="#B279A2"><title>vulkan/explicit/copy scale_f32.page1gib: 5.6 us</title></rect>
+<text x="410" y="256" font-size="9">5.6</text>
+<rect x="170" y="258" width="216" height="8" fill="#E45756"><title>vulkan/emulated/bar scale_f32.page1gib: 5.1 us</title></rect>
+<text x="390" y="265" font-size="9">5.1</text>
+<rect x="170" y="267" width="303" height="8" fill="#72B7B2"><title>vulkan/emulated/host scale_f32.page1gib: 7.2 us</title></rect>
+<text x="477" y="274" font-size="9">7.2</text>
+<rect x="170" y="276" width="260" height="8" fill="#9D755D"><title>vulkan/emulated/copy scale_f32.page1gib: 6.1 us</title></rect>
+<text x="434" y="283" font-size="9">6.1</text>
+<text x="162" y="358" text-anchor="end">scale_f32.chain2</text>
+<rect x="170" y="313" width="520" height="8" fill="#4C78A8"><title>d3d12 scale_f32.chain2: 12.3 us</title></rect>
+<text x="694" y="320" font-size="9">12.3</text>
+<rect x="170" y="322" width="495" height="8" fill="#F58518"><title>vulkan/explicit/bar scale_f32.chain2: 11.7 us</title></rect>
+<text x="669" y="329" font-size="9">11.7</text>
+<rect x="170" y="331" width="452" height="8" fill="#54A24B"><title>vulkan/explicit/host scale_f32.chain2: 10.7 us</title></rect>
+<text x="626" y="338" font-size="9">10.7</text>
+<rect x="170" y="340" width="520" height="8" fill="#B279A2"><title>vulkan/explicit/copy scale_f32.chain2: 12.3 us</title></rect>
+<text x="694" y="347" font-size="9">12.3</text>
+<rect x="170" y="349" width="520" height="8" fill="#E45756"><title>vulkan/emulated/bar scale_f32.chain2: 12.3 us</title></rect>
+<text x="694" y="356" font-size="9">12.3</text>
+<rect x="170" y="358" width="480" height="8" fill="#72B7B2"><title>vulkan/emulated/host scale_f32.chain2: 11.4 us</title></rect>
+<text x="654" y="365" font-size="9">11.4</text>
+<rect x="170" y="367" width="433" height="8" fill="#9D755D"><title>vulkan/emulated/copy scale_f32.chain2: 10.2 us</title></rect>
+<text x="607" y="374" font-size="9">10.2</text>
+<text x="162" y="449" text-anchor="end">args_echo.0</text>
+<rect x="170" y="404" width="43" height="8" fill="#4C78A8"><title>d3d12 args_echo.0: 1.0 us</title></rect>
+<text x="217" y="411" font-size="9">1.0</text>
+<rect x="170" y="413" width="52" height="8" fill="#F58518"><title>vulkan/explicit/bar args_echo.0: 1.2 us</title></rect>
+<text x="226" y="420" font-size="9">1.2</text>
+<rect x="170" y="422" width="130" height="8" fill="#54A24B"><title>vulkan/explicit/host args_echo.0: 3.1 us</title></rect>
+<text x="304" y="429" font-size="9">3.1</text>
+<rect x="170" y="431" width="43" height="8" fill="#B279A2"><title>vulkan/explicit/copy args_echo.0: 1.0 us</title></rect>
+<text x="217" y="438" font-size="9">1.0</text>
+<rect x="170" y="440" width="43" height="8" fill="#E45756"><title>vulkan/emulated/bar args_echo.0: 1.0 us</title></rect>
+<text x="217" y="447" font-size="9">1.0</text>
+<rect x="170" y="449" width="130" height="8" fill="#72B7B2"><title>vulkan/emulated/host args_echo.0: 3.1 us</title></rect>
+<text x="304" y="456" font-size="9">3.1</text>
+<rect x="170" y="458" width="43" height="8" fill="#9D755D"><title>vulkan/emulated/copy args_echo.0: 1.0 us</title></rect>
+<text x="217" y="465" font-size="9">1.0</text>
+<rect x="170" y="467" width="62" height="8" fill="#BAB0AC"><title>vulkan/explicit/bar+offset512 args_echo.0: 1.5 us</title></rect>
+<text x="236" y="474" font-size="9">1.5</text>
+<rect x="170" y="476" width="86" height="8" fill="#EECA3B"><title>vulkan/explicit/bar+stride32 args_echo.0: 2.0 us</title></rect>
+<text x="260" y="483" font-size="9">2.0</text>
+<text x="162" y="540" text-anchor="end">args_echo.1</text>
+<rect x="170" y="495" width="43" height="8" fill="#4C78A8"><title>d3d12 args_echo.1: 1.0 us</title></rect>
+<text x="217" y="502" font-size="9">1.0</text>
+<rect x="170" y="504" width="43" height="8" fill="#F58518"><title>vulkan/explicit/bar args_echo.1: 1.0 us</title></rect>
+<text x="217" y="511" font-size="9">1.0</text>
+<rect x="170" y="513" width="86" height="8" fill="#54A24B"><title>vulkan/explicit/host args_echo.1: 2.0 us</title></rect>
+<text x="260" y="520" font-size="9">2.0</text>
+<rect x="170" y="522" width="43" height="8" fill="#B279A2"><title>vulkan/explicit/copy args_echo.1: 1.0 us</title></rect>
+<text x="217" y="529" font-size="9">1.0</text>
+<rect x="170" y="531" width="36" height="8" fill="#E45756"><title>vulkan/emulated/bar args_echo.1: 0.9 us</title></rect>
+<text x="210" y="538" font-size="9">0.9</text>
+<rect x="170" y="540" width="106" height="8" fill="#72B7B2"><title>vulkan/emulated/host args_echo.1: 2.5 us</title></rect>
+<text x="280" y="547" font-size="9">2.5</text>
+<rect x="170" y="549" width="43" height="8" fill="#9D755D"><title>vulkan/emulated/copy args_echo.1: 1.0 us</title></rect>
+<text x="217" y="556" font-size="9">1.0</text>
+<text x="162" y="631" text-anchor="end">args_echo.2</text>
+<rect x="170" y="586" width="43" height="8" fill="#4C78A8"><title>d3d12 args_echo.2: 1.0 us</title></rect>
+<text x="217" y="593" font-size="9">1.0</text>
+<rect x="170" y="595" width="43" height="8" fill="#F58518"><title>vulkan/explicit/bar args_echo.2: 1.0 us</title></rect>
+<text x="217" y="602" font-size="9">1.0</text>
+<rect x="170" y="604" width="82" height="8" fill="#54A24B"><title>vulkan/explicit/host args_echo.2: 2.0 us</title></rect>
+<text x="256" y="611" font-size="9">2.0</text>
+<rect x="170" y="613" width="86" height="8" fill="#B279A2"><title>vulkan/explicit/copy args_echo.2: 2.0 us</title></rect>
+<text x="260" y="620" font-size="9">2.0</text>
+<rect x="170" y="622" width="39" height="8" fill="#E45756"><title>vulkan/emulated/bar args_echo.2: 0.9 us</title></rect>
+<text x="213" y="629" font-size="9">0.9</text>
+<rect x="170" y="631" width="75" height="8" fill="#72B7B2"><title>vulkan/emulated/host args_echo.2: 1.8 us</title></rect>
+<text x="249" y="638" font-size="9">1.8</text>
+<rect x="170" y="640" width="43" height="8" fill="#9D755D"><title>vulkan/emulated/copy args_echo.2: 1.0 us</title></rect>
+<text x="217" y="647" font-size="9">1.0</text>
+<text x="162" y="722" text-anchor="end">args_echo.3</text>
+<rect x="170" y="677" width="43" height="8" fill="#4C78A8"><title>d3d12 args_echo.3: 1.0 us</title></rect>
+<text x="217" y="684" font-size="9">1.0</text>
+<rect x="170" y="686" width="28" height="8" fill="#F58518"><title>vulkan/explicit/bar args_echo.3: 0.7 us</title></rect>
+<text x="202" y="693" font-size="9">0.7</text>
+<rect x="170" y="695" width="102" height="8" fill="#54A24B"><title>vulkan/explicit/host args_echo.3: 2.4 us</title></rect>
+<text x="276" y="702" font-size="9">2.4</text>
+<rect x="170" y="704" width="86" height="8" fill="#B279A2"><title>vulkan/explicit/copy args_echo.3: 2.0 us</title></rect>
+<text x="260" y="711" font-size="9">2.0</text>
+<rect x="170" y="713" width="43" height="8" fill="#E45756"><title>vulkan/emulated/bar args_echo.3: 1.0 us</title></rect>
+<text x="217" y="720" font-size="9">1.0</text>
+<rect x="170" y="722" width="86" height="8" fill="#72B7B2"><title>vulkan/emulated/host args_echo.3: 2.0 us</title></rect>
+<text x="260" y="729" font-size="9">2.0</text>
+<rect x="170" y="731" width="43" height="8" fill="#9D755D"><title>vulkan/emulated/copy args_echo.3: 1.0 us</title></rect>
+<text x="217" y="738" font-size="9">1.0</text>
+<text x="162" y="813" text-anchor="end">table_echo</text>
+<rect x="170" y="768" width="86" height="8" fill="#4C78A8"><title>d3d12 table_echo: 2.0 us</title></rect>
+<text x="260" y="775" font-size="9">2.0</text>
+<rect x="170" y="777" width="86" height="8" fill="#F58518"><title>vulkan/explicit/bar table_echo: 2.0 us</title></rect>
+<text x="260" y="784" font-size="9">2.0</text>
+<rect x="170" y="786" width="89" height="8" fill="#54A24B"><title>vulkan/explicit/host table_echo: 2.1 us</title></rect>
+<text x="263" y="793" font-size="9">2.1</text>
+<rect x="170" y="795" width="86" height="8" fill="#B279A2"><title>vulkan/explicit/copy table_echo: 2.0 us</title></rect>
+<text x="260" y="802" font-size="9">2.0</text>
+<rect x="170" y="804" width="130" height="8" fill="#E45756"><title>vulkan/emulated/bar table_echo: 3.1 us</title></rect>
+<text x="304" y="811" font-size="9">3.1</text>
+<rect x="170" y="813" width="116" height="8" fill="#72B7B2"><title>vulkan/emulated/host table_echo: 2.8 us</title></rect>
+<text x="290" y="820" font-size="9">2.8</text>
+<rect x="170" y="822" width="85" height="8" fill="#9D755D"><title>vulkan/emulated/copy table_echo: 2.0 us</title></rect>
+<text x="259" y="829" font-size="9">2.0</text>
+<rect x="170" y="831" width="86" height="8" fill="#BAB0AC"><title>vulkan/explicit/bar+offset512 table_echo: 2.0 us</title></rect>
+<text x="260" y="838" font-size="9">2.0</text>
+<rect x="170" y="840" width="123" height="8" fill="#EECA3B"><title>vulkan/explicit/bar+stride32 table_echo: 2.9 us</title></rect>
+<text x="297" y="847" font-size="9">2.9</text>
+<text x="162" y="904" text-anchor="end">bf16_unpack.all65536</text>
+<rect x="170" y="859" width="86" height="8" fill="#4C78A8"><title>d3d12 bf16_unpack.all65536: 2.0 us</title></rect>
+<text x="260" y="866" font-size="9">2.0</text>
+<rect x="170" y="868" width="41" height="8" fill="#F58518"><title>vulkan/explicit/bar bf16_unpack.all65536: 1.0 us</title></rect>
+<text x="215" y="875" font-size="9">1.0</text>
+<rect x="170" y="877" width="130" height="8" fill="#54A24B"><title>vulkan/explicit/host bf16_unpack.all65536: 3.1 us</title></rect>
+<text x="304" y="884" font-size="9">3.1</text>
+<rect x="170" y="886" width="86" height="8" fill="#B279A2"><title>vulkan/explicit/copy bf16_unpack.all65536: 2.0 us</title></rect>
+<text x="260" y="893" font-size="9">2.0</text>
+<rect x="170" y="895" width="51" height="8" fill="#E45756"><title>vulkan/emulated/bar bf16_unpack.all65536: 1.2 us</title></rect>
+<text x="225" y="902" font-size="9">1.2</text>
+<rect x="170" y="904" width="96" height="8" fill="#72B7B2"><title>vulkan/emulated/host bf16_unpack.all65536: 2.3 us</title></rect>
+<text x="270" y="911" font-size="9">2.3</text>
+<rect x="170" y="913" width="78" height="8" fill="#9D755D"><title>vulkan/emulated/copy bf16_unpack.all65536: 1.9 us</title></rect>
+<text x="252" y="920" font-size="9">1.9</text>
+<rect x="170" y="922" width="52" height="8" fill="#BAB0AC"><title>vulkan/explicit/bar+offset512 bf16_unpack.all65536: 1.2 us</title></rect>
+<text x="226" y="929" font-size="9">1.2</text>
+<rect x="170" y="931" width="58" height="8" fill="#EECA3B"><title>vulkan/explicit/bar+stride32 bf16_unpack.all65536: 1.4 us</title></rect>
+<text x="232" y="938" font-size="9">1.4</text>
+<text x="162" y="995" text-anchor="end">bf16_unpack.qwen_embed</text>
+<rect x="170" y="950" width="476" height="8" fill="#4C78A8"><title>d3d12 bf16_unpack.qwen_embed: 11.3 us</title></rect>
+<text x="650" y="957" font-size="9">11.3</text>
+<rect x="170" y="959" width="433" height="8" fill="#F58518"><title>vulkan/explicit/bar bf16_unpack.qwen_embed: 10.2 us</title></rect>
+<text x="607" y="966" font-size="9">10.2</text>
+<rect x="170" y="968" width="476" height="8" fill="#54A24B"><title>vulkan/explicit/host bf16_unpack.qwen_embed: 11.3 us</title></rect>
+<text x="650" y="975" font-size="9">11.3</text>
+<rect x="170" y="977" width="433" height="8" fill="#B279A2"><title>vulkan/explicit/copy bf16_unpack.qwen_embed: 10.2 us</title></rect>
+<text x="607" y="984" font-size="9">10.2</text>
+<rect x="170" y="986" width="433" height="8" fill="#E45756"><title>vulkan/emulated/bar bf16_unpack.qwen_embed: 10.2 us</title></rect>
+<text x="607" y="993" font-size="9">10.2</text>
+<rect x="170" y="995" width="476" height="8" fill="#72B7B2"><title>vulkan/emulated/host bf16_unpack.qwen_embed: 11.3 us</title></rect>
+<text x="650" y="1002" font-size="9">11.3</text>
+<rect x="170" y="1004" width="520" height="8" fill="#9D755D"><title>vulkan/emulated/copy bf16_unpack.qwen_embed: 12.3 us</title></rect>
+<text x="694" y="1011" font-size="9">12.3</text>
+<rect x="170" y="1048" width="10" height="10" fill="#4C78A8"/>
+<text x="184" y="1057">d3d12</text>
+<rect x="360" y="1048" width="10" height="10" fill="#F58518"/>
+<text x="374" y="1057">vulkan/explicit/bar</text>
+<rect x="550" y="1048" width="10" height="10" fill="#54A24B"/>
+<text x="564" y="1057">vulkan/explicit/host</text>
+<rect x="170" y="1066" width="10" height="10" fill="#B279A2"/>
+<text x="184" y="1075">vulkan/explicit/copy</text>
+<rect x="360" y="1066" width="10" height="10" fill="#E45756"/>
+<text x="374" y="1075">vulkan/emulated/bar</text>
+<rect x="550" y="1066" width="10" height="10" fill="#72B7B2"/>
+<text x="564" y="1075">vulkan/emulated/host</text>
+<rect x="170" y="1084" width="10" height="10" fill="#9D755D"/>
+<text x="184" y="1093">vulkan/emulated/copy</text>
+<rect x="360" y="1084" width="10" height="10" fill="#BAB0AC"/>
+<text x="374" y="1093">vulkan/explicit/bar+offset512</text>
+<rect x="550" y="1084" width="10" height="10" fill="#EECA3B"/>
+<text x="564" y="1093">vulkan/explicit/bar+stride32</text>
+</svg>
