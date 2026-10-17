@@ -34,6 +34,14 @@ The LRM (Large Roslyn Model) is a transformer whose experts call Roslyn inside i
 ## Local resources
 
 - Qwen3-0.6B weights: `C:\Users\end\dev\lrm-data\models\Qwen3-0.6B`. Hugging Face revision `c1899de289a04d12100db370d81485cdf75e47ca`, bf16, with `SHA256SUMS` alongside. Keep model files out of git.
+- Toolchain pins: `tools/bootstrap/toolchain.json`.
+  - DXC is at `C:\Users\end\dev\lrm-data\toolchain\dxc\1.9.2609.5\build\native\bin\x64\dxc.exe`. Never use the Windows Kits dxc: it has no SPIR-V backend.
+  - The golden-tool Python venv is at `C:\Users\end\dev\lrm-data\venv-golden`; run it with `python -I`. It produces test data only.
+- **Testing uses many oracles.** The F# CPU reference is the spec. It is cross-checked against:
+  - PyTorch/transformers fp32 goldens and HF `tokenizers`;
+  - finite differences and torch autograd (Phase 2);
+  - agreement between D3D12 and Vulkan;
+  - Roslyn itself in Phase 3 (compile, ILVerify, test execution).
 - GPU: one NVIDIA RTX 4080 16 GB, driver 616.92; 32 CPU threads. GitHub-hosted CI has no GPU, so GPU tests run locally and are tagged.
 
 ## Working rules
