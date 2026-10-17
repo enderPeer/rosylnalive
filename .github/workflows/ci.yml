@@ -46,7 +46,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('global.json', 'Directory.Packages.props', 'docs/project-graph.json', '.config/dotnet-tools.json') }}
+          key: nuget-${{ runner.os }}-${{ hashFiles('global.json', 'Directory.Packages.props', 'build/locks/*.json', '.config/dotnet-tools.json') }}
 
       - name: Cache toolchain
         uses: actions/cache@v4
@@ -70,8 +70,12 @@ jobs:
           ./tools/ci/gen-project-graph.ps1 -Check
           ./tools/bootstrap/gen-toolchain-props.ps1 -Check
 
+      # CI=true makes every restore locked (Directory.Build.props): a stale build/locks/*.json fails here.
+      - name: Restore (locked mode)
+        run: dotnet restore Lrm.slnx --locked-mode --nologo
+
       - name: Release build
-        run: dotnet build Lrm.slnx -c Release --nologo
+        run: dotnet build Lrm.slnx -c Release --nologo --no-restore
 
       - name: Tests (cpu tier)
         run: ./tools/test.ps1 -Tier cpu -NoBuild -FailOnFocusedTests

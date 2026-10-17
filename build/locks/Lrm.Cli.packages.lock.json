@@ -1,0 +1,153 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "FSharp.Core": {
+        "type": "Direct",
+        "requested": "[10.1.402, )",
+        "resolved": "10.1.402",
+        "contentHash": "kfttzFL9uArPkhlhvoH99RZOOFpJnxOAZkGLqgfG+Wnc4FO2L+HnwradMgX1ubMjzhajuNzPTTcW1Yk8D1rGEg=="
+      },
+      "lrm.cluster": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )"
+        }
+      },
+      "lrm.core": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )"
+        }
+      },
+      "lrm.dashboard": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )",
+          "Lrm.Reports": "[1.0.0, )",
+          "Lrm.Telemetry": "[1.0.0, )"
+        }
+      },
+      "lrm.gpu.core": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )"
+        }
+      },
+      "lrm.gpu.cpudevice": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Gpu.Core": "[1.0.0, )",
+          "Lrm.Tensor.CpuReference": "[1.0.0, )"
+        }
+      },
+      "lrm.gpu.d3d12": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Gpu.Core": "[1.0.0, )",
+          "Lrm.Gpu.D3D12.Interop": "[1.0.0, )"
+        }
+      },
+      "lrm.gpu.d3d12.interop": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )"
+        }
+      },
+      "lrm.gpu.exec": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Gpu.Core": "[1.0.0, )",
+          "Lrm.Models.Qwen": "[1.0.0, )",
+          "Lrm.Shaders": "[1.0.0, )",
+          "Lrm.Tensor": "[1.0.0, )"
+        }
+      },
+      "lrm.gpu.vulkan": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Gpu.Core": "[1.0.0, )",
+          "Lrm.Gpu.Vulkan.Interop": "[1.0.0, )"
+        }
+      },
+      "lrm.gpu.vulkan.interop": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )"
+        }
+      },
+      "lrm.models.qwen": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )",
+          "Lrm.Tensor": "[1.0.0, )",
+          "Lrm.Tensor.CpuReference": "[1.0.0, )",
+          "Lrm.Tokenizer": "[1.0.0, )"
+        }
+      },
+      "lrm.reports": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )",
+          "Lrm.Telemetry": "[1.0.0, )"
+        }
+      },
+      "lrm.serving": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Cluster": "[1.0.0, )",
+          "Lrm.Gpu.Core": "[1.0.0, )",
+          "Lrm.Models.Qwen": "[1.0.0, )"
+        }
+      },
+      "lrm.shaders": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Gpu.Core": "[1.0.0, )"
+        }
+      },
+      "lrm.telemetry": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )"
+        }
+      },
+      "lrm.tensor": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )"
+        }
+      },
+      "lrm.tensor.cpureference": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )",
+          "Lrm.Tensor": "[1.0.0, )"
+        }
+      },
+      "lrm.tokenizer": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )"
+        }
+      }
+    }
+  }
+}
