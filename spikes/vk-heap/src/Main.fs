@@ -286,6 +286,56 @@ cl /nologo /c /W4 /WX /std:c11 /Fo\"%s\" \"%s\"
             Expect.equal (g.HeapOffset, g.Stride, g.SlotBytes) (0UL, 16UL, 1024UL) "slots"
             Expect.equal (g.ReservedOffset, g.ReservedSize, g.HeapBytes) (1024UL, 96768UL, 97792UL) "reserved range")
 
+        testCase "recipe KAT: struct layouts, push data echo and bf16 widening digests" (fun () ->
+            // docs/contracts/vulkan-heap-recipe.md, KAT-3 to KAT-5.
+            let offsets name =
+                let size, _, offs = Layout.layoutOf (Layout.S name)
+                size, offs
+
+            Expect.equal
+                (offsets "VkDescriptorSetAndBindingMappingEXT")
+                (96,
+                 [
+                     "sType", 0
+                     "pNext", 8
+                     "descriptorSet", 16
+                     "firstBinding", 20
+                     "bindingCount", 24
+                     "resourceMask", 28
+                     "source", 32
+                     "sourceData", 40
+                 ])
+                "KAT-3 mapping"
+
+            Expect.equal
+                (offsets "VkBindHeapInfoEXT")
+                (48, [ "sType", 0; "pNext", 8; "heapRange", 16; "reservedRangeOffset", 32; "reservedRangeSize", 40 ])
+                "KAT-3 bind heap"
+
+            Expect.equal (offsets "VkPushDataInfoEXT") (40, [ "sType", 0; "pNext", 8; "offset", 16; "data", 24 ]) "KAT-3 push data"
+            Expect.equal (fst (offsets "VkDescriptorMappingSourceDataEXT")) 56 "KAT-3 union"
+            Expect.equal (fst (offsets "VkShaderDescriptorSetAndBindingMappingInfoEXT")) 32 "KAT-3 mapping info"
+            Expect.equal (fst (offsets "VkResourceDescriptorInfoEXT")) 32 "KAT-3 resource descriptor info"
+            let echo = (echoCase 0).Job.Dispatches.Head.Args
+
+            let expectedEcho =
+                "00000001 00000003 ffffffff 7fc00001 80000000 00000001 b519c20e 7fd49868 "
+                + "12508679 4c777b2c 3775418c 6b0e50d0 34a1269a 7f79bf4a 9a8da36d 2f6087d0 "
+                + "33f8d54a 40511b2b d98077b5 ac105150 dfd2c9fd d5b8cf0e 12ee2896 43de8e57 "
+                + "28dca649 65c6007e 610e2eea ae4d91c4 d2a32be2 86dc79be c1d53a9c 97b2b7a7"
+
+            Expect.equal (echo |> Array.map (sprintf "%08x") |> String.concat " ") expectedEcho "KAT-4 ArgBlock"
+
+            Expect.equal
+                (Hash.sha256 (Native.ofWords echo)).Hex
+                "74f5e898a05c7e2063639a11cbdaed2cd75d077e98c5c27296542f577afc3531"
+                "KAT-4 digest"
+
+            Expect.equal
+                (Hash.sha256 (Native.ofWords (Array.init 65536 (uint16 >> Bf16.widenBits)))).Hex
+                "9207d7eb28680a098c73dbe536d1ff7b94311dc417b9a385e0af6660683e93ca"
+                "KAT-5 digest")
+
         testCase "cpu refs: known answers" (fun () ->
             Expect.equal (scaleRef [| 2.0f; -4.0f |] 0.5f) [| 1.0f; -2.0f |] "scale"
             Expect.equal (Bf16.widenBits 0x3F80us) 0x3F800000u "bf16 1.0"
@@ -551,14 +601,22 @@ let writeReport (runId: RunId) =
 [<EntryPoint>]
 let main argv =
     Process.init ()
-    let runId, sink = RunLog.start "spikes/vk-heap"
-    use _sink = sink
-    use _t = Telemetry.install (Telemetry.ofSink sink)
-    use _s = Telemetry.scope [ Attr.str TelemetryKeys.Component "r1.vk_heap_spike" ]
-    printfn "r1-spike: run %s, events %s" runId.Value sink.Path
-    let code = Runner.main argv tiers
 
-    if Env.tryGet "LRM_TEST_TIER" = Some "gpu" || (argv |> Array.contains "gpu") then
+    let gpuTier =
+        Env.tryGet "LRM_TEST_TIER" = Some "gpu"
+        || (argv |> Array.pairwise |> Array.contains ("--tier", "gpu"))
+
+    if not gpuTier then
+        // The cpu tier measures nothing on a device, so it writes no run log.
+        Runner.main argv tiers
+    else
+        let runId, sink = RunLog.start "spikes/vk-heap"
+        use _sink = sink
+        use _t = Telemetry.install (Telemetry.ofSink sink)
+        use _s = Telemetry.scope [ Attr.str TelemetryKeys.Component "r1.vk_heap_spike" ]
+        printfn "r1-spike: run %s, events %s" runId.Value sink.Path
+        let code = Runner.main argv tiers
+
         let classes =
             [
                 if d3d12.IsValueCreated then
@@ -592,4 +650,4 @@ let main argv =
 
         writeReport runId
 
-    code
+        code
