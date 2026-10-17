@@ -13,23 +13,31 @@ type VkBool32 = uint32
 module VkConst =
     [<Literal>]
     let VK_TRUE = 1u
+
     [<Literal>]
     let VK_FALSE = 0u
+
     [<Literal>]
     let VK_MAX_EXTENSION_NAME_SIZE = 256
+
     [<Literal>]
     let VK_MAX_PHYSICAL_DEVICE_NAME_SIZE = 256
+
     [<Literal>]
     let VK_MAX_DRIVER_NAME_SIZE = 256
+
     [<Literal>]
     let VK_MAX_DRIVER_INFO_SIZE = 256
+
     [<Literal>]
     let VK_UUID_SIZE = 16
 
     [<Literal>]
     let VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME = "VK_EXT_descriptor_heap"
+
     [<Literal>]
     let VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME = "VK_KHR_shader_untyped_pointers"
+
     [<Literal>]
     let VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME = "VK_KHR_cooperative_matrix"
 
@@ -38,6 +46,7 @@ module VkConst =
 module VkVersion =
     let make (variant: uint32) (major: uint32) (minor: uint32) (patch: uint32) =
         (variant <<< 29) ||| (major <<< 22) ||| (minor <<< 12) ||| patch
+
     let variant (v: uint32) = v >>> 29
     let major (v: uint32) = (v >>> 22) &&& 0x7Fu
     let minor (v: uint32) = (v >>> 12) &&& 0x3FFu
@@ -47,10 +56,13 @@ module VkVersion =
     let VK_API_VERSION_1_2 = make 0u 1u 2u 0u
     let VK_API_VERSION_1_3 = make 0u 1u 3u 0u
     let VK_API_VERSION_1_4 = make 0u 1u 4u 0u
+
     /// Compares major.minor only, as the spec does for core-version gating.
     let atLeast (required: uint32) (actual: uint32) =
         (major actual, minor actual) >= (major required, minor required)
-    let toString (v: uint32) = sprintf "%d.%d.%d" (major v) (minor v) (patch v)
+
+    let toString (v: uint32) =
+        sprintf "%d.%d.%d" (major v) (minor v) (patch v)
 
 type VkStructureType =
     | VK_STRUCTURE_TYPE_APPLICATION_INFO = 0
@@ -124,6 +136,7 @@ module internal FixedText =
 [<Struct; StructLayout(LayoutKind.Sequential, Size = 256)>]
 type FixedBytes256 =
     val private e0: byte
+
     member this.AsString =
         let mutable copy = this
         FixedText.decode (MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(&copy, 1)))
@@ -132,6 +145,7 @@ type FixedBytes256 =
 [<Struct; StructLayout(LayoutKind.Sequential, Size = 16)>]
 type FixedBytes16 =
     val private e0: byte
+
     member this.ToArray() =
         let mutable copy = this
         MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(&copy, 1)).ToArray()
