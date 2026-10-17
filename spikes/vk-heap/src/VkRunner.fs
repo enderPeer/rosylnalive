@@ -626,10 +626,14 @@ type VulkanContext() =
                     for k in 0 .. job.Dispatches.Length - 1 do
                         let t0 = readAt<uint64> data (2 * k) &&& mask
                         let t1 = readAt<uint64> data (2 * k + 1) &&& mask
-                        float ((t1 - t0) &&& mask) * facts.TimestampPeriodNs
+                        float ((t1 - t0) &&& mask) * facts.TimestampPeriodNs, int64 (float t0 * facts.TimestampPeriodNs)
                 ]
 
-        { Outputs = outputs; DispatchGpuNs = times }
+        {
+            Outputs = outputs
+            DispatchGpuNs = List.map fst times
+            DispatchGpuStartNs = List.map snd times
+        }
 
     interface IDisposable with
         member _.Dispose() =

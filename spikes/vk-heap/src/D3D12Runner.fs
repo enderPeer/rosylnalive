@@ -519,10 +519,14 @@ type D3D12Gpu(shaders: Shaders.ShaderSet) =
                     for k in 0 .. job.Dispatches.Length - 1 do
                         let t0 = Marshal.ReadInt64(queryPtr, 16 * k) |> uint64
                         let t1 = Marshal.ReadInt64(queryPtr, 16 * k + 8) |> uint64
-                        float (t1 - t0) * 1e9 / float tsFreq
+                        float (t1 - t0) * 1e9 / float tsFreq, int64 (float t0 * 1e9 / float tsFreq)
                 ]
 
-            { Outputs = outputs; DispatchGpuNs = times }
+            {
+                Outputs = outputs
+                DispatchGpuNs = List.map fst times
+                DispatchGpuStartNs = List.map snd times
+            }
 
     interface IDisposable with
         member _.Dispose() =

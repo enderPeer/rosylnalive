@@ -238,6 +238,8 @@ type JobResult =
         Outputs: byte[] list
         /// GPU time of each dispatch from timestamp queries, in ns.
         DispatchGpuNs: float list
+        /// The start of each dispatch in the queue's GPU timestamp domain, in ns.
+        DispatchGpuStartNs: int64 list
     }
 
 /// One backend configuration that can run jobs: a device, the heap written once, and the kernels.

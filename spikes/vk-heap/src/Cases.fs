@@ -370,6 +370,8 @@ type CaseOutcome =
         Digest: string
         /// The faster run's GPU time per dispatch, in ns.
         GpuNs: float list
+        /// The first run's start of each dispatch in the GPU timestamp domain, in ns.
+        GpuStartNs: int64 list
     }
 
 let runCase (gpu: IGpu) (c: Case) : CaseOutcome =
@@ -387,4 +389,5 @@ let runCase (gpu: IGpu) (c: Case) : CaseOutcome =
         RunTwiceIdentical = (cat r1.Outputs) = (cat r2.Outputs)
         Digest = (Hash.sha256 (cat r1.Outputs)).Hex
         GpuNs = List.map2 min r1.DispatchGpuNs r2.DispatchGpuNs
+        GpuStartNs = r1.DispatchGpuStartNs
     }
