@@ -1,0 +1,48 @@
+# LRM — working notes for agents
+
+The LRM (Large Roslyn Model) is a transformer whose experts call Roslyn inside its layers, written in F# on our own D3D12/Vulkan stack. The design is in `docs/LRM-design.md`. Current status and next steps are in `docs/STATUS.md`; the multi-agent plan is in `docs/dev-plan.md` (once written).
+
+## Fixed decisions (do not re-litigate)
+
+- **Language:** F# on .NET 10 (SDK 10.0.402) for everything in the system. No PyTorch or TorchSharp in the system. Python is allowed only for offline tools such as golden-output generation, run in an isolated venv.
+- **GPU:** our own stack for Direct3D 12 **and** Vulkan, using a bindless descriptor-heap design.
+  - Vulkan requires `VK_EXT_descriptor_heap`; reject devices without it.
+  - Write our own F# P/Invoke bindings; no Silk.NET, TerraFX or Vortice.
+  - Start with the set/binding → heap mapping path, not direct heap indexing.
+- **Heap layout:** one resource heap, written once at startup, holding arena buffers plus a tensor table. Kernels receive 32-bit tensor tokens via push data or root constants. Kernel arguments are capped at 128 bytes (RTX 4080 `maxPushDataSize` is 256).
+- **Oracle:** the F# CPU reference implementation is the specification for every GPU kernel.
+- **Clusters:** designed for networked GPU clusters from the start, robust to lag and dropouts.
+  - Work units are pure and content-addressed.
+  - Lagging work is recomputed elsewhere.
+  - Reductions run in fixed shard-ID order.
+  - Chaos tests must produce bit-identical results.
+- **Observability is a core requirement, visual first.**
+  - Metrics, tracing and metering are built into every component.
+  - Markdown reports are generated from templates using computed data, with SVG charts embedded.
+  - An HTML dashboard runs over the same run logs.
+  - Reports cover training per layer and per stage, loss, thinking, routing and inference.
+
+## Roadmap
+
+1. **Phase 1:** Qwen3-0.6B forward pass on our stack.
+   - Gate: on both backends, logits match the reference goldens within tolerance and greedy decoding gives identical tokens.
+   - The same forward pass must also run split across two nodes.
+2. **Phase 2:** the backward pass and training, multi-node and fault tolerant.
+   - Gate: gradients match, and a chaos run gives identical weights.
+3. **Phase 3:** the LRM itself (Roslyn experts).
+
+## Local resources
+
+- Qwen3-0.6B weights: `C:\Users\end\dev\lrm-data\models\Qwen3-0.6B`. Hugging Face revision `c1899de289a04d12100db370d81485cdf75e47ca`, bf16, with `SHA256SUMS` alongside. Keep model files out of git.
+- GPU: one NVIDIA RTX 4080 16 GB, driver 616.92; 32 CPU threads. GitHub-hosted CI has no GPU, so GPU tests run locally and are tagged.
+
+## Working rules
+
+- **Git:**
+  - Work on a branch per workstream; for parallel agents, use a worktree each.
+  - Push after every green checkpoint, and at least once per working session.
+  - Merge to `main` through PRs; `main` stays green.
+  - End commit messages with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- **File ownership:** stay inside the paths your workstream owns. Shared files (solution, `Directory.Build.props`, CI) belong to the integrator.
+- **The user** (enderPeer) sets direction at the concept level. Make routine engineering decisions yourself and report them in a line; don't ask about plumbing.
+- **Updating STATUS:** after finishing a workstream or wave, update `docs/STATUS.md` with what changed, what is verified, and what is next.
