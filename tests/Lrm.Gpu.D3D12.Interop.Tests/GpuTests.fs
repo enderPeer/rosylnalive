@@ -438,6 +438,15 @@ let tests =
                     if x.Adapter.Description.Contains "RTX 4080" then
                         Expect.equal x.Verdict Accepted "the RTX 4080 is ACCEPTED"
 
+                use factory = DxgiApi.createFactory<IDXGIFactory6> 0u
+
+                use adapter: ComPtr<IDXGIAdapter1> =
+                    factory.EnumAdapterByGpuPreference(uint32 r.Adapter.Index, DXGI_GPU_PREFERENCE.HIGH_PERFORMANCE)
+
+                Expect.isTrue
+                    (D3D12Api.canCreateDevice adapter DeviceCheck.CreationFeatureLevel)
+                    "D3D12CreateDevice with a null out pointer reports success"
+
             testCase "refcounts balance: the device's last Release returns 0" leakTest
             testCase "failed calls raise D3D12Exception with the removed reason" failures
             testCase "DRED settings and data are reachable" dred
