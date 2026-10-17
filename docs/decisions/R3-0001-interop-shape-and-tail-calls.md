@@ -17,7 +17,7 @@ D1 builds the D3D12 backend on this interop, in F#, without third-party bindings
 2. **Cached delegates, not `calli` stubs.**
    - F# cannot call an unmanaged function pointer directly. The options were a delegate from `GetDelegateForFunctionPointer` or a `DynamicMethod` emitting `calli`.
    - Delegates are cached per (delegate type, function pointer), with the last hit kept in a field, so the common case skips the dictionary.
-   - One COM call costs about 13 ns in the bench tier (AddRef and Release on a DXGI factory). That is negligible next to a dispatch, and it keeps the stack free of emitted IL.
+   - One COM call costs about 10 to 13 ns in the bench tier (AddRef and Release on a DXGI factory). That is negligible next to a dispatch, and it keeps the stack free of emitted IL.
 3. **Phantom marker interfaces with constrained extension methods.**
    - Each COM interface is an empty .NET interface whose inheritance mirrors COM's. `ComPtr<'I>` is a struct over one `nativeint`.
    - Each method is generated once, as an extension method on `ComPtr<'I> when 'I :> Declarer`. Derived interfaces get their bases' methods through the constraint, and F# picks among same-named methods (`GetDesc` on a resource, a heap or a queue) by the constraint.
