@@ -260,8 +260,13 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
     let rolesHeld (node: uint64) =
         roles.Values |> Seq.sumBy (fun r -> if r.Contains node then 1 else 0)
 
+    /// (node, stage) pairs a node refused with WrongClass; cleared when the node leaves.
+    let refused = HashSet<struct (uint64 * uint32)>()
+
     let eligible (m: MemberState) (stage: uint32) =
-        m.Class = workload.Class && m.CanHost.Contains stage
+        m.Class = workload.Class
+        && m.CanHost.Contains stage
+        && not (refused.Contains(struct (m.Id, stage)))
 
     let startDeadline (now: int64) (p: PendingState) (a: AssignmentState) =
         if a.DeadlineStart.IsNone then
@@ -430,6 +435,7 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
             r.Remove node |> ignore
 
         replaying.RemoveWhere(fun (struct (n, _)) -> n = node) |> ignore
+        refused.RemoveWhere(fun (struct (n, _)) -> n = node) |> ignore
 
     let markReady (now: int64) (m: MemberState) =
         if not m.Ready then
@@ -1201,13 +1207,24 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
                                 removeMember m.Id "leave"
                                 epoch <- epoch + 1UL
                                 membershipChanged now "leave"
-                            | Message.Notice n when n.Code = NoticeCode.WrongClass ->
-                                // The node cannot host what it was given: take it out of every role.
-                                for r in roles.Values do
-                                    r.Remove m.Id |> ignore
+                            | Message.Notice n when n.Code = NoticeCode.WrongClass && n.Value <= uint64 UInt32.MaxValue ->
+                                // The node cannot run units of this stage: never give it the stage again, and move
+                                // its pending work of the stage to replicas that can.
+                                let stage = uint32 n.Value
 
-                                fillRoles ()
-                                reassignAll now
+                                if refused.Add(struct (m.Id, stage)) then
+                                    (replicasOf stage).Remove m.Id |> ignore
+
+                                    for p in List.ofSeq pending.Values do
+                                        if p.Unit.Stage = stage then
+                                            p.Assignments.Remove m.Id |> ignore
+
+                                    fillRoles ()
+
+                                    for p in List.ofSeq pending.Values do
+                                        if p.Unit.Stage = stage then
+                                            for node in List.ofSeq (replicasOf stage) do
+                                                assignTo now p node
                             | _ -> reject m.Id "unexpected_kind" frame.Kind
 
         member _.OnTimer(c: IActorContext, tag: uint64) =
