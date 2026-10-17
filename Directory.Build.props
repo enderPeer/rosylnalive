@@ -25,7 +25,15 @@
     <UseAppHost>false</UseAppHost>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Deterministic>true</Deterministic>
-    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <!--
+      Reproducible output. CI=true (ContinuousIntegrationBuild) maps source and obj paths to /_/, so one commit builds
+      to identical binaries in every clone whose path has the same length (CI, or nodes that build at a fixed path).
+      F# 10.0.402 sizes the PE CodeView entry from the full, unmapped PDB path, so clones at other path lengths differ
+      only in that zero padding; IL, metadata, resources and PDBs are identical. -p:LrmReproducible=true also drops
+      PDBs (DebugType=none) and gives byte-identical binaries at any path, e.g. to compare builds across nodes.
+    -->
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true' or '$(LrmReproducible)' == 'true'">true</ContinuousIntegrationBuild>
+    <DebugType Condition="'$(LrmReproducible)' == 'true'">none</DebugType>
     <!-- InvariantGlobalization silently disables NFC (verified while planning); Process.init refuses that mode. -->
     <InvariantGlobalization>false</InvariantGlobalization>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
