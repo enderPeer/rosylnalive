@@ -338,6 +338,8 @@ let private leakTest () =
         use again = dev.AddRef()
         use child: ComPtr<ID3D12Device> = r.GetDevice()
         Expect.equal child.Ptr dev.Ptr "GetDevice returns the same device"
+        r.SetName "lrm.interop.leak_test"
+        heap.SetName "lrm.interop.leak_test.heap"
         ctx.SubmitAndWait()
 
     Expect.equal (Com.liveReferences ()) (before + 1L) "only the device is still owned"
@@ -386,6 +388,36 @@ let private failures () =
     Expect.equal (dev.GetDeviceRemovedReason()) HResult.S_OK "still healthy"
 
 /// Sequenced: one GPU workload at a time, and the leak test compares the process-wide live-reference count.
+/// DRED, which D1 reads after a device removal. The settings come from D3D12GetDebugInterface in the in-box runtime
+/// and apply to devices created afterwards in this process only; the test forces auto-breadcrumbs on for one device,
+/// reads its DRED data, then restores the defaults.
+let private dred () =
+    match D3D12Api.tryGetDebugInterface<ID3D12DeviceRemovedExtendedDataSettings1>() with
+    | ValueNone -> skiptest "ID3D12DeviceRemovedExtendedDataSettings1 is not available from this runtime"
+    | ValueSome settings ->
+        use settings = settings
+
+        let set (e: D3D12_DRED_ENABLEMENT) =
+            settings.SetAutoBreadcrumbsEnablement e
+            settings.SetPageFaultEnablement e
+            settings.SetBreadcrumbContextEnablement e
+
+        set D3D12_DRED_ENABLEMENT.FORCED_ON
+
+        try
+            use dev = createDevice ()
+            use data = dev.QueryInterface<ID3D12DeviceRemovedExtendedData1>()
+            let mutable out = D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1()
+            let hr = data.GetAutoBreadcrumbsOutput1Raw(NativePtr.toNativeInt &&out)
+            // A healthy device has nothing to report yet: S_OK with an empty list, or NOT_CURRENTLY_AVAILABLE.
+            Expect.isTrue
+                (hr = HResult.S_OK || hr = HResult.DXGI_ERROR_NOT_CURRENTLY_AVAILABLE)
+                (sprintf "GetAutoBreadcrumbsOutput1 with breadcrumbs on returned %s" (HResult.describe hr))
+
+            Expect.equal (dev.GetDeviceRemovedReason()) HResult.S_OK "still healthy"
+        finally
+            set D3D12_DRED_ENABLEMENT.SYSTEM_CONTROLLED
+
 let tests =
     testSequenced
     <| testList
@@ -408,6 +440,34 @@ let tests =
 
             testCase "refcounts balance: the device's last Release returns 0" leakTest
             testCase "failed calls raise D3D12Exception with the removed reason" failures
+            testCase "DRED settings and data are reachable" dred
             Determinism.testTwice "a 1 MiB copy round trip is bit-identical twice" copyRoundTrip
             Determinism.testTwice "a ResourceDescriptorHeap dispatch is bit-identical twice" dispatchAdd
         ]
+
+/// bench tier: the cost of one COM call through Vtbl.get and a cached delegate (AddRef and Release on a DXGI factory,
+/// so the callee is real native code). Informational; reported as a gpu.interop.call histogram in ns.
+let bench =
+    [
+        testCase "a COM call through a cached delegate"
+        <| fun () ->
+            use f = DxgiApi.createFactory<IDXGIFactory6> 0u
+
+            let pairs (n: int) =
+                for _ in 1..n do
+                    Com.addRefRaw f.Ptr |> ignore
+                    Com.releaseRaw f.Ptr |> ignore
+
+            pairs 200_000
+            let n = 5_000_000
+            let clock = Stopwatch.StartNew()
+            pairs n
+            let ns = clock.Elapsed.TotalNanoseconds / float (2 * n)
+            printfn "bench: %.1f ns per COM call (Vtbl.get + cached delegate, IUnknown on IDXGIFactory6)" ns
+
+            Telemetry.histogram
+                "gpu.interop.call"
+                ns
+                TelemetryUnits.Nanoseconds
+                [ Attr.str TelemetryKeys.Backend "d3d12"; Attr.str "path" "cached_delegate" ]
+    ]

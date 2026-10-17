@@ -8,6 +8,7 @@ let tiers: TestTiers =
     { TestTiers.empty with
         Cpu = [ CpuTests.tests ]
         Gpu = [ Backend.D3D12, [ GpuTests.tests ] ]
+        Bench = GpuTests.bench
     }
 
 /// `abi-oracle [--update] [--no-compile]`: the ABI oracle outside the test runner (tools/abi-oracle/d3d12/run.ps1).
