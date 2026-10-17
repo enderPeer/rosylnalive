@@ -120,23 +120,23 @@ The normative text, with known-answer vectors, is the contract [`docs/contracts/
 
 These are validated alternatives, not the recipe.
 - **No BAR type.** If a device has no DEVICE_LOCAL | HOST_VISIBLE type, the heap goes in DEVICE_LOCAL memory. The descriptors are written to host memory and uploaded with `vkCmdCopyBuffer`. A barrier then follows, from COPY / TRANSFER_WRITE to COMPUTE_SHADER / `VK_ACCESS_2_RESOURCE_HEAP_READ_BIT_EXT` (0x0400000000000000). The barrier's second scope covers later submissions on the queue.
-- **Host memory.** A heap in HOST_VISIBLE | HOST_COHERENT system memory also works. Every descriptor fetch then crosses PCIe, which adds about 0.5 to 2 µs to the smallest dispatches (see Measurements).
+- **Host memory.** A heap in HOST_VISIBLE | HOST_COHERENT system memory also works. Every descriptor fetch then crosses PCIe, which tends to add up to about 2 µs to the smallest dispatches (see Measurements).
 
 ## Measurements
 
-GPU time per job, in microseconds, as the minimum of two runs (run `20261017-232353-70fcb924`). Timestamps are taken around each dispatch; the full matrix and the chart are in the results page.
+GPU time per job, in microseconds, as the minimum of two runs (run `20261017-232545-c79db331`, the run behind the committed results page). Timestamps are taken around each dispatch; the full matrix and the chart are in the results page.
 
 | Case | d3d12 | explicit/bar | explicit/host | explicit/copy | emulated/bar |
 | --- | --- | --- | --- | --- | --- |
-| `scale_f32` (1 Mi floats) | 6.1 | 6.1 | 7.2 | 5.7 | 7.2 |
-| `scale_f32.page1gib` | 6.1 | 6.1 | 8.2 | 5.2 | 6.1 |
-| `scale_f32.chain2` (two dispatches) | 12.3 | 11.3 | 13.3 | 11.3 | 11.8 |
-| `args_echo.0` to `.3` (one group each) | 1.0 | 0.7 to 1.6 | 1.6 to 3.1 | 1.0 to 1.5 | 1.3 to 2.0 |
-| `table_echo` (1 MiB) | 2.0 | 1.9 | 2.6 | 2.0 | 2.9 |
-| `bf16_unpack.qwen_embed` (2 Mi) | 11.3 | 10.2 | 11.3 | 10.2 | 9.9 |
+| `scale_f32` (1 Mi floats) | 7.2 | 6.1 | 6.3 | 6.7 | 6.1 |
+| `scale_f32.page1gib` | 6.1 | 6.1 | 6.2 | 5.1 | 6.1 |
+| `scale_f32.chain2` (two dispatches) | 12.3 | 11.3 | 12.3 | 10.7 | 10.2 |
+| `args_echo.0` to `.3` (one group each) | 1.0 | 1.0 to 2.0 | 1.7 to 3.1 | 0.8 to 1.5 | 0.7 to 1.0 |
+| `table_echo` (1 MiB) | 2.0 | 3.1 | 2.7 | 1.6 | 2.6 |
+| `bf16_unpack.qwen_embed` (2 Mi) | 11.3 | 9.9 | 11.3 | 9.8 | 10.2 |
 
-- The binding variant makes no difference that the spike can resolve.
-- A heap in host memory (explicit/host) is slower than BAR in every row, by about 0.5 to 2 µs on the smallest dispatches, because the descriptors are fetched over PCIe. That is one more reason for the BAR placement.
+- Across repeated runs the numbers move by about ±1 µs. Within that noise, neither the binding variant nor the heap placement makes a resolvable difference.
+- The one consistent tendency is that a heap in host memory makes the smallest dispatches slower, by up to about 2 µs, because their descriptors are fetched over PCIe.
 - These numbers cover the binding path only and are not a performance baseline; the bench tier owns that.
 
 ## Pitfalls found

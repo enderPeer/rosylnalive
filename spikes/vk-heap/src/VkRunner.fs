@@ -503,6 +503,12 @@ type VulkanContext() =
 
     member _.TimelineValue = timelineValue
 
+    /// Waits for the device and resets the command pool. A reserved range stays bound to a command buffer until the
+    /// buffer is reset, and the application must not access it before that.
+    member _.ReleaseHeapBindings() =
+        ok "vkDeviceWaitIdle" (fns.DeviceWaitIdle.Invoke device)
+        ok "vkResetCommandPool" (fns.ResetCommandPool.Invoke(device, pool, 0u))
+
     /// Runs one job against a heap that is already bound by `bindHeap` (recorded first in the command buffer).
     member this.RunJob(bindHeap: Scratch -> unit, pipelines: Map<string, uint64>, job: Job) : JobResult =
         let nq = uint32 (2 * job.Dispatches.Length)
@@ -958,6 +964,7 @@ type VulkanConfig
             match placement with
             | Bar
             | HostMemory ->
+                ctx.ReleaseHeapBindings()
                 let heapHost = heapBuffer.Mapped + nativeint heapOffsetInBuffer
                 let bytes = copyOut (heapHost + nativeint geo.ReservedOffset) (int geo.ReservedSize)
                 Some(bytes |> Array.filter (fun b -> b <> canary) |> Array.length)
