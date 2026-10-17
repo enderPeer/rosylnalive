@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Owner: S0 (this file and Program.fs). Commands/*.fs belong to the workstreams named in each file.
+    The compile order is fixed by the dev plan; do not reorder. References come only from docs/project-graph.json.
+  -->
+  <ItemGroup>
+    <Compile Include="Commands/DevicesVulkan.fs" />
+    <Compile Include="Commands/DevicesD3D12.fs" />
+    <Compile Include="Commands/Backends.fs" />
+    <Compile Include="Commands/GpuBackends.fs" />
+    <Compile Include="Commands/Forward.fs" />
+    <Compile Include="Commands/Generate.fs" />
+    <Compile Include="Commands/Report.fs" />
+    <Compile Include="Commands/Dashboard.fs" />
+    <Compile Include="Commands/Chaos.fs" />
+    <Compile Include="Commands/Coord.fs" />
+    <Compile Include="Commands/Node.fs" />
+    <Compile Include="Commands/Bisect.fs" />
+    <Compile Include="Commands/Gate1.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+</Project>

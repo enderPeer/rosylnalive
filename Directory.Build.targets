@@ -1,0 +1,32 @@
+<Project>
+  <!-- ProjectReference and PackageReference items for every registered project, generated from docs/project-graph.json. -->
+  <Import Project="build/ProjectGraph.g.props" />
+
+  <!--
+    FSharp.Core for every F# project, at the SDK default version (FSCorePackageVersion, pinned in
+    Directory.Packages.props). Central package management switches the SDK's own implicit reference off.
+  -->
+  <ItemGroup Condition="'$(LrmIsSpike)' != 'true'">
+    <PackageReference Include="FSharp.Core" LrmGraph="true" ExcludeAssets="contentFiles" />
+  </ItemGroup>
+
+  <!--
+    Guard: a project must be registered in docs/project-graph.json, and every reference it has must come from the
+    graph. A reference written into an fsproj by hand fails the build (and restore) with a pointer to the JSON.
+  -->
+  <Target Name="LrmCheckProjectGraph"
+          BeforeTargets="CollectPackageReferences;ResolveProjectReferences;CoreCompile"
+          Condition="'$(LrmIsSpike)' != 'true'">
+    <Error Condition="'$(LrmGraphName)' == ''"
+           Text="$(LrmProjectPath) is not registered in docs/project-graph.json. Add it there and run: pwsh tools/ci/gen-project-graph.ps1" />
+    <ItemGroup>
+      <_LrmStrayProjectReference Include="@(ProjectReference)" Condition="'%(ProjectReference.LrmGraph)' != 'true'" />
+      <_LrmStrayPackageReference Include="@(PackageReference)"
+                                 Condition="'%(PackageReference.LrmGraph)' != 'true' and '%(PackageReference.IsImplicitlyDefined)' != 'true'" />
+    </ItemGroup>
+    <Error Condition="'@(_LrmStrayProjectReference)' != ''"
+           Text="$(LrmGraphName): ProjectReference '@(_LrmStrayProjectReference)' is not from docs/project-graph.json. References live only in the graph (ProjectGraph contract)." />
+    <Error Condition="'@(_LrmStrayPackageReference)' != ''"
+           Text="$(LrmGraphName): PackageReference '@(_LrmStrayPackageReference)' is not from docs/project-graph.json. References live only in the graph (ProjectGraph contract)." />
+  </Target>
+</Project>

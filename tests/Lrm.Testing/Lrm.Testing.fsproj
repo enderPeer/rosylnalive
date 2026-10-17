@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Owner: S0. TestTiers contract. References come only from docs/project-graph.json; this file lists files. -->
+  <ItemGroup>
+    <Compile Include="Env.fs" />
+    <Compile Include="Tiers.fs" />
+    <Compile Include="Locks.fs" />
+    <Compile Include="Determinism.fs" />
+    <Compile Include="Props.fs" />
+    <Compile Include="Devices.fs" />
+    <Compile Include="Runner.fs" />
+  </ItemGroup>
+</Project>

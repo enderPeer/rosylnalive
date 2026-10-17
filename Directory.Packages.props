@@ -1,0 +1,18 @@
+<Project>
+  <!--
+    Central package versions. Which project uses which package is decided only in docs/project-graph.json;
+    this file only pins versions. Every package here was approved under AP-1 (2026-10-17).
+    FSharp.Core stays at the SDK default: FSCorePackageVersion comes from the pinned SDK (global.json), and the SDK
+    ships that package in its library-packs folder, so it is never downloaded.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally Condition="'$(ManagePackageVersionsCentrally)' == ''">true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="FSharp.Core" Version="$(FSCorePackageVersion)" />
+    <PackageVersion Include="Expecto" Version="11.1.1" />
+    <PackageVersion Include="Expecto.FsCheck" Version="11.1.1" />
+    <PackageVersion Include="FsCheck" Version="3.4.0" />
+  </ItemGroup>
+</Project>
