@@ -1,17 +1,61 @@
 {
+  "schema": "lrm.toolchain/1",
+  "about": "Every toolchain pin (DataRootAndToolchain contract): URL, size, hash and path under LRM_DATA. tools/bootstrap/bootstrap.ps1 verifies or installs the entries marked managedBy=bootstrap. Nothing under LRM_DATA is ever committed.",
   "dataRoot": "C:/Users/end/dev/lrm-data",
   "dxc": {
+    "managedBy": "bootstrap",
+    "approval": "AP-1, approved 2026-10-17 (already local; CI runners download it)",
     "package": "Microsoft.Direct3D.DXC",
     "version": "1.9.2609.5",
     "url": "https://api.nuget.org/v3-flatcontainer/microsoft.direct3d.dxc/1.9.2609.5/microsoft.direct3d.dxc.1.9.2609.5.nupkg",
     "size": 53395273,
     "sha512Base64": "gV/8G+1EOTpuiDaIBe53sB75lABIcZrXWqUGAvNSNg6qW8u+kP9CVM5nA0MbUkdP8N5CiUU/BEPTRXR2AL6r4w==",
+    "download": "downloads/dxc-1.9.2609.5/microsoft.direct3d.dxc.1.9.2609.5.nupkg",
     "install": "toolchain/dxc/1.9.2609.5",
     "exe": "toolchain/dxc/1.9.2609.5/build/native/bin/x64/dxc.exe",
+    "extract": [
+      "LICENCE-MIT.txt",
+      "LICENSE-LLVM.txt",
+      "LICENSE-MS.txt",
+      "ReleaseNotes.md",
+      "build/native/include/*",
+      "build/native/bin/x64/*.exe",
+      "build/native/bin/x64/*.dll"
+    ],
+    "sha256": {
+      "build/native/bin/x64/dxc.exe": "aa7965b3763d9c710baaa5a28cedcc633449962a75d1391d161a85304a41b3e2",
+      "build/native/bin/x64/dxcompiler.dll": "0689e2fee0a1c9df8662a59680469f24e2a3ad7ce6bbbcc9284f7a83172bfc59",
+      "build/native/bin/x64/dxil.dll": "64be2368211d257a038a7d4ea6bb3e24c878eb8d588c7b8414fccf759b69c2ac",
+      "build/native/bin/x64/dxv.exe": "74528e8e86cdafcb9ecaa26f21a9ad9de9102b0d84213b67435de798b5a807f9"
+    },
+    "versionOutput": "dxcompiler.dll: 1.9(5512-01b62ad4)(1.9.2609.5) - 1.9.2609.5 (01b62ad47)",
     "signer": "CN=Microsoft Corporation",
     "note": "Never use the Windows Kits dxc: it has no SPIR-V backend."
   },
+  "vkxml": {
+    "managedBy": "bootstrap",
+    "approval": "pending",
+    "approvalNote": "AP-1: asked of the user on 2026-10-17. Until it is approved, bootstrap skips this entry and never downloads it.",
+    "version": "1.4.365",
+    "url": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Docs/v1.4.365/xml/vk.xml",
+    "size": 3341644,
+    "sha256": null,
+    "install": "toolchain/vulkan/1.4.365/vk.xml",
+    "note": "Read as data by tools/vkgen (R2). The sha256 is pinned when the download is approved."
+  },
+  "vkheaders": {
+    "managedBy": "bootstrap",
+    "approval": "pending",
+    "approvalNote": "AP-1: asked of the user on 2026-10-17. Until it is approved, bootstrap skips this entry and never downloads it.",
+    "version": "1.4.365",
+    "url": "https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v1.4.365.zip",
+    "size": null,
+    "sha256": null,
+    "install": "toolchain/vulkan-headers/1.4.365",
+    "note": "Used only by the cl.exe ABI oracle (tools/abi-oracle/vulkan). Size and sha256 are pinned when approved."
+  },
   "goldenVenv": {
+    "managedBy": "manual",
     "python": "3.11",
     "path": "venv-golden",
     "torchIndex": "https://download.pytorch.org/whl/cpu",
@@ -20,6 +64,7 @@
     "note": "Test data only; never part of the system."
   },
   "model": {
+    "managedBy": "manual",
     "id": "Qwen/Qwen3-0.6B",
     "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
     "path": "models/Qwen3-0.6B",
