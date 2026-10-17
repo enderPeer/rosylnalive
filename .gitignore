@@ -20,3 +20,6 @@ __pycache__/
 vk.xml
 *.safetensors
 *.nupkg
+# Small committed goldens are the exception (GoldenSet contract): goldens/tiny/g1/model/model.safetensors and
+# the tap files, at most 2 MiB each. Large goldens stay in LRM_DATA/golden; the size check (S0b) bounds goldens/.
+!goldens/**/*.safetensors

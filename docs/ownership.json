@@ -1,6 +1,6 @@
 {
   "schema": "lrm.ownership/1",
-  "about": "OwnershipAndContractChange contract: each workstream family owns the paths matched by its globs; slices (a/b ids) share their family's paths. A leading '!' excludes paths from that family. '**' matches any number of path segments, '*' matches within one segment. Every tracked file belongs to exactly one family. Branches are ws/<id>-<slug>, ws/<id>-fix-<slug> and int/<slug>; the hygiene job (S0b) fails edits outside the branch's family. The integrator (int/*) may touch any path. There are no mid-plan handovers.",
+  "about": "OwnershipAndContractChange contract: each workstream family owns the paths matched by its globs; slices (a/b ids) share their family's paths. A leading '!' excludes paths from that family. '**' matches any number of path segments, '*' matches within one segment. Every tracked file belongs to exactly one family. Branches are ws/<id>-<slug>, ws/<id>-fix-<slug> and int/<slug>; the hygiene job (S0b) fails edits outside the branch's family. The integrator (int/*) may touch any path. Each family writes its contract texts as docs/contracts/<name>.md (plan section 5), its ADRs as docs/decisions/<family>-*.md, and its generated reports under its own docs/reports/ folder; wave-exit reports (docs/reports/waves/**) belong to the integrator (S0). There are no mid-plan handovers.",
   "branches": [
     "ws/<id>-<slug>",
     "ws/<id>-fix-<slug>",
@@ -50,7 +50,9 @@
         "docs/contracts/data-root-and-toolchain.md",
         "docs/contracts/agent-permissions.md",
         "docs/contracts/ownership-and-contract-change.md",
-        "docs/decisions/S0-*.md"
+        "docs/decisions/S0-*.md",
+        "docs/reports/README.md",
+        "docs/reports/waves/**"
       ]
     },
     "S1": {
@@ -62,7 +64,8 @@
         "tests/Lrm.Core.Tests/**",
         "docs/contracts/lrm-core.md",
         "docs/contracts/telemetry-facade.md",
-        "docs/contracts/execution-class.md"
+        "docs/contracts/execution-class.md",
+        "docs/decisions/S1-*.md"
       ]
     },
     "R1": {
@@ -71,7 +74,8 @@
       ],
       "paths": [
         "spikes/vk-heap/**",
-        "docs/decisions/R1-*.md"
+        "docs/decisions/R1-*.md",
+        "docs/contracts/vulkan-heap-recipe.md"
       ]
     },
     "R2": {
@@ -86,7 +90,8 @@
         "apps/VkDeviceCheck/**",
         "tests/Lrm.Gpu.Vulkan.Interop.Tests/**",
         "apps/Lrm.Cli/Commands/DevicesVulkan.fs",
-        "docs/decisions/R2-*.md"
+        "docs/decisions/R2-*.md",
+        "docs/contracts/vulkan-interop.md"
       ]
     },
     "R3": {
@@ -99,7 +104,8 @@
         "src/Lrm.Gpu.D3D12.Interop/**",
         "tests/Lrm.Gpu.D3D12.Interop.Tests/**",
         "apps/Lrm.Cli/Commands/DevicesD3D12.fs",
-        "docs/decisions/R3-*.md"
+        "docs/decisions/R3-*.md",
+        "docs/contracts/d3d12-com-idiom.md"
       ]
     },
     "R4": {
@@ -151,7 +157,8 @@
         "docs/contracts/cpu-reference.md",
         "docs/contracts/comparators.md",
         "docs/contracts/kernel-bounds.md",
-        "docs/decisions/O2-*.md"
+        "docs/decisions/O2-*.md",
+        "docs/contracts/tolerance-spec.md"
       ]
     },
     "T1": {
@@ -164,7 +171,9 @@
         "tests/Lrm.Telemetry.Tests/**",
         "apps/Lrm.Cli/Commands/Report.fs",
         "docs/contracts/run-log.md",
-        "docs/contracts/report-templates.md"
+        "docs/contracts/report-templates.md",
+        "docs/reports/samples/**",
+        "docs/decisions/T1-*.md"
       ]
     },
     "C1": {
@@ -212,7 +221,8 @@
         "apps/Lrm.Cli/Commands/Forward.fs",
         "apps/Lrm.Cli/Commands/Generate.fs",
         "docs/contracts/qwen-model.md",
-        "docs/decisions/M2-*.md"
+        "docs/decisions/M2-*.md",
+        "docs/reports/parity/**"
       ]
     },
     "E1": {
@@ -226,7 +236,8 @@
         "!tests/Lrm.Kernels.Conformance/Cases/basic/**",
         "!tests/Lrm.Kernels.Conformance/Cases/matmul/**",
         "!tests/Lrm.Kernels.Conformance/Cases/attention/**",
-        "docs/contracts/conformance-harness.md"
+        "docs/contracts/conformance-harness.md",
+        "docs/decisions/E1-*.md"
       ]
     },
     "D1": {
@@ -264,7 +275,8 @@
       ],
       "paths": [
         "src/Lrm.Shaders/hlsl/kernels/basic/**",
-        "tests/Lrm.Kernels.Conformance/Cases/basic/**"
+        "tests/Lrm.Kernels.Conformance/Cases/basic/**",
+        "docs/decisions/K1-*.md"
       ]
     },
     "K2": {
@@ -273,7 +285,8 @@
       ],
       "paths": [
         "src/Lrm.Shaders/hlsl/kernels/matmul/**",
-        "tests/Lrm.Kernels.Conformance/Cases/matmul/**"
+        "tests/Lrm.Kernels.Conformance/Cases/matmul/**",
+        "docs/decisions/K2-*.md"
       ]
     },
     "K3": {
@@ -282,7 +295,8 @@
       ],
       "paths": [
         "src/Lrm.Shaders/hlsl/kernels/attention/**",
-        "tests/Lrm.Kernels.Conformance/Cases/attention/**"
+        "tests/Lrm.Kernels.Conformance/Cases/attention/**",
+        "docs/decisions/K3-*.md"
       ]
     },
     "X1": {
@@ -294,7 +308,8 @@
         "src/Lrm.Gpu.Exec/**",
         "tests/Lrm.Gpu.Exec.Tests/**",
         "apps/Lrm.Cli/Commands/GpuBackends.fs",
-        "docs/contracts/gpu-executor.md"
+        "docs/contracts/gpu-executor.md",
+        "docs/decisions/X1-*.md"
       ]
     },
     "C2": {
@@ -308,7 +323,8 @@
         "apps/Lrm.Cli/Commands/Coord.fs",
         "apps/Lrm.Cli/Commands/Node.fs",
         "docs/contracts/stage-pipeline.md",
-        "docs/reports/cluster-dev/**"
+        "docs/reports/cluster-dev/**",
+        "docs/decisions/C2-*.md"
       ]
     },
     "T2": {
@@ -318,7 +334,8 @@
       "paths": [
         "src/Lrm.Dashboard/**",
         "tests/Lrm.Dashboard.Tests/**",
-        "apps/Lrm.Cli/Commands/Dashboard.fs"
+        "apps/Lrm.Cli/Commands/Dashboard.fs",
+        "docs/decisions/T2-*.md"
       ]
     },
     "I1": {
@@ -330,7 +347,9 @@
         "apps/Lrm.Cli/Commands/Bisect.fs",
         "docs/reports/gate1/backends/**",
         "docs/reports/inference/**",
-        "docs/reports/kernels/**"
+        "docs/reports/kernels/**",
+        "docs/contracts/gate1-evidence.md",
+        "docs/decisions/I1-*.md"
       ]
     },
     "I2": {
@@ -339,7 +358,8 @@
       ],
       "paths": [
         "tests/Lrm.Gate1.Cluster/**",
-        "docs/reports/gate1/cluster/**"
+        "docs/reports/gate1/cluster/**",
+        "docs/decisions/I2-*.md"
       ]
     },
     "I3": {
@@ -350,7 +370,8 @@
         "apps/Lrm.Cli/Commands/Gate1.fs",
         "docs/reports/gate1/README.md",
         "docs/reports/gate1/summary/**",
-        "docs/reports/gate1/dashboard.html"
+        "docs/reports/gate1/dashboard.html",
+        "docs/decisions/I3-*.md"
       ]
     }
   }
