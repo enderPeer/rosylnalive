@@ -1187,8 +1187,12 @@ class RunLog:
             self.path = os.path.join(self.dir, "events.n0.jsonl")
             self._f = open(self.path, "w", encoding="utf-8", newline="\n")
             manifest = {"schema": "lrm.run/1", "runId": self.run_id, "tool": tool, "nodes": ["n0"],
-                        "note": "Written by tools/goldens (Python). Fields beyond runId and nodes follow T1's RunLog contract once it exists."}
+                        "started": time.strftime("%Y-%m-%dT%H:%M:%SZ", now),
+                        "provisional": "Python emitter in tools/goldens; T1 owns the RunLog contract"}
             write_bytes(os.path.join(self.dir, "manifest.json"), json_bytes(manifest))
+            import atexit
+
+            atexit.register(self.close)  # a run that stops on an error still leaves a readable log
 
     @staticmethod
     def _valid(name: str) -> bool:
@@ -1246,5 +1250,5 @@ class RunLog:
         self.check("golden.compare", passed, **extra, **attrs)
 
     def close(self):
-        if self.enabled:
+        if self.enabled and not self._f.closed:
             self._f.close()
