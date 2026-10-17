@@ -1,9 +1,10 @@
 {
   "schema": "lrm.toolchain/1",
-  "about": "Every toolchain pin (DataRootAndToolchain contract): URL, size, hash and path under LRM_DATA. tools/bootstrap/bootstrap.ps1 verifies or installs the entries marked managedBy=bootstrap. Nothing under LRM_DATA is ever committed.",
+  "about": "Every toolchain pin (DataRootAndToolchain contract): URL, size, hash and path under LRM_DATA. tools/bootstrap/bootstrap.ps1 verifies or installs the entries marked managedBy=bootstrap, by kind (dxc-nupkg, file, zip), and only when approval says approved. dataRoot is the one source of the default LRM_DATA (build/Toolchain.g.props, tools/test.ps1, Lrm.Testing). Nothing under LRM_DATA is ever committed.",
   "dataRoot": "C:/Users/end/dev/lrm-data",
   "dxc": {
     "managedBy": "bootstrap",
+    "kind": "dxc-nupkg",
     "approval": "AP-1, approved 2026-10-17 (already local; CI runners download it)",
     "package": "Microsoft.Direct3D.DXC",
     "version": "1.9.2609.5",
@@ -34,6 +35,7 @@
   },
   "vkxml": {
     "managedBy": "bootstrap",
+    "kind": "file",
     "approval": "pending",
     "approvalNote": "AP-1: asked of the user on 2026-10-17. Until it is approved, bootstrap skips this entry and never downloads it.",
     "version": "1.4.365",
@@ -41,18 +43,25 @@
     "size": 3341644,
     "sha256": null,
     "install": "toolchain/vulkan/1.4.365/vk.xml",
-    "note": "Read as data by tools/vkgen (R2). The sha256 is pinned when the download is approved."
+    "note": "Read as data by tools/vkgen (R2). The sha256 is pinned when the download is approved (bootstrap -Only vkxml -ComputePins -AllowDownload prints it)."
   },
   "vkheaders": {
     "managedBy": "bootstrap",
+    "kind": "zip",
     "approval": "pending",
     "approvalNote": "AP-1: asked of the user on 2026-10-17. Until it is approved, bootstrap skips this entry and never downloads it.",
     "version": "1.4.365",
     "url": "https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v1.4.365.zip",
     "size": null,
     "sha256": null,
+    "download": "downloads/vulkan-headers-1.4.365/Vulkan-Headers-1.4.365.zip",
+    "stripTopFolder": true,
+    "extract": [
+      "LICENSE*",
+      "include/*"
+    ],
     "install": "toolchain/vulkan-headers/1.4.365",
-    "note": "Used only by the cl.exe ABI oracle (tools/abi-oracle/vulkan). Size and sha256 are pinned when approved."
+    "note": "Used only by the cl.exe ABI oracle (tools/abi-oracle/vulkan). Size and sha256 are pinned when approved (bootstrap -Only vkheaders -ComputePins -AllowDownload prints them)."
   },
   "goldenVenv": {
     "managedBy": "manual",
