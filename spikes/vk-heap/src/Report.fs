@@ -1,0 +1,201 @@
+/// The spike's evidence, visual first: a Markdown results page and an SVG chart of GPU time per dispatch, built from
+/// the outcomes the run collected (the same numbers the telemetry carries).
+module VkHeapSpike.Report
+
+open System
+open System.IO
+open System.Text
+open Lrm.Core
+open VkHeapSpike.Cases
+
+type ConfigResult =
+    {
+        Label: string
+        Outcomes: CaseOutcome list
+    }
+
+let private esc (s: string) =
+    s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;")
+
+let private f1 (x: float) = x.ToString("0.0", Invariant.culture)
+
+/// Grouped horizontal bars: one group per gating case, one bar per configuration, length = GPU microseconds.
+/// Colors are mid-tone so they read on light and dark backgrounds; text uses currentColor.
+let svg (configs: ConfigResult list) =
+    let palette =
+        [| "#4C78A8"; "#F58518"; "#54A24B"; "#B279A2"; "#E45756"; "#72B7B2"; "#9D755D"; "#BAB0AC"; "#EECA3B" |]
+
+    let cases =
+        configs
+        |> List.collect (fun c -> c.Outcomes |> List.filter _.Gating |> List.map _.Case)
+        |> List.distinct
+
+    let value (c: ConfigResult) (case: string) =
+        c.Outcomes
+        |> List.tryFind (fun o -> o.Case = case)
+        |> Option.map (fun o -> (List.sum o.GpuNs) / 1000.0)
+
+    let vmax =
+        [ for c in configs do
+              for k in cases do
+                  match value c k with
+                  | Some v -> v
+                  | None -> () ]
+        |> List.fold max 1.0
+
+    let barH = 9
+    let gap = 10
+    let left = 170
+    let width = 760
+    let plotW = width - left - 70
+    let groupH = configs.Length * barH + gap
+    let top = 40
+    let legendH = 18 * ((configs.Length + 2) / 3)
+    let height = top + cases.Length * groupH + 30 + legendH
+    let sb = StringBuilder()
+    let add (s: string) = sb.Append(s).Append('\n') |> ignore
+
+    add (
+        sprintf
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 %d %d\" width=\"%d\" height=\"%d\" font-family=\"system-ui, sans-serif\" font-size=\"11\" fill=\"currentColor\">"
+            width
+            height
+            width
+            height
+    )
+
+    add "<title>GPU time per dispatch (minimum of two runs), RTX 4080</title>"
+    add "<text x=\"0\" y=\"16\" font-size=\"13\" font-weight=\"600\">GPU time per dispatch, microseconds (min of 2 runs)</text>"
+
+    cases
+    |> List.iteri (fun gi case ->
+        let y0 = top + gi * groupH
+        add (sprintf "<text x=\"%d\" y=\"%d\" text-anchor=\"end\">%s</text>" (left - 8) (y0 + groupH / 2) (esc case))
+
+        configs
+        |> List.iteri (fun ci c ->
+            match value c case with
+            | Some v ->
+                let w = max 1 (int (float plotW * v / vmax))
+                let y = y0 + ci * barH
+
+                add (
+                    sprintf
+                        "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" fill=\"%s\"><title>%s %s: %s us</title></rect>"
+                        left
+                        y
+                        w
+                        (barH - 1)
+                        palette[ci % palette.Length]
+                        (esc c.Label)
+                        (esc case)
+                        (f1 v)
+                )
+
+                add (
+                    sprintf
+                        "<text x=\"%d\" y=\"%d\" font-size=\"9\">%s</text>"
+                        (left + w + 4)
+                        (y + barH - 2)
+                        (f1 v)
+                )
+            | None -> ()))
+
+    let ly = top + cases.Length * groupH + 16
+
+    configs
+    |> List.iteri (fun ci c ->
+        let x = left + (ci % 3) * 190
+        let y = ly + (ci / 3) * 18
+        add (sprintf "<rect x=\"%d\" y=\"%d\" width=\"10\" height=\"10\" fill=\"%s\"/>" x (y - 9) palette[ci % palette.Length])
+        add (sprintf "<text x=\"%d\" y=\"%d\">%s</text>" (x + 14) y (esc c.Label)))
+
+    add "</svg>"
+    sb.ToString()
+
+/// Notes of the form "<config label> <text>" with the same text are merged into one line listing the labels.
+let groupNotes (notes: string list) =
+    let isLabel (w: string) = w = "d3d12" || w.StartsWith "vulkan/"
+
+    let keyed =
+        notes
+        |> List.map (fun n ->
+            match n.IndexOf ' ' with
+            | i when i > 0 && isLabel (n.Substring(0, i)) -> n.Substring(i + 1), Some(n.Substring(0, i))
+            | _ -> n, None)
+
+    keyed
+    |> List.groupBy fst
+    |> List.map (fun (text, xs) ->
+        match xs |> List.choose snd |> List.distinct |> List.sort with
+        | [] -> text
+        | [ one ] -> one + " " + text
+        | labels -> sprintf "%s (%d configurations): %s" (String.concat ", " labels) labels.Length text)
+    |> List.sort
+
+let markdown (header: string list) (configs: ConfigResult list) (svgName: string) =
+    let sb = StringBuilder()
+    let line (s: string) = sb.Append(s).Append('\n') |> ignore
+    line "# R1 spike results"
+    line ""
+    line "Generated by `spikes/vk-heap` (VkHeapSpike) from one gpu-tier run on both backends. Every case runs twice and must give identical bytes; every gating case is compared word by word with the CPU reference."
+    line ""
+
+    for h in header do
+        line ("- " + h)
+
+    let cases =
+        configs |> List.collect (fun c -> c.Outcomes |> List.map (fun o -> o.Case, o.Gating)) |> List.distinct
+
+    let find (c: ConfigResult) case =
+        c.Outcomes |> List.tryFind (fun o -> o.Case = case)
+
+    line ""
+    line "## Bit-exactness and GPU time"
+    line ""
+    line "Each cell: words that differ from the CPU reference / GPU microseconds for the job's dispatches (minimum of two runs). Every run-twice comparison was identical unless a cell says DIFF."
+    line ""
+    line ("| Case | Gating | " + (configs |> List.map _.Label |> String.concat " | ") + " |")
+    line ("| --- | --- | " + (configs |> List.map (fun _ -> "---") |> String.concat " | ") + " |")
+
+    for (case, gating) in cases do
+        let cells =
+            configs
+            |> List.map (fun c ->
+                match find c case with
+                | Some o ->
+                    sprintf
+                        "%d / %s%s"
+                        o.Mismatches
+                        (f1 ((List.sum o.GpuNs) / 1000.0))
+                        (if o.RunTwiceIdentical then "" else " DIFF")
+                | None -> "")
+
+        line (sprintf "| %s | %s | %s |" case (if gating then "yes" else "no") (String.concat " | " cells))
+
+    line ""
+    line (sprintf "![GPU time per dispatch](%s)" svgName)
+    line ""
+    line "## Output digests"
+    line ""
+    line "SHA-256 of each case's output bytes. One digest per case means every configuration, on both backends, produced the same bits."
+    line ""
+    line "| Case | SHA-256 (first 16 hex) | Configurations |"
+    line "| --- | --- | --- |"
+
+    for (case, _) in cases do
+        let byDigest =
+            configs
+            |> List.choose (fun c -> find c case |> Option.map (fun o -> o.Digest, c.Label))
+            |> List.groupBy fst
+
+        for (d, xs) in byDigest do
+            line (sprintf "| %s | `%s` | %d: %s |" case (d.Substring(0, 16)) xs.Length (xs |> List.map snd |> String.concat ", "))
+
+    sb.ToString()
+
+let write (dir: string) (header: string list) (configs: ConfigResult list) =
+    Directory.CreateDirectory dir |> ignore
+    let svgName = "dispatch-gpu-us.svg"
+    File.WriteAllText(Path.Combine(dir, svgName), svg configs, UTF8Encoding(false))
+    File.WriteAllText(Path.Combine(dir, "results.md"), markdown header configs svgName, UTF8Encoding(false))
