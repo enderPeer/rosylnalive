@@ -12,13 +12,14 @@ A transformer whose tokens, structure and coherence come from Roslyn. It reads a
 | `docs/LRM-design.md` | Architecture, backward pass, training curriculum, systems, evaluation, roadmap and review |
 | `docs/project-graph.json` | Every project, its kind and owner, and every project and package reference |
 | `docs/ownership.json` | Which workstream family owns which paths |
+| `docs/contracts/` | The contract texts, one file per contract, each written by its owner |
 | `src/` | The libraries: `Lrm.Core`, tensors and the CPU reference, tokenizer, Qwen model, GPU core, shaders, D3D12 and Vulkan interop and backends, executor, cluster, serving, telemetry, reports, dashboard |
 | `src/Lrm.Gpu.Vulkan.Interop` | F# P/Invoke binding to the Vulkan C API (query only so far) |
 | `apps/Lrm.Cli` | The `lrm` command line |
 | `apps/VkDeviceCheck` | Device check that rejects Vulkan devices without `VK_EXT_descriptor_heap` |
 | `tests/` | Expecto test exes, one per library, plus conformance and Gate 1 suites; `Lrm.Testing` is the shared runner |
 | `tools/` | Bootstrap, test runner, CI scripts, code generators, golden-output tooling |
-| `build/` | Files generated from `docs/project-graph.json` and `tools/bootstrap/toolchain.json` |
+| `build/` | Files generated from `docs/project-graph.json` and `tools/bootstrap/toolchain.json`, and the NuGet lock files in `build/locks/` |
 | `roslyn-research-2026-10-17.zip` | Earlier Roslyn research: notes plus compiler-pipeline, tokenization and IL round-trip demos |
 
 Most projects are still shells; each workstream of the development plan fills its own.

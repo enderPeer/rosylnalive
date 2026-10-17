@@ -7,7 +7,7 @@ Last updated: 2026-10-18. Waves 0 and 1 are built, reviewed and combined on the 
 | Item | Where | Verified |
 | --- | --- | --- |
 | Design document, with an independent review applied | `docs/LRM-design.md` | Reviewed by a first-principles reviewer agent |
-| F# Vulkan binding (query only) and device check | `gpu/vulkan` | Builds with no warnings; RTX 4080 accepted; 17 struct layouts match vk.xml |
+| F# Vulkan binding (query only) and device check | `src/Lrm.Gpu.Vulkan.Interop`, `apps/VkDeviceCheck` | Builds with no warnings; RTX 4080 accepted; 17 struct layouts match vk.xml |
 | Qwen3-0.6B weights and tokenizer | `C:\Users\end\dev\lrm-data\models\Qwen3-0.6B` | SHA-256 of `model.safetensors` and `tokenizer.json` match Hugging Face |
 | Public GitHub repo | https://github.com/enderPeer/rosylnalive | `main` pushed |
 | Shader compiler: DXC 1.9.2609.5 from NuGet, pinned in `tools/bootstrap/toolchain.json` | `lrm-data\toolchain\dxc\1.9.2609.5` | SHA-512 matches nuget.org; Microsoft signature valid; a bindless test kernel compiles to DXIL and SPIR-V |
