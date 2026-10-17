@@ -223,6 +223,7 @@ let main (argv: string[]) (tiers: TestTiers) : int =
             2
         | Ok seed ->
             let groups = plan tier backends tiers
+            opts.Results |> Option.iter (Directory.CreateDirectory >> ignore)
 
             printfn
                 "lrm-test: %s tier=%s groups=[%s] fscheck-seed=%s%s"
