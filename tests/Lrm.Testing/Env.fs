@@ -3,10 +3,18 @@ module Lrm.Testing.Env
 
 open System
 open System.IO
+open System.Reflection
 
-/// Default LRM_DATA (DataRootAndToolchain contract).
-[<Literal>]
-let DefaultDataRoot = "C:/Users/end/dev/lrm-data"
+type private Marker = class end
+
+/// Default LRM_DATA (DataRootAndToolchain contract): the dataRoot in tools/bootstrap/toolchain.json, embedded at build
+/// time as the Lrm.DefaultDataRoot assembly metadata (Directory.Build.props, from build/Toolchain.g.props).
+let DefaultDataRoot =
+    typeof<Marker>.Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
+    |> Seq.tryFind (fun a -> a.Key = "Lrm.DefaultDataRoot" && not (String.IsNullOrWhiteSpace a.Value))
+    |> Option.map _.Value
+    |> Option.defaultWith (fun () ->
+        failwith "Lrm.Testing was built without the Lrm.DefaultDataRoot metadata (see Directory.Build.props)")
 
 let private var (name: string) =
     match Environment.GetEnvironmentVariable name with

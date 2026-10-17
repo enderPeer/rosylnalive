@@ -8,13 +8,18 @@
     instead of colliding. Per-exe JSON summaries and JUnit files go to -Results; a Markdown summary for PR bodies is
     printed at the end and written to <Results>/summary.md.
 
-    The run fails when any exe fails, when the tier ran no tests at all (a missing tier), or, for the gpu tier, when
-    a backend named in LRM_REQUIRED_BACKENDS ran no tests. The bench tier is informational: it never fails the run.
+    The run fails when any exe fails, when the tier ran no tests at all (a missing tier), or when a required backend
+    ran no tests. Required backends come from LRM_REQUIRED_BACKENDS (for example "d3d12,vulkan"):
+      - gpu tier: always enforced.
+      - model tier: enforced with -RequireBackends (GPU model gates). Without it, for example M2b's CPU-only
+        gate1-cpu run, a required backend that ran no model tests is listed in the summary as a note, not a failure.
+    The bench tier is informational: it never fails the run.
 
 .EXAMPLE
     pwsh tools/test.ps1 -Tier cpu
     pwsh tools/test.ps1 -Tier gpu -Project Lrm.Gpu.Vulkan.Tests
     pwsh tools/test.ps1 -Tier cpu -NoBuild -FailOnFocusedTests    # what CI runs
+    pwsh tools/test.ps1 -Tier model -RequireBackends              # a GPU model gate
 #>
 [CmdletBinding()]
 param(
@@ -29,6 +34,8 @@ param(
     [string]$Results,
     # Fail when a test is focused (ftestCase, ftestList); CI sets this.
     [switch]$FailOnFocusedTests,
+    # Model tier: fail when a backend in LRM_REQUIRED_BACKENDS ran no model tests (always on for the gpu tier).
+    [switch]$RequireBackends,
     # Extra arguments for every Expecto exe, e.g. -ExpectoArgs '--filter','cpu.selftest.locks'
     [string[]]$ExpectoArgs = @()
 )
@@ -42,6 +49,12 @@ $Results = [IO.Path]::GetFullPath($Results)
 $isBench = $Tier -eq 'bench'
 
 function Write-Fail([string]$m) { Write-Host "test.ps1: $m" -ForegroundColor Red }
+
+$required = @(if ($env:LRM_REQUIRED_BACKENDS) { $env:LRM_REQUIRED_BACKENDS -split '[,; ]+' | Where-Object { $_ } | ForEach-Object { $_.ToLowerInvariant() } })
+$unknownBackends = @($required | Where-Object { @('d3d12', 'vulkan') -notcontains $_ })
+if ($unknownBackends) { Write-Fail "LRM_REQUIRED_BACKENDS: unknown backend(s) $($unknownBackends -join ', '); expected d3d12, vulkan"; exit 1 }
+if ($RequireBackends -and -not $required) { Write-Fail '-RequireBackends needs LRM_REQUIRED_BACKENDS (for example d3d12,vulkan)'; exit 1 }
+if ($RequireBackends -and $Tier -notin @('gpu', 'model')) { Write-Fail "-RequireBackends applies to the gpu and model tiers, not $Tier"; exit 1 }
 
 if (-not $NoBuild) {
     Write-Host "test.ps1: building Lrm.slnx ($Configuration)"
@@ -67,7 +80,8 @@ if ($env:CI -eq 'true') { $extra += '--no-spinner' }
 
 $env:LRM_TEST_TIER = $Tier
 $env:LRM_REPO_ROOT = $repo
-if (-not $env:LRM_DATA) { $env:LRM_DATA = 'C:/Users/end/dev/lrm-data' }
+# DataRootAndToolchain: the default data root has one source, toolchain.json's dataRoot.
+if (-not $env:LRM_DATA) { $env:LRM_DATA = (Get-Content -Raw (Join-Path $repo 'tools/bootstrap/toolchain.json') | ConvertFrom-Json).dataRoot }
 
 $rows = @()
 $failed = @()
@@ -106,13 +120,17 @@ foreach ($t in $tests) {
 # ---- checks ---------------------------------------------------------------------------------------
 
 $problems = @()
+$notes = @()
 if ($failed) { $problems += "failed: $($failed -join ', ')" }
 $executed = ($rows | ForEach-Object { $_.Passed + $_.Failed + $_.Errored } | Measure-Object -Sum).Sum
 if (-not $executed) { $problems += "missing tier: no $Tier tests ran in any of $($tests.Count) test exe(s)" }
-if ($Tier -eq 'gpu' -and $env:LRM_REQUIRED_BACKENDS) {
+if ($required -and $Tier -in @('gpu', 'model')) {
     $ran = @($rows | ForEach-Object { $_.Backends })
-    foreach ($b in ($env:LRM_REQUIRED_BACKENDS -split '[,; ]+' | Where-Object { $_ })) {
-        if ($ran -notcontains $b.ToLowerInvariant()) { $problems += "required backend '$b' (LRM_REQUIRED_BACKENDS) ran no gpu tests" }
+    $enforced = $Tier -eq 'gpu' -or $RequireBackends
+    foreach ($b in $required) {
+        if ($ran -contains $b) { continue }
+        if ($enforced) { $problems += "required backend '$b' (LRM_REQUIRED_BACKENDS) ran no $Tier tests" }
+        else { $notes += "note: required backend '$b' (LRM_REQUIRED_BACKENDS) ran no $Tier tests; not enforced without -RequireBackends" }
     }
 }
 
@@ -141,6 +159,7 @@ $tot = { param($k) ($rows | ForEach-Object { $_.$k } | Measure-Object -Sum).Sum 
 $verdict = if ($problems -and -not $isBench) { 'FAILED' } elseif ($problems) { 'informational (bench never gates)' } else { 'PASSED' }
 [void]$md.AppendLine("Result: **$verdict**")
 foreach ($p in $problems) { [void]$md.AppendLine("- $p") }
+foreach ($n in $notes) { [void]$md.AppendLine("- $n") }
 
 $text = $md.ToString().Replace("`r`n", "`n")
 [IO.File]::WriteAllText((Join-Path $Results 'summary.md'), $text, [Text.UTF8Encoding]::new($false))
