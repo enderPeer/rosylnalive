@@ -1,6 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: R3. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
+    <Compile Include="Preprocessor.fs" />
+    <Compile Include="Lexer.fs" />
+    <Compile Include="Header.fs" />
+    <Compile Include="CppPass.fs" />
+    <Compile Include="Bind.fs" />
+    <Compile Include="Emit.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 </Project>
