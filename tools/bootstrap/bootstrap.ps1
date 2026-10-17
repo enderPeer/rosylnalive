@@ -80,7 +80,9 @@ function Test-Approved($e) {
 }
 
 # Downloads $e.url to "$dest.partial", runs $verify on it, then moves it to $dest. Needs -AllowDownload.
-function Save-Download([string]$key, $e, [string]$dest, [scriptblock]$verify) {
+# $verify names the pin check (Test-Sha512Pin or Test-Sha256Pin). A function name, not a closure: a script block from
+# GetNewClosure() runs in a new module scope where this script's functions are not visible.
+function Save-Download([string]$key, $e, [string]$dest, [string]$verify) {
     if (-not $AllowDownload) {
         throw ("$key $($e.version) is not at $dest. Run bootstrap with -AllowDownload (only for an approved entry), " +
             "or put the pinned file there.")
@@ -90,7 +92,7 @@ function Save-Download([string]$key, $e, [string]$dest, [scriptblock]$verify) {
     Write-Host "${key}: downloading $($e.url) ($($e.size) bytes)"
     try {
         Invoke-WebRequest -Uri $e.url -OutFile $partial -UseBasicParsing
-        & $verify $partial
+        & $verify $key $e $partial
     }
     catch {
         Remove-Item -LiteralPath $partial -Force -ErrorAction SilentlyContinue
@@ -165,7 +167,7 @@ function Install-Dxc([string]$key, $e) {
         }
         $nupkg = Under $e.download
         if (-not (Test-Path -LiteralPath $nupkg)) {
-            Save-Download $key $e $nupkg { param($p) Test-Sha512Pin $key $e $p }.GetNewClosure()
+            Save-Download $key $e $nupkg Test-Sha512Pin
         }
         Test-Sha512Pin $key $e $nupkg
         Write-Host "${key}: extracting $nupkg"
@@ -199,7 +201,7 @@ function Install-File([string]$key, $e) {
     Assert-Pinned $key $e
     $dest = Under $e.install
     if (-not (Test-Path -LiteralPath $dest)) {
-        Save-Download $key $e $dest { param($p) Test-Sha256Pin $key $e $p }.GetNewClosure()
+        Save-Download $key $e $dest Test-Sha256Pin
     }
     Test-Sha256Pin $key $e $dest
     Write-Host "$key $($e.version): OK  $dest" -ForegroundColor Green
@@ -212,7 +214,7 @@ function Install-Zip([string]$key, $e) {
     if (-not (Test-Path -LiteralPath $install)) {
         $archive = Under $e.download
         if (-not (Test-Path -LiteralPath $archive)) {
-            Save-Download $key $e $archive { param($p) Test-Sha256Pin $key $e $p }.GetNewClosure()
+            Save-Download $key $e $archive Test-Sha256Pin
         }
         Test-Sha256Pin $key $e $archive
         Write-Host "${key}: extracting $archive"
