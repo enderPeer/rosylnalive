@@ -336,6 +336,27 @@ let tests =
                 rig.Hello 5UL
                 Expect.equal (notices (rig.Script.Take())) [ 5UL, NoticeCode.Shutdown, 0UL ] "even a newcomer"
 
+            testCase "a node that answers WrongClass loses the stage and its work moves"
+            <| fun () ->
+                let rig = Rig(1, 1)
+                rig.Hello 1UL
+                rig.Hello 2UL
+                let first = assigns (rig.Script.Take())
+                Expect.isTrue (first |> List.forall (fun (d, _) -> d = 1UL)) "stage 0 starts on node 1"
+
+                rig.From
+                    1UL
+                    2UL
+                    (Message.Notice
+                        {
+                            Code = NoticeCode.WrongClass
+                            Value = 0UL
+                            Detail = "cannot run this unit"
+                        })
+
+                let moved = assigns (rig.Script.Take())
+                Expect.equal (moved |> List.map fst) [ 2UL; 2UL ] "both stage-0 units go to node 2"
+
             testCase "a replayed chain whose digest differs is a divergence"
             <| fun () ->
                 let rig = Rig(1, 1)
