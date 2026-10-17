@@ -1,0 +1,53 @@
+<Project>
+  <!--
+    Shared build settings for every project in the repo (ProjectGraph contract).
+    Project identity and kind come from build/ProjectKinds.g.props, generated from docs/project-graph.json.
+    fsproj files hold file items (Compile, plus EmbeddedResource/None where needed) and nothing else.
+  -->
+  <PropertyGroup>
+    <LrmRepoRoot>$([MSBuild]::EnsureTrailingSlash('$(MSBuildThisFileDirectory)').Replace('\', '/'))</LrmRepoRoot>
+    <LrmProjectPath>$([MSBuild]::MakeRelative('$(LrmRepoRoot)', '$(MSBuildProjectFullPath)').Replace('\', '/'))</LrmProjectPath>
+    <LrmIsSpike Condition="$(LrmProjectPath.StartsWith('spikes/'))">true</LrmIsSpike>
+
+    <!-- DataRootAndToolchain: LRM_DATA, else the default data root. Nothing under it is ever committed. -->
+    <LrmData Condition="'$(LrmData)' == ''">$(LRM_DATA)</LrmData>
+    <LrmData Condition="'$(LrmData)' == ''">C:/Users/end/dev/lrm-data</LrmData>
+  </PropertyGroup>
+
+  <!-- Toolchain pins from tools/bootstrap/toolchain.json ($(LrmDxcExe) and friends), and project identity and kind. -->
+  <Import Project="build/Toolchain.g.props" />
+  <Import Project="build/ProjectKinds.g.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- Struct layouts and the GPU stack assume 64-bit pointers; apps run as `dotnet <dll>`, x64 only. -->
+    <PlatformTarget>x64</PlatformTarget>
+    <UseAppHost>false</UseAppHost>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <!-- InvariantGlobalization silently disables NFC (verified while planning); Process.init refuses that mode. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <IsPackable>false</IsPackable>
+    <!-- All bin/ and obj/ output goes to artifacts/<bin|obj>/<project>/<config>/ (gitignored). -->
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <ArtifactsPath>$(LrmRepoRoot)artifacts</ArtifactsPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(LrmProjectKind)' == 'app' or '$(LrmProjectKind)' == 'test' or '$(LrmProjectKind)' == 'tool'">
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(LrmProjectKind)' == 'test'">
+    <!-- Expecto exes are run by tools/test.ps1, not by `dotnet test`. -->
+    <IsTestProject>false</IsTestProject>
+    <LrmIsTestExe>true</LrmIsTestExe>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(LrmIsSpike)' == 'true'">
+    <!-- Spikes are throwaway: not in the solution, not in CI, free to pin their own packages. -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>

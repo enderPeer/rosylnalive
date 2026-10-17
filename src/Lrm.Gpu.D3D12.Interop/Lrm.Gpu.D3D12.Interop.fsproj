@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Owner: R3. References come only from docs/project-graph.json; this file lists files. -->
+  <ItemGroup>
+    <Compile Include="Placeholder.fs" />
+  </ItemGroup>
+</Project>

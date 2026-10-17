@@ -1,12 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <!-- Struct layouts assume 64-bit pointers / size_t. -->
-    <PlatformTarget>x64</PlatformTarget>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
-  </PropertyGroup>
-
+  <!-- Owner: R2. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
     <Compile Include="VkTypes.fs" />
     <Compile Include="VkCore.Generated.fs" />
@@ -14,5 +7,4 @@
     <Compile Include="VkCommands.fs" />
     <Compile Include="DeviceCheck.fs" />
   </ItemGroup>
-
 </Project>
