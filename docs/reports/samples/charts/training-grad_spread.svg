@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="training-grad_spread-title training-grad_spread-desc">
+<title id="training-grad_spread-title">Gradient norm per layer over the run</title>
+<desc id="training-grad_spread-desc">Error bars of gradient norm (log) per layer: 1 series over 28 categories, whiskers from low to high.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#898781}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="379" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Gradient norm per layer over the run</text>
+<text class="t2" x="16" y="45" font-size="12">Dot: median over steps; whiskers: 5th to 95th percentile</text>
+<line class="grid" x1="41.84" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="33.84" y="338" font-size="11" text-anchor="end">0.1</text>
+<line class="grid" x1="41.84" y1="206" x2="696" y2="206" stroke-width="1"/>
+<text class="t3" x="33.84" y="210" font-size="11" text-anchor="end">1</text>
+<line class="grid" x1="41.84" y1="78" x2="696" y2="78" stroke-width="1"/>
+<text class="t3" x="33.84" y="82" font-size="11" text-anchor="end">10</text>
+<text class="t3" x="41.84" y="68" font-size="11" text-anchor="start">gradient norm (log)</text>
+<text class="t3" x="368.92" y="370" font-size="11" text-anchor="middle">layer</text>
+<text class="t3" x="53.52" y="351" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="76.88" y="351" font-size="11" text-anchor="middle">1</text>
+<text class="t3" x="100.25" y="351" font-size="11" text-anchor="middle">2</text>
+<text class="t3" x="123.61" y="351" font-size="11" text-anchor="middle">3</text>
+<text class="t3" x="146.97" y="351" font-size="11" text-anchor="middle">4</text>
+<text class="t3" x="170.34" y="351" font-size="11" text-anchor="middle">5</text>
+<text class="t3" x="193.7" y="351" font-size="11" text-anchor="middle">6</text>
+<text class="t3" x="217.06" y="351" font-size="11" text-anchor="middle">7</text>
+<text class="t3" x="240.42" y="351" font-size="11" text-anchor="middle">8</text>
+<text class="t3" x="263.79" y="351" font-size="11" text-anchor="middle">9</text>
+<text class="t3" x="287.15" y="351" font-size="11" text-anchor="middle">10</text>
+<text class="t3" x="310.51" y="351" font-size="11" text-anchor="middle">11</text>
+<text class="t3" x="333.88" y="351" font-size="11" text-anchor="middle">12</text>
+<text class="t3" x="357.24" y="351" font-size="11" text-anchor="middle">13</text>
+<text class="t3" x="380.6" y="351" font-size="11" text-anchor="middle">14</text>
+<text class="t3" x="403.96" y="351" font-size="11" text-anchor="middle">15</text>
+<text class="t3" x="427.33" y="351" font-size="11" text-anchor="middle">16</text>
+<text class="t3" x="450.69" y="351" font-size="11" text-anchor="middle">17</text>
+<text class="t3" x="474.05" y="351" font-size="11" text-anchor="middle">18</text>
+<text class="t3" x="497.42" y="351" font-size="11" text-anchor="middle">19</text>
+<text class="t3" x="520.78" y="351" font-size="11" text-anchor="middle">20</text>
+<text class="t3" x="544.14" y="351" font-size="11" text-anchor="middle">21</text>
+<text class="t3" x="567.5" y="351" font-size="11" text-anchor="middle">22</text>
+<text class="t3" x="590.87" y="351" font-size="11" text-anchor="middle">23</text>
+<text class="t3" x="614.23" y="351" font-size="11" text-anchor="middle">24</text>
+<text class="t3" x="637.59" y="351" font-size="11" text-anchor="middle">25</text>
+<text class="t3" x="660.96" y="351" font-size="11" text-anchor="middle">26</text>
+<text class="t3" x="684.32" y="351" font-size="11" text-anchor="middle">27</text>
+<path class="s0" d="M53.52 234.46V175.56M50.52 234.46h6M50.52 175.56h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="53.52" cy="205.97" r="4" stroke-width="1.5"><title>gradient norm, layer 0: 1.0e+00 (6.0e-01 to 1.7e+00)</title></circle>
+<path class="s0" d="M76.88 236.42V186.2M73.88 236.42h6M73.88 186.2h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="76.88" cy="210.24" r="4" stroke-width="1.5"><title>gradient norm, layer 1: 9.3e-01 (5.8e-01 to 1.4e+00)</title></circle>
+<path class="s0" d="M100.25 231.77V180.74M97.25 231.77h6M97.25 180.74h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="100.25" cy="209.75" r="4" stroke-width="1.5"><title>gradient norm, layer 2: 9.3e-01 (6.3e-01 to 1.6e+00)</title></circle>
+<path class="s0" d="M123.61 231.52V184.92M120.61 231.52h6M120.61 184.92h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="123.61" cy="205.14" r="4" stroke-width="1.5"><title>gradient norm, layer 3: 1.0e+00 (6.3e-01 to 1.5e+00)</title></circle>
+<path class="s0" d="M146.97 232.09V185.14M143.97 232.09h6M143.97 185.14h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="146.97" cy="213.45" r="4" stroke-width="1.5"><title>gradient norm, layer 4: 8.7e-01 (6.3e-01 to 1.5e+00)</title></circle>
+<path class="s0" d="M170.34 234.84V195.71M167.34 234.84h6M167.34 195.71h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="170.34" cy="210.08" r="4" stroke-width="1.5"><title>gradient norm, layer 5: 9.3e-01 (6.0e-01 to 1.2e+00)</title></circle>
+<path class="s0" d="M193.7 232.65V186.99M190.7 232.65h6M190.7 186.99h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="193.7" cy="212.46" r="4" stroke-width="1.5"><title>gradient norm, layer 6: 8.9e-01 (6.2e-01 to 1.4e+00)</title></circle>
+<path class="s0" d="M217.06 237.12V192.34M214.06 237.12h6M214.06 192.34h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="217.06" cy="212.85" r="4" stroke-width="1.5"><title>gradient norm, layer 7: 8.8e-01 (5.7e-01 to 1.3e+00)</title></circle>
+<path class="s0" d="M240.42 234.55V187.6M237.42 234.55h6M237.42 187.6h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="240.42" cy="214.68" r="4" stroke-width="1.5"><title>gradient norm, layer 8: 8.6e-01 (6.0e-01 to 1.4e+00)</title></circle>
+<path class="s0" d="M263.79 238.9V188.33M260.79 238.9h6M260.79 188.33h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="263.79" cy="216.49" r="4" stroke-width="1.5"><title>gradient norm, layer 9: 8.3e-01 (5.5e-01 to 1.4e+00)</title></circle>
+<path class="s0" d="M287.15 233.5V197.72M284.15 233.5h6M284.15 197.72h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="287.15" cy="219.57" r="4" stroke-width="1.5"><title>gradient norm, layer 10: 7.8e-01 (6.1e-01 to 1.2e+00)</title></circle>
+<path class="s0" d="M310.51 246.26V184.81M307.51 246.26h6M307.51 184.81h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="310.51" cy="214.81" r="4" stroke-width="1.5"><title>gradient norm, layer 11: 8.5e-01 (4.8e-01 to 1.5e+00)</title></circle>
+<path class="s0" d="M333.88 236.61V186.16M330.88 236.61h6M330.88 186.16h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="333.88" cy="213.23" r="4" stroke-width="1.5"><title>gradient norm, layer 12: 8.8e-01 (5.8e-01 to 1.4e+00)</title></circle>
+<path class="s0" d="M357.24 246.43V190.92M354.24 246.43h6M354.24 190.92h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="357.24" cy="219.11" r="4" stroke-width="1.5"><title>gradient norm, layer 13: 7.9e-01 (4.8e-01 to 1.3e+00)</title></circle>
+<path class="s0" d="M380.6 234.4V186.68M377.6 234.4h6M377.6 186.68h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="380.6" cy="216.45" r="4" stroke-width="1.5"><title>gradient norm, layer 14: 8.3e-01 (6.0e-01 to 1.4e+00)</title></circle>
+<path class="s0" d="M403.96 248.62V195.76M400.96 248.62h6M400.96 195.76h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="403.96" cy="221.92" r="4" stroke-width="1.5"><title>gradient norm, layer 15: 7.5e-01 (4.6e-01 to 1.2e+00)</title></circle>
+<path class="s0" d="M427.33 242.24V203.41M424.33 242.24h6M424.33 203.41h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="427.33" cy="223.99" r="4" stroke-width="1.5"><title>gradient norm, layer 16: 7.2e-01 (5.2e-01 to 1.0e+00)</title></circle>
+<path class="s0" d="M450.69 253.31V195.81M447.69 253.31h6M447.69 195.81h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="450.69" cy="222.99" r="4" stroke-width="1.5"><title>gradient norm, layer 17: 7.4e-01 (4.3e-01 to 1.2e+00)</title></circle>
+<path class="s0" d="M474.05 249.12V195.74M471.05 249.12h6M471.05 195.74h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="474.05" cy="225.47" r="4" stroke-width="1.5"><title>gradient norm, layer 18: 7.0e-01 (4.6e-01 to 1.2e+00)</title></circle>
+<path class="s0" d="M497.42 240.76V203.17M494.42 240.76h6M494.42 203.17h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="497.42" cy="224.49" r="4" stroke-width="1.5"><title>gradient norm, layer 19: 7.2e-01 (5.4e-01 to 1.1e+00)</title></circle>
+<path class="s0" d="M520.78 245.21V199.7M517.78 245.21h6M517.78 199.7h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="520.78" cy="221.61" r="4" stroke-width="1.5"><title>gradient norm, layer 20: 7.6e-01 (4.9e-01 to 1.1e+00)</title></circle>
+<path class="s0" d="M544.14 252.84V201.44M541.14 252.84h6M541.14 201.44h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="544.14" cy="229.88" r="4" stroke-width="1.5"><title>gradient norm, layer 21: 6.5e-01 (4.3e-01 to 1.1e+00)</title></circle>
+<path class="s0" d="M567.5 245.09V200.97M564.5 245.09h6M564.5 200.97h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="567.5" cy="227.76" r="4" stroke-width="1.5"><title>gradient norm, layer 22: 6.8e-01 (5.0e-01 to 1.1e+00)</title></circle>
+<path class="s0" d="M590.87 258.32V205.84M587.87 258.32h6M587.87 205.84h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="590.87" cy="231.86" r="4" stroke-width="1.5"><title>gradient norm, layer 23: 6.3e-01 (3.9e-01 to 1.0e+00)</title></circle>
+<path class="s0" d="M614.23 248.51V203.29M611.23 248.51h6M611.23 203.29h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="614.23" cy="227.01" r="4" stroke-width="1.5"><title>gradient norm, layer 24: 6.9e-01 (4.7e-01 to 1.0e+00)</title></circle>
+<path class="s0" d="M637.59 255.57V202.41M634.59 255.57h6M634.59 202.41h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="637.59" cy="229.65" r="4" stroke-width="1.5"><title>gradient norm, layer 25: 6.5e-01 (4.1e-01 to 1.1e+00)</title></circle>
+<path class="s0" d="M660.96 252.58V203.4M657.96 252.58h6M657.96 203.4h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="660.96" cy="236.4" r="4" stroke-width="1.5"><title>gradient norm, layer 26: 5.8e-01 (4.3e-01 to 1.0e+00)</title></circle>
+<path class="s0" d="M684.32 252.26V210.51M681.32 252.26h6M681.32 210.51h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="684.32" cy="235" r="4" stroke-width="1.5"><title>gradient norm, layer 27: 5.9e-01 (4.4e-01 to 9.2e-01)</title></circle>
+<line class="axis" x1="41.84" y1="334" x2="696" y2="334" stroke-width="1"/>
+</svg>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="routing-entropy_over_steps-title routing-entropy_over_steps-desc">
+<title id="routing-entropy_over_steps-title">Mean router entropy over training</title>
+<desc id="routing-entropy_over_steps-desc">Line chart of entropy (nats) against step: 1 series, 6 points.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#898781}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="379" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Mean router entropy over training</text>
+<text class="t2" x="16" y="45" font-size="12">Mean over layers</text>
+<line class="grid" x1="41.84" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="33.84" y="338" font-size="11" text-anchor="end">0.0</text>
+<line class="grid" x1="41.84" y1="270" x2="696" y2="270" stroke-width="1"/>
+<text class="t3" x="33.84" y="274" font-size="11" text-anchor="end">0.5</text>
+<line class="grid" x1="41.84" y1="206" x2="696" y2="206" stroke-width="1"/>
+<text class="t3" x="33.84" y="210" font-size="11" text-anchor="end">1.0</text>
+<line class="grid" x1="41.84" y1="142" x2="696" y2="142" stroke-width="1"/>
+<text class="t3" x="33.84" y="146" font-size="11" text-anchor="end">1.5</text>
+<line class="grid" x1="41.84" y1="78" x2="696" y2="78" stroke-width="1"/>
+<text class="t3" x="33.84" y="82" font-size="11" text-anchor="end">2.0</text>
+<text class="t3" x="41.84" y="351" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="172.67" y="351" font-size="11" text-anchor="middle">500</text>
+<text class="t3" x="303.5" y="351" font-size="11" text-anchor="middle">1,000</text>
+<text class="t3" x="434.34" y="351" font-size="11" text-anchor="middle">1,500</text>
+<text class="t3" x="565.17" y="351" font-size="11" text-anchor="middle">2,000</text>
+<text class="t3" x="696" y="351" font-size="11" text-anchor="middle">2,500</text>
+<line class="axis" x1="41.84" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="41.84" y="68" font-size="11" text-anchor="start">entropy (nats)</text>
+<text class="t3" x="368.92" y="370" font-size="11" text-anchor="middle">step</text>
+<path class="line s0" d="M41.84 87.69 L172.67 95.73 L303.5 105.54 L434.34 117.44 L565.17 130.76 L696 143.44"><title>mean entropy</title></path>
+<circle class="f0 ring" cx="41.84" cy="87.69" r="4" stroke-width="2"><title>mean entropy, step 0: 1.924</title></circle>
+<circle class="f0 ring" cx="172.67" cy="95.73" r="4" stroke-width="2"><title>mean entropy, step 500: 1.862</title></circle>
+<circle class="f0 ring" cx="303.5" cy="105.54" r="4" stroke-width="2"><title>mean entropy, step 1,000: 1.785</title></circle>
+<circle class="f0 ring" cx="434.34" cy="117.44" r="4" stroke-width="2"><title>mean entropy, step 1,500: 1.692</title></circle>
+<circle class="f0 ring" cx="565.17" cy="130.76" r="4" stroke-width="2"><title>mean entropy, step 2,000: 1.588</title></circle>
+<circle class="f0 ring" cx="696" cy="143.44" r="4" stroke-width="2"><title>mean entropy, step 2,500: 1.489</title></circle>
+</svg>

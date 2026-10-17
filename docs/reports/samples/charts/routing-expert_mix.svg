@@ -1,0 +1,262 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="routing-expert_mix-title routing-expert_mix-desc">
+<title id="routing-expert_mix-title">Expert mix per layer</title>
+<desc id="routing-expert_mix-desc">Bar chart of share of tokens for 28 layer values, 7 series.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#898781}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="379" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Expert mix per layer</text>
+<text class="t2" x="16" y="45" font-size="12">Routed tokens at step 2500, stacked by expert</text>
+<rect class="f0" x="19" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="38" y="66" font-size="12">GetDiagnostics</text>
+<rect class="f1" x="143.96" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="162.96" y="66" font-size="12">AnalyzeDataFlow</text>
+<rect class="f2" x="283.32" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="302.32" y="66" font-size="12">ReplaceNode</text>
+<rect class="f3" x="396.76" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="415.76" y="66" font-size="12">DecompileIL</text>
+<rect class="f4" x="508.04" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="527.04" y="66" font-size="12">CompileToIL</text>
+<rect class="f5" x="19" y="77" width="10" height="10" rx="2"/>
+<text class="t2" x="38" y="86" font-size="12">InsertNodesAfter</text>
+<rect class="fn" x="151.64" y="77" width="10" height="10" rx="2"/>
+<text class="t2" x="170.64" y="86" font-size="12">none</text>
+<line class="grid" x1="50.64" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="42.64" y="338" font-size="11" text-anchor="end">0</text>
+<line class="grid" x1="50.64" y1="290.8" x2="696" y2="290.8" stroke-width="1"/>
+<text class="t3" x="42.64" y="294.8" font-size="11" text-anchor="end">20%</text>
+<line class="grid" x1="50.64" y1="247.6" x2="696" y2="247.6" stroke-width="1"/>
+<text class="t3" x="42.64" y="251.6" font-size="11" text-anchor="end">40%</text>
+<line class="grid" x1="50.64" y1="204.4" x2="696" y2="204.4" stroke-width="1"/>
+<text class="t3" x="42.64" y="208.4" font-size="11" text-anchor="end">60%</text>
+<line class="grid" x1="50.64" y1="161.2" x2="696" y2="161.2" stroke-width="1"/>
+<text class="t3" x="42.64" y="165.2" font-size="11" text-anchor="end">80%</text>
+<line class="grid" x1="50.64" y1="118" x2="696" y2="118" stroke-width="1"/>
+<text class="t3" x="42.64" y="122" font-size="11" text-anchor="end">100%</text>
+<text class="t3" x="50.64" y="108" font-size="11" text-anchor="start">share of tokens</text>
+<text class="t3" x="373.32" y="370" font-size="11" text-anchor="middle">layer</text>
+<text class="t3" x="62.16" y="351" font-size="11" text-anchor="middle">0</text>
+<path class="f0" d="M53.87 257.16h16.59v76.84h-16.59Z"><title>0, GetDiagnostics: 36.5%</title></path>
+<path class="f1" d="M53.87 243.29h16.59v11.87h-16.59Z"><title>0, AnalyzeDataFlow: 6.4%</title></path>
+<path class="f2" d="M53.87 240.39h16.59v0.9h-16.59Z"><title>0, ReplaceNode: 1.3%</title></path>
+<path class="f3" d="M53.87 225.36h16.59v13.03h-16.59Z"><title>0, DecompileIL: 7.0%</title></path>
+<path class="f4" d="M53.87 222.86h16.59v0.5h-16.59Z"><title>0, CompileToIL: 0.2%</title></path>
+<path class="f5" d="M53.87 220.09h16.59v2.9h-16.59Z"><title>0, InsertNodesAfter: 2.3%</title></path>
+<path class="fn" d="M53.87 218.09V122Q53.87 118 57.87 118H66.46Q70.46 118 70.46 122V218.09Z"><title>0, none: 46.3%</title></path>
+<text class="t3" x="85.21" y="351" font-size="11" text-anchor="middle">1</text>
+<path class="f0" d="M76.92 242.45h16.59v91.55h-16.59Z"><title>1, GetDiagnostics: 43.3%</title></path>
+<path class="f1" d="M76.92 229.95h16.59v10.5h-16.59Z"><title>1, AnalyzeDataFlow: 5.8%</title></path>
+<path class="f2" d="M76.92 226.58h16.59v1.38h-16.59Z"><title>1, ReplaceNode: 1.6%</title></path>
+<path class="f3" d="M76.92 216.19h16.59v8.39h-16.59Z"><title>1, DecompileIL: 4.8%</title></path>
+<path class="f4" d="M76.92 213.69h16.59v0.5h-16.59Z"><title>1, CompileToIL: 0.1%</title></path>
+<path class="f5" d="M76.92 211.13h16.59v2.75h-16.59Z"><title>1, InsertNodesAfter: 2.2%</title></path>
+<path class="fn" d="M76.92 209.13V122Q76.92 118 80.92 118H89.51Q93.51 118 93.51 122V209.13Z"><title>1, none: 42.2%</title></path>
+<text class="t3" x="108.26" y="351" font-size="11" text-anchor="middle">2</text>
+<path class="f0" d="M99.96 261.86h16.59v72.14h-16.59Z"><title>2, GetDiagnostics: 34.3%</title></path>
+<path class="f1" d="M99.96 245.56h16.59v14.29h-16.59Z"><title>2, AnalyzeDataFlow: 7.5%</title></path>
+<path class="f2" d="M99.96 242.08h16.59v1.48h-16.59Z"><title>2, ReplaceNode: 1.6%</title></path>
+<path class="f3" d="M99.96 228.32h16.59v11.76h-16.59Z"><title>2, DecompileIL: 6.4%</title></path>
+<path class="f4" d="M99.96 225.82h16.59v0.5h-16.59Z"><title>2, CompileToIL: 0.2%</title></path>
+<path class="f5" d="M99.96 222.83h16.59v3.12h-16.59Z"><title>2, InsertNodesAfter: 2.4%</title></path>
+<path class="fn" d="M99.96 220.83V122Q99.96 118 103.96 118H112.56Q116.56 118 116.56 122V220.83Z"><title>2, none: 47.6%</title></path>
+<text class="t3" x="131.31" y="351" font-size="11" text-anchor="middle">3</text>
+<path class="f0" d="M123.01 249.78h16.59v84.22h-16.59Z"><title>3, GetDiagnostics: 39.9%</title></path>
+<path class="f1" d="M123.01 231.38h16.59v16.4h-16.59Z"><title>3, AnalyzeDataFlow: 8.5%</title></path>
+<path class="f2" d="M123.01 227.21h16.59v2.17h-16.59Z"><title>3, ReplaceNode: 1.9%</title></path>
+<path class="f3" d="M123.01 213.45h16.59v11.76h-16.59Z"><title>3, DecompileIL: 6.4%</title></path>
+<path class="f4" d="M123.01 210.95h16.59v0.5h-16.59Z"><title>3, CompileToIL: 0.2%</title></path>
+<path class="f5" d="M123.01 208.12h16.59v2.8h-16.59Z"><title>3, InsertNodesAfter: 2.2%</title></path>
+<path class="fn" d="M123.01 206.12V122Q123.01 118 127.01 118H135.61Q139.61 118 139.61 122V206.12Z"><title>3, none: 40.8%</title></path>
+<text class="t3" x="154.36" y="351" font-size="11" text-anchor="middle">4</text>
+<path class="f0" d="M146.06 220.04h16.59v113.96h-16.59Z"><title>4, GetDiagnostics: 53.7%</title></path>
+<path class="f1" d="M146.06 197.41h16.59v20.62h-16.59Z"><title>4, AnalyzeDataFlow: 10.5%</title></path>
+<path class="f2" d="M146.06 191.4h16.59v4.01h-16.59Z"><title>4, ReplaceNode: 2.8%</title></path>
+<path class="f3" d="M146.06 175.37h16.59v14.03h-16.59Z"><title>4, DecompileIL: 7.4%</title></path>
+<path class="f4" d="M146.06 172.87h16.59v0.5h-16.59Z"><title>4, CompileToIL: 0.2%</title></path>
+<path class="f5" d="M146.06 169.41h16.59v3.54h-16.59Z"><title>4, InsertNodesAfter: 2.6%</title></path>
+<path class="fn" d="M146.06 167.41V122Q146.06 118 150.06 118H158.66Q162.66 118 162.66 122V167.41Z"><title>4, none: 22.9%</title></path>
+<text class="t3" x="177.41" y="351" font-size="11" text-anchor="middle">5</text>
+<path class="f0" d="M169.11 212.57h16.59v121.43h-16.59Z"><title>5, GetDiagnostics: 57.1%</title></path>
+<path class="f1" d="M169.11 196.43h16.59v14.14h-16.59Z"><title>5, AnalyzeDataFlow: 7.5%</title></path>
+<path class="f2" d="M169.11 191.37h16.59v3.06h-16.59Z"><title>5, ReplaceNode: 2.3%</title></path>
+<path class="f3" d="M169.11 178.39h16.59v10.98h-16.59Z"><title>5, DecompileIL: 6.0%</title></path>
+<path class="f4" d="M169.11 175.89h16.59v0.5h-16.59Z"><title>5, CompileToIL: 0.2%</title></path>
+<path class="f5" d="M169.11 172.91h16.59v2.96h-16.59Z"><title>5, InsertNodesAfter: 2.3%</title></path>
+<path class="fn" d="M169.11 170.91V122Q169.11 118 173.11 118H181.7Q185.7 118 185.7 122V170.91Z"><title>5, none: 24.5%</title></path>
+<text class="t3" x="200.46" y="351" font-size="11" text-anchor="middle">6</text>
+<path class="f0" d="M192.16 215.47h16.59v118.53h-16.59Z"><title>6, GetDiagnostics: 55.8%</title></path>
+<path class="f1" d="M192.16 190.58h16.59v22.9h-16.59Z"><title>6, AnalyzeDataFlow: 11.5%</title></path>
+<path class="f2" d="M192.16 183.03h16.59v5.54h-16.59Z"><title>6, ReplaceNode: 3.5%</title></path>
+<path class="f3" d="M192.16 165.47h16.59v15.56h-16.59Z"><title>6, DecompileIL: 8.1%</title></path>
+<path class="f4" d="M192.16 162.97h16.59v0.5h-16.59Z"><title>6, CompileToIL: 0.4%</title></path>
+<path class="f5" d="M192.16 158.03h16.59v4.49h-16.59Z"><title>6, InsertNodesAfter: 3.0%</title></path>
+<path class="fn" d="M192.16 156.03V122Q192.16 118 196.16 118H204.75Q208.75 118 208.75 122V156.03Z"><title>6, none: 17.6%</title></path>
+<text class="t3" x="223.5" y="351" font-size="11" text-anchor="middle">7</text>
+<path class="f0" d="M215.21 230.48h16.59v103.52h-16.59Z"><title>7, GetDiagnostics: 48.9%</title></path>
+<path class="f1" d="M215.21 194.41h16.59v34.07h-16.59Z"><title>7, AnalyzeDataFlow: 16.7%</title></path>
+<path class="f2" d="M215.21 187.61h16.59v4.8h-16.59Z"><title>7, ReplaceNode: 3.1%</title></path>
+<path class="f3" d="M215.21 174.58h16.59v11.03h-16.59Z"><title>7, DecompileIL: 6.0%</title></path>
+<path class="f4" d="M215.21 172.08h16.59v0.5h-16.59Z"><title>7, CompileToIL: 0.5%</title></path>
+<path class="f5" d="M215.21 168.2h16.59v3.27h-16.59Z"><title>7, InsertNodesAfter: 2.4%</title></path>
+<path class="fn" d="M215.21 166.2V122Q215.21 118 219.21 118H227.8Q231.8 118 231.8 122V166.2Z"><title>7, none: 22.3%</title></path>
+<text class="t3" x="246.55" y="351" font-size="11" text-anchor="middle">8</text>
+<path class="f0" d="M238.26 254.95h16.59v79.05h-16.59Z"><title>8, GetDiagnostics: 37.5%</title></path>
+<path class="f1" d="M238.26 214.18h16.59v38.76h-16.59Z"><title>8, AnalyzeDataFlow: 18.9%</title></path>
+<path class="f2" d="M238.26 207.06h16.59v5.12h-16.59Z"><title>8, ReplaceNode: 3.3%</title></path>
+<path class="f3" d="M238.26 193.99h16.59v11.08h-16.59Z"><title>8, DecompileIL: 6.1%</title></path>
+<path class="f4" d="M238.26 191.49h16.59v0.5h-16.59Z"><title>8, CompileToIL: 0.7%</title></path>
+<path class="f5" d="M238.26 185.6h16.59v4.8h-16.59Z"><title>8, InsertNodesAfter: 3.1%</title></path>
+<path class="fn" d="M238.26 183.6V122Q238.26 118 242.26 118H250.85Q254.85 118 254.85 122V183.6Z"><title>8, none: 30.4%</title></path>
+<text class="t3" x="269.6" y="351" font-size="11" text-anchor="middle">9</text>
+<path class="f0" d="M261.3 267.02h16.59v66.98h-16.59Z"><title>9, GetDiagnostics: 31.9%</title></path>
+<path class="f1" d="M261.3 223.31h16.59v41.72h-16.59Z"><title>9, AnalyzeDataFlow: 20.2%</title></path>
+<path class="f2" d="M261.3 207.91h16.59v13.4h-16.59Z"><title>9, ReplaceNode: 7.1%</title></path>
+<path class="f3" d="M261.3 187.18h16.59v18.72h-16.59Z"><title>9, DecompileIL: 9.6%</title></path>
+<path class="f4" d="M261.3 184.68h16.59v0.5h-16.59Z"><title>9, CompileToIL: 0.8%</title></path>
+<path class="f5" d="M261.3 178.75h16.59v4.7h-16.59Z"><title>9, InsertNodesAfter: 3.1%</title></path>
+<path class="fn" d="M261.3 176.75V122Q261.3 118 265.3 118H273.9Q277.9 118 277.9 122V176.75Z"><title>9, none: 27.2%</title></path>
+<text class="t3" x="292.65" y="351" font-size="11" text-anchor="middle">10</text>
+<path class="f0" d="M284.35 296.45h16.59v37.55h-16.59Z"><title>10, GetDiagnostics: 18.3%</title></path>
+<path class="f1" d="M284.35 239.71h16.59v54.74h-16.59Z"><title>10, AnalyzeDataFlow: 26.3%</title></path>
+<path class="f2" d="M284.35 225.84h16.59v11.87h-16.59Z"><title>10, ReplaceNode: 6.4%</title></path>
+<path class="f3" d="M284.35 199.63h16.59v24.21h-16.59Z"><title>10, DecompileIL: 12.1%</title></path>
+<path class="f4" d="M284.35 197.13h16.59v0.5h-16.59Z"><title>10, CompileToIL: 1.0%</title></path>
+<path class="f5" d="M284.35 188.5h16.59v6.91h-16.59Z"><title>10, InsertNodesAfter: 4.1%</title></path>
+<path class="fn" d="M284.35 186.5V122Q284.35 118 288.35 118H296.95Q300.95 118 300.95 122V186.5Z"><title>10, none: 31.7%</title></path>
+<text class="t3" x="315.7" y="351" font-size="11" text-anchor="middle">11</text>
+<path class="f0" d="M307.4 311.1h16.59v22.9h-16.59Z"><title>11, GetDiagnostics: 11.5%</title></path>
+<path class="f1" d="M307.4 235.81h16.59v73.29h-16.59Z"><title>11, AnalyzeDataFlow: 34.9%</title></path>
+<path class="f2" d="M307.4 221.77h16.59v12.03h-16.59Z"><title>11, ReplaceNode: 6.5%</title></path>
+<path class="f3" d="M307.4 194.55h16.59v25.22h-16.59Z"><title>11, DecompileIL: 12.6%</title></path>
+<path class="f4" d="M307.4 191.91h16.59v0.64h-16.59Z"><title>11, CompileToIL: 1.2%</title></path>
+<path class="f5" d="M307.4 178.35h16.59v11.56h-16.59Z"><title>11, InsertNodesAfter: 6.3%</title></path>
+<path class="fn" d="M307.4 176.35V122Q307.4 118 311.4 118H320Q324 118 324 122V176.35Z"><title>11, none: 27.0%</title></path>
+<text class="t3" x="338.75" y="351" font-size="11" text-anchor="middle">12</text>
+<path class="f0" d="M330.45 317.12h16.59v16.88h-16.59Z"><title>12, GetDiagnostics: 8.7%</title></path>
+<path class="f1" d="M330.45 233.17h16.59v81.95h-16.59Z"><title>12, AnalyzeDataFlow: 38.9%</title></path>
+<path class="f2" d="M330.45 215.77h16.59v15.4h-16.59Z"><title>12, ReplaceNode: 8.1%</title></path>
+<path class="f3" d="M330.45 191.14h16.59v22.63h-16.59Z"><title>12, DecompileIL: 11.4%</title></path>
+<path class="f4" d="M330.45 186.5h16.59v2.64h-16.59Z"><title>12, CompileToIL: 2.1%</title></path>
+<path class="f5" d="M330.45 174.42h16.59v10.08h-16.59Z"><title>12, InsertNodesAfter: 5.6%</title></path>
+<path class="fn" d="M330.45 172.42V122Q330.45 118 334.45 118H343.04Q347.04 118 347.04 122V172.42Z"><title>12, none: 25.2%</title></path>
+<text class="t3" x="361.8" y="351" font-size="11" text-anchor="middle">13</text>
+<path class="f0" d="M353.5 314.9h16.59v19.1h-16.59Z"><title>13, GetDiagnostics: 9.8%</title></path>
+<path class="f1" d="M353.5 243.27h16.59v69.63h-16.59Z"><title>13, AnalyzeDataFlow: 33.2%</title></path>
+<path class="f2" d="M353.5 218.37h16.59v22.9h-16.59Z"><title>13, ReplaceNode: 11.5%</title></path>
+<path class="f3" d="M353.5 189.94h16.59v26.43h-16.59Z"><title>13, DecompileIL: 13.2%</title></path>
+<path class="f4" d="M353.5 184.04h16.59v3.91h-16.59Z"><title>13, CompileToIL: 2.7%</title></path>
+<path class="f5" d="M353.5 168.05h16.59v13.98h-16.59Z"><title>13, InsertNodesAfter: 7.4%</title></path>
+<path class="fn" d="M353.5 166.05V122Q353.5 118 357.5 118H366.09Q370.09 118 370.09 122V166.05Z"><title>13, none: 22.2%</title></path>
+<text class="t3" x="384.84" y="351" font-size="11" text-anchor="middle">14</text>
+<path class="f0" d="M376.55 325.24h16.59v8.76h-16.59Z"><title>14, GetDiagnostics: 5.0%</title></path>
+<path class="f1" d="M376.55 276.46h16.59v46.78h-16.59Z"><title>14, AnalyzeDataFlow: 22.6%</title></path>
+<path class="f2" d="M376.55 232.54h16.59v41.93h-16.59Z"><title>14, ReplaceNode: 20.3%</title></path>
+<path class="f3" d="M376.55 201.74h16.59v28.8h-16.59Z"><title>14, DecompileIL: 14.3%</title></path>
+<path class="f4" d="M376.55 193.46h16.59v6.28h-16.59Z"><title>14, CompileToIL: 3.8%</title></path>
+<path class="f5" d="M376.55 171.52h16.59v19.94h-16.59Z"><title>14, InsertNodesAfter: 10.2%</title></path>
+<path class="fn" d="M376.55 169.52V122Q376.55 118 380.55 118H389.14Q393.14 118 393.14 122V169.52Z"><title>14, none: 23.9%</title></path>
+<text class="t3" x="407.89" y="351" font-size="11" text-anchor="middle">15</text>
+<path class="f0" d="M399.6 328.56h16.59v5.44h-16.59Z"><title>15, GetDiagnostics: 3.4%</title></path>
+<path class="f1" d="M399.6 296.28h16.59v30.28h-16.59Z"><title>15, AnalyzeDataFlow: 14.9%</title></path>
+<path class="f2" d="M399.6 257.09h16.59v37.19h-16.59Z"><title>15, ReplaceNode: 18.1%</title></path>
+<path class="f3" d="M399.6 221.64h16.59v33.45h-16.59Z"><title>15, DecompileIL: 16.4%</title></path>
+<path class="f4" d="M399.6 212.99h16.59v6.65h-16.59Z"><title>15, CompileToIL: 4.0%</title></path>
+<path class="f5" d="M399.6 193.9h16.59v17.09h-16.59Z"><title>15, InsertNodesAfter: 8.8%</title></path>
+<path class="fn" d="M399.6 191.9V122Q399.6 118 403.6 118H412.19Q416.19 118 416.19 122V191.9Z"><title>15, none: 34.2%</title></path>
+<text class="t3" x="430.94" y="351" font-size="11" text-anchor="middle">16</text>
+<path class="f0" d="M422.64 329.72h16.59v4.28h-16.59Z"><title>16, GetDiagnostics: 2.9%</title></path>
+<path class="f1" d="M422.64 302.4h16.59v25.32h-16.59Z"><title>16, AnalyzeDataFlow: 12.6%</title></path>
+<path class="f2" d="M422.64 240.47h16.59v59.93h-16.59Z"><title>16, ReplaceNode: 28.7%</title></path>
+<path class="f3" d="M422.64 213.89h16.59v24.58h-16.59Z"><title>16, DecompileIL: 12.3%</title></path>
+<path class="f4" d="M422.64 203.34h16.59v8.55h-16.59Z"><title>16, CompileToIL: 4.9%</title></path>
+<path class="f5" d="M422.64 180.34h16.59v21h-16.59Z"><title>16, InsertNodesAfter: 10.6%</title></path>
+<path class="fn" d="M422.64 178.34V122Q422.64 118 426.64 118H435.24Q439.24 118 439.24 122V178.34Z"><title>16, none: 27.9%</title></path>
+<text class="t3" x="453.99" y="351" font-size="11" text-anchor="middle">17</text>
+<path class="f0" d="M445.69 329.36h16.59v4.64h-16.59Z"><title>17, GetDiagnostics: 3.1%</title></path>
+<path class="f1" d="M445.69 312.7h16.59v14.66h-16.59Z"><title>17, AnalyzeDataFlow: 7.7%</title></path>
+<path class="f2" d="M445.69 246.43h16.59v64.27h-16.59Z"><title>17, ReplaceNode: 30.7%</title></path>
+<path class="f3" d="M445.69 221.01h16.59v23.41h-16.59Z"><title>17, DecompileIL: 11.8%</title></path>
+<path class="f4" d="M445.69 206.78h16.59v12.23h-16.59Z"><title>17, CompileToIL: 6.6%</title></path>
+<path class="f5" d="M445.69 182.37h16.59v22.41h-16.59Z"><title>17, InsertNodesAfter: 11.3%</title></path>
+<path class="fn" d="M445.69 180.37V122Q445.69 118 449.69 118H458.29Q462.29 118 462.29 122V180.37Z"><title>17, none: 28.9%</title></path>
+<text class="t3" x="477.04" y="351" font-size="11" text-anchor="middle">18</text>
+<path class="f0" d="M468.74 332.57h16.59v1.43h-16.59Z"><title>18, GetDiagnostics: 1.6%</title></path>
+<path class="f1" d="M468.74 317.02h16.59v13.55h-16.59Z"><title>18, AnalyzeDataFlow: 7.2%</title></path>
+<path class="f2" d="M468.74 233.67h16.59v81.35h-16.59Z"><title>18, ReplaceNode: 38.6%</title></path>
+<path class="f3" d="M468.74 214.58h16.59v17.09h-16.59Z"><title>18, DecompileIL: 8.8%</title></path>
+<path class="f4" d="M468.74 197.08h16.59v15.5h-16.59Z"><title>18, CompileToIL: 8.1%</title></path>
+<path class="f5" d="M468.74 170.93h16.59v24.15h-16.59Z"><title>18, InsertNodesAfter: 12.1%</title></path>
+<path class="fn" d="M468.74 168.93V122Q468.74 118 472.74 118H481.34Q485.34 118 485.34 122V168.93Z"><title>18, none: 23.6%</title></path>
+<text class="t3" x="500.09" y="351" font-size="11" text-anchor="middle">19</text>
+<path class="f0" d="M491.79 333.47h16.59v0.53h-16.59Z"><title>19, GetDiagnostics: 1.2%</title></path>
+<path class="f1" d="M491.79 320.39h16.59v11.08h-16.59Z"><title>19, AnalyzeDataFlow: 6.1%</title></path>
+<path class="f2" d="M491.79 250.89h16.59v67.5h-16.59Z"><title>19, ReplaceNode: 32.2%</title></path>
+<path class="f3" d="M491.79 230h16.59v18.88h-16.59Z"><title>19, DecompileIL: 9.7%</title></path>
+<path class="f4" d="M491.79 204.43h16.59v23.58h-16.59Z"><title>19, CompileToIL: 11.8%</title></path>
+<path class="f5" d="M491.79 170.04h16.59v32.38h-16.59Z"><title>19, InsertNodesAfter: 15.9%</title></path>
+<path class="fn" d="M491.79 168.04V122Q491.79 118 495.79 118H504.38Q508.38 118 508.38 122V168.04Z"><title>19, none: 23.2%</title></path>
+<text class="t3" x="523.14" y="351" font-size="11" text-anchor="middle">20</text>
+<path class="f0" d="M514.84 333.5h16.59v0.5h-16.59Z"><title>20, GetDiagnostics: 1.0%</title></path>
+<path class="f1" d="M514.84 322.55h16.59v9.18h-16.59Z"><title>20, AnalyzeDataFlow: 5.2%</title></path>
+<path class="f2" d="M514.84 282.32h16.59v38.24h-16.59Z"><title>20, ReplaceNode: 18.6%</title></path>
+<path class="f3" d="M514.84 265.23h16.59v15.09h-16.59Z"><title>20, DecompileIL: 7.9%</title></path>
+<path class="f4" d="M514.84 232.38h16.59v30.85h-16.59Z"><title>20, CompileToIL: 15.2%</title></path>
+<path class="f5" d="M514.84 188.98h16.59v41.4h-16.59Z"><title>20, InsertNodesAfter: 20.1%</title></path>
+<path class="fn" d="M514.84 186.98V122Q514.84 118 518.84 118H527.43Q531.43 118 531.43 122V186.98Z"><title>20, none: 31.9%</title></path>
+<text class="t3" x="546.18" y="351" font-size="11" text-anchor="middle">21</text>
+<path class="f0" d="M537.89 333.5h16.59v0.5h-16.59Z"><title>21, GetDiagnostics: 0.7%</title></path>
+<path class="f1" d="M537.89 324.5h16.59v7.97h-16.59Z"><title>21, AnalyzeDataFlow: 4.6%</title></path>
+<path class="f2" d="M537.89 284.11h16.59v38.39h-16.59Z"><title>21, ReplaceNode: 18.7%</title></path>
+<path class="f3" d="M537.89 265.44h16.59v16.67h-16.59Z"><title>21, DecompileIL: 8.6%</title></path>
+<path class="f4" d="M537.89 217.77h16.59v45.67h-16.59Z"><title>21, CompileToIL: 22.1%</title></path>
+<path class="f5" d="M537.89 185.71h16.59v30.06h-16.59Z"><title>21, InsertNodesAfter: 14.8%</title></path>
+<path class="fn" d="M537.89 183.71V122Q537.89 118 541.89 118H550.48Q554.48 118 554.48 122V183.71Z"><title>21, none: 30.4%</title></path>
+<text class="t3" x="569.23" y="351" font-size="11" text-anchor="middle">22</text>
+<path class="f0" d="M560.94 333.5h16.59v0.5h-16.59Z"><title>22, GetDiagnostics: 0.4%</title></path>
+<path class="f1" d="M560.94 327.25h16.59v5.8h-16.59Z"><title>22, AnalyzeDataFlow: 3.6%</title></path>
+<path class="f2" d="M560.94 303.1h16.59v22.15h-16.59Z"><title>22, ReplaceNode: 11.2%</title></path>
+<path class="f3" d="M560.94 292.5h16.59v8.6h-16.59Z"><title>22, DecompileIL: 4.9%</title></path>
+<path class="f4" d="M560.94 238.83h16.59v51.67h-16.59Z"><title>22, CompileToIL: 24.8%</title></path>
+<path class="f5" d="M560.94 213.9h16.59v22.94h-16.59Z"><title>22, InsertNodesAfter: 11.5%</title></path>
+<path class="fn" d="M560.94 211.9V122Q560.94 118 564.94 118H573.53Q577.53 118 577.53 122V211.9Z"><title>22, none: 43.5%</title></path>
+<text class="t3" x="592.28" y="351" font-size="11" text-anchor="middle">23</text>
+<path class="f0" d="M583.98 333.5h16.59v0.5h-16.59Z"><title>23, GetDiagnostics: 0.5%</title></path>
+<path class="f1" d="M583.98 328.78h16.59v4.12h-16.59Z"><title>23, AnalyzeDataFlow: 2.8%</title></path>
+<path class="f2" d="M583.98 302.62h16.59v24.16h-16.59Z"><title>23, ReplaceNode: 12.1%</title></path>
+<path class="f3" d="M583.98 293.29h16.59v7.33h-16.59Z"><title>23, DecompileIL: 4.3%</title></path>
+<path class="f4" d="M583.98 221.2h16.59v70.09h-16.59Z"><title>23, CompileToIL: 33.4%</title></path>
+<path class="f5" d="M583.98 195.04h16.59v24.16h-16.59Z"><title>23, InsertNodesAfter: 12.1%</title></path>
+<path class="fn" d="M583.98 193.04V122Q583.98 118 587.98 118H596.58Q600.58 118 600.58 122V193.04Z"><title>23, none: 34.7%</title></path>
+<text class="t3" x="615.33" y="351" font-size="11" text-anchor="middle">24</text>
+<path class="f0" d="M607.03 333.5h16.59v0.5h-16.59Z"><title>24, GetDiagnostics: 0.2%</title></path>
+<path class="f1" d="M607.03 332.15h16.59v1.32h-16.59Z"><title>24, AnalyzeDataFlow: 1.5%</title></path>
+<path class="f2" d="M607.03 317.44h16.59v12.71h-16.59Z"><title>24, ReplaceNode: 6.8%</title></path>
+<path class="f3" d="M607.03 308.69h16.59v6.75h-16.59Z"><title>24, DecompileIL: 4.1%</title></path>
+<path class="f4" d="M607.03 209.68h16.59v97.01h-16.59Z"><title>24, CompileToIL: 45.8%</title></path>
+<path class="f5" d="M607.03 193.23h16.59v14.45h-16.59Z"><title>24, InsertNodesAfter: 7.6%</title></path>
+<path class="fn" d="M607.03 191.23V122Q607.03 118 611.03 118H619.63Q623.63 118 623.63 122V191.23Z"><title>24, none: 33.9%</title></path>
+<text class="t3" x="638.38" y="351" font-size="11" text-anchor="middle">25</text>
+<path class="f0" d="M630.08 333.5h16.59v0.5h-16.59Z"><title>25, GetDiagnostics: 0.3%</title></path>
+<path class="f1" d="M630.08 331.94h16.59v1.48h-16.59Z"><title>25, AnalyzeDataFlow: 1.6%</title></path>
+<path class="f2" d="M630.08 316.96h16.59v12.98h-16.59Z"><title>25, ReplaceNode: 6.9%</title></path>
+<path class="f3" d="M630.08 306.31h16.59v8.65h-16.59Z"><title>25, DecompileIL: 4.9%</title></path>
+<path class="f4" d="M630.08 222.57h16.59v81.74h-16.59Z"><title>25, CompileToIL: 38.8%</title></path>
+<path class="f5" d="M630.08 203.9h16.59v16.67h-16.59Z"><title>25, InsertNodesAfter: 8.6%</title></path>
+<path class="fn" d="M630.08 201.9V122Q630.08 118 634.08 118H642.68Q646.68 118 646.68 122V201.9Z"><title>25, none: 38.8%</title></path>
+<text class="t3" x="661.43" y="351" font-size="11" text-anchor="middle">26</text>
+<path class="f0" d="M653.13 333.5h16.59v0.5h-16.59Z"><title>26, GetDiagnostics: 0.2%</title></path>
+<path class="f1" d="M653.13 332.25h16.59v1.38h-16.59Z"><title>26, AnalyzeDataFlow: 1.6%</title></path>
+<path class="f2" d="M653.13 322.34h16.59v7.92h-16.59Z"><title>26, ReplaceNode: 4.6%</title></path>
+<path class="f3" d="M653.13 312.95h16.59v7.39h-16.59Z"><title>26, DecompileIL: 4.3%</title></path>
+<path class="f4" d="M653.13 238.31h16.59v72.64h-16.59Z"><title>26, CompileToIL: 34.6%</title></path>
+<path class="f5" d="M653.13 219.96h16.59v16.36h-16.59Z"><title>26, InsertNodesAfter: 8.5%</title></path>
+<path class="fn" d="M653.13 217.96V122Q653.13 118 657.13 118H665.72Q669.72 118 669.72 122V217.96Z"><title>26, none: 46.3%</title></path>
+<text class="t3" x="684.48" y="351" font-size="11" text-anchor="middle">27</text>
+<path class="f0" d="M676.18 333.5h16.59v0.5h-16.59Z"><title>27, GetDiagnostics: 0.2%</title></path>
+<path class="f1" d="M676.18 333.08h16.59v0.5h-16.59Z"><title>27, AnalyzeDataFlow: 1.1%</title></path>
+<path class="f2" d="M676.18 323.4h16.59v7.7h-16.59Z"><title>27, ReplaceNode: 4.5%</title></path>
+<path class="f3" d="M676.18 316.75h16.59v4.64h-16.59Z"><title>27, DecompileIL: 3.1%</title></path>
+<path class="f4" d="M676.18 255.58h16.59v59.17h-16.59Z"><title>27, CompileToIL: 28.3%</title></path>
+<path class="f5" d="M676.18 241.76h16.59v11.82h-16.59Z"><title>27, InsertNodesAfter: 6.4%</title></path>
+<path class="fn" d="M676.18 239.76V122Q676.18 118 680.18 118H688.77Q692.77 118 692.77 122V239.76Z"><title>27, none: 56.4%</title></path>
+<line class="axis" x1="50.64" y1="334" x2="696" y2="334" stroke-width="1"/>
+</svg>
