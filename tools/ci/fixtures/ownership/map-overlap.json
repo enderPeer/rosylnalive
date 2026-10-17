@@ -1,0 +1,9 @@
+{
+  "schema": "lrm.ownership/1",
+  "about": "Fixture map for tools/ci/test-hygiene.ps1: family B's glob overlaps family A's, and docs/orphan.md is owned by nobody.",
+  "families": {
+    "A": { "slices": [ "A" ], "paths": [ "src/A/**" ] },
+    "B": { "slices": [ "B" ], "paths": [ "src/*/shared.fs" ] }
+  },
+  "contract": { "label": "contract-change", "exceptionLabel": "ownership-exception", "freezeTag": "contracts-v1", "files": [ "docs/contracts/*.md" ] }
+}
