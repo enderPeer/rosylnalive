@@ -46,14 +46,16 @@
     <ItemGroup>
       <_LrmHandFrameworkReference Remove="@(_LrmHandFrameworkReference)"
                                   Condition="'%(_LrmHandFrameworkReference.IsImplicitlyDefined)' == 'true'" />
-      <_LrmLateProjectReference Include="@(ProjectReference)" Condition="'%(ProjectReference.LrmGraph)' != 'true'" />
-      <_LrmLatePackageReference Include="@(PackageReference)"
-                                Condition="'%(PackageReference.LrmGraph)' != 'true' and '%(PackageReference.IsImplicitlyDefined)' != 'true'" />
+      <_LrmStrayProjectReference Include="@(_LrmHandProjectReference)" />
+      <_LrmStrayProjectReference Include="@(ProjectReference)" Condition="'%(ProjectReference.LrmGraph)' != 'true'" />
+      <_LrmStrayPackageReference Include="@(_LrmHandPackageReference)" />
+      <_LrmStrayPackageReference Include="@(PackageReference)"
+                                 Condition="'%(PackageReference.LrmGraph)' != 'true' and '%(PackageReference.IsImplicitlyDefined)' != 'true'" />
     </ItemGroup>
-    <Error Condition="'@(_LrmHandProjectReference)' != '' or '@(_LrmLateProjectReference)' != ''"
-           Text="$(LrmGraphName): ProjectReference '@(_LrmHandProjectReference);@(_LrmLateProjectReference)' is not from docs/project-graph.json. References live only in the graph (ProjectGraph contract)." />
-    <Error Condition="'@(_LrmHandPackageReference)' != '' or '@(_LrmLatePackageReference)' != ''"
-           Text="$(LrmGraphName): PackageReference '@(_LrmHandPackageReference);@(_LrmLatePackageReference)' is not from docs/project-graph.json. References live only in the graph (ProjectGraph contract)." />
+    <Error Condition="'@(_LrmStrayProjectReference)' != ''"
+           Text="$(LrmGraphName): ProjectReference '@(_LrmStrayProjectReference->Distinct())' is not from docs/project-graph.json. References live only in the graph (ProjectGraph contract)." />
+    <Error Condition="'@(_LrmStrayPackageReference)' != ''"
+           Text="$(LrmGraphName): PackageReference '@(_LrmStrayPackageReference->Distinct())' is not from docs/project-graph.json. References live only in the graph (ProjectGraph contract)." />
     <Error Condition="'@(_LrmHandPackageDownload)' != ''"
            Text="$(LrmGraphName): PackageDownload '@(_LrmHandPackageDownload)' is not allowed. Packages come only from docs/project-graph.json (ProjectGraph contract)." />
     <Error Condition="'@(_LrmHandReference)' != ''"
