@@ -282,8 +282,9 @@ type TcpClientTransport(host: string, port: int) =
             Task.Run(fun () ->
                 task {
                     while not token.IsCancellationRequested do
+                        let client = new TcpClient(NoDelay = true)
+
                         try
-                            let client = new TcpClient(NoDelay = true)
                             do! client.ConnectAsync(host, port, token)
 
                             let closed =
@@ -301,7 +302,8 @@ type TcpClientTransport(host: string, port: int) =
                             do! closed.Task
                             current <- null
                         with _ ->
-                            ()
+                            // A failed connect leaves the client unused; a closed connection already closed it.
+                            client.Dispose()
 
                         if not token.IsCancellationRequested then
                             try
