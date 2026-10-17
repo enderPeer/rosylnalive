@@ -253,12 +253,22 @@ type CanonicalReader(data: ReadOnlyMemory<byte>) =
         | 1uy -> Some(read ())
         | b -> raise (FormatException(sprintf "canonical option tag must be 0x00 or 0x01, got 0x%02x" b))
 
-    member r.Seq(read: unit -> 'a) : 'a list =
+    /// A u32 count of items that each take at least one byte, so a count beyond the remaining bytes is malformed.
+    /// Checking it first keeps hostile input from forcing a huge allocation.
+    member r.ItemCount() =
         let n = r.Count()
+
+        if n > data.Length - pos then
+            raise (FormatException(sprintf "canonical count %d exceeds the %d remaining bytes" n (data.Length - pos)))
+
+        n
+
+    member r.Seq(read: unit -> 'a) : 'a list =
+        let n = r.ItemCount()
         List.init n (fun _ -> read ())
 
     member r.Map(read: unit -> 'a) : (string * 'a) list =
-        let n = r.Count()
+        let n = r.ItemCount()
         let previous = ref (null: byte[])
 
         List.init n (fun _ ->
