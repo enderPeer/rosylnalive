@@ -1,0 +1,413 @@
+/// gpu tier (d3d12): the device check on the real adapter, the refcount leak test, and the interop's own smoke
+/// tests (a copy round trip and a ResourceDescriptorHeap dispatch with root constants and timestamps), each run
+/// twice with a byte comparison. They exercise every slot D1 depends on first.
+module Lrm.Gpu.D3D12.Interop.Tests.GpuTests
+
+#nowarn "9"
+#nowarn "51"
+
+open System
+open System.Diagnostics
+open System.IO
+open System.Runtime.InteropServices
+open System.Text.Json
+open System.Threading
+open Expecto
+open Lrm.Core
+open Lrm.Gpu.D3D12.Interop
+open Lrm.Testing
+open Microsoft.FSharp.NativeInterop
+
+/// The first accepted adapter's report, discovered once.
+let private discovered = lazy (DeviceCheck.enumerate ())
+
+let private accepted () =
+    match DeviceCheck.firstAccepted discovered.Value with
+    | Some r -> r
+    | None -> failtestf "no D3D12 adapter is accepted: %A" (discovered.Value |> List.map (fun r -> r.Verdict))
+
+/// A device on the first accepted adapter (high-performance order).
+let private createDevice () : ComPtr<ID3D12Device> =
+    let r = accepted ()
+    use factory = DxgiApi.createFactory<IDXGIFactory6> 0u
+
+    use adapter: ComPtr<IDXGIAdapter1> =
+        factory.EnumAdapterByGpuPreference(uint32 r.Adapter.Index, DXGI_GPU_PREFERENCE.HIGH_PERFORMANCE)
+
+    D3D12Api.createDevice<IDXGIAdapter1, ID3D12Device> adapter DeviceCheck.CreationFeatureLevel
+
+/// A compute queue with one allocator, list and fence.
+type private Context(dev: ComPtr<ID3D12Device>) =
+    let qdesc = Desc.commandQueue D3D12_COMMAND_LIST_TYPE.COMPUTE
+    let queue: ComPtr<ID3D12CommandQueue> = dev.CreateCommandQueue(&qdesc)
+
+    let allocator: ComPtr<ID3D12CommandAllocator> =
+        dev.CreateCommandAllocator D3D12_COMMAND_LIST_TYPE.COMPUTE
+
+    let list: ComPtr<ID3D12GraphicsCommandList> =
+        dev.CreateCommandList(0u, D3D12_COMMAND_LIST_TYPE.COMPUTE, allocator, ComPtr<ID3D12PipelineState>.Null)
+
+    let fence: ComPtr<ID3D12Fence> = dev.CreateFence(0UL, D3D12_FENCE_FLAGS.NONE)
+    let event = new AutoResetEvent(false)
+    let mutable value = 0UL
+
+    member _.Device = dev
+    member _.Queue = queue
+    member _.List = list
+
+    /// Closes the list, runs it, waits (10 s at most), checks the removed reason, then resets for reuse.
+    member _.SubmitAndWait() =
+        list.Close()
+        let mutable l = list.Ptr
+        queue.ExecuteCommandLists(1u, NativePtr.toNativeInt &&l)
+        value <- value + 1UL
+        queue.Signal(fence, value)
+
+        if fence.GetCompletedValue() < value then
+            fence.SetEventOnCompletion(value, event.SafeWaitHandle.DangerousGetHandle())
+
+            if not (event.WaitOne(TimeSpan.FromSeconds 10.0)) then
+                failtestf
+                    "GPU work did not finish within 10 s (removed reason %s)"
+                    (HResult.describe (dev.GetDeviceRemovedReason()))
+
+        Expect.equal (dev.GetDeviceRemovedReason()) HResult.S_OK "the device is not removed"
+        allocator.Reset()
+        list.Reset(allocator, ComPtr<ID3D12PipelineState>.Null)
+
+    member _.Buffer(kind: D3D12_HEAP_TYPE, bytes: uint64, state: D3D12_RESOURCE_STATES) : ComPtr<ID3D12Resource> =
+        let props = Desc.heapProperties kind
+
+        let flags =
+            if kind = D3D12_HEAP_TYPE.DEFAULT then
+                D3D12_RESOURCE_FLAGS.ALLOW_UNORDERED_ACCESS
+            else
+                D3D12_RESOURCE_FLAGS.NONE
+
+        let desc = Desc.buffer bytes flags
+        dev.CreateCommittedResource(&props, D3D12_HEAP_FLAGS.NONE, &desc, state, 0n)
+
+    member _.Barrier(r: ComPtr<ID3D12Resource>, before, after) =
+        let mutable b = Desc.transition r before after
+        list.ResourceBarrier(1u, NativePtr.toNativeInt &&b)
+
+    interface IDisposable with
+        member _.Dispose() =
+            event.Dispose()
+            fence.Dispose()
+            list.Dispose()
+            allocator.Dispose()
+            queue.Dispose()
+
+let private write (r: ComPtr<ID3D12Resource>) (data: byte[]) =
+    let mutable p = 0n
+    r.Map(0u, 0n, NativePtr.toNativeInt &&p)
+    Marshal.Copy(data, 0, p, data.Length)
+    r.Unmap(0u, 0n)
+
+let private read (r: ComPtr<ID3D12Resource>) (bytes: int) =
+    let mutable p = 0n
+    let mutable range = D3D12_RANGE(Begin = 0un, End = unativeint bytes)
+    r.Map(0u, NativePtr.toNativeInt &&range, NativePtr.toNativeInt &&p)
+    let out = Array.zeroCreate<byte> bytes
+    Marshal.Copy(p, out, 0, bytes)
+    let mutable written = D3D12_RANGE(Begin = 0un, End = 0un)
+    r.Unmap(0u, NativePtr.toNativeInt &&written)
+    out
+
+/// A deterministic test pattern.
+let private pattern (n: int) =
+    Array.init n (fun i -> byte ((uint32 i * 2654435761u) >>> 24))
+
+let private record () =
+    let r = accepted ()
+    Devices.record Backend.D3D12 r.Adapter.Description r.Adapter.DriverVersion None
+
+let private copyRoundTrip () : byte[] =
+    let n = 1 <<< 20
+    let data = pattern n
+    use dev = createDevice ()
+    use ctx = new Context(dev)
+
+    use upload =
+        ctx.Buffer(D3D12_HEAP_TYPE.UPLOAD, uint64 n, D3D12_RESOURCE_STATES.GENERIC_READ)
+
+    use gpu =
+        ctx.Buffer(D3D12_HEAP_TYPE.DEFAULT, uint64 n, D3D12_RESOURCE_STATES.COMMON)
+
+    use readback =
+        ctx.Buffer(D3D12_HEAP_TYPE.READBACK, uint64 n, D3D12_RESOURCE_STATES.COPY_DEST)
+
+    write upload data
+    ctx.Barrier(gpu, D3D12_RESOURCE_STATES.COMMON, D3D12_RESOURCE_STATES.COPY_DEST)
+    ctx.List.CopyBufferRegion(gpu, 0UL, upload, 0UL, uint64 n)
+    ctx.Barrier(gpu, D3D12_RESOURCE_STATES.COPY_DEST, D3D12_RESOURCE_STATES.COPY_SOURCE)
+    ctx.List.CopyBufferRegion(readback, 0UL, gpu, 0UL, uint64 n)
+    ctx.SubmitAndWait()
+    let back = read readback n
+    Expect.equal back data "the bytes came back unchanged"
+
+    Telemetry.meter
+        "gpu.bytes_moved"
+        (float (2 * n))
+        TelemetryUnits.Bytes
+        [
+            Attr.str TelemetryKeys.Backend "d3d12"
+            Attr.str "case" "interop.copy_round_trip"
+        ]
+
+    back
+
+/// The pinned DXC from tools/bootstrap/toolchain.json under LRM_DATA.
+let private dxc () =
+    let repo = Env.repoRoot ()
+
+    use doc =
+        JsonDocument.Parse(File.ReadAllText(Path.Combine(repo, "tools", "bootstrap", "toolchain.json")))
+
+    let rel = doc.RootElement.GetProperty("dxc").GetProperty("exe").GetString()
+    let exe = Path.Combine(Env.dataRoot (), rel)
+
+    if not (File.Exists exe) then
+        failtestf "pinned DXC not found at %s (run tools/bootstrap/bootstrap.ps1)" exe
+
+    exe
+
+/// The smoke kernel: C = A + B over float32, the buffers named by descriptor-heap indices in root constants
+/// (the shape every LRM kernel has: SM 6.6 ResourceDescriptorHeap, 32 root constants at b0).
+let private addSource =
+    String.concat
+        "\n"
+        [
+            "#define RS \"RootFlags(CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED), RootConstants(num32BitConstants=32, b0)\""
+            "struct Args { uint a; uint b; uint c; uint n; };"
+            "ConstantBuffer<Args> args : register(b0);"
+            "[RootSignature(RS)]"
+            "[numthreads(64, 1, 1)]"
+            "void main(uint3 id : SV_DispatchThreadID) {"
+            "  if (id.x >= args.n) return;"
+            "  RWByteAddressBuffer A = ResourceDescriptorHeap[args.a];"
+            "  RWByteAddressBuffer B = ResourceDescriptorHeap[args.b];"
+            "  RWByteAddressBuffer C = ResourceDescriptorHeap[args.c];"
+            "  C.Store(id.x * 4, asuint(asfloat(A.Load(id.x * 4)) + asfloat(B.Load(id.x * 4))));"
+            "}"
+            ""
+        ]
+
+let private compiledAdd =
+    lazy
+        (let dir = Path.Combine(Env.repoRoot (), "artifacts", "d3d12-interop-tests")
+         Directory.CreateDirectory dir |> ignore
+         let src = Path.Combine(dir, "add.hlsl")
+         let out = Path.Combine(dir, "add.dxil")
+         File.WriteAllText(src, addSource)
+
+         let psi =
+             ProcessStartInfo(dxc (), sprintf "-nologo -T cs_6_6 -E main -Fo \"%s\" \"%s\"" out src)
+
+         psi.UseShellExecute <- false
+         psi.RedirectStandardOutput <- true
+         psi.RedirectStandardError <- true
+         use p = Process.Start psi
+         let err = p.StandardError.ReadToEnd() + p.StandardOutput.ReadToEnd()
+         p.WaitForExit()
+
+         if p.ExitCode <> 0 then
+             failtestf "dxc failed (%d): %s" p.ExitCode err
+
+         File.ReadAllBytes out)
+
+let private dispatchAdd () : byte[] =
+    let n = 4096
+    let bytes = n * 4
+    let a = Array.init n (fun i -> float32 i)
+    let b = Array.init n (fun i -> 0.5f + float32 (i % 7))
+    let dxil = compiledAdd.Value
+    use dev = createDevice ()
+    use ctx = new Context(dev)
+
+    let toBytes (xs: float32[]) =
+        MemoryMarshal.AsBytes(ReadOnlySpan xs).ToArray()
+
+    use upload =
+        ctx.Buffer(D3D12_HEAP_TYPE.UPLOAD, uint64 (2 * bytes), D3D12_RESOURCE_STATES.GENERIC_READ)
+
+    use bufA =
+        ctx.Buffer(D3D12_HEAP_TYPE.DEFAULT, uint64 bytes, D3D12_RESOURCE_STATES.COMMON)
+
+    use bufB =
+        ctx.Buffer(D3D12_HEAP_TYPE.DEFAULT, uint64 bytes, D3D12_RESOURCE_STATES.COMMON)
+
+    use bufC =
+        ctx.Buffer(D3D12_HEAP_TYPE.DEFAULT, uint64 bytes, D3D12_RESOURCE_STATES.COMMON)
+
+    use readback =
+        ctx.Buffer(D3D12_HEAP_TYPE.READBACK, uint64 bytes, D3D12_RESOURCE_STATES.COPY_DEST)
+
+    use stamps =
+        ctx.Buffer(D3D12_HEAP_TYPE.READBACK, 16UL, D3D12_RESOURCE_STATES.COPY_DEST)
+
+    write upload (Array.append (toBytes a) (toBytes b))
+
+    // Root signature (embedded in the DXIL) and pipeline.
+    use pin = fixed dxil
+    let p = NativePtr.toNativeInt pin
+
+    use rootSig: ComPtr<ID3D12RootSignature> =
+        dev.CreateRootSignature(0u, p, unativeint dxil.Length)
+
+    let psoDesc = Desc.computePipeline rootSig p (unativeint dxil.Length)
+    use pso: ComPtr<ID3D12PipelineState> = dev.CreateComputePipelineState(&psoDesc)
+
+    // Three raw UAVs at descriptor indices 0, 1, 2 of a shader-visible heap.
+    let heapDesc = Desc.descriptorHeap D3D12_DESCRIPTOR_HEAP_TYPE.CBV_SRV_UAV 64u true
+    use heap: ComPtr<ID3D12DescriptorHeap> = dev.CreateDescriptorHeap(&heapDesc)
+
+    let inc =
+        dev.GetDescriptorHandleIncrementSize D3D12_DESCRIPTOR_HEAP_TYPE.CBV_SRV_UAV
+
+    let start = heap.GetCPUDescriptorHandleForHeapStart()
+
+    for (k, r) in List.indexed [ bufA; bufB; bufC ] do
+        let mutable uav = Desc.rawBufferUav 0UL (uint32 n)
+        let at = D3D12_CPU_DESCRIPTOR_HANDLE(ptr = start.ptr + unativeint (k * int inc))
+        dev.CreateUnorderedAccessView(r, ComPtr<ID3D12Resource>.Null, NativePtr.toNativeInt &&uav, at)
+
+    let qdesc = Desc.queryHeap D3D12_QUERY_HEAP_TYPE.TIMESTAMP 2u
+    use queries: ComPtr<ID3D12QueryHeap> = dev.CreateQueryHeap(&qdesc)
+
+    let l = ctx.List
+    ctx.Barrier(bufA, D3D12_RESOURCE_STATES.COMMON, D3D12_RESOURCE_STATES.COPY_DEST)
+    ctx.Barrier(bufB, D3D12_RESOURCE_STATES.COMMON, D3D12_RESOURCE_STATES.COPY_DEST)
+    l.CopyBufferRegion(bufA, 0UL, upload, 0UL, uint64 bytes)
+    l.CopyBufferRegion(bufB, 0UL, upload, uint64 bytes, uint64 bytes)
+    ctx.Barrier(bufA, D3D12_RESOURCE_STATES.COPY_DEST, D3D12_RESOURCE_STATES.UNORDERED_ACCESS)
+    ctx.Barrier(bufB, D3D12_RESOURCE_STATES.COPY_DEST, D3D12_RESOURCE_STATES.UNORDERED_ACCESS)
+    ctx.Barrier(bufC, D3D12_RESOURCE_STATES.COMMON, D3D12_RESOURCE_STATES.UNORDERED_ACCESS)
+    // Directly indexed heaps must be bound before the root signature.
+    let mutable heapPtr = heap.Ptr
+    l.SetDescriptorHeaps(1u, NativePtr.toNativeInt &&heapPtr)
+    l.SetComputeRootSignature rootSig
+    l.SetPipelineState pso
+    let args = [| 0u; 1u; 2u; uint32 n |]
+    use argsPin = fixed args
+    l.SetComputeRoot32BitConstants(0u, uint32 args.Length, NativePtr.toNativeInt argsPin, 0u)
+    l.EndQuery(queries, D3D12_QUERY_TYPE.TIMESTAMP, 0u)
+    l.Dispatch(uint32 (n / 64), 1u, 1u)
+    l.EndQuery(queries, D3D12_QUERY_TYPE.TIMESTAMP, 1u)
+    l.ResolveQueryData(queries, D3D12_QUERY_TYPE.TIMESTAMP, 0u, 2u, stamps, 0UL)
+    ctx.Barrier(bufC, D3D12_RESOURCE_STATES.UNORDERED_ACCESS, D3D12_RESOURCE_STATES.COPY_SOURCE)
+    l.CopyBufferRegion(readback, 0UL, bufC, 0UL, uint64 bytes)
+    ctx.SubmitAndWait()
+
+    let out = read readback bytes
+    let c = MemoryMarshal.Cast<byte, float32>(ReadOnlySpan out).ToArray()
+
+    for i in 0 .. n - 1 do
+        if c[i] <> a[i] + b[i] then
+            failtestf "C[%d] = %g, expected %g" i c[i] (a[i] + b[i])
+
+    let ticks = MemoryMarshal.Cast<byte, uint64>(ReadOnlySpan(read stamps 16)).ToArray()
+    let freq = ctx.Queue.GetTimestampFrequency()
+    Expect.isGreaterThan freq 0UL "timestamp frequency"
+    Expect.isGreaterThanOrEqual ticks[1] ticks[0] "timestamps are ordered"
+    let toNs (t: uint64) = int64 (float t * 1e9 / float freq)
+
+    Telemetry.gpuInterval
+        "gpu.dispatch"
+        (toNs ticks[0])
+        (toNs (ticks[1] - ticks[0]))
+        [
+            Attr.str TelemetryKeys.Backend "d3d12"
+            Attr.str TelemetryKeys.Kernel "interop.selftest_add"
+            Attr.int "groups" (n / 64)
+        ]
+
+    out
+
+let private leakTest () =
+    let before = Com.liveReferences ()
+    let mutable dev = createDevice ()
+
+    do
+        use ctx = new Context(dev)
+        use r = ctx.Buffer(D3D12_HEAP_TYPE.DEFAULT, 65536UL, D3D12_RESOURCE_STATES.COMMON)
+        let heapDesc = Desc.descriptorHeap D3D12_DESCRIPTOR_HEAP_TYPE.CBV_SRV_UAV 64u true
+        use heap: ComPtr<ID3D12DescriptorHeap> = dev.CreateDescriptorHeap(&heapDesc)
+        use asObject = r.QueryInterface<ID3D12Object>()
+        use again = dev.AddRef()
+        use child: ComPtr<ID3D12Device> = r.GetDevice()
+        Expect.equal child.Ptr dev.Ptr "GetDevice returns the same device"
+        ctx.SubmitAndWait()
+
+    Expect.equal (Com.liveReferences ()) (before + 1L) "only the device is still owned"
+    let remaining = dev.Release()
+    dev <- ComPtr<ID3D12Device>.Null
+    Expect.equal remaining 0u "the device's last Release returns 0: no reference leaked"
+    Expect.equal (Com.liveReferences ()) before "no live references"
+
+let private failures () =
+    use dev = createDevice ()
+    Expect.equal (dev.GetDeviceRemovedReason()) HResult.S_OK "a healthy device"
+
+    // A zero-width buffer is invalid: the device itself reports the failure.
+    let props = Desc.heapProperties D3D12_HEAP_TYPE.DEFAULT
+    let bad = Desc.buffer 0UL D3D12_RESOURCE_FLAGS.NONE
+
+    let e =
+        try
+            use _r: ComPtr<ID3D12Resource> =
+                dev.CreateCommittedResource(&props, D3D12_HEAP_FLAGS.NONE, &bad, D3D12_RESOURCE_STATES.COMMON, 0n)
+
+            failtest "a zero-width buffer was created"
+        with :? D3D12Exception as e ->
+            e
+
+    Expect.equal e.Code HResult.E_INVALIDARG "E_INVALIDARG"
+    Expect.equal e.RemovedReason (Some HResult.S_OK) "the removed reason comes from the device"
+    Expect.isFalse e.DeviceLost "not lost"
+
+    // Mapping a default-heap buffer fails on the resource: the reason is found through ID3D12DeviceChild.
+    let good = Desc.buffer 256UL D3D12_RESOURCE_FLAGS.NONE
+
+    use r: ComPtr<ID3D12Resource> =
+        dev.CreateCommittedResource(&props, D3D12_HEAP_FLAGS.NONE, &good, D3D12_RESOURCE_STATES.COMMON, 0n)
+
+    let e =
+        try
+            let mutable p = 0n
+            r.Map(0u, 0n, NativePtr.toNativeInt &&p)
+            failtest "mapping a default-heap buffer succeeded"
+        with :? D3D12Exception as e ->
+            e
+
+    Expect.equal e.Call "ID3D12Resource::Map" "call"
+    Expect.equal e.RemovedReason (Some HResult.S_OK) "the removed reason comes from the owning device"
+    Expect.equal (dev.GetDeviceRemovedReason()) HResult.S_OK "still healthy"
+
+/// Sequenced: one GPU workload at a time, and the leak test compares the process-wide live-reference count.
+let tests =
+    testSequenced
+    <| testList
+        "d3d12.interop.gpu"
+        [
+            testCase "the device check accepts the GPU (SM 6.6+, binding tier 3)"
+            <| fun () ->
+                record ()
+                let r = accepted ()
+
+                match r.Capabilities with
+                | Ok c ->
+                    Expect.isGreaterThanOrEqual c.HighestShaderModel DeviceCheck.RequiredShaderModel "SM"
+                    Expect.isGreaterThanOrEqual c.ResourceBindingTier DeviceCheck.RequiredBindingTier "tier"
+                | Error e -> failtest e
+
+                for x in discovered.Value do
+                    if x.Adapter.Description.Contains "RTX 4080" then
+                        Expect.equal x.Verdict Accepted "the RTX 4080 is ACCEPTED"
+
+            testCase "refcounts balance: the device's last Release returns 0" leakTest
+            testCase "failed calls raise D3D12Exception with the removed reason" failures
+            Determinism.testTwice "a 1 MiB copy round trip is bit-identical twice" copyRoundTrip
+            Determinism.testTwice "a ResourceDescriptorHeap dispatch is bit-identical twice" dispatchAdd
+        ]
