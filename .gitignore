@@ -1,13 +1,22 @@
+# Build output (UseArtifactsOutput puts bin/obj under artifacts/)
+artifacts/
 bin/
 obj/
+*.binlog
+
+# IDE and OS clutter
 .vs/
 .idea/
+.ionide/
 *.user
 *.suo
 *.swp
 .DS_Store
 Thumbs.db
 __pycache__/
-# downloaded Vulkan registry / model weights stay out of git
+
+# Everything under LRM_DATA stays out of git: toolchains, registries, headers,
+# model weights, large goldens and run logs. These patterns catch strays.
 vk.xml
 *.safetensors
+*.nupkg
