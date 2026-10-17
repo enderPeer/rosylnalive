@@ -1,4 +1,26 @@
 <Project>
+  <!--
+    Per-project build logic (for example R4a's incremental shader target) goes in <ProjectName>.lrm.targets next to
+    the fsproj, owned by the project's owner. It is imported here, so the fsproj itself keeps only file items.
+    It may add targets, properties and file items, but never references: the guard below treats a reference written
+    there like one written in the fsproj.
+  -->
+  <Import Project="$(MSBuildProjectDirectory)/$(MSBuildProjectName).lrm.targets"
+          Condition="'$(LrmIsSpike)' != 'true' and Exists('$(MSBuildProjectDirectory)/$(MSBuildProjectName).lrm.targets')" />
+
+  <!--
+    Snapshot of every reference item that exists before the graph adds its own. These come from the fsproj,
+    Directory.Build.props or the project's .lrm.targets, so each one is hand-written, whatever metadata it carries
+    (LrmGraph="true" included). The SDK's implicit framework reference is told apart by IsImplicitlyDefined.
+  -->
+  <ItemGroup Condition="'$(LrmIsSpike)' != 'true'">
+    <_LrmHandProjectReference Include="@(ProjectReference)" />
+    <_LrmHandPackageReference Include="@(PackageReference)" />
+    <_LrmHandPackageDownload Include="@(PackageDownload)" />
+    <_LrmHandReference Include="@(Reference)" />
+    <_LrmHandFrameworkReference Include="@(FrameworkReference)" />
+  </ItemGroup>
+
   <!-- ProjectReference and PackageReference items for every registered project, generated from docs/project-graph.json. -->
   <Import Project="build/ProjectGraph.g.props" />
 
@@ -11,22 +33,32 @@
   </ItemGroup>
 
   <!--
-    Guard: a project must be registered in docs/project-graph.json, and every reference it has must come from the
-    graph. A reference written into an fsproj by hand fails the build (and restore) with a pointer to the JSON.
+    Guard (ProjectGraph contract): a project must be registered in docs/project-graph.json, and every reference it has
+    must come from the graph. A hand-written ProjectReference, PackageReference, PackageDownload, Reference or
+    FrameworkReference fails restore and build with a pointer to the JSON, and so does a project or package reference
+    that a target adds later without the graph's LrmGraph marker.
   -->
   <Target Name="LrmCheckProjectGraph"
-          BeforeTargets="CollectPackageReferences;ResolveProjectReferences;CoreCompile"
+          BeforeTargets="CollectPackageReferences;CollectPackageDownloads;ResolveProjectReferences;ResolveAssemblyReferences;CoreCompile"
           Condition="'$(LrmIsSpike)' != 'true'">
     <Error Condition="'$(LrmGraphName)' == ''"
            Text="$(LrmProjectPath) is not registered in docs/project-graph.json. Add it there and run: pwsh tools/ci/gen-project-graph.ps1" />
     <ItemGroup>
-      <_LrmStrayProjectReference Include="@(ProjectReference)" Condition="'%(ProjectReference.LrmGraph)' != 'true'" />
-      <_LrmStrayPackageReference Include="@(PackageReference)"
-                                 Condition="'%(PackageReference.LrmGraph)' != 'true' and '%(PackageReference.IsImplicitlyDefined)' != 'true'" />
+      <_LrmHandFrameworkReference Remove="@(_LrmHandFrameworkReference)"
+                                  Condition="'%(_LrmHandFrameworkReference.IsImplicitlyDefined)' == 'true'" />
+      <_LrmLateProjectReference Include="@(ProjectReference)" Condition="'%(ProjectReference.LrmGraph)' != 'true'" />
+      <_LrmLatePackageReference Include="@(PackageReference)"
+                                Condition="'%(PackageReference.LrmGraph)' != 'true' and '%(PackageReference.IsImplicitlyDefined)' != 'true'" />
     </ItemGroup>
-    <Error Condition="'@(_LrmStrayProjectReference)' != ''"
-           Text="$(LrmGraphName): ProjectReference '@(_LrmStrayProjectReference)' is not from docs/project-graph.json. References live only in the graph (ProjectGraph contract)." />
-    <Error Condition="'@(_LrmStrayPackageReference)' != ''"
-           Text="$(LrmGraphName): PackageReference '@(_LrmStrayPackageReference)' is not from docs/project-graph.json. References live only in the graph (ProjectGraph contract)." />
+    <Error Condition="'@(_LrmHandProjectReference)' != '' or '@(_LrmLateProjectReference)' != ''"
+           Text="$(LrmGraphName): ProjectReference '@(_LrmHandProjectReference);@(_LrmLateProjectReference)' is not from docs/project-graph.json. References live only in the graph (ProjectGraph contract)." />
+    <Error Condition="'@(_LrmHandPackageReference)' != '' or '@(_LrmLatePackageReference)' != ''"
+           Text="$(LrmGraphName): PackageReference '@(_LrmHandPackageReference);@(_LrmLatePackageReference)' is not from docs/project-graph.json. References live only in the graph (ProjectGraph contract)." />
+    <Error Condition="'@(_LrmHandPackageDownload)' != ''"
+           Text="$(LrmGraphName): PackageDownload '@(_LrmHandPackageDownload)' is not allowed. Packages come only from docs/project-graph.json (ProjectGraph contract)." />
+    <Error Condition="'@(_LrmHandReference)' != ''"
+           Text="$(LrmGraphName): Reference '@(_LrmHandReference)' is not allowed. Assemblies come only from docs/project-graph.json (ProjectGraph contract)." />
+    <Error Condition="'@(_LrmHandFrameworkReference)' != ''"
+           Text="$(LrmGraphName): FrameworkReference '@(_LrmHandFrameworkReference)' is not allowed; the SDK's implicit Microsoft.NETCore.App is the only framework (ProjectGraph contract)." />
   </Target>
 </Project>

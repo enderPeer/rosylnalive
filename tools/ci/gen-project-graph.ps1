@@ -4,7 +4,8 @@
 
 .DESCRIPTION
     docs/project-graph.json is the only source of ProjectReferences and PackageReferences (ProjectGraph contract).
-    This script validates the graph (schema, files on disk, layering rules) and writes:
+    This script validates the graph (schema, files on disk, layering rules), checks that every fsproj holds file
+    items only and that every <Name>.lrm.targets sits next to its registered project, and writes:
       - build/ProjectKinds.g.props  project identity and kind, imported by Directory.Build.props
       - build/ProjectGraph.g.props  ProjectReference and PackageReference items, imported by Directory.Build.targets
       - Lrm.slnx                    every project in the graph, nothing else (spikes/** is never listed)
@@ -73,6 +74,40 @@ $onDisk = Get-ChildItem -LiteralPath $RepoRoot -Recurse -Filter *.fsproj -File |
     ForEach-Object { [IO.Path]::GetRelativePath($RepoRoot, $_.FullName).Replace('\', '/') } |
     Where-Object { -not ($_.StartsWith('spikes/') -or $_.StartsWith('artifacts/') -or $_ -match '(^|/)(bin|obj)/') }
 foreach ($f in $onDisk) { if (-not $byPath.ContainsKey($f)) { Fail "$f is not registered in docs/project-graph.json" } }
+
+# An fsproj holds file items only: <Project Sdk="Microsoft.NET.Sdk"> with ItemGroups of Compile, EmbeddedResource,
+# None and Content items. Build logic goes in <Name>.lrm.targets next to it, which Directory.Build.targets imports.
+$fileItems = @('Compile', 'EmbeddedResource', 'None', 'Content')
+$skipNodes = @([Xml.XmlNodeType]::Comment, [Xml.XmlNodeType]::Whitespace, [Xml.XmlNodeType]::SignificantWhitespace)
+foreach ($proj in $byName.Values) {
+    $full = Join-Path $RepoRoot $proj.Path
+    if (-not (Test-Path -LiteralPath $full)) { continue }
+    $hint = "an fsproj holds only ItemGroups of $($fileItems -join ', ') items; build logic goes in $($proj.Name).lrm.targets"
+    try { [xml]$x = Get-Content -Raw -LiteralPath $full }
+    catch { Fail "$($proj.Path): not well-formed XML: $($_.Exception.Message)"; continue }
+    $root = $x.DocumentElement
+    if ($root.Name -ne 'Project' -or $root.Attributes.Count -ne 1 -or $root.GetAttribute('Sdk') -ne 'Microsoft.NET.Sdk') {
+        Fail "$($proj.Path): the root element must be <Project Sdk=`"Microsoft.NET.Sdk`"> with no other attributes"
+    }
+    foreach ($n in $root.ChildNodes) {
+        if ($skipNodes -contains $n.NodeType) { continue }
+        if ($n.NodeType -ne [Xml.XmlNodeType]::Element -or $n.Name -ne 'ItemGroup') { Fail "$($proj.Path): <$($n.Name)> is not allowed; $hint"; continue }
+        foreach ($a in $n.Attributes) { if (@('Condition', 'Label') -notcontains $a.Name) { Fail "$($proj.Path): ItemGroup attribute '$($a.Name)' is not allowed" } }
+        foreach ($i in $n.ChildNodes) {
+            if ($skipNodes -contains $i.NodeType) { continue }
+            if ($i.NodeType -ne [Xml.XmlNodeType]::Element -or $fileItems -notcontains $i.Name) { Fail "$($proj.Path): <$($i.Name)> is not allowed; $hint" }
+        }
+    }
+}
+
+# A <Name>.lrm.targets file is imported only next to its own registered <Name>.fsproj; anything else is a stray.
+$extensions = Get-ChildItem -LiteralPath $RepoRoot -Recurse -Filter *.lrm.targets -File |
+    ForEach-Object { [IO.Path]::GetRelativePath($RepoRoot, $_.FullName).Replace('\', '/') } |
+    Where-Object { -not ($_.StartsWith('spikes/') -or $_.StartsWith('artifacts/') -or $_ -match '(^|/)(bin|obj)/') }
+foreach ($t in $extensions) {
+    $fsproj = $t.Substring(0, $t.Length - '.lrm.targets'.Length) + '.fsproj'
+    if (-not $byPath.ContainsKey($fsproj)) { Fail "$t has no registered project $fsproj next to it, so nothing imports it" }
+}
 
 # ---- references and packages --------------------------------------------------------------------
 

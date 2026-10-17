@@ -161,6 +161,7 @@
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Gpu.Vulkan/Lrm.Gpu.Vulkan.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Gpu.D3D12/Lrm.Gpu.D3D12.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Models.Qwen/Lrm.Models.Qwen.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Telemetry/Lrm.Telemetry.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)tests/Lrm.Testing/Lrm.Testing.fsproj" LrmGraph="true" />
   </ItemGroup>
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Gpu.Vulkan.Interop.Tests'">
@@ -180,10 +181,13 @@
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Gpu.D3D12/Lrm.Gpu.D3D12.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Tensor/Lrm.Tensor.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Tensor.CpuReference/Lrm.Tensor.CpuReference.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Telemetry/Lrm.Telemetry.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)tests/Lrm.Testing/Lrm.Testing.fsproj" LrmGraph="true" />
   </ItemGroup>
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Models.Qwen.Tests'">
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Models.Qwen/Lrm.Models.Qwen.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Telemetry/Lrm.Telemetry.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Reports/Lrm.Reports.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)tests/Lrm.Testing/Lrm.Testing.fsproj" LrmGraph="true" />
   </ItemGroup>
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Serving.Tests'">
@@ -192,6 +196,8 @@
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Gpu.CpuDevice/Lrm.Gpu.CpuDevice.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Gpu.Vulkan/Lrm.Gpu.Vulkan.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Gpu.D3D12/Lrm.Gpu.D3D12.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Telemetry/Lrm.Telemetry.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Reports/Lrm.Reports.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)tests/Lrm.Testing/Lrm.Testing.fsproj" LrmGraph="true" />
   </ItemGroup>
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Telemetry.Tests'">
