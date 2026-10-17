@@ -1,0 +1,9 @@
+# Generated F# is checked by its codegen diff, not by fantomas.
+**/*.g.fs
+# The legacy generator and the two files it generated, until vkgen v2 replaces them.
+tools/vkgen/legacy/**
+src/Lrm.Gpu.Vulkan.Interop/VkCore.Generated.fs
+apps/VkDeviceCheck/VkXmlLayout.fs
+# Spikes are throwaway and never built in CI.
+spikes/**
+artifacts/**

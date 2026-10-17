@@ -1,0 +1,23 @@
+# Line endings: every text file is LF in the index and in working trees, on every OS.
+# The EOL hygiene check (S0b) runs `git ls-files --eol` against these rules.
+* text=auto eol=lf
+
+# Windows-only scripts that cmd.exe parses need CRLF.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binary formats, never normalized or diffed as text.
+*.zip binary
+*.nupkg binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.bin binary
+*.dxil binary
+*.spv binary
+*.safetensors binary
+*.npy binary
+*.dll binary
+*.exe binary
