@@ -32,6 +32,8 @@ let printHeap (h: DescriptorHeapLimits) =
 
 [<EntryPoint>]
 let main _ =
+    Lrm.Core.Process.init ()
+
     match LayoutCheck.run () with
     | [] -> printfn "struct layouts: %d structs match vk.xml" VkXmlLayout.expected.Length
     | errors ->
