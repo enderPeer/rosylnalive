@@ -1,4 +1,4 @@
-# Minimal CI for PR0a (dev plan, section 7). build-test is a required check; hygiene arrives with S0b.
+# CI (dev plan, section 7). build-test and hygiene are the required checks.
 # GitHub-hosted runners have no GPU, so CI runs only the cpu tier. GPU and model tiers run locally.
 name: ci
 
@@ -94,4 +94,38 @@ jobs:
           path: |
             artifacts/test-results/
             artifacts/dxc-regression/
+          if-no-files-found: ignore
+
+  # Ownership, layering, sizes, EOL and the contract-change label (OwnershipAndContractChange contract, S0b).
+  # The checkers' self-test runs first: every fixture must fail as designed. Labels are read live, so after adding or
+  # removing a label, re-run this job (label events do not start CI).
+  hygiene:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout (full history and tags, for the branch diff and contracts-v1)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Checker self-test (fixtures fail as designed)
+        run: ./tools/ci/test-hygiene.ps1
+
+      - name: Hygiene checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./tools/ci/hygiene.ps1 -Ci
+
+      - name: Upload hygiene summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hygiene
+          path: artifacts/hygiene/
           if-no-files-found: ignore
