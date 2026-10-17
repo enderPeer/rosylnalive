@@ -1,0 +1,168 @@
+{
+  "about": "Ownership fixtures, run by tools/ci/test-hygiene.ps1 against docs/ownership.json (or the case's own map). A 'fail' case must produce errors, and every 'match' regex must match one of them; a 'pass' case must produce none, and every 'warn' regex must match a warning. 'labels' absent means the labels are unknown.",
+  "cases": [
+    {
+      "name": "own-path-edit",
+      "why": "positive control: S1 edits its own Lrm.Core",
+      "branch": "ws/S1-core",
+      "changes": [ { "status": "M", "path": "src/Lrm.Core/Hash.fs", "added": 3, "deleted": 1 } ],
+      "labels": [],
+      "expect": "pass"
+    },
+    {
+      "name": "out-of-path-edit",
+      "why": "O1 edits a Lrm.Core file, which S1 owns",
+      "branch": "ws/O1-oracles",
+      "changes": [ { "status": "M", "path": "src/Lrm.Core/Hash.fs", "added": 3, "deleted": 1 } ],
+      "labels": [],
+      "expect": "fail",
+      "match": [ "^src/Lrm\\.Core/Hash\\.fs is owned by family S1, not by family O1 " ]
+    },
+    {
+      "name": "slice-shares-family-paths",
+      "why": "positive control: R4b may edit R4a's files, since slices share the family's paths",
+      "branch": "ws/R4b-spirv-inspector",
+      "changes": [ { "status": "M", "path": "src/Lrm.Gpu.Core/HeapLayout.fs" } ],
+      "labels": [],
+      "expect": "pass"
+    },
+    {
+      "name": "excluded-subtree",
+      "why": "R4 owns src/Lrm.Shaders/** except the kernel folders, which K1 to K3 own",
+      "branch": "ws/R4b-spirv-inspector",
+      "changes": [ { "status": "A", "path": "src/Lrm.Shaders/hlsl/kernels/basic/add.hlsl" } ],
+      "labels": [],
+      "expect": "fail",
+      "match": [ "^src/Lrm\\.Shaders/hlsl/kernels/basic/add\\.hlsl is owned by family K1, not by family R4 " ]
+    },
+    {
+      "name": "fix-branch",
+      "why": "positive control: ws/<id>-fix-<slug> maps to the same family",
+      "branch": "ws/O2-fix-kernel-bounds",
+      "changes": [ { "status": "M", "path": "src/Lrm.Tensor/KernelBounds.fs" } ],
+      "labels": [],
+      "expect": "pass"
+    },
+    {
+      "name": "deletion-outside-family",
+      "why": "deleting another family's file is an out-of-path edit too",
+      "branch": "ws/T1-telemetry-reports",
+      "changes": [ { "status": "D", "path": "src/Lrm.Core/Telemetry.fs", "added": 0, "deleted": 400 } ],
+      "labels": [],
+      "expect": "fail",
+      "match": [ "^src/Lrm\\.Core/Telemetry\\.fs is owned by family S1, not by family T1 \\(branch ws/T1-telemetry-reports, status D\\)" ]
+    },
+    {
+      "name": "new-unowned-file",
+      "why": "a new file that no family owns fails both coverage and the branch check",
+      "branch": "ws/S1-core",
+      "tracked": [ "src/Lrm.Core/Hash.fs", "misc/notes.txt" ],
+      "changes": [ { "status": "A", "path": "misc/notes.txt" } ],
+      "labels": [],
+      "expect": "fail",
+      "match": [ "^misc/notes\\.txt is owned by no family in docs/ownership\\.json$", "^misc/notes\\.txt is owned by no family, not by family S1 " ]
+    },
+    {
+      "name": "unknown-workstream",
+      "why": "the id must be a slice in docs/ownership.json",
+      "branch": "ws/Z9-something",
+      "changes": [ { "status": "M", "path": "README.md" } ],
+      "labels": [],
+      "expect": "fail",
+      "match": [ "^branch 'ws/Z9-something' names workstream 'Z9', which is no slice" ]
+    },
+    {
+      "name": "id-is-case-sensitive",
+      "why": "slice ids match case-sensitively, so ws/s1-core is not S1",
+      "branch": "ws/s1-core",
+      "changes": [ { "status": "M", "path": "src/Lrm.Core/Hash.fs" } ],
+      "labels": [],
+      "expect": "fail",
+      "match": [ "names workstream 's1', which is no slice" ]
+    },
+    {
+      "name": "branch-shape",
+      "why": "only ws/<id>-<slug>, ws/<id>-fix-<slug> and int/<slug> are allowed",
+      "branch": "feature/new-kernel",
+      "changes": [ { "status": "M", "path": "README.md" } ],
+      "labels": [],
+      "expect": "fail",
+      "match": [ "^branch 'feature/new-kernel' does not follow ws/<id>-<slug>, ws/<id>-fix-<slug> or int/<slug>$" ]
+    },
+    {
+      "name": "slug-is-lowercase",
+      "why": "slugs are lowercase letters and digits joined by hyphens",
+      "branch": "ws/S1-Core_Fixes",
+      "changes": [ { "status": "M", "path": "src/Lrm.Core/Hash.fs" } ],
+      "labels": [],
+      "expect": "fail",
+      "match": [ "does not follow ws/<id>-<slug>" ]
+    },
+    {
+      "name": "integrator-any-path",
+      "why": "positive control: int/ branches may touch any path",
+      "branch": "int/status-2026-10-18",
+      "changes": [ { "status": "M", "path": "docs/STATUS.md" }, { "status": "M", "path": "src/Lrm.Core/Hash.fs" } ],
+      "labels": [],
+      "expect": "pass"
+    },
+    {
+      "name": "main-coverage-only",
+      "why": "positive control: on main only coverage is checked",
+      "branch": "main",
+      "changes": [],
+      "expect": "pass"
+    },
+    {
+      "name": "shared-append",
+      "why": "positive control: any family may append to docs/contracts/CHANGELOG.md",
+      "branch": "ws/O2-tensors",
+      "changes": [ { "status": "M", "path": "docs/contracts/CHANGELOG.md", "added": 4, "deleted": 0 } ],
+      "labels": [],
+      "expect": "pass"
+    },
+    {
+      "name": "shared-rewrite",
+      "why": "a family other than S0 may only add lines to the CHANGELOG",
+      "branch": "ws/O2-tensors",
+      "changes": [ { "status": "M", "path": "docs/contracts/CHANGELOG.md", "added": 1, "deleted": 2 } ],
+      "labels": [],
+      "expect": "fail",
+      "match": [ "^docs/contracts/CHANGELOG\\.md is shared append-only .*deletes or rewrites 2 line\\(s\\)$" ]
+    },
+    {
+      "name": "shared-delete",
+      "why": "deleting the shared CHANGELOG is never an append",
+      "branch": "ws/O2-tensors",
+      "changes": [ { "status": "D", "path": "docs/contracts/CHANGELOG.md", "added": 0, "deleted": 40 } ],
+      "labels": [],
+      "expect": "fail",
+      "match": [ "^docs/contracts/CHANGELOG\\.md is shared append-only .*this change deletes the file$" ]
+    },
+    {
+      "name": "exception-label",
+      "why": "the integrator's exception label turns a reviewed out-of-path edit into a warning",
+      "branch": "ws/T1-telemetry-reports",
+      "changes": [ { "status": "M", "path": "docs/project-graph.json" } ],
+      "labels": [ "ownership-exception" ],
+      "expect": "pass",
+      "warn": [ "^docs/project-graph\\.json is owned by family S0, not T1; accepted by the 'ownership-exception' label$" ]
+    },
+    {
+      "name": "exception-needs-known-labels",
+      "why": "without PR labels the exception cannot apply",
+      "branch": "ws/T1-telemetry-reports",
+      "changes": [ { "status": "M", "path": "docs/project-graph.json" } ],
+      "expect": "fail",
+      "match": [ "^docs/project-graph\\.json is owned by family S0, not by family T1 " ]
+    },
+    {
+      "name": "overlapping-map",
+      "why": "a map whose globs overlap, or that leaves a file unowned, fails coverage",
+      "map": "map-overlap.json",
+      "tracked": [ "src/A/x.fs", "src/A/shared.fs", "docs/orphan.md" ],
+      "expect": "fail",
+      "match": [ "^src/A/shared\\.fs is owned by several families \\(A, B\\)", "^docs/orphan\\.md is owned by no family" ]
+    }
+  ]
+}

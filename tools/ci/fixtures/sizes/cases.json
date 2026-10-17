@@ -1,0 +1,95 @@
+{
+  "about": "Size fixtures, run by tools/ci/test-hygiene.ps1 against tools/ci/hygiene.json. entries: path, size in bytes, optional type (blob or commit). 'repeat' expands an entry n times with -<i> before the extension.",
+  "cases": [
+    {
+      "name": "small-tree",
+      "why": "positive control: ordinary source files pass",
+      "entries": [ { "path": "src/Lrm.Core/Hash.fs", "size": 9000 }, { "path": "docs/LRM-design.md", "size": 36000 }, { "path": "roslyn-research-2026-10-17.zip", "size": 16222 } ],
+      "expect": "pass"
+    },
+    {
+      "name": "large-source-file",
+      "why": "outside goldens/, a file is at most 1 MiB",
+      "entries": [ { "path": "src/Lrm.Gpu.Vulkan.Interop/Vk.g.fs", "size": 1572864 } ],
+      "expect": "fail",
+      "match": [ "^src/Lrm\\.Gpu\\.Vulkan\\.Interop/Vk\\.g\\.fs is 1\\.50 MiB \\(1572864 bytes\\), over the 1\\.00 MiB limit: the default per-file limit$" ]
+    },
+    {
+      "name": "golden-under-limit",
+      "why": "positive control: a golden file may be up to 2 MiB",
+      "entries": [ { "path": "goldens/tiny/g1/adamw_f32.safetensors", "size": 1389704 }, { "path": "goldens/tiny/g1/model/model.safetensors", "size": 232760 } ],
+      "expect": "pass"
+    },
+    {
+      "name": "golden-over-limit",
+      "why": "GoldenSet: a committed golden file is at most 2 MiB",
+      "entries": [ { "path": "goldens/tiny/g2/fwd_f64p.safetensors", "size": 2097153 } ],
+      "expect": "fail",
+      "match": [ "^goldens/tiny/g2/fwd_f64p\\.safetensors is 2\\.00 MiB \\(2097153 bytes\\), over the 2\\.00 MiB limit: GoldenSet" ]
+    },
+    {
+      "name": "tiny-budget",
+      "why": "O1 acceptance: goldens/tiny is at most 5 MiB in total",
+      "entries": [ { "path": "goldens/tiny/g1/part.safetensors", "size": 1500000, "repeat": 4 } ],
+      "expect": "fail",
+      "match": [ "^files under goldens/tiny/\\*\\* total 5\\.72 MiB \\(6000000 bytes\\), over the 5\\.00 MiB budget" ]
+    },
+    {
+      "name": "qwen-budget",
+      "why": "G2 acceptance: committed Qwen goldens are at most 10 MiB",
+      "entries": [ { "path": "goldens/qwen3-0.6b/g1/top64.safetensors", "size": 2000000, "repeat": 6 } ],
+      "expect": "fail",
+      "match": [ "^files under goldens/qwen3-0\\.6b/\\*\\* total 11\\.44 MiB \\(12000000 bytes\\), over the 10\\.00 MiB budget" ]
+    },
+    {
+      "name": "tree-budget",
+      "why": "the whole tree stays under 64 MiB",
+      "entries": [ { "path": "docs/reports/samples/big.svg", "size": 1000000, "repeat": 70 } ],
+      "expect": "fail",
+      "match": [ "^files under \\*\\* total 66\\.76 MiB \\(70000000 bytes\\), over the 64\\.00 MiB budget" ]
+    },
+    {
+      "name": "weights-outside-goldens",
+      "why": "weights live in LRM_DATA/models",
+      "entries": [ { "path": "models/Qwen3-0.6B/model.safetensors", "size": 1000 } ],
+      "expect": "fail",
+      "match": [ "^models/Qwen3-0\\.6B/model\\.safetensors must not be committed: weights live in LRM_DATA/models" ]
+    },
+    {
+      "name": "registry-and-headers",
+      "why": "vk.xml and SDK headers live in LRM_DATA/toolchain",
+      "entries": [ { "path": "tools/vkgen/vk.xml", "size": 1000 }, { "path": "tools/abi-oracle/vulkan/include/vulkan/vulkan_core.h", "size": 1000 }, { "path": "tools/abi-oracle/d3d12/d3d12.h", "size": 1000 } ],
+      "expect": "fail",
+      "match": [ "^tools/vkgen/vk\\.xml must not be committed", "^tools/abi-oracle/vulkan/include/vulkan/vulkan_core\\.h must not be committed", "^tools/abi-oracle/d3d12/d3d12\\.h must not be committed" ]
+    },
+    {
+      "name": "build-output",
+      "why": "artifacts/, bin/, obj/ and binaries are never committed",
+      "entries": [ { "path": "artifacts/bin/Lrm.Core/release/Lrm.Core.dll", "size": 1000 }, { "path": "tools/x/obj/project.assets.json", "size": 1000 }, { "path": "tools/dxc.exe", "size": 1000 } ],
+      "expect": "fail",
+      "match": [ "^artifacts/bin/Lrm\\.Core/release/Lrm\\.Core\\.dll must not be committed: build output", "^tools/x/obj/project\\.assets\\.json must not be committed", "^tools/dxc\\.exe must not be committed" ]
+    },
+    {
+      "name": "agent-allowlist",
+      "why": "AgentPermissions: AP-0 was declined, so .claude/settings.json is never committed",
+      "entries": [ { "path": ".claude/settings.json", "size": 300 } ],
+      "expect": "fail",
+      "match": [ "^\\.claude/settings\\.json must not be committed: AgentPermissions" ]
+    },
+    {
+      "name": "run-log",
+      "why": "run logs live in LRM_DATA/runs; test fixtures under tests/ are allowed",
+      "entries": [ { "path": "docs/reports/inference/events.n0.jsonl", "size": 300 }, { "path": "tests/Lrm.Telemetry.Tests/fixtures/events.n0.jsonl", "size": 300 } ],
+      "expect": "fail",
+      "match": [ "^docs/reports/inference/events\\.n0\\.jsonl must not be committed: run logs" ],
+      "errors": 1
+    },
+    {
+      "name": "submodule",
+      "why": "LRM has no submodules",
+      "entries": [ { "path": "third_party/Vulkan-Headers", "size": 0, "type": "commit" } ],
+      "expect": "fail",
+      "match": [ "^third_party/Vulkan-Headers is a submodule" ]
+    }
+  ]
+}

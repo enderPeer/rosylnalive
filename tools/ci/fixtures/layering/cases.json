@@ -1,0 +1,120 @@
+{
+  "about": "Layering fixtures, run by tools/ci/test-hygiene.ps1. Each case copies the files gen-project-graph.ps1 reads (docs/project-graph.json, Directory.Packages.props, every registered fsproj and .lrm.targets, and the generated outputs) into a temporary root, applies its edits, and runs the layering check there. edits: addRef / addBuildRef (project, ref), addPackage (project, package), addProject (project object). files: path -> content, written over the copy. The unmodified copy must pass first.",
+  "cases": [
+    {
+      "name": "unmodified-copy",
+      "why": "positive control: the copy of the real graph passes, so every failure below comes from its edit",
+      "expect": "pass"
+    },
+    {
+      "name": "handwritten-project-reference",
+      "why": "acceptance: a bad ProjectReference written into an fsproj fails; references come only from the graph",
+      "files": {
+        "src/Lrm.Tokenizer/Lrm.Tokenizer.fsproj": "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <ItemGroup>\n    <Compile Include=\"Placeholder.fs\" />\n  </ItemGroup>\n  <ItemGroup>\n    <ProjectReference Include=\"../Lrm.Gpu.Core/Lrm.Gpu.Core.fsproj\" />\n  </ItemGroup>\n</Project>\n"
+      },
+      "expect": "fail",
+      "match": [ "^src/Lrm\\.Tokenizer/Lrm\\.Tokenizer\\.fsproj: <ProjectReference> is not allowed" ]
+    },
+    {
+      "name": "handwritten-property-group",
+      "why": "an fsproj holds file items only; build logic goes in <Name>.lrm.targets",
+      "files": {
+        "src/Lrm.Tensor/Lrm.Tensor.fsproj": "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <Nullable>enable</Nullable>\n  </PropertyGroup>\n  <ItemGroup>\n    <Compile Include=\"Placeholder.fs\" />\n  </ItemGroup>\n</Project>\n"
+      },
+      "expect": "fail",
+      "match": [ "^src/Lrm\\.Tensor/Lrm\\.Tensor\\.fsproj: <PropertyGroup> is not allowed" ]
+    },
+    {
+      "name": "model-reaches-gpu",
+      "why": "Models.Qwen never references a GPU project",
+      "edits": [ { "op": "addRef", "project": "Lrm.Models.Qwen", "ref": "Lrm.Gpu.Core" } ],
+      "expect": "fail",
+      "match": [ "^rule model-and-cluster-never-gpu: Lrm\\.Models\\.Qwen -> Lrm\\.Gpu\\.Core " ]
+    },
+    {
+      "name": "cluster-reaches-gpu-transitively",
+      "why": "the rules hold on the transitive closure: Cluster -> Tensor -> Gpu.Core is caught",
+      "edits": [ { "op": "addRef", "project": "Lrm.Cluster", "ref": "Lrm.Tensor" }, { "op": "addRef", "project": "Lrm.Tensor", "ref": "Lrm.Gpu.Core" } ],
+      "expect": "fail",
+      "match": [ "^rule model-and-cluster-never-gpu: Lrm\\.Cluster -> Lrm\\.Tensor -> Lrm\\.Gpu\\.Core " ]
+    },
+    {
+      "name": "core-references-something",
+      "why": "Core references nothing",
+      "edits": [ { "op": "addRef", "project": "Lrm.Core", "ref": "Lrm.Telemetry" } ],
+      "expect": "fail",
+      "match": [ "^rule core-is-leaf: Lrm\\.Core -> Lrm\\.Telemetry ", "^cycle: " ]
+    },
+    {
+      "name": "exec-reaches-backend",
+      "why": "Gpu.Exec never references a concrete backend or CpuDevice",
+      "edits": [ { "op": "addRef", "project": "Lrm.Gpu.Exec", "ref": "Lrm.Gpu.CpuDevice" } ],
+      "expect": "fail",
+      "match": [ "^rule exec-never-backend: Lrm\\.Gpu\\.Exec -> Lrm\\.Gpu\\.CpuDevice " ]
+    },
+    {
+      "name": "lib-wires-backend",
+      "why": "only apps and tests wire backends",
+      "edits": [ { "op": "addRef", "project": "Lrm.Serving", "ref": "Lrm.Gpu.Vulkan" } ],
+      "expect": "fail",
+      "match": [ "^rule only-apps-and-tests-wire-backends: Lrm\\.Serving -> Lrm\\.Gpu\\.Vulkan " ]
+    },
+    {
+      "name": "interop-outside-backend",
+      "why": "an interop project is used only by its own backend, apps and tests",
+      "edits": [ { "op": "addRef", "project": "Lrm.Gpu.Core", "ref": "Lrm.Gpu.D3D12.Interop" } ],
+      "expect": "fail",
+      "match": [ "^rule interop-only-under-its-backend: Lrm\\.Gpu\\.Core -> Lrm\\.Gpu\\.D3D12\\.Interop " ]
+    },
+    {
+      "name": "reference-to-exe",
+      "why": "nothing references an app, a test exe or a tool",
+      "edits": [ { "op": "addRef", "project": "Lrm.Reports", "ref": "Lrm.Cli" } ],
+      "expect": "fail",
+      "match": [ "^rule no-refs-to-executables: Lrm\\.Reports -> Lrm\\.Cli references a app " ]
+    },
+    {
+      "name": "extra-build-only-edge",
+      "why": "Shaders -> Shaders.Build is the only build-only edge",
+      "edits": [ { "op": "addBuildRef", "project": "Lrm.Gpu.Core", "ref": "Lrm.Shaders.Build" } ],
+      "expect": "fail",
+      "match": [ "^rule build-only-edges: Lrm\\.Gpu\\.Core -> Lrm\\.Shaders\\.Build is not an allowed build-only edge$" ]
+    },
+    {
+      "name": "cycle",
+      "why": "the graph is acyclic",
+      "edits": [ { "op": "addRef", "project": "Lrm.Tensor", "ref": "Lrm.Tensor.CpuReference" } ],
+      "expect": "fail",
+      "match": [ "^cycle: .*Lrm\\.Tensor -> Lrm\\.Tensor\\.CpuReference -> Lrm\\.Tensor" ]
+    },
+    {
+      "name": "unregistered-fsproj",
+      "why": "every fsproj outside spikes/ is registered in the graph",
+      "files": { "src/Lrm.Rogue/Lrm.Rogue.fsproj": "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <ItemGroup>\n    <Compile Include=\"A.fs\" />\n  </ItemGroup>\n</Project>\n" },
+      "expect": "fail",
+      "match": [ "^src/Lrm\\.Rogue/Lrm\\.Rogue\\.fsproj is not registered in docs/project-graph\\.json$" ]
+    },
+    {
+      "name": "spike-in-graph",
+      "why": "spikes/** is never in the graph or the solution",
+      "edits": [ { "op": "addProject", "project": { "name": "VkHeapSpike", "path": "spikes/vk-heap/VkHeapSpike.fsproj", "kind": "app", "owner": "R1", "refs": [] } } ],
+      "files": { "spikes/vk-heap/VkHeapSpike.fsproj": "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <ItemGroup>\n    <Compile Include=\"Main.fs\" />\n  </ItemGroup>\n</Project>\n" },
+      "expect": "fail",
+      "match": [ "^rule no-spikes: spikes/vk-heap/VkHeapSpike\\.fsproj " ]
+    },
+    {
+      "name": "unpinned-package",
+      "why": "a project names only packages from the graph's list, each pinned in Directory.Packages.props",
+      "edits": [ { "op": "addPackage", "project": "Lrm.Tokenizer", "package": "Newtonsoft.Json" } ],
+      "expect": "fail",
+      "match": [ "^Lrm\\.Tokenizer: package 'Newtonsoft\\.Json' is not in the top-level packages list$" ]
+    },
+    {
+      "name": "stale-generated-props",
+      "why": "an allowed edge that was not regenerated fails the codegen diff",
+      "edits": [ { "op": "addRef", "project": "Lrm.Tokenizer", "ref": "Lrm.Telemetry" } ],
+      "expect": "fail",
+      "match": [ "^build/ProjectGraph\\.g\\.props is out of date" ]
+    }
+  ]
+}
