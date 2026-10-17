@@ -1,0 +1,93 @@
+# Minimal CI for PR0a (dev plan, section 7). build-test is a required check; hygiene arrives with S0b.
+# GitHub-hosted runners have no GPU, so CI runs only the cpu tier. GPU and model tiers run locally.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up .NET (global.json)
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Use a temporary LRM_DATA
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'lrm-data'
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          "LRM_DATA=$root" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('global.json', 'Directory.Packages.props', 'docs/project-graph.json', '.config/dotnet-tools.json') }}
+
+      - name: Cache toolchain
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.LRM_DATA }}/toolchain
+          key: toolchain-${{ runner.os }}-${{ hashFiles('tools/bootstrap/toolchain.json') }}
+
+      - name: Bootstrap (DXC download allowed on runners, AP-1)
+        run: ./tools/bootstrap/bootstrap.ps1 -AllowDownload
+
+      - name: DXC regression
+        run: ./tools/bootstrap/dxc-regression.ps1
+
+      - name: Fantomas check
+        run: |
+          dotnet tool restore
+          dotnet fantomas --check .
+
+      - name: Codegen diffs
+        run: |
+          ./tools/ci/gen-project-graph.ps1 -Check
+          ./tools/bootstrap/gen-toolchain-props.ps1 -Check
+
+      - name: Release build
+        run: dotnet build Lrm.slnx -c Release --nologo
+
+      - name: Tests (cpu tier)
+        run: ./tools/test.ps1 -Tier cpu -NoBuild -FailOnFocusedTests
+
+      - name: Test summary
+        if: always()
+        run: |
+          $summary = 'artifacts/test-results/cpu/summary.md'
+          if (Test-Path $summary) { Get-Content $summary | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8 }
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-cpu
+          path: |
+            artifacts/test-results/
+            artifacts/dxc-regression/
+          if-no-files-found: ignore
