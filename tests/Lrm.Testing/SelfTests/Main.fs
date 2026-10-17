@@ -324,6 +324,29 @@ let propTests =
                 List.rev (List.rev xs) = xs)
         ]
 
+let envTests =
+    testList
+        "env"
+        [
+            testCase "the default data root is the dataRoot in toolchain.json, and LRM_DATA overrides it"
+            <| fun () ->
+                let toolchain =
+                    Path.Combine(Env.repoRoot (), "tools", "bootstrap", "toolchain.json")
+
+                use doc = Text.Json.JsonDocument.Parse(File.ReadAllText toolchain)
+                let pinned = doc.RootElement.GetProperty("dataRoot").GetString()
+                Expect.equal Env.DefaultDataRoot pinned "embedded default"
+                let saved = Environment.GetEnvironmentVariable "LRM_DATA"
+
+                try
+                    Environment.SetEnvironmentVariable("LRM_DATA", null)
+                    Expect.equal (Env.dataRoot ()) pinned "unset"
+                    Environment.SetEnvironmentVariable("LRM_DATA", " D:/elsewhere ")
+                    Expect.equal (Env.dataRoot ()) "D:/elsewhere" "override"
+                finally
+                    Environment.SetEnvironmentVariable("LRM_DATA", saved)
+        ]
+
 let processTests =
     testList
         "process"
@@ -340,7 +363,9 @@ let tiers: TestTiers =
         // Sequenced: some tests change process-wide environment variables.
         Cpu =
             [
-                testSequenced (testList "selftest" [ tierTests; lockTests; determinismTests; propTests; processTests ])
+                testSequenced (
+                    testList "selftest" [ tierTests; lockTests; determinismTests; propTests; envTests; processTests ]
+                )
             ]
     }
 

@@ -32,7 +32,13 @@ let main argv = Runner.main argv tiers
 
 ## Running
 
-`pwsh tools/test.ps1 -Tier <tier>` builds, runs every test exe and prints a Markdown summary for the PR body. A single exe can also run directly: `LRM_TEST_TIER=cpu dotnet artifacts/bin/<exe>/release/<exe>.dll [expecto args]`. A missing or unknown tier fails, as does a gpu run in which a backend listed in `LRM_REQUIRED_BACKENDS` ran no tests. `LRM_BACKENDS=d3d12` restricts a run to some backends.
+`pwsh tools/test.ps1 -Tier <tier>` builds, runs every test exe and prints a Markdown summary for the PR body. A single exe can also run directly: `LRM_TEST_TIER=cpu dotnet artifacts/bin/<exe>/release/<exe>.dll [expecto args]`. A missing or unknown tier fails. `LRM_BACKENDS=d3d12` restricts a run to some backends.
+
+**Required backends.** `LRM_REQUIRED_BACKENDS` (for example `d3d12,vulkan`) names the backends that must run tests:
+
+- **gpu tier:** always enforced. A gpu run fails when a listed backend ran no gpu tests.
+- **model tier:** enforced only with `-RequireBackends`, which GPU model gates use (X1b, I1, I2, I3). Without the switch, a listed backend that ran no model tests appears as a note in the summary and does not fail the run. This keeps CPU-only model runs such as M2b's gate1-cpu valid while `LRM_REQUIRED_BACKENDS` is set.
+- `-RequireBackends` without `LRM_REQUIRED_BACKENDS`, or on the cpu or bench tier, is a usage error. An unknown backend name in `LRM_REQUIRED_BACKENDS` also fails the run.
 
 ## Mutexes and the queue
 
