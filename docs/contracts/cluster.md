@@ -82,7 +82,7 @@ Payloads use the canonical encoding (LrmCore contract): fields in order, little-
 | Notice | code (u16), value (u64), detail (string) |
 | Ready | chain (option of lane u32, stage u32), head (unit id), state digest (id) |
 
-A chain head is lane (u32), stage (u32), head unit id, state digest. Unit phases: 0 Queued, 1 Fetching, 2 Replaying, 3 Positioned. Notice codes: 1 StaleEpoch (value = current epoch), 2 UnknownMember, 3 Shutdown, 4 Leave, 5 WrongClass.
+A chain head is lane (u32), stage (u32), head unit id, state digest. Unit phases: 0 Queued, 1 Fetching, 2 Replaying, 3 Positioned. Notice codes: 1 StaleEpoch (value = current epoch), 2 UnknownMember, 3 Shutdown, 4 Leave, 5 WrongClass (value = the stage the node cannot run).
 
 ## Work units
 
@@ -125,6 +125,7 @@ The coordinator is member 0 and the single authority (coordinator replication is
 - **Reissue.** When a pending unit has no live assignment left, the coordinator recomputes it elsewhere: it assigns the unit to the Ready, eligible member not yet assigned with the fewest roles (then the lowest id), which joins the stage's replicas. If nobody is free, it waits and emits `cluster.reissue.unavailable` once.
 - **Demotion.** A replica whose assignment had missed its deadline when another replica's result was accepted gains a lag count; any other outcome resets it. While a stage has more than `Replicas` replicas, those with a lag count of 3 or more are dropped from it, the worst first.
 - **Retransmission.** An assignment that the node's heartbeat does not list is re-sent after 500 ms. A node asked for a unit it already applied as its chain head answers with the cached result.
+- **WrongClass.** A node answers an Assign it cannot run (another class, or a stage it cannot host) with Notice WrongClass. The coordinator never gives that node the stage again while it stays a member, and moves its pending units of the stage to replicas that can run them.
 
 ## Results, divergence and the unit log
 
