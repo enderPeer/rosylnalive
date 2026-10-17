@@ -128,7 +128,8 @@ type CanonicalWriter() =
             w.U8 1uy
             write v
 
-    /// A u32 count, then each item in order.
+    /// A u32 count, then each item in order. Every item must encode to at least one byte (a zero-width item, such as
+    /// unit, an empty record or `Raw` of nothing, raises), so that the reader can bound a count by the bytes left.
     member w.Seq(items: 'a seq, write: 'a -> unit) =
         if isNull (box items) then
             nullArg "items"
@@ -137,10 +138,14 @@ type CanonicalWriter() =
         w.U32(uint32 items.Length)
 
         for item in items do
+            let before = buffer.WrittenCount
             write item
 
+            if buffer.WrittenCount = before then
+                invalidArg "write" "a canonical sequence item must encode to at least one byte"
+
     /// A u32 count, then (key, value) entries sorted by the UTF-8 bytes of the key (Unicode code point order).
-    /// Duplicate keys raise.
+    /// Duplicate keys raise. Values may be zero-width: every entry carries at least its key's u32 length.
     member w.Map(entries: (string * 'a) seq, write: 'a -> unit) =
         if isNull (box entries) then
             nullArg "entries"
@@ -253,8 +258,8 @@ type CanonicalReader(data: ReadOnlyMemory<byte>) =
         | 1uy -> Some(read ())
         | b -> raise (FormatException(sprintf "canonical option tag must be 0x00 or 0x01, got 0x%02x" b))
 
-    /// A u32 count of items that each take at least one byte, so a count beyond the remaining bytes is malformed.
-    /// Checking it first keeps hostile input from forcing a huge allocation.
+    /// A u32 count of items that each take at least one byte (the writer enforces this), so a count beyond the
+    /// remaining bytes is malformed. Checking it first keeps hostile input from forcing a huge allocation.
     member r.ItemCount() =
         let n = r.Count()
 
@@ -263,10 +268,20 @@ type CanonicalReader(data: ReadOnlyMemory<byte>) =
 
         n
 
+    /// A u32 count, then the items. An item that reads no bytes raises, as the writer never produces one.
     member r.Seq(read: unit -> 'a) : 'a list =
         let n = r.ItemCount()
-        List.init n (fun _ -> read ())
 
+        List.init n (fun _ ->
+            let before = pos
+            let item = read ()
+
+            if pos = before then
+                raise (FormatException "canonical sequence item took no bytes (zero-width items are not canonical)")
+
+            item)
+
+    /// A u32 count, then the entries. Every entry carries its key's u32 length, so a map value may be zero-width.
     member r.Map(read: unit -> 'a) : (string * 'a) list =
         let n = r.ItemCount()
         let previous = ref (null: byte[])

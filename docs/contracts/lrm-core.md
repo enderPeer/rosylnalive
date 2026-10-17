@@ -27,6 +27,7 @@ After contracts-v1, this text and its vectors change only through a `contract-ch
   - `Short` is the first 12 hex digits, for logs and reports only. Never use it as a key.
   - `ContentId.zero` (all zero bytes) means "none", for example a first unit's predecessor. It is never the hash of real content.
 - **Hash** offers `Hash.sha256` (array), `sha256Span`, `sha256Utf8` (strict UTF-8; a lone surrogate raises), `sha256Stream`, `sha256File` and `Hash.Incremental`.
+- **Raw ids and typed ids never share a keyspace.** A raw `Hash.sha256` or `sha256File` id is for matching digests published outside LRM, such as `SHA256SUMS`, toolchain pins and the tokenizer hash. Any store or map keyed by ContentId uses `Canonical.hash` ids only; see "Keyspaces" below.
 
 ## Canonical encoding
 
@@ -38,24 +39,25 @@ The canonical encoding is how structured values become bytes for hashing and con
 | `bool` | `0x00` or `0x01` |
 | `u16`, `u32`, `u64` | little-endian |
 | `i32`, `i64` | little-endian two's complement |
-| `f32`, `f64` | the raw IEEE 754 bits, little-endian. Negative zero and every NaN payload are kept; nothing is canonicalized |
+| `f32`, `f64` | the raw IEEE 754 bits, little-endian. Negative zero and every NaN payload are kept; nothing is canonicalized. The writer encodes the bits of the value it receives, so write a signalling NaN test value with `U32` or `U64` of its bits (see "bf16 and binary16") |
 | bytes | `u32` length, then the bytes |
 | string | `u32` byte length, then strict UTF-8 with no BOM. A lone surrogate raises `ArgumentException`. Text is not normalized: callers that need NFC normalize first |
 | `ContentId` | the 32 raw bytes, with no length prefix |
 | option | `0x00` for None, or `0x01` followed by the value |
-| sequence | `u32` count, then the items in order |
-| map with string keys | `u32` count, then (key as a string, value) entries sorted by the UTF-8 bytes of the key, which is Unicode code point order. Duplicate keys raise |
+| sequence | `u32` count, then the items in order. Every item encodes to at least one byte: a zero-width item (unit, a record with no fields, `Raw` of nothing) raises `ArgumentException` |
+| map with string keys | `u32` count, then (key as a string, value) entries sorted by the UTF-8 bytes of the key, which is Unicode code point order. Duplicate keys raise. Values may be zero-width, since every entry carries its key's `u32` length |
 | `DType` | its code as one `u8` |
 | record | its fields in declared order |
 
-- **Map order is code point order, not UTF-16 order.** The two differ for astral characters. For example, U+FF61 sorts before U+1F600 here, but after it under .NET's `String.CompareOrdinal`.
+- **Map order is code point order, not UTF-16 order.** The two differ for astral characters. For example, U+FF61 sorts before U+1F600 here, but after it under .NET's `String.CompareOrdinal`. This byte order is what "ordinally sorted maps" means in the plan's LrmCore summary. Python's `sorted()` over `str` keys gives the same order, so Python tools can reproduce ids.
 - **Lengths and counts are `u32`.** A blob too large for that is hashed on its own and embedded as a ContentId.
 - **No time encoder.** There is no encoder for times, dates or durations, so timestamps cannot enter a hash (TelemetryFacade contract). A test checks this by reflection.
 - **The reader accepts only canonical input.** `CanonicalReader` raises `FormatException` for any of these:
   - a bool or option tag other than `0x00` or `0x01`;
   - invalid UTF-8;
   - map keys that are unsorted or duplicated;
-  - a sequence or map count larger than the bytes left, since every item takes at least one byte (so hostile input cannot force a huge allocation);
+  - a sequence or map count larger than the bytes left, since every item takes at least one byte (so hostile input cannot force a huge allocation). The writer guarantees this: it rejects zero-width sequence items, and every map entry carries a key length;
+  - a sequence item that reads no bytes, which the writer never produces;
   - truncated input;
   - trailing bytes, when `ExpectEnd` is called.
 
@@ -66,11 +68,13 @@ The canonical encoding is how structured values become bytes for hashing and con
 - **Tags.** A tag is 1 to 128 printable ASCII characters (0x21 to 0x7E, so no spaces). By convention it is `lrm.<thing>/<version>`.
 - **Versioning.** A change to a value's encoding changes the version in its tag, so old and new ids never collide.
 - **The separator.** The `0x00` byte keeps tag and payload apart: (tag `ab`, payload `c`) and (tag `a`, payload `bc`) hash differently.
+- **Keyspaces.** Separation holds among `Canonical.hash` ids only. A raw SHA-256 id is not separated from them: a blob whose bytes start with ASCII(tag) || `0x00` has exactly the id of that tagged value. So raw-content ids (`Hash.sha256` of files or blobs) and `Canonical.hash` ids must never be keys in one store, cache or map. A store that keeps raw bytes by content id next to typed ids, such as a cluster blob store, keys them as `Canonical.hashBytes "lrm.blob/1" bytes`. Raw SHA-256 stays for matching external digests such as `SHA256SUMS`.
 
 | Tag | Owner | Used for |
 | --- | --- | --- |
 | `lrm.xclass/1` | S1 | ExecutionClassId (`execution-class.md`) |
 | `lrm.rng.stream/1` | S1 | `DetRng.streamOf` |
+| `lrm.blob/1` | S1 | Raw bytes stored by content id in a store shared with typed ids; the payload is the bytes themselves |
 | `lrm.test/1` | S1 | Test vectors only |
 | `lrm.unit/1` | C1 | WorkUnit ids (ClusterProtocol) |
 
@@ -107,6 +111,8 @@ The payload is 123 bytes. `Canonical.hash "lrm.test/1"` over it is `bcaeed69c2d4
 
 **C3: map key order.** `Map [U+1F600: 2uy; U+FF61: 1uy]` encodes as `02000000 03000000 efbda1 01 04000000 f09f9880 02`. Its `lrm.test/1` hash is `6658a5c6133053fc57c29797182eae1f2fb6f773c658691de0cf468dad570edb`.
 
+**C4: blob id.** `Canonical.hashBytes "lrm.blob/1"` over the 3 bytes `616263` (`abc`) is `43dc986338811e8f6ba04bbba1545fdb098e2e138a1392cb276961ebfe901a2c`. Over no bytes it is `ad6b5a670a9ed1a436317420b9e3b8bca558b3ac96adeed05537b66050c342c1`.
+
 ## DType
 
 The codes are frozen. They appear in the GPU tensor table, in canonical encodings and in hashes. Code 0 is invalid, so zeroed memory never reads as a valid type.
@@ -130,7 +136,8 @@ The codes are frozen. They appear in the GPU tensor table, in canonical encoding
 
 Both types are carried as their raw `uint16` bits.
 
-- **`Bf16.widen`** is exact: the bits become the top half of a float32. NaN payloads are kept.
+- **`Bf16.widenBits`** (`uint16 -> uint32`) is exact for every pattern: the bits become the top half of the float32 bits. It never touches a float.
+- **`Bf16.widen`** is exact for bits read at run time (from memory, a file or a computation): it returns the float32 whose bits are `widenBits`, NaN payloads included.
 - **`Bf16.narrowRne`** rounds to nearest, ties to even:
   - for a non-NaN input `u`, the result is `(u + 0x7FFF + ((u >> 16) & 1)) >> 16`;
   - results beyond the largest finite bf16 become infinities;
@@ -138,19 +145,25 @@ Both types are carried as their raw `uint16` bits.
   - a NaN narrows to `0x7FC0`, or to `0xFFC0` when its sign bit is set, whatever its payload.
 - **Round trip.** Every non-NaN bf16 round-trips through `widen` and `narrowRne`. The 254 NaN patterns cannot, by design.
 - **Compared with PyTorch.** The result equals PyTorch's `c10::BFloat16` round-to-nearest-even for every non-NaN input. c10 maps every NaN to `0x7FC0`, while LRM keeps the sign.
-- **`F16.widen`** is exact. Subnormals become normal float32 values. A NaN keeps its payload, shifted into the top of the float32 mantissa.
+- **`F16.widenBits`** (`uint16 -> uint32`) is exact for every pattern, with integer arithmetic only. Subnormals become normal float32 values. A NaN keeps its payload, shifted into the top of the float32 mantissa.
+- **`F16.widen`** returns the float32 whose bits are `F16.widenBits`, under the same run-time condition as `Bf16.widen`.
+- **Signalling NaN constants.** Under optimized RyuJIT, a call such as `Bf16.widen 0x7F81us` with a compile-time-constant argument can be folded into a float constant. The JIT holds float constants as doubles, which quiets a signalling NaN: here `7fc10000` instead of `7f810000`, while Debug or MinOpts code keeps `7f810000`. `BitConverter.UInt32BitsToSingle 0x7F810000u` behaves the same way. Values loaded at run time are never changed. So:
+  - known-answer tests and GPU KATs (for example `bf16_unpack`) build and compare expected NaN vectors as raw `uint32` bits, with `widenBits` or integer literals, never as float32 literals or `widen` of a literal;
+  - comparisons of float results use `BitConverter.SingleToUInt32Bits` on values that came from memory.
+
+  `narrowRne` is unaffected, because a quiet and a signalling NaN of the same sign narrow to the same pattern.
 - **`F16.narrowRne`** rounds to nearest, ties to even:
   - subnormal results are kept, never flushed;
   - values of 65520 or more become infinities (65520 is the tie above 65504 and rounds to even, which is infinity);
   - a NaN narrows to `0x7E00`, or to `0xFE00` when its sign bit is set.
-- **Bulk forms.** `Bf16.widenInto` and `narrowInto` work on spans, and `widenArray` and `narrowArray` on arrays.
+- **Bulk forms.** `Bf16.widenInto` and `narrowInto` work on spans, and `widenArray` and `narrowArray` on arrays. `widenInto` writes `widenBits` straight into the destination's bits.
 
 **Verification.**
 - Both `narrowRne` functions are checked against independent oracles on every one of the 2^32 float32 bit patterns:
   - bf16 against an exact-distance oracle, which compares both bf16 neighbours in float64 and breaks ties to even;
   - f16 against a float64 `Math.Round(ToEven)` oracle and against `System.Half`.
 - The full sweep takes 1.1 s (bf16) and 2.0 s (f16) on 32 threads, and 2.9 s and 9.2 s with 4 processors. It therefore runs in full on CI, with no sampling by classes.
-- All 65,536 patterns of each type are checked for widening and round trips.
+- All 65,536 patterns of each type are checked for widening (`widen` against `widenBits`, and `F16.widen` against a float64 oracle and `System.Half`) and for round trips.
 
 **bf16 vectors** (float32 bits to bf16 bits):
 
@@ -291,7 +304,9 @@ The sequence:
 
 Library code formats and parses numbers only through `Invariant`, or with an explicit `CultureInfo.InvariantCulture`. It never relies on the current culture, even though `Process.init` sets it.
 
-- **Floats.** `Invariant.f32` and `Invariant.f64` use the `R` format, the shortest text that parses back to the same bits. Examples: `1.5`, `0.1`, `1E-05`, `3.4028235E+38`, `-0`, `NaN`, `Infinity` and `-Infinity`. `parseF32` and `parseF64` invert them exactly, and a property test checks this for random float32 bit patterns.
+- **Floats.** `Invariant.f32` and `Invariant.f64` use the `R` format. Examples: `1.5`, `0.1`, `1E-05`, `3.4028235E+38`, `-0`, `Infinity` and `-Infinity`.
+  - Non-NaN values round-trip bit-exactly: the text is the shortest that `parseF32` or `parseF64` reads back to the same bits. A property test checks this for random float32 bit patterns.
+  - Every NaN formats as `NaN`, and `NaN` parses to the runtime's default NaN (`ffc00000` and `fff8000000000000` on x64). NaN sign and payload are therefore lost in text; keep them as hex bits where they matter.
 - **Integers.** `i32`, `i64`, `u32` and `u64` format; `tryParseI32`, `tryParseI64` and `tryParseU64` parse, together with their raising forms.
 - **Interpolation.** `Invariant.format $"..."` formats an interpolated string with the invariant culture. Plain F# interpolation without a format specifier uses the current culture.
 - **Hex.** `hex` writes lowercase hex. `ofHex` and `tryOfHex` read either case, with no separators or prefix.
@@ -302,7 +317,7 @@ Library code formats and parses numbers only through `Invariant`, or with an exp
 - **Default.** `LrmPaths.defaultDataRoot` comes from the `Lrm.DefaultDataRoot` assembly metadata, which Directory.Build.props sets from the `dataRoot` in `tools/bootstrap/toolchain.json`. It is the same source Lrm.Testing reads.
 - **Override.** `dataRoot ()` returns `LRM_DATA` when it is set and not blank, else the default, always as a full path. `resolveDataRoot` is the same rule as a pure function.
 - **Fixed locations.** `models ()`, `model name`, `toolchain ()`, `downloads ()`, `golden ()`, `runs ()`, `run runId`, `locks ()` and `venvGolden ()`.
-- **Other paths.** `under relative` builds any other path under the data root, and `underRoot` does the same under a given root. Both reject rooted paths and paths that climb out with `..`.
+- **Other paths.** `under relative` builds any other path under the data root, and `underRoot` does the same under a given root. Both reject rooted paths, paths that climb out with `..`, and paths that name the root itself (such as `.`). The root may be a drive root such as `D:\` or a UNC share root.
 
 ## Process.init
 
@@ -321,7 +336,8 @@ A failure raises `InvalidOperationException("LRM Process.init: <cause>")`. Unhan
 ## Verification
 
 The cpu tier of `Lrm.Core.Tests` covers all of the following:
-- **Known answers:** SHA-256 (FIPS 180-2 vectors plus one million `a`), Canonical C1 to C3, ExecutionClass, Philox4x32-10 and -7, and SplitMix64.
+- **Known answers:** SHA-256 (FIPS 180-2 vectors plus one million `a`), Canonical C1 to C4, ExecutionClass, Philox4x32-10 and -7, and SplitMix64.
+- **Canonical rules:** non-canonical input is rejected, zero-width sequence items are rejected by writer and reader, and zero-width map values round-trip.
 - **bf16 and f16:** the exhaustive sweeps and the vector tables.
 - **Round-trip properties:** canonical values, strings and collections; `R` floats; hex; ContentId; and DetRng random access against sequential draws.
 - **Process.init:** child processes show that it succeeds normally and fails in invariant mode, whether set by switch or by variable. A further child run shows that the NFC canary alone detects invariant mode.

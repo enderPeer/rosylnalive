@@ -1,6 +1,8 @@
 namespace Lrm.Core
 
 open System
+open System.Numerics
+open System.Runtime.InteropServices
 
 /// bfloat16 conversions (LrmCore contract). A bf16 value is carried as its raw uint16 bits: 1 sign bit, 8 exponent
 /// bits and 7 mantissa bits, the top half of a float32.
@@ -17,9 +19,14 @@ module Bf16 =
     /// True when the bits encode a NaN.
     let isNaN (bits: uint16) = (bits &&& 0x7FFFus) > 0x7F80us
 
-    /// Exact widening: the bf16 bits become the top half of the float32. NaN payloads are kept.
+    /// Exact widening to raw float32 bits: the bf16 bits become the top half. Build and compare expected NaN vectors
+    /// with this, never with float32 values: the JIT can quiet a constant signalling NaN (LrmCore contract).
+    let inline widenBits (bits: uint16) : uint32 = uint32 bits <<< 16
+
+    /// Exact widening: the bf16 bits become the top half of the float32. NaN payloads are kept for bits read at run
+    /// time; a signalling NaN in a compile-time constant can be quieted by JIT constant folding (use widenBits).
     let inline widen (bits: uint16) : float32 =
-        BitConverter.UInt32BitsToSingle(uint32 bits <<< 16)
+        BitConverter.UInt32BitsToSingle(widenBits bits)
 
     /// Round to nearest, ties to even. Values beyond the largest finite bf16 (after rounding) become infinities;
     /// subnormals round like any other value (no flushing). Every non-NaN bf16 round-trips through widen. A NaN
@@ -42,8 +49,11 @@ module Bf16 =
         if destination.Length < source.Length then
             invalidArg "destination" "destination is shorter than source"
 
+        // Written as raw bits, so no value passes through a float register on the way.
+        let destination = MemoryMarshal.Cast<float32, uint32> destination
+
         for i in 0 .. source.Length - 1 do
-            destination[i] <- widen source[i]
+            destination[i] <- widenBits source[i]
 
     /// Narrows every element of `source` into `destination`, which must be at least as long.
     let narrowInto (source: ReadOnlySpan<float32>, destination: Span<uint16>) =
@@ -79,23 +89,30 @@ module F16 =
     /// True when the bits encode a NaN.
     let isNaN (bits: uint16) = (bits &&& 0x7FFFus) > 0x7C00us
 
-    /// Exact widening to float32. Subnormals become normal float32 values; NaN payloads are kept (shifted into the
-    /// top of the float32 mantissa).
-    let widen (bits: uint16) : float32 =
+    /// Exact widening to raw float32 bits. Subnormals become normal float32 values; NaN payloads are kept (shifted into
+    /// the top of the float32 mantissa). Build and compare expected NaN vectors with this, never with float32 values.
+    let widenBits (bits: uint16) : uint32 =
         let sign = uint32 (bits &&& 0x8000us) <<< 16
-        let exponent = int ((bits >>> 10) &&& 0x1Fus)
+        let exponent = uint32 ((bits >>> 10) &&& 0x1Fus)
         let mantissa = uint32 (bits &&& 0x3FFus)
 
-        if exponent = 0x1F then
-            BitConverter.UInt32BitsToSingle(sign ||| 0x7F800000u ||| (mantissa <<< 13))
-        elif exponent <> 0 then
-            BitConverter.UInt32BitsToSingle(sign ||| (uint32 (exponent + 112) <<< 23) ||| (mantissa <<< 13))
+        if exponent = 0x1Fu then
+            sign ||| 0x7F800000u ||| (mantissa <<< 13)
+        elif exponent <> 0u then
+            sign ||| ((exponent + 112u) <<< 23) ||| (mantissa <<< 13)
         elif mantissa = 0u then
-            BitConverter.UInt32BitsToSingle sign
+            sign
         else
-            // A subnormal is mantissa * 2^-24, exact in float32: an integer below 2^10 times a power of two.
-            let magnitude = float32 mantissa * 5.9604644775390625e-8f
-            if sign <> 0u then -magnitude else magnitude
+            // A subnormal is mantissa * 2^-24. With p the index of its top set bit (0 to 9), that is
+            // 2^(p - 24) * (mantissa / 2^p): float32 exponent field p + 103, and the bits below the top one shifted up
+            // to fill the 23-bit mantissa field.
+            let p = 31 - BitOperations.LeadingZeroCount mantissa
+            sign ||| (uint32 (p + 103) <<< 23) ||| ((mantissa <<< (23 - p)) &&& 0x7FFFFFu)
+
+    /// Exact widening to float32. Subnormals become normal float32 values. NaN payloads are kept for bits read at run
+    /// time; a signalling NaN in a compile-time constant can be quieted by JIT constant folding (use widenBits).
+    let widen (bits: uint16) : float32 =
+        BitConverter.UInt32BitsToSingle(widenBits bits)
 
     /// Round to nearest, ties to even, with subnormal results (no flushing). Values at or above 65520 become
     /// infinities. A NaN narrows to 0x7E00, or 0xFE00 when its sign bit is set, whatever its payload.
