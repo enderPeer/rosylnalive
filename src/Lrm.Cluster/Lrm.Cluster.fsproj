@@ -1,6 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: C1. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
-    <Compile Include="Placeholder.fs" />
+    <!-- ClusterProtocol contract files (Protocol*.fs): changes after contracts-v1 go through contract-change. -->
+    <Compile Include="ProtocolFrame.fs" />
+    <Compile Include="ProtocolUnit.fs" />
+    <Compile Include="ProtocolMessages.fs" />
+    <Compile Include="Clock.fs" />
+    <Compile Include="BlobStore.fs" />
+    <Compile Include="Executor.fs" />
+    <Compile Include="FakePipeline.fs" />
+    <Compile Include="Actor.fs" />
+    <Compile Include="Coordinator.fs" />
+    <Compile Include="Node.fs" />
+    <Compile Include="ChaosPolicy.fs" />
+    <Compile Include="Simulation.fs" />
+    <Compile Include="Transport.fs" />
+    <Compile Include="ChaosProxy.fs" />
+    <Compile Include="Runtime.fs" />
+    <Compile Include="Harness.fs" />
   </ItemGroup>
 </Project>
