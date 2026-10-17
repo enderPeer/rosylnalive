@@ -1,0 +1,13 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+*.suo
+*.swp
+.DS_Store
+Thumbs.db
+__pycache__/
+# downloaded Vulkan registry / model weights stay out of git
+vk.xml
+*.safetensors
