@@ -27,6 +27,8 @@ $props = [ordered]@{
     LrmVkXml            = '$(LrmData)/' + $t.vkxml.install
     LrmVkHeadersVersion = $t.vkheaders.version
     LrmVkHeaders        = '$(LrmData)/' + $t.vkheaders.install
+    LrmTokenizerJson    = '$(LrmData)/' + $t.tokenizer.install
+    LrmTokenizerSha256  = $t.tokenizer.sha256
 }
 
 $sb = [System.Text.StringBuilder]::new()

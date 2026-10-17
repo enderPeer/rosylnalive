@@ -8,20 +8,25 @@
       dxc-nupkg  (dxc) Verified in place: SHA-256 of each binary, `dxc --version`, Authenticode signer. When it is
                  not installed, it is extracted from the pinned nupkg in LRM_DATA/downloads. The nupkg is downloaded
                  only with -AllowDownload and is checked against its pinned size and SHA-512 before use.
-      file       (vkxml) One file at its install path, checked against its pinned size and SHA-256 on every run. A
-                 missing file is downloaded with -AllowDownload to a .partial file, checked, then moved into place.
+      file       (vkxml, tokenizer) One file at its install path, checked against its pinned size and SHA-256 on every
+                 run. A missing file is downloaded with -AllowDownload to a .partial file, checked, then moved into
+                 place.
       zip        (vkheaders) An archive kept in LRM_DATA/downloads and checked against its pinned size and SHA-256.
                  It is extracted into a staging folder (only the `extract` patterns, without the archive's single
                  top folder when stripTopFolder is set), which is then moved into place. The install folder records
                  the archive hash and every file's SHA-256 in .lrm-install.json, and every run verifies the files
                  against that record and against any `files` pins in toolchain.json.
 
-    Approval gates every entry. Only an entry whose `approval` says "approved" is verified or installed; a pending or
-    declined entry is skipped with a message and never downloaded. An approved file or zip entry also needs its url,
-    size and sha256 pinned. -ComputePins (with -AllowDownload) downloads such an entry once, prints the size and
-    SHA-256 to pin, and installs nothing; the integrator checks them against the upstream release and commits them.
+    Approval gates every download. Only an entry whose `approval` says "approved" is installed; a pending or declined
+    entry is never downloaded. A pending or declined file entry whose size and sha256 are pinned is still verified when
+    a copy is already at its install path (for example the tokenizer, which came with the verified weights): a bad
+    copy fails the run, and a missing one is skipped with a message. Every other unapproved entry is skipped. An
+    approved file or zip entry also needs its url, size and sha256 pinned. -ComputePins (with -AllowDownload)
+    downloads such an entry once, prints the size and SHA-256 to pin, and installs nothing; the integrator checks them
+    against the upstream release and commits them.
 
-    The exit code is 0 when every approved entry verifies, otherwise 1. Running it again downloads nothing.
+    The exit code is 0 when every approved entry and every present pinned copy verifies, otherwise 1. Running it again
+    downloads nothing.
 
 .PARAMETER DataRoot
     Overrides LRM_DATA (default: the dataRoot in toolchain.json).
@@ -36,6 +41,9 @@
     For approved file and zip entries whose size or sha256 is not pinned yet: download once (needs -AllowDownload),
     print the values to pin, and install nothing.
 
+.PARAMETER ToolchainPath
+    Another toolchain.json, for tools/bootstrap/test-bootstrap.ps1. Default: the one next to this script.
+
 .EXAMPLE
     pwsh tools/bootstrap/bootstrap.ps1
     pwsh tools/bootstrap/bootstrap.ps1 -AllowDownload                               # CI
@@ -46,13 +54,13 @@ param(
     [string]$DataRoot,
     [switch]$AllowDownload,
     [string[]]$Only,
-    [switch]$ComputePins
+    [switch]$ComputePins,
+    [string]$ToolchainPath = (Join-Path $PSScriptRoot 'toolchain.json')
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$toolchainPath = Join-Path $PSScriptRoot 'toolchain.json'
 $toolchain = Get-Content -Raw -LiteralPath $toolchainPath | ConvertFrom-Json
 if ($toolchain.schema -ne 'lrm.toolchain/1') { throw "toolchain.json: unknown schema '$($toolchain.schema)'" }
 
@@ -287,6 +295,19 @@ function Show-Pins([string]$key, $e) {
     Write-Host "  (downloaded copy: $dest)"
 }
 
+# An unapproved file entry with size and sha256 pinned, whose copy is already in place: verify it, never download.
+function Test-LocalCopy([string]$key, $e) {
+    if ((Get-Field $e 'kind') -ne 'file' -or -not (Get-Field $e 'size') -or -not (Get-Field $e 'sha256')) { return $false }
+    $install = Get-Field $e 'install'
+    [bool]($install -and (Test-Path -LiteralPath (Under $install) -PathType Leaf))
+}
+
+function Confirm-LocalCopy([string]$key, $e) {
+    $dest = Under $e.install
+    Test-Sha256Pin $key $e $dest
+    Write-Host "$key $($e.version): OK  $dest (local copy verified; download not approved)" -ForegroundColor Green
+}
+
 function Skip-Unapproved([string]$key, $e) {
     $approval = [string](Get-Field $e 'approval')
     $why = if ($approval -match '\bpending\b') { 'the download awaits user approval' } else { "it is not approved ('$approval')" }
@@ -309,7 +330,11 @@ $failures = 0
 foreach ($key in $keys) {
     $e = $toolchain.$key
     try {
-        if (-not (Test-Approved $e)) { Skip-Unapproved $key $e; continue }
+        if (-not (Test-Approved $e)) {
+            if (-not $ComputePins -and (Test-LocalCopy $key $e)) { Confirm-LocalCopy $key $e }
+            else { Skip-Unapproved $key $e }
+            continue
+        }
         if ($ComputePins) { Show-Pins $key $e; continue }
         $kind = Get-Field $e 'kind'
         switch ($kind) {
