@@ -1,6 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: T1. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
-    <Compile Include="Placeholder.fs" />
+    <Compile Include="Json.fs" />
+    <Compile Include="EventLine.fs" />
+    <Compile Include="Manifest.fs" />
+    <Compile Include="JsonlSink.fs" />
+    <Compile Include="RunContext.fs" />
+    <Compile Include="RunLogReader.fs" />
+    <Compile Include="OpCost.fs" />
+    <Compile Include="Metering.fs" />
   </ItemGroup>
 </Project>

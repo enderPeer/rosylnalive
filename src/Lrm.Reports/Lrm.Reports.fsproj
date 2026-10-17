@@ -1,6 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: T1. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
-    <Compile Include="Placeholder.fs" />
+    <Compile Include="DetMath.fs" />
+    <Compile Include="Fmt.fs" />
+    <Compile Include="Svg.fs" />
+    <Compile Include="Charts.fs" />
+    <Compile Include="Template.fs" />
+    <Compile Include="Builders/Common.fs" />
+    <Compile Include="Builders/Parity.fs" />
+    <Compile Include="Builders/Inference.fs" />
+    <Compile Include="Builders/Kernels.fs" />
+    <Compile Include="Builders/Cluster.fs" />
+    <Compile Include="Builders/Gate1.fs" />
+    <Compile Include="Builders/Training.fs" />
+    <Compile Include="Builders/Routing.fs" />
+    <Compile Include="Builders/Thinking.fs" />
+    <Compile Include="Synthetic.fs" />
+    <Compile Include="Reports.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The Markdown templates, read at run time as templates/<name>.md. -->
+    <EmbeddedResource Include="templates/*.md" LogicalName="templates/%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>
