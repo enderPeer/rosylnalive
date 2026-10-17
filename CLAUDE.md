@@ -1,6 +1,6 @@
 # LRM — working notes for agents
 
-The LRM (Large Roslyn Model) is a transformer whose experts call Roslyn inside its layers, written in F# on our own D3D12/Vulkan stack. The design is in `docs/LRM-design.md`. Current status and next steps are in `docs/STATUS.md`; the multi-agent plan is in `docs/dev-plan.md` (once written).
+The LRM (Large Roslyn Model) is a transformer whose experts call Roslyn inside its layers, written in F# on our own D3D12/Vulkan stack. The design is in `docs/LRM-design.md`. Current status and next steps are in `docs/STATUS.md`; the multi-agent plan is in `docs/dev-plan.md`, and who owns which paths is in `docs/ownership.json`.
 
 ## Fixed decisions (do not re-litigate)
 
@@ -43,6 +43,16 @@ The LRM (Large Roslyn Model) is a transformer whose experts call Roslyn inside i
   - agreement between D3D12 and Vulkan;
   - Roslyn itself in Phase 3 (compile, ILVerify, test execution).
 - GPU: one NVIDIA RTX 4080 16 GB, driver 616.92; 32 CPU threads. GitHub-hosted CI has no GPU, so GPU tests run locally and are tagged.
+
+## Repo layout and build
+
+- **Layout:** libraries in `src/`, apps in `apps/` (`Lrm.Cli`, `VkDeviceCheck`), Expecto test exes in `tests/`, scripts and generators in `tools/`, throwaway spikes in `spikes/` (never in the solution or CI). `Lrm.slnx` lists every project.
+- **References come only from `docs/project-graph.json`.** `tools/ci/gen-project-graph.ps1` checks the layering rules and writes `build/ProjectGraph.g.props`, `build/ProjectKinds.g.props` and `Lrm.slnx`. An fsproj holds file items only; a hand-written reference or an unregistered project fails the build. To change an edge or add a project, ask the integrator (S0).
+- **Data root:** `LRM_DATA` (default `C:/Users/end/dev/lrm-data`) holds toolchains, weights, goldens, run logs and test locks. Nothing under it is committed. `pwsh tools/bootstrap/bootstrap.ps1` verifies the pinned DXC; vk.xml and Vulkan-Headers are pending approval, so bootstrap skips them. MSBuild reads the pins from `build/Toolchain.g.props` (for example `$(LrmDxcExe)`).
+- **Build:** `dotnet build Lrm.slnx -c Release`. Warnings are errors; output goes to `artifacts/`. Apps run as `dotnet <dll>`, x64 only, and every exe calls `Lrm.Core.Process.init ()` first.
+- **Tests:** `pwsh tools/test.ps1 -Tier cpu|gpu|model|bench`. Each test exe declares `TestTiers` (cpu, gpu per backend, model, bench) and calls `Runner.main` from `tests/Lrm.Testing`. GPU and model runs queue on the mutexes `Local\LrmGpu.d3d12`, `Local\LrmGpu.vulkan` and `Local\LrmModelCpu`, with tickets in `LRM_DATA/locks`. Use `Props.testProperty` (fixed FsCheck seed, `LRM_FSCHECK_SEED` overrides) and `Determinism.runTwice` for GPU results. CI runs only the cpu tier.
+- **Before pushing:** `dotnet fantomas .` (CI runs `fantomas --check`), a 0-warning Release build, and the tiers you touched.
+- **No `.claude/settings.json`** is committed (AP-0 was declined).
 
 ## Working rules
 
