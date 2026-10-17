@@ -63,6 +63,33 @@
     "install": "toolchain/vulkan-headers/1.4.365",
     "note": "Used only by the cl.exe ABI oracle (tools/abi-oracle/vulkan). Size and sha256 are pinned when approved (bootstrap -Only vkheaders -ComputePins -AllowDownload prints them)."
   },
+  "tokenizer": {
+    "managedBy": "bootstrap",
+    "kind": "file",
+    "approval": "pending",
+    "approvalNote": "AP-1: the download on CI runners was asked of the user on 2026-10-17. Until it is approved, bootstrap never downloads it. A local copy, which came with the verified weights, is verified against the pins on every run.",
+    "version": "c1899de289a04d12100db370d81485cdf75e47ca",
+    "url": "https://huggingface.co/Qwen/Qwen3-0.6B/resolve/c1899de289a04d12100db370d81485cdf75e47ca/tokenizer.json",
+    "size": 11422654,
+    "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+    "install": "models/Qwen3-0.6B/tokenizer.json",
+    "note": "Qwen3-0.6B tokenizer at the pinned model revision; the same hash as model.sha256 below. Read by Lrm.Tokenizer (M1), which checks this SHA-256 (TokenizerApi), and by the golden tools (O1)."
+  },
+  "vulkanSdk": {
+    "managedBy": "manual",
+    "optional": true,
+    "kind": "installer",
+    "approval": "not requested",
+    "approvalNote": "AP-3 (optional): asked when V1 starts. Without it, work proceeds without validation layers; bootstrap never touches this entry.",
+    "version": "1.4.363.0",
+    "url": "https://sdk.lunarg.com/sdk/download/1.4.363.0/windows/VulkanSDK-1.4.363.0-Installer.exe",
+    "size": null,
+    "sha256": null,
+    "install": "toolchain/vulkan-sdk/1.4.363.0",
+    "installMode": "copy-only into install under LRM_DATA: no registry, PATH, environment or system changes",
+    "use": "Validation layers only, enabled per test process through the Vulkan loader's environment variables pointing at <install>/Bin; never registered system-wide",
+    "note": "The url, the copy-only command line, size and sha256 are confirmed and pinned when AP-3 is asked; none of them has been fetched or verified yet."
+  },
   "goldenVenv": {
     "managedBy": "manual",
     "python": "3.11",

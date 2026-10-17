@@ -57,6 +57,9 @@ jobs:
       - name: Bootstrap (DXC download allowed on runners, AP-1)
         run: ./tools/bootstrap/bootstrap.ps1 -AllowDownload
 
+      - name: Bootstrap self-test (a second run downloads nothing; pending entries are never fetched)
+        run: ./tools/bootstrap/test-bootstrap.ps1
+
       - name: DXC regression
         run: ./tools/bootstrap/dxc-regression.ps1
 
