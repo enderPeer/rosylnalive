@@ -47,8 +47,8 @@ let runAndCheck (gpu: Heap.IGpu) (c: Case) =
     let o = runCase gpu c
     let a = attrsOf gpu.Label @ [ Attr.str TelemetryKeys.Kernel c.Kernel; Attr.str TelemetryKeys.Case c.Name ]
 
-    for ns in o.GpuNs do
-        Telemetry.gpuInterval "gpu.dispatch" 0L (int64 ns) a
+    for (start, ns) in List.zip o.GpuStartNs o.GpuNs do
+        Telemetry.gpuInterval "gpu.dispatch" start (int64 ns) a
 
     let bytes =
         (c.Job.Uploads |> List.sumBy (fun u -> int64 u.Data.Length))
