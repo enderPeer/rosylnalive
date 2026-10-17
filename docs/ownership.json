@@ -1,0 +1,357 @@
+{
+  "schema": "lrm.ownership/1",
+  "about": "OwnershipAndContractChange contract: each workstream family owns the paths matched by its globs; slices (a/b ids) share their family's paths. A leading '!' excludes paths from that family. '**' matches any number of path segments, '*' matches within one segment. Every tracked file belongs to exactly one family. Branches are ws/<id>-<slug>, ws/<id>-fix-<slug> and int/<slug>; the hygiene job (S0b) fails edits outside the branch's family. The integrator (int/*) may touch any path. There are no mid-plan handovers.",
+  "branches": [
+    "ws/<id>-<slug>",
+    "ws/<id>-fix-<slug>",
+    "int/<slug>"
+  ],
+  "families": {
+    "S0": {
+      "slices": [
+        "S0a",
+        "S0b"
+      ],
+      "paths": [
+        "Lrm.slnx",
+        "global.json",
+        "Directory.Build.props",
+        "Directory.Build.targets",
+        "Directory.Packages.props",
+        "build/**",
+        ".gitattributes",
+        ".gitignore",
+        ".editorconfig",
+        ".fantomasignore",
+        ".config/**",
+        ".claude/settings.json",
+        ".github/**",
+        "tools/bootstrap/**",
+        "tools/test.ps1",
+        "tests/Lrm.Testing/**",
+        "apps/Lrm.Cli/Lrm.Cli.fsproj",
+        "apps/Lrm.Cli/Program.fs",
+        "docs/STATUS.md",
+        "docs/dev-plan.md",
+        "docs/ownership.json",
+        "docs/project-graph.json",
+        "docs/LRM-design.md",
+        "README.md",
+        "CLAUDE.md",
+        "roslyn-research-2026-10-17.zip",
+        "tools/ci/**",
+        "docs/contracts/README.md",
+        "docs/contracts/CHANGELOG.md",
+        "docs/decisions/0000-*.md",
+        "docs/decisions/0001-*.md",
+        "spikes/probes/**",
+        "docs/contracts/project-graph.md",
+        "docs/contracts/test-tiers.md",
+        "docs/contracts/data-root-and-toolchain.md",
+        "docs/contracts/agent-permissions.md",
+        "docs/contracts/ownership-and-contract-change.md",
+        "docs/decisions/S0-*.md"
+      ]
+    },
+    "S1": {
+      "slices": [
+        "S1"
+      ],
+      "paths": [
+        "src/Lrm.Core/**",
+        "tests/Lrm.Core.Tests/**",
+        "docs/contracts/lrm-core.md",
+        "docs/contracts/telemetry-facade.md",
+        "docs/contracts/execution-class.md"
+      ]
+    },
+    "R1": {
+      "slices": [
+        "R1"
+      ],
+      "paths": [
+        "spikes/vk-heap/**",
+        "docs/decisions/R1-*.md"
+      ]
+    },
+    "R2": {
+      "slices": [
+        "R2a",
+        "R2b"
+      ],
+      "paths": [
+        "tools/vkgen/**",
+        "tools/abi-oracle/vulkan/**",
+        "src/Lrm.Gpu.Vulkan.Interop/**",
+        "apps/VkDeviceCheck/**",
+        "tests/Lrm.Gpu.Vulkan.Interop.Tests/**",
+        "apps/Lrm.Cli/Commands/DevicesVulkan.fs",
+        "docs/decisions/R2-*.md"
+      ]
+    },
+    "R3": {
+      "slices": [
+        "R3"
+      ],
+      "paths": [
+        "tools/d3d12gen/**",
+        "tools/abi-oracle/d3d12/**",
+        "src/Lrm.Gpu.D3D12.Interop/**",
+        "tests/Lrm.Gpu.D3D12.Interop.Tests/**",
+        "apps/Lrm.Cli/Commands/DevicesD3D12.fs",
+        "docs/decisions/R3-*.md"
+      ]
+    },
+    "R4": {
+      "slices": [
+        "R4a",
+        "R4b"
+      ],
+      "paths": [
+        "src/Lrm.Gpu.Core/**",
+        "src/Lrm.Shaders/**",
+        "!src/Lrm.Shaders/hlsl/kernels/basic/**",
+        "!src/Lrm.Shaders/hlsl/kernels/matmul/**",
+        "!src/Lrm.Shaders/hlsl/kernels/attention/**",
+        "src/Lrm.Shaders.Build/**",
+        "tests/Lrm.Gpu.Core.Tests/**",
+        "docs/contracts/heap-and-tensor-table.md",
+        "docs/contracts/kernel-abi.md",
+        "docs/contracts/gpu-backend.md",
+        "docs/contracts/shader-build.md",
+        "docs/contracts/batch-invariance.md",
+        "docs/decisions/R4-*.md"
+      ]
+    },
+    "O1": {
+      "slices": [
+        "O1"
+      ],
+      "paths": [
+        "tools/goldens/**",
+        "!tools/goldens/qwen/**",
+        "goldens/tiny/**",
+        "goldens/tokenizer/**",
+        "goldens/README.md",
+        "docs/contracts/golden-set.md",
+        "docs/contracts/activation-names.md",
+        "docs/contracts/reference-oracles.md",
+        "docs/decisions/O1-*.md"
+      ]
+    },
+    "O2": {
+      "slices": [
+        "O2"
+      ],
+      "paths": [
+        "src/Lrm.Tensor/**",
+        "src/Lrm.Tensor.CpuReference/**",
+        "tests/Lrm.Tensor.Tests/**",
+        "docs/contracts/host-tensor.md",
+        "docs/contracts/cpu-reference.md",
+        "docs/contracts/comparators.md",
+        "docs/contracts/kernel-bounds.md",
+        "docs/decisions/O2-*.md"
+      ]
+    },
+    "T1": {
+      "slices": [
+        "T1"
+      ],
+      "paths": [
+        "src/Lrm.Telemetry/**",
+        "src/Lrm.Reports/**",
+        "tests/Lrm.Telemetry.Tests/**",
+        "apps/Lrm.Cli/Commands/Report.fs",
+        "docs/contracts/run-log.md",
+        "docs/contracts/report-templates.md"
+      ]
+    },
+    "C1": {
+      "slices": [
+        "C1"
+      ],
+      "paths": [
+        "src/Lrm.Cluster/**",
+        "tests/Lrm.Cluster.Tests/**",
+        "apps/Lrm.Cli/Commands/Chaos.fs",
+        "docs/contracts/cluster.md",
+        "docs/decisions/C1-*.md"
+      ]
+    },
+    "G2": {
+      "slices": [
+        "G2"
+      ],
+      "paths": [
+        "tools/goldens/qwen/**",
+        "goldens/qwen3-0.6b/**",
+        "docs/decisions/G2-*.md"
+      ]
+    },
+    "M1": {
+      "slices": [
+        "M1"
+      ],
+      "paths": [
+        "src/Lrm.Tokenizer/**",
+        "tests/Lrm.Tokenizer.Tests/**",
+        "docs/contracts/tokenizer.md",
+        "docs/decisions/M1-*.md"
+      ]
+    },
+    "M2": {
+      "slices": [
+        "M2a",
+        "M2b"
+      ],
+      "paths": [
+        "src/Lrm.Models.Qwen/**",
+        "tests/Lrm.Models.Qwen.Tests/**",
+        "apps/Lrm.Cli/Commands/Backends.fs",
+        "apps/Lrm.Cli/Commands/Forward.fs",
+        "apps/Lrm.Cli/Commands/Generate.fs",
+        "docs/contracts/qwen-model.md",
+        "docs/decisions/M2-*.md"
+      ]
+    },
+    "E1": {
+      "slices": [
+        "E1"
+      ],
+      "paths": [
+        "src/Lrm.Gpu.CpuDevice/**",
+        "tests/Lrm.Gpu.CpuDevice.Tests/**",
+        "tests/Lrm.Kernels.Conformance/**",
+        "!tests/Lrm.Kernels.Conformance/Cases/basic/**",
+        "!tests/Lrm.Kernels.Conformance/Cases/matmul/**",
+        "!tests/Lrm.Kernels.Conformance/Cases/attention/**",
+        "docs/contracts/conformance-harness.md"
+      ]
+    },
+    "D1": {
+      "slices": [
+        "D1"
+      ],
+      "paths": [
+        "src/Lrm.Gpu.D3D12/**",
+        "tests/Lrm.Gpu.D3D12.Tests/**",
+        "docs/decisions/D1-*.md"
+      ]
+    },
+    "V1": {
+      "slices": [
+        "V1"
+      ],
+      "paths": [
+        "src/Lrm.Gpu.Vulkan/**",
+        "tests/Lrm.Gpu.Vulkan.Tests/**",
+        "docs/decisions/V1-*.md"
+      ]
+    },
+    "R5": {
+      "slices": [
+        "R5"
+      ],
+      "paths": [
+        "spikes/d3d12/**",
+        "docs/decisions/R5-*.md"
+      ]
+    },
+    "K1": {
+      "slices": [
+        "K1"
+      ],
+      "paths": [
+        "src/Lrm.Shaders/hlsl/kernels/basic/**",
+        "tests/Lrm.Kernels.Conformance/Cases/basic/**"
+      ]
+    },
+    "K2": {
+      "slices": [
+        "K2"
+      ],
+      "paths": [
+        "src/Lrm.Shaders/hlsl/kernels/matmul/**",
+        "tests/Lrm.Kernels.Conformance/Cases/matmul/**"
+      ]
+    },
+    "K3": {
+      "slices": [
+        "K3"
+      ],
+      "paths": [
+        "src/Lrm.Shaders/hlsl/kernels/attention/**",
+        "tests/Lrm.Kernels.Conformance/Cases/attention/**"
+      ]
+    },
+    "X1": {
+      "slices": [
+        "X1a",
+        "X1b"
+      ],
+      "paths": [
+        "src/Lrm.Gpu.Exec/**",
+        "tests/Lrm.Gpu.Exec.Tests/**",
+        "apps/Lrm.Cli/Commands/GpuBackends.fs",
+        "docs/contracts/gpu-executor.md"
+      ]
+    },
+    "C2": {
+      "slices": [
+        "C2a",
+        "C2b"
+      ],
+      "paths": [
+        "src/Lrm.Serving/**",
+        "tests/Lrm.Serving.Tests/**",
+        "apps/Lrm.Cli/Commands/Coord.fs",
+        "apps/Lrm.Cli/Commands/Node.fs",
+        "docs/contracts/stage-pipeline.md",
+        "docs/reports/cluster-dev/**"
+      ]
+    },
+    "T2": {
+      "slices": [
+        "T2"
+      ],
+      "paths": [
+        "src/Lrm.Dashboard/**",
+        "tests/Lrm.Dashboard.Tests/**",
+        "apps/Lrm.Cli/Commands/Dashboard.fs"
+      ]
+    },
+    "I1": {
+      "slices": [
+        "I1"
+      ],
+      "paths": [
+        "tests/Lrm.Gate1/**",
+        "apps/Lrm.Cli/Commands/Bisect.fs",
+        "docs/reports/gate1/backends/**",
+        "docs/reports/inference/**",
+        "docs/reports/kernels/**"
+      ]
+    },
+    "I2": {
+      "slices": [
+        "I2"
+      ],
+      "paths": [
+        "tests/Lrm.Gate1.Cluster/**",
+        "docs/reports/gate1/cluster/**"
+      ]
+    },
+    "I3": {
+      "slices": [
+        "I3"
+      ],
+      "paths": [
+        "apps/Lrm.Cli/Commands/Gate1.fs",
+        "docs/reports/gate1/README.md",
+        "docs/reports/gate1/summary/**",
+        "docs/reports/gate1/dashboard.html"
+      ]
+    }
+  }
+}
