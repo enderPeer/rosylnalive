@@ -8,13 +8,13 @@
     <LrmRepoRoot>$([MSBuild]::EnsureTrailingSlash('$(MSBuildThisFileDirectory)').Replace('\', '/'))</LrmRepoRoot>
     <LrmProjectPath>$([MSBuild]::MakeRelative('$(LrmRepoRoot)', '$(MSBuildProjectFullPath)').Replace('\', '/'))</LrmProjectPath>
     <LrmIsSpike Condition="$(LrmProjectPath.StartsWith('spikes/'))">true</LrmIsSpike>
-
-    <!-- DataRootAndToolchain: LRM_DATA, else the default data root. Nothing under it is ever committed. -->
-    <LrmData Condition="'$(LrmData)' == ''">$(LRM_DATA)</LrmData>
-    <LrmData Condition="'$(LrmData)' == ''">C:/Users/end/dev/lrm-data</LrmData>
   </PropertyGroup>
 
-  <!-- Toolchain pins from tools/bootstrap/toolchain.json ($(LrmDxcExe) and friends), and project identity and kind. -->
+  <!--
+    Toolchain pins from tools/bootstrap/toolchain.json ($(LrmDxcExe) and friends), and project identity and kind.
+    Toolchain.g.props also resolves $(LrmData) (DataRootAndToolchain): the LrmData property, else LRM_DATA, else
+    $(LrmDefaultData), the dataRoot in toolchain.json. Nothing under it is ever committed.
+  -->
   <Import Project="build/Toolchain.g.props" />
   <Import Project="build/ProjectKinds.g.props" />
 
@@ -31,10 +31,30 @@
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <IsPackable>false</IsPackable>
-    <!-- All bin/ and obj/ output goes to artifacts/<bin|obj>/<project>/<config>/ (gitignored). -->
+    <!--
+      All bin/ and obj/ output goes to artifacts/<bin|obj>/<project>/<config>/ (gitignored). The path keeps the native
+      separators: ContinuousIntegrationBuild maps only the native SourceRoot to /_/, so a forward-slash obj path would
+      leak the clone location into every F# assembly (FSharpSignatureCompressedData) and break cross-path determinism.
+    -->
     <UseArtifactsOutput>true</UseArtifactsOutput>
-    <ArtifactsPath>$(LrmRepoRoot)artifacts</ArtifactsPath>
+    <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
   </PropertyGroup>
+
+  <!--
+    NuGet lock files pin the whole package closure, transitive packages included (for example Mono.Cecil via Expecto).
+    They live in build/locks/<project>.packages.lock.json, so a graph change touches only S0 paths. A normal restore
+    updates them; CI restores in locked mode and fails when a committed lock file is stale.
+  -->
+  <PropertyGroup Condition="'$(LrmIsSpike)' != 'true' and '$(LrmGraphName)' != ''">
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <NuGetLockFilePath>$(MSBuildThisFileDirectory)build/locks/$(LrmGraphName).packages.lock.json</NuGetLockFilePath>
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
+  </PropertyGroup>
+
+  <!-- The default data root, for code that resolves LRM_DATA at run time (Lrm.Testing's Env, S1's LrmPaths). -->
+  <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Core' or '$(LrmGraphName)' == 'Lrm.Testing'">
+    <AssemblyMetadata Include="Lrm.DefaultDataRoot" Value="$(LrmDefaultData)" />
+  </ItemGroup>
 
   <PropertyGroup Condition="'$(LrmProjectKind)' == 'app' or '$(LrmProjectKind)' == 'test' or '$(LrmProjectKind)' == 'tool'">
     <OutputType>Exe</OutputType>
