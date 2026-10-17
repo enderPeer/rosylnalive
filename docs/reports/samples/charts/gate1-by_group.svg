@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="326" viewBox="0 0 720 326" role="img" aria-labelledby="gate1-by_group-title gate1-by_group-desc">
+<title id="gate1-by_group-title">Gate checks by group</title>
+<desc id="gate1-by_group-desc">Bar chart of checks for 7 group values, 2 series.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#898781}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="326" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="325" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Gate checks by group</text>
+<text class="t2" x="16" y="45" font-size="12">Passed and failed checks per group</text>
+<rect class="fgood" x="19" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="38" y="66" font-size="12">passed</text>
+<rect class="fcrit" x="99.32" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="118.32" y="66" font-size="12">failed</text>
+<line class="grid" x1="97.76" y1="98" x2="97.76" y2="280" stroke-width="1"/>
+<line class="grid" x1="278.51" y1="98" x2="278.51" y2="280" stroke-width="1"/>
+<line class="grid" x1="459.25" y1="98" x2="459.25" y2="280" stroke-width="1"/>
+<line class="grid" x1="640" y1="98" x2="640" y2="280" stroke-width="1"/>
+<text class="t3" x="97.76" y="297" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="278.51" y="297" font-size="11" text-anchor="middle">2</text>
+<text class="t3" x="459.25" y="297" font-size="11" text-anchor="middle">4</text>
+<text class="t3" x="640" y="297" font-size="11" text-anchor="middle">6</text>
+<text class="t3" x="97.76" y="88" font-size="11" text-anchor="start">group</text>
+<text class="t3" x="368.88" y="316" font-size="11" text-anchor="middle">checks</text>
+<text class="t2" x="89.76" y="115" font-size="12" text-anchor="end">environment</text>
+<path class="fgood" d="M97.76 103H455.25Q459.25 103 459.25 107V115Q459.25 119 455.25 119H97.76Z"><title>environment, passed: 4</title></path>
+<text class="t2" x="465.25" y="115" font-size="11">4</text>
+<text class="t2" x="89.76" y="141" font-size="12" text-anchor="end">tokenizer</text>
+<path class="fgood" d="M97.76 129H184.13Q188.13 129 188.13 133V141Q188.13 145 184.13 145H97.76Z"><title>tokenizer, passed: 1</title></path>
+<text class="t2" x="194.13" y="141" font-size="11">1</text>
+<text class="t2" x="89.76" y="167" font-size="12" text-anchor="end">cpuref</text>
+<path class="fgood" d="M97.76 155H364.88Q368.88 155 368.88 159V167Q368.88 171 364.88 171H97.76Z"><title>cpuref, passed: 3</title></path>
+<text class="t2" x="374.88" y="167" font-size="11">3</text>
+<text class="t2" x="89.76" y="193" font-size="12" text-anchor="end">conformance</text>
+<path class="fgood" d="M97.76 181H364.88Q368.88 181 368.88 185V193Q368.88 197 364.88 197H97.76Z"><title>conformance, passed: 3</title></path>
+<text class="t2" x="374.88" y="193" font-size="11">3</text>
+<text class="t2" x="89.76" y="219" font-size="12" text-anchor="end">backend</text>
+<path class="fgood" d="M97.76 207H636Q640 207 640 211V219Q640 223 636 223H97.76Z"><title>backend, passed: 6</title></path>
+<text class="t2" x="646" y="219" font-size="11">6</text>
+<text class="t2" x="89.76" y="245" font-size="12" text-anchor="end">cluster</text>
+<path class="fgood" d="M97.76 233H455.25Q459.25 233 459.25 237V245Q459.25 249 455.25 249H97.76Z"><title>cluster, passed: 4</title></path>
+<text class="t2" x="465.25" y="245" font-size="11">4</text>
+<text class="t2" x="89.76" y="271" font-size="12" text-anchor="end">determinism</text>
+<path class="fgood" d="M97.76 259H184.13Q188.13 259 188.13 263V271Q188.13 275 184.13 275H97.76Z"><title>determinism, passed: 1</title></path>
+<text class="t2" x="194.13" y="271" font-size="11">1</text>
+<line class="axis" x1="97.76" y1="98" x2="97.76" y2="98" stroke-width="1"/>
+<line class="axis" x1="97.76" y1="98" x2="97.76" y2="280" stroke-width="1"/>
+</svg>

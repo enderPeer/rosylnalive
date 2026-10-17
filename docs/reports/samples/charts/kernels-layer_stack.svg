@@ -1,0 +1,200 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="kernels-layer_stack-title kernels-layer_stack-desc">
+<title id="kernels-layer_stack-title">GPU time per layer by kernel family, vulkan</title>
+<desc id="kernels-layer_stack-desc">Bar chart of GPU time for 28 layer values, 5 series.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#898781}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="379" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">GPU time per layer by kernel family, vulkan</text>
+<text class="t2" x="16" y="45" font-size="12">Sum over all steps</text>
+<rect class="f0" x="19" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="38" y="66" font-size="12">matmul</text>
+<rect class="f1" x="100.76" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="119.76" y="66" font-size="12">attention</text>
+<rect class="f2" x="189.72" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="208.72" y="66" font-size="12">norm</text>
+<rect class="f3" x="257.32" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="276.32" y="66" font-size="12">rope</text>
+<rect class="f4" x="321.32" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="340.32" y="66" font-size="12">elementwise</text>
+<line class="grid" x1="60.1" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="52.1" y="338" font-size="11" text-anchor="end">0</text>
+<line class="grid" x1="60.1" y1="275" x2="696" y2="275" stroke-width="1"/>
+<text class="t3" x="52.1" y="279" font-size="11" text-anchor="end">50 µs</text>
+<line class="grid" x1="60.1" y1="216" x2="696" y2="216" stroke-width="1"/>
+<text class="t3" x="52.1" y="220" font-size="11" text-anchor="end">100 µs</text>
+<line class="grid" x1="60.1" y1="157" x2="696" y2="157" stroke-width="1"/>
+<text class="t3" x="52.1" y="161" font-size="11" text-anchor="end">150 µs</text>
+<line class="grid" x1="60.1" y1="98" x2="696" y2="98" stroke-width="1"/>
+<text class="t3" x="52.1" y="102" font-size="11" text-anchor="end">200 µs</text>
+<text class="t3" x="60.1" y="88" font-size="11" text-anchor="start">GPU time</text>
+<text class="t3" x="378.05" y="370" font-size="11" text-anchor="middle">layer</text>
+<text class="t3" x="71.46" y="351" font-size="11" text-anchor="middle">0</text>
+<path class="f0" d="M63.28 170.6h16.35v163.4h-16.35Z"><title>0, matmul: 140.17 µs</title></path>
+<path class="f1" d="M63.28 155.77h16.35v12.83h-16.35Z"><title>0, attention: 12.57 µs</title></path>
+<path class="f2" d="M63.28 140.21h16.35v13.55h-16.35Z"><title>0, norm: 13.18 µs</title></path>
+<path class="f3" d="M63.28 133.56h16.35v4.65h-16.35Z"><title>0, rope: 5.64 µs</title></path>
+<path class="f4" d="M63.28 131.56V126.16Q63.28 122.16 67.28 122.16H75.63Q79.63 122.16 79.63 126.16V131.56Z"><title>0, elementwise: 7.96 µs</title></path>
+<text class="t3" x="94.17" y="351" font-size="11" text-anchor="middle">1</text>
+<path class="f0" d="M85.99 172.46h16.35v161.54h-16.35Z"><title>1, matmul: 138.59 µs</title></path>
+<path class="f1" d="M85.99 158h16.35v12.46h-16.35Z"><title>1, attention: 12.25 µs</title></path>
+<path class="f2" d="M85.99 142.45h16.35v13.56h-16.35Z"><title>1, norm: 13.18 µs</title></path>
+<path class="f3" d="M85.99 135.75h16.35v4.7h-16.35Z"><title>1, rope: 5.67 µs</title></path>
+<path class="f4" d="M85.99 133.75V127.96Q85.99 123.96 89.99 123.96H98.34Q102.34 123.96 102.34 127.96V133.75Z"><title>1, elementwise: 8.30 µs</title></path>
+<text class="t3" x="116.88" y="351" font-size="11" text-anchor="middle">2</text>
+<path class="f0" d="M108.7 165.93h16.35v168.07h-16.35Z"><title>2, matmul: 144.13 µs</title></path>
+<path class="f1" d="M108.7 150.72h16.35v13.21h-16.35Z"><title>2, attention: 12.89 µs</title></path>
+<path class="f2" d="M108.7 134.95h16.35v13.76h-16.35Z"><title>2, norm: 13.36 µs</title></path>
+<path class="f3" d="M108.7 128.45h16.35v4.5h-16.35Z"><title>2, rope: 5.51 µs</title></path>
+<path class="f4" d="M108.7 126.45V120.79Q108.7 116.79 112.7 116.79H121.05Q125.05 116.79 125.05 120.79V126.45Z"><title>2, elementwise: 8.18 µs</title></path>
+<text class="t3" x="139.59" y="351" font-size="11" text-anchor="middle">3</text>
+<path class="f0" d="M131.41 169.45h16.35v164.55h-16.35Z"><title>3, matmul: 141.14 µs</title></path>
+<path class="f1" d="M131.41 154.24h16.35v13.21h-16.35Z"><title>3, attention: 12.89 µs</title></path>
+<path class="f2" d="M131.41 138.98h16.35v13.26h-16.35Z"><title>3, norm: 12.93 µs</title></path>
+<path class="f3" d="M131.41 132.32h16.35v4.66h-16.35Z"><title>3, rope: 5.64 µs</title></path>
+<path class="f4" d="M131.41 130.32V124.98Q131.41 120.98 135.41 120.98H143.76Q147.76 120.98 147.76 124.98V130.32Z"><title>3, elementwise: 7.92 µs</title></path>
+<text class="t3" x="162.3" y="351" font-size="11" text-anchor="middle">4</text>
+<path class="f0" d="M154.12 171.14h16.35v162.86h-16.35Z"><title>4, matmul: 139.71 µs</title></path>
+<path class="f1" d="M154.12 156.57h16.35v12.58h-16.35Z"><title>4, attention: 12.35 µs</title></path>
+<path class="f2" d="M154.12 140.71h16.35v13.86h-16.35Z"><title>4, norm: 13.44 µs</title></path>
+<path class="f3" d="M154.12 134.12h16.35v4.59h-16.35Z"><title>4, rope: 5.59 µs</title></path>
+<path class="f4" d="M154.12 132.12V126.45Q154.12 122.45 158.12 122.45H166.47Q170.47 122.45 170.47 126.45V132.12Z"><title>4, elementwise: 8.19 µs</title></path>
+<text class="t3" x="185.01" y="351" font-size="11" text-anchor="middle">5</text>
+<path class="f0" d="M176.83 171h16.35v163h-16.35Z"><title>5, matmul: 139.83 µs</title></path>
+<path class="f1" d="M176.83 156.3h16.35v12.7h-16.35Z"><title>5, attention: 12.46 µs</title></path>
+<path class="f2" d="M176.83 140.6h16.35v13.7h-16.35Z"><title>5, norm: 13.30 µs</title></path>
+<path class="f3" d="M176.83 133.94h16.35v4.67h-16.35Z"><title>5, rope: 5.65 µs</title></path>
+<path class="f4" d="M176.83 131.94V126.23Q176.83 122.23 180.83 122.23H189.18Q193.18 122.23 193.18 126.23V131.94Z"><title>5, elementwise: 8.23 µs</title></path>
+<text class="t3" x="207.72" y="351" font-size="11" text-anchor="middle">6</text>
+<path class="f0" d="M199.54 168.59h16.35v165.41h-16.35Z"><title>6, matmul: 141.88 µs</title></path>
+<path class="f1" d="M199.54 153.84h16.35v12.75h-16.35Z"><title>6, attention: 12.50 µs</title></path>
+<path class="f2" d="M199.54 137.76h16.35v14.07h-16.35Z"><title>6, norm: 13.62 µs</title></path>
+<path class="f3" d="M199.54 130.94h16.35v4.83h-16.35Z"><title>6, rope: 5.78 µs</title></path>
+<path class="f4" d="M199.54 128.94V123.22Q199.54 119.22 203.54 119.22H211.9Q215.9 119.22 215.9 123.22V128.94Z"><title>6, elementwise: 8.24 µs</title></path>
+<text class="t3" x="230.43" y="351" font-size="11" text-anchor="middle">7</text>
+<path class="f0" d="M222.25 167.89h16.35v166.11h-16.35Z"><title>7, matmul: 142.47 µs</title></path>
+<path class="f1" d="M222.25 151.79h16.35v14.1h-16.35Z"><title>7, attention: 13.65 µs</title></path>
+<path class="f2" d="M222.25 136.38h16.35v13.4h-16.35Z"><title>7, norm: 13.05 µs</title></path>
+<path class="f3" d="M222.25 129.93h16.35v4.45h-16.35Z"><title>7, rope: 5.46 µs</title></path>
+<path class="f4" d="M222.25 127.93V122.24Q222.25 118.24 226.25 118.24H234.61Q238.61 118.24 238.61 122.24V127.93Z"><title>7, elementwise: 8.21 µs</title></path>
+<text class="t3" x="253.14" y="351" font-size="11" text-anchor="middle">8</text>
+<path class="f0" d="M244.97 170.26h16.35v163.74h-16.35Z"><title>8, matmul: 140.46 µs</title></path>
+<path class="f1" d="M244.97 155.12h16.35v13.14h-16.35Z"><title>8, attention: 12.83 µs</title></path>
+<path class="f2" d="M244.97 139.67h16.35v13.45h-16.35Z"><title>8, norm: 13.10 µs</title></path>
+<path class="f3" d="M244.97 133.02h16.35v4.65h-16.35Z"><title>8, rope: 5.64 µs</title></path>
+<path class="f4" d="M244.97 131.02V125.43Q244.97 121.43 248.97 121.43H257.32Q261.32 121.43 261.32 125.43V131.02Z"><title>8, elementwise: 8.13 µs</title></path>
+<text class="t3" x="275.85" y="351" font-size="11" text-anchor="middle">9</text>
+<path class="f0" d="M267.68 169.93h16.35v164.07h-16.35Z"><title>9, matmul: 140.74 µs</title></path>
+<path class="f1" d="M267.68 155.2h16.35v12.73h-16.35Z"><title>9, attention: 12.48 µs</title></path>
+<path class="f2" d="M267.68 139.5h16.35v13.7h-16.35Z"><title>9, norm: 13.30 µs</title></path>
+<path class="f3" d="M267.68 132.86h16.35v4.64h-16.35Z"><title>9, rope: 5.63 µs</title></path>
+<path class="f4" d="M267.68 130.86V125.52Q267.68 121.52 271.68 121.52H280.03Q284.03 121.52 284.03 125.52V130.86Z"><title>9, elementwise: 7.92 µs</title></path>
+<text class="t3" x="298.56" y="351" font-size="11" text-anchor="middle">10</text>
+<path class="f0" d="M290.39 164.46h16.35v169.54h-16.35Z"><title>10, matmul: 145.38 µs</title></path>
+<path class="f1" d="M290.39 148.95h16.35v13.51h-16.35Z"><title>10, attention: 13.14 µs</title></path>
+<path class="f2" d="M290.39 133.48h16.35v13.47h-16.35Z"><title>10, norm: 13.11 µs</title></path>
+<path class="f3" d="M290.39 127.03h16.35v4.45h-16.35Z"><title>10, rope: 5.46 µs</title></path>
+<path class="f4" d="M290.39 125.03V119.21Q290.39 115.21 294.39 115.21H302.74Q306.74 115.21 306.74 119.21V125.03Z"><title>10, elementwise: 8.32 µs</title></path>
+<text class="t3" x="321.27" y="351" font-size="11" text-anchor="middle">11</text>
+<path class="f0" d="M313.1 166.68h16.35v167.32h-16.35Z"><title>11, matmul: 143.50 µs</title></path>
+<path class="f1" d="M313.1 151.37h16.35v13.3h-16.35Z"><title>11, attention: 12.97 µs</title></path>
+<path class="f2" d="M313.1 135.64h16.35v13.73h-16.35Z"><title>11, norm: 13.33 µs</title></path>
+<path class="f3" d="M313.1 129.14h16.35v4.5h-16.35Z"><title>11, rope: 5.51 µs</title></path>
+<path class="f4" d="M313.1 127.14V121.51Q313.1 117.51 317.1 117.51H325.45Q329.45 117.51 329.45 121.51V127.14Z"><title>11, elementwise: 8.15 µs</title></path>
+<text class="t3" x="343.98" y="351" font-size="11" text-anchor="middle">12</text>
+<path class="f0" d="M335.81 176.59h16.35v157.41h-16.35Z"><title>12, matmul: 135.09 µs</title></path>
+<path class="f1" d="M335.81 161.32h16.35v13.27h-16.35Z"><title>12, attention: 12.94 µs</title></path>
+<path class="f2" d="M335.81 145.39h16.35v13.92h-16.35Z"><title>12, norm: 13.49 µs</title></path>
+<path class="f3" d="M335.81 138.77h16.35v4.62h-16.35Z"><title>12, rope: 5.61 µs</title></path>
+<path class="f4" d="M335.81 136.77V130.82Q335.81 126.82 339.81 126.82H348.16Q352.16 126.82 352.16 130.82V136.77Z"><title>12, elementwise: 8.43 µs</title></path>
+<text class="t3" x="366.69" y="351" font-size="11" text-anchor="middle">13</text>
+<path class="f0" d="M358.52 168.67h16.35v165.33h-16.35Z"><title>13, matmul: 141.80 µs</title></path>
+<path class="f1" d="M358.52 153.25h16.35v13.42h-16.35Z"><title>13, attention: 13.07 µs</title></path>
+<path class="f2" d="M358.52 137.45h16.35v13.8h-16.35Z"><title>13, norm: 13.39 µs</title></path>
+<path class="f3" d="M358.52 130.81h16.35v4.64h-16.35Z"><title>13, rope: 5.62 µs</title></path>
+<path class="f4" d="M358.52 128.81V123.22Q358.52 119.22 362.52 119.22H370.87Q374.87 119.22 374.87 123.22V128.81Z"><title>13, elementwise: 8.12 µs</title></path>
+<text class="t3" x="389.41" y="351" font-size="11" text-anchor="middle">14</text>
+<path class="f0" d="M381.23 170.77h16.35v163.23h-16.35Z"><title>14, matmul: 140.03 µs</title></path>
+<path class="f1" d="M381.23 154.87h16.35v13.9h-16.35Z"><title>14, attention: 13.47 µs</title></path>
+<path class="f2" d="M381.23 139.11h16.35v13.76h-16.35Z"><title>14, norm: 13.36 µs</title></path>
+<path class="f3" d="M381.23 132.59h16.35v4.52h-16.35Z"><title>14, rope: 5.53 µs</title></path>
+<path class="f4" d="M381.23 130.59V124.95Q381.23 120.95 385.23 120.95H393.58Q397.58 120.95 397.58 124.95V130.59Z"><title>14, elementwise: 8.17 µs</title></path>
+<text class="t3" x="412.12" y="351" font-size="11" text-anchor="middle">15</text>
+<path class="f0" d="M403.94 168.85h16.35v165.15h-16.35Z"><title>15, matmul: 141.65 µs</title></path>
+<path class="f1" d="M403.94 152.69h16.35v14.16h-16.35Z"><title>15, attention: 13.70 µs</title></path>
+<path class="f2" d="M403.94 136.69h16.35v14h-16.35Z"><title>15, norm: 13.56 µs</title></path>
+<path class="f3" d="M403.94 130.36h16.35v4.33h-16.35Z"><title>15, rope: 5.36 µs</title></path>
+<path class="f4" d="M403.94 128.36V122.89Q403.94 118.89 407.94 118.89H416.29Q420.29 118.89 420.29 122.89V128.36Z"><title>15, elementwise: 8.02 µs</title></path>
+<text class="t3" x="434.83" y="351" font-size="11" text-anchor="middle">16</text>
+<path class="f0" d="M426.65 169.41h16.35v164.59h-16.35Z"><title>16, matmul: 141.18 µs</title></path>
+<path class="f1" d="M426.65 153.98h16.35v13.43h-16.35Z"><title>16, attention: 13.08 µs</title></path>
+<path class="f2" d="M426.65 138.35h16.35v13.63h-16.35Z"><title>16, norm: 13.25 µs</title></path>
+<path class="f3" d="M426.65 131.84h16.35v4.51h-16.35Z"><title>16, rope: 5.51 µs</title></path>
+<path class="f4" d="M426.65 129.84V124.17Q426.65 120.17 430.65 120.17H439Q443 120.17 443 124.17V129.84Z"><title>16, elementwise: 8.19 µs</title></path>
+<text class="t3" x="457.54" y="351" font-size="11" text-anchor="middle">17</text>
+<path class="f0" d="M449.36 170.96h16.35v163.04h-16.35Z"><title>17, matmul: 139.86 µs</title></path>
+<path class="f1" d="M449.36 155.48h16.35v13.48h-16.35Z"><title>17, attention: 13.12 µs</title></path>
+<path class="f2" d="M449.36 139.6h16.35v13.88h-16.35Z"><title>17, norm: 13.46 µs</title></path>
+<path class="f3" d="M449.36 132.69h16.35v4.91h-16.35Z"><title>17, rope: 5.86 µs</title></path>
+<path class="f4" d="M449.36 130.69V124.92Q449.36 120.92 453.36 120.92H461.71Q465.71 120.92 465.71 124.92V130.69Z"><title>17, elementwise: 8.28 µs</title></path>
+<text class="t3" x="480.25" y="351" font-size="11" text-anchor="middle">18</text>
+<path class="f0" d="M472.07 167.28h16.35v166.72h-16.35Z"><title>18, matmul: 142.99 µs</title></path>
+<path class="f1" d="M472.07 151.17h16.35v14.11h-16.35Z"><title>18, attention: 13.65 µs</title></path>
+<path class="f2" d="M472.07 135.27h16.35v13.89h-16.35Z"><title>18, norm: 13.47 µs</title></path>
+<path class="f3" d="M472.07 129.05h16.35v4.22h-16.35Z"><title>18, rope: 5.27 µs</title></path>
+<path class="f4" d="M472.07 127.05V121.28Q472.07 117.28 476.07 117.28H484.42Q488.42 117.28 488.42 121.28V127.05Z"><title>18, elementwise: 8.29 µs</title></path>
+<text class="t3" x="502.96" y="351" font-size="11" text-anchor="middle">19</text>
+<path class="f0" d="M494.78 170.16h16.35v163.84h-16.35Z"><title>19, matmul: 140.55 µs</title></path>
+<path class="f1" d="M494.78 154.37h16.35v13.78h-16.35Z"><title>19, attention: 13.38 µs</title></path>
+<path class="f2" d="M494.78 138.64h16.35v13.73h-16.35Z"><title>19, norm: 13.33 µs</title></path>
+<path class="f3" d="M494.78 132.09h16.35v4.56h-16.35Z"><title>19, rope: 5.56 µs</title></path>
+<path class="f4" d="M494.78 130.09V124.22Q494.78 120.22 498.78 120.22H507.13Q511.13 120.22 511.13 124.22V130.09Z"><title>19, elementwise: 8.36 µs</title></path>
+<text class="t3" x="525.67" y="351" font-size="11" text-anchor="middle">20</text>
+<path class="f0" d="M517.49 171.63h16.35v162.37h-16.35Z"><title>20, matmul: 139.29 µs</title></path>
+<path class="f1" d="M517.49 156.57h16.35v13.06h-16.35Z"><title>20, attention: 12.76 µs</title></path>
+<path class="f2" d="M517.49 140.71h16.35v13.87h-16.35Z"><title>20, norm: 13.45 µs</title></path>
+<path class="f3" d="M517.49 133.71h16.35v5h-16.35Z"><title>20, rope: 5.93 µs</title></path>
+<path class="f4" d="M517.49 131.71V125.89Q517.49 121.89 521.49 121.89H529.85Q533.85 121.89 533.85 125.89V131.71Z"><title>20, elementwise: 8.32 µs</title></path>
+<text class="t3" x="548.38" y="351" font-size="11" text-anchor="middle">21</text>
+<path class="f0" d="M540.2 174.6h16.35v159.4h-16.35Z"><title>21, matmul: 136.78 µs</title></path>
+<path class="f1" d="M540.2 159.84h16.35v12.76h-16.35Z"><title>21, attention: 12.51 µs</title></path>
+<path class="f2" d="M540.2 144.32h16.35v13.52h-16.35Z"><title>21, norm: 13.15 µs</title></path>
+<path class="f3" d="M540.2 137.51h16.35v4.81h-16.35Z"><title>21, rope: 5.77 µs</title></path>
+<path class="f4" d="M540.2 135.51V129.84Q540.2 125.84 544.2 125.84H552.56Q556.56 125.84 556.56 129.84V135.51Z"><title>21, elementwise: 8.20 µs</title></path>
+<text class="t3" x="571.09" y="351" font-size="11" text-anchor="middle">22</text>
+<path class="f0" d="M562.92 171.83h16.35v162.17h-16.35Z"><title>22, matmul: 139.13 µs</title></path>
+<path class="f1" d="M562.92 155.94h16.35v13.89h-16.35Z"><title>22, attention: 13.46 µs</title></path>
+<path class="f2" d="M562.92 139.91h16.35v14.03h-16.35Z"><title>22, norm: 13.58 µs</title></path>
+<path class="f3" d="M562.92 133.54h16.35v4.38h-16.35Z"><title>22, rope: 5.40 µs</title></path>
+<path class="f4" d="M562.92 131.54V126.31Q562.92 122.31 566.92 122.31H575.27Q579.27 122.31 579.27 126.31V131.54Z"><title>22, elementwise: 7.82 µs</title></path>
+<text class="t3" x="593.8" y="351" font-size="11" text-anchor="middle">23</text>
+<path class="f0" d="M585.63 166.87h16.35v167.13h-16.35Z"><title>23, matmul: 143.33 µs</title></path>
+<path class="f1" d="M585.63 151.66h16.35v13.2h-16.35Z"><title>23, attention: 12.88 µs</title></path>
+<path class="f2" d="M585.63 135.44h16.35v14.23h-16.35Z"><title>23, norm: 13.75 µs</title></path>
+<path class="f3" d="M585.63 128.75h16.35v4.68h-16.35Z"><title>23, rope: 5.66 µs</title></path>
+<path class="f4" d="M585.63 126.75V121.33Q585.63 117.33 589.63 117.33H597.98Q601.98 117.33 601.98 121.33V126.75Z"><title>23, elementwise: 7.98 µs</title></path>
+<text class="t3" x="616.51" y="351" font-size="11" text-anchor="middle">24</text>
+<path class="f0" d="M608.34 170.99h16.35v163.01h-16.35Z"><title>24, matmul: 139.84 µs</title></path>
+<path class="f1" d="M608.34 155.68h16.35v13.31h-16.35Z"><title>24, attention: 12.97 µs</title></path>
+<path class="f2" d="M608.34 140.28h16.35v13.4h-16.35Z"><title>24, norm: 13.05 µs</title></path>
+<path class="f3" d="M608.34 133.64h16.35v4.64h-16.35Z"><title>24, rope: 5.63 µs</title></path>
+<path class="f4" d="M608.34 131.64V125.59Q608.34 121.59 612.34 121.59H620.69Q624.69 121.59 624.69 125.59V131.64Z"><title>24, elementwise: 8.51 µs</title></path>
+<text class="t3" x="639.22" y="351" font-size="11" text-anchor="middle">25</text>
+<path class="f0" d="M631.05 174.05h16.35v159.95h-16.35Z"><title>25, matmul: 137.24 µs</title></path>
+<path class="f1" d="M631.05 159.08h16.35v12.97h-16.35Z"><title>25, attention: 12.69 µs</title></path>
+<path class="f2" d="M631.05 143.42h16.35v13.66h-16.35Z"><title>25, norm: 13.27 µs</title></path>
+<path class="f3" d="M631.05 136.94h16.35v4.48h-16.35Z"><title>25, rope: 5.49 µs</title></path>
+<path class="f4" d="M631.05 134.94V129.2Q631.05 125.2 635.05 125.2H643.4Q647.4 125.2 647.4 129.2V134.94Z"><title>25, elementwise: 8.26 µs</title></path>
+<text class="t3" x="661.93" y="351" font-size="11" text-anchor="middle">26</text>
+<path class="f0" d="M653.76 168.66h16.35v165.34h-16.35Z"><title>26, matmul: 141.82 µs</title></path>
+<path class="f1" d="M653.76 153.3h16.35v13.35h-16.35Z"><title>26, attention: 13.01 µs</title></path>
+<path class="f2" d="M653.76 137.02h16.35v14.29h-16.35Z"><title>26, norm: 13.80 µs</title></path>
+<path class="f3" d="M653.76 130.19h16.35v4.82h-16.35Z"><title>26, rope: 5.78 µs</title></path>
+<path class="f4" d="M653.76 128.19V122.63Q653.76 118.63 657.76 118.63H666.11Q670.11 118.63 670.11 122.63V128.19Z"><title>26, elementwise: 8.10 µs</title></path>
+<text class="t3" x="684.64" y="351" font-size="11" text-anchor="middle">27</text>
+<path class="f0" d="M676.47 171.07h16.35v162.93h-16.35Z"><title>27, matmul: 139.77 µs</title></path>
+<path class="f1" d="M676.47 155.16h16.35v13.91h-16.35Z"><title>27, attention: 13.48 µs</title></path>
+<path class="f2" d="M676.47 139.14h16.35v14.01h-16.35Z"><title>27, norm: 13.57 µs</title></path>
+<path class="f3" d="M676.47 132.53h16.35v4.61h-16.35Z"><title>27, rope: 5.60 µs</title></path>
+<path class="f4" d="M676.47 130.53V124.7Q676.47 120.7 680.47 120.7H688.82Q692.82 120.7 692.82 124.7V130.53Z"><title>27, elementwise: 8.34 µs</title></path>
+<line class="axis" x1="60.1" y1="334" x2="696" y2="334" stroke-width="1"/>
+</svg>
