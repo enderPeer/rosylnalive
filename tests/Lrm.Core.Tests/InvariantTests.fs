@@ -69,6 +69,27 @@ let tests =
                 Single.IsNaN x
                 || BitConverter.SingleToUInt32Bits(Invariant.parseF32 (Invariant.f32 x)) = bits
 
+            testCase "every NaN formats as NaN and parses to the default NaN"
+            <| fun () ->
+                // Sign and payload are lost: R text has a single NaN spelling.
+                for bits in [ 0x7FC00000u; 0xFFC00000u; 0x7F800001u; 0x7FC12345u; 0xFFFFFFFFu ] do
+                    let x = BitConverter.UInt32BitsToSingle bits
+                    Expect.equal (Invariant.f32 x) "NaN" (sprintf "f32 %08x" bits)
+
+                Expect.equal
+                    (BitConverter.SingleToUInt32Bits(Invariant.parseF32 "NaN"))
+                    (BitConverter.SingleToUInt32Bits Single.NaN)
+                    "parseF32"
+
+                for bits in [ 0x7FF8000000000000UL; 0xFFF8000000000000UL; 0x7FF0000000000001UL ] do
+                    let x = BitConverter.UInt64BitsToDouble bits
+                    Expect.equal (Invariant.f64 x) "NaN" (sprintf "f64 %016x" bits)
+
+                Expect.equal
+                    (BitConverter.DoubleToUInt64Bits(Invariant.parseF64 "NaN"))
+                    (BitConverter.DoubleToUInt64Bits Double.NaN)
+                    "parseF64"
+
             testCase "integers and interpolation"
             <| fun () ->
                 Expect.equal (Invariant.i64 -1234567L) "-1234567" "i64"

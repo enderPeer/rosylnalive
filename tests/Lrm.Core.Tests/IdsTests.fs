@@ -89,9 +89,40 @@ let tests =
                     (Path.Combine(full, "runs", "r1"))
                     "runs/r1"
 
-                for bad in [ ".."; Path.Combine("..", "x"); Path.Combine("a", "..", ".."); full; "" ] do
-                    Expect.throwsT<ArgumentException> (fun () -> LrmPaths.underRoot root bad |> ignore) bad
+                let sep = string Path.DirectorySeparatorChar
 
+                let bad =
+                    [
+                        ".."
+                        Path.Combine("..", "x")
+                        Path.Combine("a", "..", "..")
+                        full
+                        ""
+                        // The root itself is not under the root, with or without a trailing separator.
+                        "."
+                        Path.Combine("a", "..") + sep
+                    ]
+
+                for b in bad do
+                    Expect.throwsT<ArgumentException> (fun () -> LrmPaths.underRoot root b |> ignore) b
+
+            testCase "a drive root works as the data root"
+            <| fun () ->
+                // C:\ on Windows, / elsewhere: the root keeps its separator when trimmed.
+                let drive = Path.GetPathRoot(Path.GetTempPath())
+                Expect.isTrue (Path.EndsInDirectorySeparator drive) drive
+                Expect.equal (LrmPaths.underRoot drive "x") (Path.Combine(drive, "x")) "x"
+
+                Expect.equal
+                    (LrmPaths.underRoot drive (Path.Combine("runs", "r1")))
+                    (Path.Combine(drive, "runs", "r1"))
+                    "runs/r1"
+
+                for b in [ ".."; "."; Path.Combine("a", "..", "..") ] do
+                    Expect.throwsT<ArgumentException> (fun () -> LrmPaths.underRoot drive b |> ignore) b
+
+            testCase "fixed locations"
+            <| fun () ->
                 Expect.equal (LrmPaths.run (RunId.parse "r1")) (Path.Combine(LrmPaths.dataRoot (), "runs", "r1")) "run"
 
                 Expect.equal

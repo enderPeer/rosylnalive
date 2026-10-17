@@ -220,6 +220,16 @@ let tests =
                             let bits = uint16 b
                             let w = BitConverter.SingleToUInt32Bits(Bf16.widen bits)
                             Expect.equal w (uint32 bits <<< 16) (sprintf "widen 0x%04x" bits)
+                            Expect.equal (Bf16.widenBits bits) (uint32 bits <<< 16) (sprintf "widenBits 0x%04x" bits)
+
+                    testCase "widenBits keeps signalling NaN payloads of constants"
+                    <| fun () ->
+                        // widen of a constant sNaN can be folded through a double by the JIT, which quiets it; the
+                        // bits form never touches a float.
+                        Expect.equal (Bf16.widenBits 0x7F81us) 0x7F810000u "+sNaN"
+                        Expect.equal (Bf16.widenBits 0xFF81us) 0xFF810000u "-sNaN"
+                        Expect.equal (F16.widenBits 0x7C01us) 0x7F802000u "f16 +sNaN"
+                        Expect.equal (F16.widenBits 0xFC01us) 0xFF802000u "f16 -sNaN"
 
                     testCase "every non-NaN bf16 round-trips; NaN narrows to 0x7FC0 or 0xFFC0 by sign"
                     <| fun () ->
@@ -255,6 +265,13 @@ let tests =
                         let bits = Bf16.narrowArray xs
                         Expect.equal bits (xs |> Array.map Bf16.narrowRne) "narrowArray"
                         Expect.equal (Bf16.widenArray bits |> Array.map Bf16.narrowRne) bits "widenArray"
+
+                        let patterns = Array.init 65536 uint16
+
+                        Expect.equal
+                            (Bf16.widenArray patterns |> Array.map BitConverter.SingleToUInt32Bits)
+                            (patterns |> Array.map Bf16.widenBits)
+                            "widenArray keeps every pattern, NaN payloads included"
                 ]
 
             testList
@@ -272,6 +289,11 @@ let tests =
                         for b in 0..65535 do
                             let h = uint16 b
                             let w = F16.widen h
+
+                            Expect.equal
+                                (F16.widenBits h)
+                                (BitConverter.SingleToUInt32Bits w)
+                                (sprintf "widenBits 0x%04x" h)
 
                             if F16.isNaN h then
                                 let expected =

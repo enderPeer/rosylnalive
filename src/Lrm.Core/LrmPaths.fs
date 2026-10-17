@@ -31,7 +31,8 @@ let resolveDataRoot (lrmData: string) =
 let dataRoot () =
     resolveDataRoot (Environment.GetEnvironmentVariable "LRM_DATA")
 
-/// A path under the data root `root`. `relative` must be relative and must not climb out with "..".
+/// A path strictly under the data root `root`, which may be a drive root. `relative` must be relative, must not climb
+/// out with "..", and must not name the root itself.
 let underRoot (root: string) (relative: string) =
     if String.IsNullOrWhiteSpace relative || Path.IsPathRooted relative then
         invalidArg "relative" (sprintf "'%s' is not a relative path" relative)
@@ -39,11 +40,21 @@ let underRoot (root: string) (relative: string) =
     let root = Path.GetFullPath root
     let full = Path.GetFullPath(Path.Combine(root, relative))
 
+    // A drive root such as C:\ keeps its separator when trimmed, so add one only when it is missing.
     let rootWithSlash =
-        Path.TrimEndingDirectorySeparator root + string Path.DirectorySeparatorChar
+        let trimmed = Path.TrimEndingDirectorySeparator root
 
-    if not (full.StartsWith(rootWithSlash, StringComparison.OrdinalIgnoreCase)) then
-        invalidArg "relative" (sprintf "'%s' leaves the data root" relative)
+        if Path.EndsInDirectorySeparator trimmed then
+            trimmed
+        else
+            trimmed + string Path.DirectorySeparatorChar
+
+    // Strictly under: the root itself ("." or "a/../") is rejected too, with or without a trailing separator.
+    if
+        full.Length <= rootWithSlash.Length
+        || not (full.StartsWith(rootWithSlash, StringComparison.OrdinalIgnoreCase))
+    then
+        invalidArg "relative" (sprintf "'%s' is not under the data root" relative)
 
     full
 

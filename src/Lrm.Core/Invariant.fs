@@ -1,9 +1,10 @@
 /// Culture-independent formatting and parsing (LrmCore contract).
 ///
 /// Library code formats and parses numbers only through these helpers, or with an explicit
-/// CultureInfo.InvariantCulture, so no output ever depends on the machine's culture. Floats use the "R" format: the
-/// shortest text that parses back to the same bits. Process.init also sets the invariant culture, but libraries must
-/// not rely on that, because tests and hosts can change the current culture.
+/// CultureInfo.InvariantCulture, so no output ever depends on the machine's culture. Floats use the "R" format: for
+/// every non-NaN value, the shortest text that parses back to the same bits. Every NaN formats as "NaN" and parses to
+/// the runtime's default NaN, so NaN sign and payload are not kept. Process.init also sets the invariant culture, but
+/// libraries must not rely on that, because tests and hosts can change the current culture.
 module Lrm.Core.Invariant
 
 open System
@@ -12,10 +13,12 @@ open System.Globalization
 /// The culture every LRM component formats and parses with.
 let culture = CultureInfo.InvariantCulture
 
-/// Shortest round-trip text of a float32 ("R"): "1.5", "1E-05", "-0", "NaN", "Infinity", "-Infinity".
+/// Shortest round-trip text of a float32 ("R"): "1.5", "1E-05", "-0", "Infinity", "-Infinity". Non-NaN values
+/// round-trip bit-exactly; every NaN is "NaN", without its sign or payload.
 let f32 (x: float32) = x.ToString("R", culture)
 
-/// Shortest round-trip text of a float ("R"): "0.1", "1E+300", "-0", "NaN", "Infinity", "-Infinity".
+/// Shortest round-trip text of a float ("R"): "0.1", "1E+300", "-0", "Infinity", "-Infinity". Non-NaN values
+/// round-trip bit-exactly; every NaN is "NaN", without its sign or payload.
 let f64 (x: float) = x.ToString("R", culture)
 
 /// Decimal text of an int32.
@@ -36,13 +39,15 @@ let format (text: FormattableString) = FormattableString.Invariant text
 
 let private floatStyle = NumberStyles.Float
 
-/// Parses a float32 written by f32 (or any invariant float text). None when the text is not a number.
+/// Parses a float32 written by f32 (or any invariant float text); "NaN" gives the runtime's default NaN. None when
+/// the text is not a number.
 let tryParseF32 (text: string) : float32 option =
     match Single.TryParse(text, floatStyle, culture) with
     | true, v -> Some v
     | _ -> None
 
-/// Parses a float written by f64 (or any invariant float text). None when the text is not a number.
+/// Parses a float written by f64 (or any invariant float text); "NaN" gives the runtime's default NaN. None when the
+/// text is not a number.
 let tryParseF64 (text: string) : float option =
     match Double.TryParse(text, floatStyle, culture) with
     | true, v -> Some v

@@ -104,6 +104,25 @@ let tests =
                 let a' = Canonical.hashBytes "a" (Encoding.ASCII.GetBytes "bc")
                 Expect.notEqual ab a' "separator"
 
+            testCase "raw ids are not separated from tagged ids (why keyspaces stay apart)"
+            <| fun () ->
+                // A blob that starts with ASCII(tag) || 0x00 has exactly the id of that tagged value.
+                let blob = Array.append (Encoding.ASCII.GetBytes "lrm.test/1") [| 0uy |]
+                Expect.equal (Hash.sha256 blob) (Canonical.hashBytes "lrm.test/1" [||]) "collision by construction"
+
+            testCase "C4: blob ids"
+            <| fun () ->
+                // Computed independently with sha256sum over "lrm.blob/1" || 0x00 || payload.
+                Expect.equal
+                    (Canonical.hashBytes "lrm.blob/1" (Encoding.ASCII.GetBytes "abc")).Hex
+                    "43dc986338811e8f6ba04bbba1545fdb098e2e138a1392cb276961ebfe901a2c"
+                    "abc"
+
+                Expect.equal
+                    (Canonical.hashBytes "lrm.blob/1" [||]).Hex
+                    "ad6b5a670a9ed1a436317420b9e3b8bca558b3ac96adeed05537b66050c342c1"
+                    "empty"
+
             testCase "tags must be printable ASCII"
             <| fun () ->
                 for bad in [ ""; "has space"; "tab\t"; "nul\000"; "caf\u00e9"; String('a', 129) ] do
@@ -177,6 +196,31 @@ let tests =
                         r.U8() |> ignore
                         r.ExpectEnd())
                     "trailing bytes"
+
+            testCase "sequence items take at least one byte"
+            <| fun () ->
+                Expect.throwsT<ArgumentException>
+                    (fun () -> Canonical.encode (fun w -> w.Seq([ (); (); () ], fun () -> ())) |> ignore)
+                    "unit items"
+
+                Expect.throwsT<ArgumentException>
+                    (fun () ->
+                        Canonical.encode (fun w ->
+                            w.Seq([ [| 1uy |]; [||] ], fun (b: byte[]) -> w.Raw(ReadOnlySpan b)))
+                        |> ignore)
+                    "an empty Raw item"
+
+                Expect.equal (hex (Canonical.encode (fun w -> w.Seq([], fun () -> ())))) "00000000" "empty sequence"
+
+                // The reader rejects the same thing: count 1 with a spare byte, but the item reads nothing.
+                rejects "0100000000" (fun r -> r.Seq(fun () -> ()) |> ignore)
+
+                // Map values may be zero-width: every entry carries its key's u32 length.
+                let m = Canonical.encode (fun w -> w.Map([ "b", (); "a", () ], fun () -> ()))
+                Expect.equal (hex m) ("02000000" + "0100000061" + "0100000062") "zero-width map values"
+
+                let back = CanonicalReader(m).Map(fun () -> ())
+                Expect.equal back [ "a", (); "b", () ] "map reads back"
 
             testCase "the KAT payload reads back"
             <| fun () ->
