@@ -77,6 +77,72 @@ let tests =
                 raisesContract "outside" (fun () -> Heap.vulkanDescriptorOffset 64)
                 raisesContract "outside" (fun () -> Heap.d3d12DescriptorIndex -1)
 
+            testCase "KAT V1: the Vulkan heap geometry of the recipe (VulkanHeapRecipe KAT-2)"
+            <| fun () ->
+                let g = Heap.vulkanGeometry Heap.rtx4080VulkanLimits
+
+                Expect.equal
+                    g
+                    {
+                        SlotStride = 16L
+                        SlotAreaBytes = 1024L
+                        ReservedRangeOffset = 1024L
+                        ReservedRangeBytes = 96768L
+                        HeapBytes = 97792L
+                    }
+                    "RTX 4080: slots at 16 i, reserved range at 1,024 for 96,768 bytes, heap 97,792 bytes"
+
+                // The stride-16 helpers are this device's geometry.
+                for i in 0..63 do
+                    Expect.equal (Heap.vulkanSlotOffset g i) (Heap.vulkanDescriptorOffset i) "slot offset"
+
+                Expect.equal g.ReservedRangeOffset Heap.vulkanReservedRangeOffset "reserved range offset"
+                Expect.equal g.HeapBytes (Heap.vulkanHeapBytes 96768L) "heap bytes"
+
+                // The general rule: the stride is the descriptor size, and the reserved range follows the slot area at
+                // the largest of 64 and the two descriptor alignments.
+                let other =
+                    Heap.vulkanGeometry
+                        { Heap.rtx4080VulkanLimits with
+                            BufferDescriptorSize = 24L
+                            ImageDescriptorAlignment = 2048L
+                        }
+
+                Expect.equal (other.SlotStride, other.SlotAreaBytes) (24L, 1536L) "24-byte descriptors"
+                Expect.equal other.ReservedRangeOffset 2048L "aligned to imageDescriptorAlignment 2048"
+                Expect.equal other.HeapBytes (2048L + 96768L) "heap bytes"
+                Expect.equal (Heap.vulkanSlotOffset other 63) (63L * 24L) "slot 63"
+
+                let rejects (fragment: string) (l: VulkanHeapLimits) =
+                    raisesContract fragment (fun () -> Heap.vulkanGeometry l)
+
+                let l = Heap.rtx4080VulkanLimits
+                rejects "positive" { l with BufferDescriptorSize = 0L }
+
+                rejects
+                    "powers of two"
+                    { l with
+                        BufferDescriptorAlignment = 12L
+                    }
+
+                rejects "powers of two" { l with ImageDescriptorAlignment = 0L }
+                rejects "multiple" { l with BufferDescriptorSize = 20L }
+
+                rejects
+                    "negative"
+                    { l with
+                        MinResourceHeapReservedRange = -1L
+                    }
+
+                rejects "maxResourceHeapSize" { l with MaxResourceHeapSize = 97791L }
+
+                Expect.equal
+                    (Heap.vulkanGeometry { l with MaxResourceHeapSize = 97792L }).HeapBytes
+                    97792L
+                    "exactly at the limit"
+
+                raisesContract "outside" (fun () -> Heap.vulkanSlotOffset g 64)
+
             testCase "ofPages assigns slots 1..N in order with per-arena page indices"
             <| fun () ->
                 let l =

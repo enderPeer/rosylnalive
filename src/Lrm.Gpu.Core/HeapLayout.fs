@@ -112,6 +112,38 @@ type HeapPage =
         Bytes: int64
     }
 
+/// The device limits the Vulkan heap geometry depends on (VulkanHeapRecipe, section 3): from
+/// VkPhysicalDeviceDescriptorHeapPropertiesEXT, queried by the Vulkan backend, never hard-coded.
+type VulkanHeapLimits =
+    {
+        /// bufferDescriptorSize (16 on the RTX 4080 under driver 616.92).
+        BufferDescriptorSize: int64
+        /// bufferDescriptorAlignment (8).
+        BufferDescriptorAlignment: int64
+        /// imageDescriptorAlignment (32).
+        ImageDescriptorAlignment: int64
+        /// minResourceHeapReservedRange (96,768).
+        MinResourceHeapReservedRange: int64
+        /// maxResourceHeapSize (33,554,432).
+        MaxResourceHeapSize: int64
+    }
+
+/// Where the 64 slots and the driver's reserved range sit in the Vulkan resource heap (VulkanHeapRecipe, section 3),
+/// in bytes from heapRange.address.
+type VulkanHeapGeometry =
+    {
+        /// Bytes from one slot to the next: bufferDescriptorSize, also the mapping's heapArrayStride (SpirvBinding).
+        SlotStride: int64
+        /// The 64 slots: 64 * SlotStride.
+        SlotAreaBytes: int64
+        /// reservedRangeOffset: the slot area aligned up to max(64, bufferDescriptorAlignment, imageDescriptorAlignment).
+        ReservedRangeOffset: int64
+        /// reservedRangeSize: minResourceHeapReservedRange.
+        ReservedRangeBytes: int64
+        /// heapRange.size: ReservedRangeOffset + ReservedRangeBytes, at most maxResourceHeapSize.
+        HeapBytes: int64
+    }
+
 /// The fixed numbers of the heap (HeapLayoutAndTensorTable contract).
 [<RequireQualifiedAccess>]
 module Heap =
@@ -148,7 +180,8 @@ module Heap =
     [<Literal>]
     let AllocationAlignment = 256L
 
-    /// Vulkan: bytes per descriptor in the resource heap. Slot i sits at byte 16 * i.
+    /// Vulkan: bytes per descriptor in the resource heap on the RTX 4080 (bufferDescriptorSize 16): slot i sits at
+    /// byte 16 * i. The general rule is vulkanGeometry (slot i at i * bufferDescriptorSize).
     [<Literal>]
     let VulkanDescriptorStride = 16
 
@@ -167,7 +200,8 @@ module Heap =
 
         int64 slot * int64 VulkanDescriptorStride
 
-    /// Vulkan: where the driver's reserved range starts (64-byte aligned, after the 64 descriptors).
+    /// Vulkan: where the driver's reserved range starts for 16-byte descriptors whose alignments are at most 64 (the
+    /// RTX 4080: 1,024). The general rule is vulkanGeometry.
     let vulkanReservedRangeOffset =
         (VulkanDescriptorBytes + VulkanReservedAlignment - 1L) / VulkanReservedAlignment
         * VulkanReservedAlignment
@@ -179,6 +213,80 @@ module Heap =
 
         vulkanReservedRangeOffset + reservedRangeBytes
 
+    /// Rounds `bytes` up to a multiple of `alignment` (a power of two).
+    let alignUp (alignment: int64) (bytes: int64) =
+        (bytes + alignment - 1L) &&& ~~~(alignment - 1L)
+
+    /// Vulkan: the limits of the RTX 4080 under driver 616.92, as VulkanHeapRecipe records them (its KAT-2). The
+    /// stride-16 helpers above are this device's geometry.
+    let rtx4080VulkanLimits =
+        {
+            BufferDescriptorSize = 16L
+            BufferDescriptorAlignment = 8L
+            ImageDescriptorAlignment = 32L
+            MinResourceHeapReservedRange = 96768L
+            MaxResourceHeapSize = 33554432L
+        }
+
+    let private isPowerOfTwo (v: int64) = v > 0L && v &&& (v - 1L) = 0L
+
+    /// Vulkan: the heap geometry of VulkanHeapRecipe section 3 for a device's limits: slot i at byte
+    /// i * bufferDescriptorSize, then the reserved range at the slot area aligned up to max(64,
+    /// bufferDescriptorAlignment, imageDescriptorAlignment). Raises GpuContractException for limits that break the
+    /// recipe: a non-positive size, an alignment that is not a power of two, a descriptor size that is not a multiple
+    /// of its alignment, a negative reserved range, or a heap above maxResourceHeapSize.
+    let vulkanGeometry (limits: VulkanHeapLimits) : VulkanHeapGeometry =
+        let l = limits
+
+        if l.BufferDescriptorSize <= 0L then
+            Fail.contract "bufferDescriptorSize %d must be positive" l.BufferDescriptorSize
+
+        if
+            not (isPowerOfTwo l.BufferDescriptorAlignment)
+            || not (isPowerOfTwo l.ImageDescriptorAlignment)
+        then
+            Fail.contract
+                "descriptor alignments %d and %d must be powers of two"
+                l.BufferDescriptorAlignment
+                l.ImageDescriptorAlignment
+
+        if l.BufferDescriptorSize % l.BufferDescriptorAlignment <> 0L then
+            Fail.contract
+                "bufferDescriptorSize %d is not a multiple of bufferDescriptorAlignment %d"
+                l.BufferDescriptorSize
+                l.BufferDescriptorAlignment
+
+        if l.MinResourceHeapReservedRange < 0L then
+            Fail.contract "minResourceHeapReservedRange %d is negative" l.MinResourceHeapReservedRange
+
+        let slotArea = int64 SlotCount * l.BufferDescriptorSize
+
+        let reservedOffset =
+            alignUp (max 64L (max l.BufferDescriptorAlignment l.ImageDescriptorAlignment)) slotArea
+
+        let heapBytes = reservedOffset + l.MinResourceHeapReservedRange
+
+        if heapBytes > l.MaxResourceHeapSize then
+            Fail.contract
+                "the resource heap needs %d bytes, more than maxResourceHeapSize %d"
+                heapBytes
+                l.MaxResourceHeapSize
+
+        {
+            SlotStride = l.BufferDescriptorSize
+            SlotAreaBytes = slotArea
+            ReservedRangeOffset = reservedOffset
+            ReservedRangeBytes = l.MinResourceHeapReservedRange
+            HeapBytes = heapBytes
+        }
+
+    /// Vulkan: the byte offset of slot `slot` in a heap of geometry `g`.
+    let vulkanSlotOffset (g: VulkanHeapGeometry) (slot: int) =
+        if slot < 0 || slot >= SlotCount then
+            Fail.contract "slot %d is outside 0..%d" slot (SlotCount - 1)
+
+        int64 slot * g.SlotStride
+
     /// D3D12: the descriptor index of slot `slot` in the shader-visible CBV/SRV/UAV heap (a raw R32_TYPELESS UAV).
     let d3d12DescriptorIndex (slot: int) =
         if slot < 0 || slot >= SlotCount then
@@ -186,12 +294,10 @@ module Heap =
 
         slot
 
-    /// Rounds `bytes` up to a multiple of `alignment` (a power of two).
-    let alignUp (alignment: int64) (bytes: int64) =
-        (bytes + alignment - 1L) &&& ~~~(alignment - 1L)
-
-/// Where the slots of a heap point: slot 0 is the tensor table, slots 1 to N are pages in arena order, the remaining
-/// slots hold null descriptors. A layout is immutable and is written to the heap once.
+/// Where the slots of a heap point: slot 0 is the tensor table, slots 1 to N are pages in arena order. The remaining
+/// slots hold null descriptors on D3D12 and, because Vulkan has no null descriptors without robustness2, a small
+/// dummy page's descriptor on Vulkan (VulkanHeapRecipe); no table row names them. A layout is immutable and is
+/// written to the heap once.
 [<Sealed>]
 type HeapLayout internal (pages: HeapPage[]) =
     let bySlot = pages |> Array.map (fun p -> p.Slot, p) |> dict

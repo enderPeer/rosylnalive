@@ -381,6 +381,20 @@ module GpuTelemetry =
     [<Literal>]
     let ShaderBytes = "gpu.shader.bytes"
 
+    /// Check per SPIR-V blob the inspector reads (SpirvInspector, ShaderBuildAndSourceConvention v1.1); attrs kernel,
+    /// target, findings (a count) and rules (the failed rule names, comma-separated; empty when it passed).
+    [<Literal>]
+    let SpirvCheck = "gpu.shader.spirv_check"
+
+    /// Gauge: bytes of a SPIR-V blob's push-constant block (4 per argument word it declares); attrs kernel, target.
+    [<Literal>]
+    let PushBytes = "gpu.shader.push_bytes"
+
+    /// Gauge: bytes of a SPIR-V blob's Workgroup (groupshared) variables, against the 32 KiB limit; attrs kernel,
+    /// target.
+    [<Literal>]
+    let WorkgroupBytes = "gpu.shader.workgroup_bytes"
+
     let private backendAttr (backend: ExecutionBackend) =
         Attr.str TelemetryKeys.Backend (ExecutionBackend.name backend)
 
