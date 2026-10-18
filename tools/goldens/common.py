@@ -915,6 +915,11 @@ def forward_taps(model, ids: list[int]) -> tuple[dict, dict]:
     return arrays, {"k_rope_equals_cache": True, "v_cache_equals_cache": True, "layers": nl}
 
 
+# transformers 5.20.1 generation/utils.py, GenerationMixin._sample: the last logits row is cast to float32 before the
+# logits processors and torch.argmax. greedy_generate asserts that the pinned source still does this.
+GENERATE_F32_CAST = "next_token_logits = outputs.logits[:, -1].to(copy=True, dtype=torch.float32, device=input_ids.device)"
+
+
 def _argmax_margin(logits_row: torch.Tensor) -> tuple[int, float]:
     if torch.isnan(logits_row).any():
         raise GoldenError("NaN logits")
@@ -923,20 +928,43 @@ def _argmax_margin(logits_row: torch.Tensor) -> tuple[int, float]:
     return idx, float(top[0] - top[1])
 
 
-def greedy_manual(model, ids: list[int], steps: int) -> tuple[list[int], list[float]]:
-    """The canonical schedule: one prefill, then single-token decode steps with the cache. EOS is never checked."""
-    out_ids, margins = [], []
+def _f32_view(logits_row: torch.Tensor, idx: int, margin: float) -> tuple[bool, float]:
+    """What generate() sees: it casts the last logits row to float32 before its argmax (GENERATE_F32_CAST). Returns
+    whether the float32-rounded row has the same argmax as the row itself, and the top-2 margin in float32 ulps of the
+    top logit. For a float32 row the cast is the identity, so the first value is always true."""
+    row32 = logits_row.to(torch.float32)
+    agrees = int(torch.argmax(row32)) == idx
+    ulp = float(np.spacing(np.float32(abs(float(row32[idx])))))
+    return agrees, margin / ulp
+
+
+def greedy_manual_detail(model, ids: list[int], steps: int) -> dict:
+    """greedy_manual plus, per step, what a float32 argmax over the same row picks (_f32_view): returns `ids`,
+    `margins`, `f32_argmax_agrees` and `margin_f32_ulps`. In torch64p, generate() can agree with the manual loop at
+    a step only where f32_argmax_agrees holds (ReferenceOracles, Greedy decoding and EOS)."""
+    out_ids, margins, agrees, ulps = [], [], [], []
     with torch.no_grad():
         out = model(input_ids=torch.tensor([ids], dtype=torch.long), use_cache=True)
         past = out.past_key_values
         for s in range(steps):
-            nxt, m = _argmax_margin(out.logits[0, -1])
+            row = out.logits[0, -1]
+            nxt, m = _argmax_margin(row)
+            a, u = _f32_view(row, nxt, m)
             out_ids.append(nxt)
             margins.append(m)
+            agrees.append(a)
+            ulps.append(u)
             if s + 1 < steps:
                 out = model(input_ids=torch.tensor([[nxt]], dtype=torch.long), past_key_values=past, use_cache=True)
                 past = out.past_key_values
-    return out_ids, margins
+    return {"ids": out_ids, "margins": margins, "f32_argmax_agrees": agrees, "margin_f32_ulps": ulps}
+
+
+def greedy_manual(model, ids: list[int], steps: int) -> tuple[list[int], list[float]]:
+    """The canonical schedule: one prefill, then single-token decode steps with the cache. EOS is never checked.
+    Each step takes torch.argmax of the last row in the model's dtype; the margin is top-1 minus top-2 in float64."""
+    d = greedy_manual_detail(model, ids, steps)
+    return d["ids"], d["margins"]
 
 
 def greedy_no_cache(model, ids: list[int], steps: int) -> list[int]:
@@ -955,9 +983,16 @@ def greedy_generate(model, ids: list[int], steps: int) -> tuple[list[int], dict]
     transformers 5.20.1 fills every None field of the passed config from model.generation_config, which carries the
     checkpoint's eos_token_id, so eos_token_id=None alone does not disable EOS. The model's generation config is
     therefore replaced by a neutral GenerationConfig() for the call and restored afterwards; the effective config is
-    asserted to have no EOS. min_new_tokens is never used (it masks the EOS logits)."""
-    from transformers import GenerationConfig
+    asserted to have no EOS. min_new_tokens is never used (it masks the EOS logits).
 
+    generate() takes its argmax over float32 (GENERATE_F32_CAST, asserted against the pinned source). In torch64p it
+    therefore picks from float32-rounded logits; the canonical torch64p ids are the manual loop's, and
+    greedy_manual_detail records the steps where the two could differ."""
+    from transformers import GenerationConfig
+    from transformers.generation.utils import GenerationMixin
+
+    if GENERATE_F32_CAST not in inspect.getsource(GenerationMixin._sample):
+        raise GoldenError("GenerationMixin._sample no longer casts the logits row to float32; review the torch64p greedy rule")
     gc = GenerationConfig(do_sample=False, max_new_tokens=steps, eos_token_id=None)
     saved = model.generation_config
     leaked = copy_effective(model, gc)
@@ -972,7 +1007,8 @@ def greedy_generate(model, ids: list[int], steps: int) -> tuple[list[int], dict]
     finally:
         model.generation_config = saved
     new = out[0, len(ids):].tolist()
-    return new, {"effective": effective, "eos_token_id_without_neutral_model_config": leaked["eos_token_id"]}
+    return new, {"effective": effective, "eos_token_id_without_neutral_model_config": leaked["eos_token_id"],
+                 "argmax_dtype": "float32"}
 
 
 def greedy_generate_without_neutral_config(model, ids: list[int], steps: int) -> list[int]:
@@ -1143,8 +1179,38 @@ def write_tree(root: str, files: dict) -> None:
         write_bytes(os.path.join(root, *rel.split("/")), data)
 
 
-def compare_tree(root: str, files: dict) -> list[str]:
-    """Differences between an on-disk golden tree and freshly generated bytes."""
+# Manifest fields that describe the generating machine and data root rather than the goldens. They make --check a
+# check for the same machine and LRM_DATA (GoldenSet contract, Verification); compare_tree names them when they
+# are the only differences.
+MACHINE_FIELDS = ("env.", "double_run.", "threads", "selftests.safetensors.real_")
+
+
+def json_diff_paths(old, new, path: str = "") -> list[tuple[str, object, object]]:
+    """The JSON paths (dotted keys, [i] for list items) whose values differ, with the old and new values. A key present
+    on one side only is reported with the value <absent> on the other."""
+    if isinstance(old, dict) and isinstance(new, dict):
+        out = []
+        for k in sorted(set(old) | set(new)):
+            p = f"{path}.{k}" if path else k
+            if k not in old or k not in new:
+                out.append((p, old.get(k, "<absent>"), new.get(k, "<absent>")))
+            else:
+                out.extend(json_diff_paths(old[k], new[k], p))
+        return out
+    if isinstance(old, list) and isinstance(new, list) and len(old) == len(new):
+        return [d for i, (a, b) in enumerate(zip(old, new)) for d in json_diff_paths(a, b, f"{path}[{i}]")]
+    return [] if old == new and type(old) is type(new) else [(path, old, new)]
+
+
+def _short(v, n: int = 80) -> str:
+    s = json.dumps(v, sort_keys=True, ensure_ascii=True)
+    return s if len(s) <= n else s[: n - 3] + "..."
+
+
+def compare_tree(root: str, files: dict, max_paths: int = 40) -> list[str]:
+    """Differences between an on-disk golden tree and freshly generated bytes. For a JSON file that differs, the
+    following lines name every JSON path whose value changed (committed -> regenerated), and say when all of them are
+    machine or data-root fields (MACHINE_FIELDS)."""
     problems = []
     have = set()
     for dirpath, _dirs, names in os.walk(root):
@@ -1157,8 +1223,25 @@ def compare_tree(root: str, files: dict) -> list[str]:
             problems.append(f"missing on disk: {rel}")
         else:
             with open(os.path.join(root, *rel.split("/")), "rb") as f:
-                if f.read() != files[rel]:
-                    problems.append(f"bytes differ: {rel}")
+                committed = f.read()
+            if committed == files[rel]:
+                continue
+            problems.append(f"bytes differ: {rel}")
+            if rel.endswith(".json"):
+                try:
+                    diffs = json_diff_paths(json.loads(committed), json.loads(files[rel]))
+                except ValueError:
+                    problems.append(f"  {rel}: the committed file is not valid JSON")
+                    continue
+                for p, a, b in diffs[:max_paths]:
+                    problems.append(f"  {rel} {p or '<root>'}: {_short(a)} -> {_short(b)}")
+                if len(diffs) > max_paths:
+                    problems.append(f"  {rel}: {len(diffs) - max_paths} more paths differ")
+                if not diffs:
+                    problems.append(f"  {rel}: same JSON values, different bytes (formatting)")
+                elif all(p.startswith(MACHINE_FIELDS) for p, _, _ in diffs):
+                    problems.append(f"  {rel}: every difference is a machine or data-root field "
+                                    f"({', '.join(MACHINE_FIELDS)}); --check is a same-machine, same-LRM_DATA check")
     return problems
 
 

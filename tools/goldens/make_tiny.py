@@ -80,6 +80,13 @@ def select_prompts(model_dir: str) -> tuple[list[dict], int]:
     return prompts, eos
 
 
+def _f32_record(det: dict, gen_info: dict) -> dict:
+    """generate() takes its argmax over float32-cast logits, the manual loop over the model dtype. These fields say
+    whether that can matter: in torch64p, manual = generate() is guaranteed only where the float32 argmax agrees."""
+    return {"generate_argmax_dtype": gen_info["argmax_dtype"], "f32_argmax_agrees_every_step": all(det["f32_argmax_agrees"]),
+            "min_margin_f32_ulps": min(det["margin_f32_ulps"])}
+
+
 def build(model_dir: str, prompts: list[dict], inv_bits: np.ndarray, tables) -> dict:
     """Every golden file except the model and the manifest, plus __results__.json (the measured facts the manifest
     reports). Deterministic: double_run calls it twice and compares the bytes."""
@@ -101,7 +108,8 @@ def build(model_dir: str, prompts: list[dict], inv_bits: np.ndarray, tables) -> 
     greedy = {}
     for name in tm.GREEDY_PROMPTS:
         ids = by_name[name]["ids"]
-        manual, margins = c.greedy_manual(m32, ids, tm.GREEDY_STEPS)
+        det = c.greedy_manual_detail(m32, ids, tm.GREEDY_STEPS)
+        manual, margins = det["ids"], det["margins"]
         gen, gen_info = c.greedy_generate(m32, ids, tm.GREEDY_STEPS)
         nocache = c.greedy_no_cache(m32, ids, tm.GREEDY_STEPS)
         if not (manual == gen == nocache) or len(manual) != tm.GREEDY_STEPS:
@@ -111,7 +119,7 @@ def build(model_dir: str, prompts: list[dict], inv_bits: np.ndarray, tables) -> 
         res["greedy"][name] = {"torch32": {
             "manual_equals_generate": True, "manual_equals_no_cache": True, "min_margin": min(margins),
             "distinct_tokens": len(set(manual)), "eos_first_step": manual.index(eos) if eos in manual else None,
-            "generate_effective_config": gen_info["effective"],
+            "generate_effective_config": gen_info["effective"], **_f32_record(det, gen_info),
             "control_without_neutral_model_config": {"new_tokens": len(leak), "stops_at_eos": len(leak) < tm.GREEDY_STEPS and leak[-1] == eos,
                                                      "eos_token_id_leaked": gen_info["eos_token_id_without_neutral_model_config"]}}}
     gp = by_name[tm.GRAD_PROMPT]["ids"]
@@ -134,7 +142,8 @@ def build(model_dir: str, prompts: list[dict], inv_bits: np.ndarray, tables) -> 
                 res["selftest_tiny_fp64_forward"] = selftest.test_tiny_f64(taps, p["ids"], tables)
         for name in tm.GREEDY_PROMPTS:
             ids = by_name[name]["ids"]
-            manual, margins = c.greedy_manual(m64, ids, tm.GREEDY_STEPS)
+            det = c.greedy_manual_detail(m64, ids, tm.GREEDY_STEPS)
+            manual, margins = det["ids"], det["margins"]
             gen, gen_info = c.greedy_generate(m64, ids, tm.GREEDY_STEPS)
             nocache = c.greedy_no_cache(m64, ids, tm.GREEDY_STEPS)
             if not (manual == gen == nocache):
@@ -144,7 +153,7 @@ def build(model_dir: str, prompts: list[dict], inv_bits: np.ndarray, tables) -> 
             greedy[(name, "torch64p")] = (manual, margins)
             res["greedy"][name]["torch64p"] = {"manual_equals_generate": True, "manual_equals_no_cache": True,
                                               "min_margin": min(margins), "equals_torch32": True,
-                                              "generate_effective_config": gen_info["effective"]}
+                                              "generate_effective_config": gen_info["effective"], **_f32_record(det, gen_info)}
         grads64, loss64 = c.cross_entropy_grads(m64, gp)
         del m64
 

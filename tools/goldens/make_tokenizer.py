@@ -11,8 +11,11 @@ cases.jsonl, one per line, with sorted keys and ASCII-only escapes:
   decoded with U+FFFD for each maximal invalid subpart (Python errors="replace", the Unicode recommended practice that
   .NET's UTF8Encoding also follows); ids = Encode(s);
 - {"kind": "decode", "ids": [...], "text": s, "bytes": hex}: bytes are the concatenated token bytes (DecodeBytes);
-  s = tok.decode(ids, skip_special_tokens=False), which equals the bytes decoded with errors="replace";
-- {"kind": "encode_reject", "text": s, "error": "lone surrogate"}: Encode must raise.
+  s = tok.decode(ids, skip_special_tokens=False), which equals the bytes decoded with errors="replace". Ids from
+  151,669 to 151,935 are lm_head rows with no token: they contribute no bytes, as in HF;
+- {"kind": "encode_reject", "utf16": hex, "error": "lone surrogate"}: the text is given only as its UTF-16 code units
+  (big-endian, lowercase hex, 4 digits per unit), because a JSON string with a lone-surrogate escape is not readable
+  by every JSON library (System.Text.Json's GetString throws). The text holds a lone surrogate; Encode must raise.
 
 Every case also has "id" (unique, "<category>-<n>") and "cat" (its category).
 """
@@ -36,6 +39,7 @@ SRC = os.path.join(c.TOOLS_DIR, "tokenizer")
 TOOL_FILES = ["common.py", "make_tokenizer.py", "tokenizer/csharp.txt", "tokenizer/il.txt", "tokenizer/multilingual.txt", "tokenizer/prose.txt"]
 SEED = 0x70C
 REAL_IDS = 151669
+MODEL_ROWS = 151936  # Qwen3-0.6B vocab_size: lm_head rows. Ids REAL_IDS..MODEL_ROWS-1 have no token.
 MIN_CASES = 2000
 
 
@@ -69,7 +73,17 @@ class Corpus:
         self._add(cat, {"kind": "decode", "ids": list(ids)}, ("d", tuple(ids)))
 
     def reject(self, cat: str, s: str) -> None:
-        self._add(cat, {"kind": "encode_reject", "text": s}, ("r", s))
+        self._add(cat, {"kind": "encode_reject", "utf16": utf16_hex(s)}, ("r", s))
+
+
+def utf16_hex(s: str) -> str:
+    """The UTF-16 code units of s, big-endian, as lowercase hex: 4 digits per unit. Lone surrogates pass through."""
+    return s.encode("utf-16-be", errors="surrogatepass").hex()
+
+
+def from_utf16_hex(h: str) -> str:
+    """The inverse of utf16_hex. A high-low surrogate pair becomes one astral character, as in .NET strings."""
+    return bytes.fromhex(h).decode("utf-16-be", errors="surrogatepass")
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -173,6 +187,23 @@ def digit_cases(corpus: Corpus) -> None:
               "½", "¼", "¾", "⅓", "²", "³", "¹", "x²+y²", "H₂O", "Ⅻ", "ⅻ", "①②③", "٠١٢٣٤٥٦٧٨٩", "۰۱۲۳", "०१२३४५६७८९", "३.१४",
               "০১২", "๐๑๒", "０１２３４５６７８９", "１２３abc", "𝟎𝟏𝟐𝟑", "𝟘𝟙", "𑁦𑁧", "〇一二三", "٣٫١٤", "1٢3", "⑴⒈", "⓪", "₀₁₂"):
         corpus.text(cat, t)
+
+
+# \p{N} has three classes, Nd, Nl and No, and the Split regex treats them alike: each is one pre-token, and a space
+# before one is its own pre-token (` ?[^\s\p{L}\p{N}]+` excludes \p{N}). An engine that classifies only Nd as a
+# number merges ' ½' into one pre-token. These contexts catch a classifier that misses Nl or No.
+NUMBER_NL = ["Ⅻ", "ⅻ", "〇", "Ⅰ", "〡", "\U00010140", "ᛮ", "ↂ"]
+NUMBER_NO = ["½", "²", "①", "₀", "⑴", "༳", "↉", "⓪", "¼", "³", "\U0001d360", "⁵"]
+
+
+def number_class_cases(corpus: Corpus) -> None:
+    for cls, chars in (("Nl", NUMBER_NL), ("No", NUMBER_NO)):
+        for n in chars:
+            if unicodedata.category(n) != cls:
+                raise c.GoldenError(f"U+{ord(n):04X} is {unicodedata.category(n)}, not {cls}")
+            for ctx in (" {n}", "x {n}", "{n}x", "{n}{n}", "({n})", " {n}.", "{n}1", "1{n}", " {n}1", "a {n} b", "{n} {n}",
+                        "\n{n}", "'{n}"):
+                corpus.text("number-class", ctx.format(n=n))
 
 
 CONTRACTIONS = ["s", "t", "re", "ve", "m", "ll", "d"]
@@ -359,6 +390,15 @@ def decode_cases(corpus: Corpus, tok, added: list[dict]) -> None:
     for _ in range(40):
         n = rng.next_int(1, 11)
         corpus.decode("decode", [rng.choice([rng.next_below(151643), rng.choice(added)["id"], byte_ids[rng.next_below(256)]]) for _ in range(n)])
+    # The empty list, and lm_head rows with no token (REAL_IDS..MODEL_ROWS-1): HF drops them and they add no bytes.
+    zh = [byte_ids[b] for b in "中".encode()]
+    for ids in ([], [REAL_IDS], [MODEL_ROWS - 1], [REAL_IDS, MODEL_ROWS - 1], [byte_ids[ord("I")], 151700, byte_ids[ord("J")]],
+                zh[:1] + [151700] + zh[1:], [151700, added[0]["id"]], [added[0]["id"], MODEL_ROWS - 1, added[1]["id"]]):
+        corpus.decode("decode", ids)
+    for _ in range(16):
+        n = rng.next_int(1, 9)
+        corpus.decode("decode", [rng.choice([rng.next_below(151643), REAL_IDS + rng.next_below(MODEL_ROWS - REAL_IDS), byte_ids[rng.next_below(256)]])
+                                 for _ in range(n)])
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -390,6 +430,12 @@ def byte_token_ids(tok) -> list[int]:
 def token_bytes(tok, i: int, added_by_id: dict) -> bytes:
     if i in added_by_id:
         return added_by_id[i].encode("utf-8")
+    if REAL_IDS <= i < MODEL_ROWS:
+        if tok.id_to_token(i) is not None:
+            raise c.GoldenError(f"id {i} has a token, but ids from {REAL_IDS} on should have none")
+        return b""
+    if not 0 <= i < REAL_IDS:
+        raise c.GoldenError(f"decode case id {i} is outside the model's {MODEL_ROWS} rows")
     inv = {v: k for k, v in bytes_to_unicode().items()}
     return bytes(inv[ch] for ch in tok.id_to_token(i))
 
@@ -403,6 +449,7 @@ def build_corpus(tok, added: list[dict]) -> Corpus:
     multilingual_cases(corpus)
     whitespace_cases(corpus)
     digit_cases(corpus)
+    number_class_cases(corpus)
     contraction_cases(corpus)
     emoji_cases(corpus)
     astral_cases(corpus)
@@ -449,8 +496,17 @@ def run_oracle(tok, corpus: Corpus, added: list[dict]) -> tuple[bytes, dict]:
             case["text"] = text
             case["bytes"] = raw.hex()
         elif kind == "encode_reject":
+            text = from_utf16_hex(case["utf16"])
+            if utf16_hex(text) != case["utf16"]:
+                raise c.GoldenError(f"{case['id']}: utf16 does not round-trip")
             try:
-                tok.encode(case["text"], add_special_tokens=False)
+                text.encode("utf-8")
+            except UnicodeEncodeError:
+                pass
+            else:
+                raise c.GoldenError(f"{case['id']}: the text holds no lone surrogate")
+            try:
+                tok.encode(text, add_special_tokens=False)
             except Exception as e:  # noqa: BLE001  (PyO3 raises UnicodeEncodeError or a TypeError subclass)
                 case["error"] = "lone surrogate"
                 checks["rejected"] += 1
@@ -505,6 +561,9 @@ def main() -> int:
     added = [{"id": a["id"], "content": a["content"], "special": a["special"]} for a in tj["added_tokens"]]
     if len(added) != 26 or tok.get_vocab_size(with_added_tokens=True) != REAL_IDS:
         raise c.GoldenError("unexpected added tokens or vocabulary size")
+    with open(os.path.join(model_dir, "config.json"), encoding="utf-8") as f:
+        if json.load(f)["vocab_size"] != MODEL_ROWS:
+            raise c.GoldenError(f"the model's vocab_size is not {MODEL_ROWS}")
     for a in added:
         if tok.encode(a["content"], add_special_tokens=False).ids != [a["id"]]:
             raise c.GoldenError(f"added token {a['content']} does not encode to its id")
@@ -546,11 +605,14 @@ def main() -> int:
         "semantics": {
             "encode": "ids = Encode(text): added tokens first, NFC, the Split regex, byte-level BPE; no BOS",
             "encode_bytes": "text = bytes decoded as UTF-8 with U+FFFD per maximal invalid subpart (errors=replace); ids = Encode(text)",
-            "decode": "bytes = concatenated token bytes (DecodeBytes); text = Decode(ids) = bytes decoded with errors=replace",
-            "encode_reject": "Encode raises: the text holds a lone surrogate",
+            "decode": "bytes = concatenated token bytes (DecodeBytes); text = Decode(ids) = bytes decoded with errors=replace; "
+                      f"ids {REAL_IDS}..{MODEL_ROWS - 1} (lm_head rows with no token) add no bytes",
+            "encode_reject": "text = the UTF-16 code units in utf16 (big-endian hex, 4 digits per unit); Encode(text) raises: "
+                             "the text holds a lone surrogate",
         },
         "added_tokens": added,
         "vocab_real_ids": REAL_IDS,
+        "vocab_model_rows": MODEL_ROWS,
         "counts": {"cases": len(corpus.cases), "by_kind": dict(sorted(by_kind.items())), "by_category": dict(sorted(by_cat.items()))},
         "checks": {"no_bos": checks["no_bos"], "round_trip_nfc": checks["round_trip_nfc"],
                    "round_trip_mismatch": checks["round_trip_mismatch"], "decode_equals_errors_replace": checks["decode_equals_replace"],
