@@ -57,7 +57,7 @@ The rendered reports are committed under [`reports/`](reports/):
 - [`warp-conformance`](reports/warp-conformance/kernels.md): E1's harness on d3d12-warp (the matrix, the denormal mode, GPU time);
 - [`warp-throughput-2cpu`](reports/warp-throughput-2cpu/kernels.md) and [`warp-throughput-8cpu`](reports/warp-throughput-8cpu/kernels.md): the throughput series alone at 2 and 8 processors (`--filter-test-case throughput`).
 
-The kernels template does not read `gpu.device.check`, `gpu.selftest` or `gpu.warp.versus_hardware`, so the ADR tabulates them (a request to the integrator, like D1's).
+The kernels template does not read `gpu.device.check`, `gpu.selftest`, `gpu.warp.backend` or `gpu.warp.versus_hardware`, so the ADR tabulates them (a request to the integrator, like D1's).
 
 `ci-probe.ps1` is what a one-off run on a windows-latest runner executes. It prints the OS (`Win32_OperatingSystem`'s caption, the release and the build with its update revision), the in-box versions and whether `D3D12SDKLayers.dll` is present. Then it builds the spike and the CLI, runs `warp-info` and both tiers (`LRM_WARP_CPUS=all` by default there), and renders every new run log. It writes `summary.md` (and the GitHub step summary) on every path, failures included, with whether D1's backend ran WARP under the debug layer. It changes no setting and downloads nothing; the workflow's bootstrap step provides DXC. Its exit code:
 
