@@ -1,10 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: R2. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
-    <Compile Include="VkTypes.fs" />
-    <Compile Include="VkCore.Generated.fs" />
-    <Compile Include="VkStructs.fs" />
-    <Compile Include="VkCommands.fs" />
+    <Compile Include="AbiAttributes.fs" />
+    <Compile Include="Vk.g.fs" />
+    <Compile Include="Support.fs" />
+    <Compile Include="VkCommands.g.fs" />
+    <Compile Include="VkMeta.g.fs" />
+    <Compile Include="Text.fs" />
+    <Compile Include="Chain.fs" />
+    <Compile Include="LayoutCheck.fs" />
+    <Compile Include="Loader.fs" />
+    <Compile Include="Device.fs" />
     <Compile Include="DeviceCheck.fs" />
+    <Compile Include="Diagnostics.fs" />
+    <Compile Include="AssemblyInfo.fs" />
   </ItemGroup>
 </Project>
