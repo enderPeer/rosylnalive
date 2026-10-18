@@ -143,6 +143,7 @@ R1's spike ran both SPIR-V binding variants on the RTX 4080 (driver 616.92) thro
 - Both layouts put argument word *k* at byte 4·*k*, so the shader reads the same bytes. The typed block also names and types every word, and the inspector checks those against the catalog.
 - The spike's pitfall, a flat `uint d[32]` that DXIL packs into 500 bytes, concerns arrays. Scalar members pack at 4-byte offsets in the D3D cbuffer layout: DXC reports `args_echo`'s block as 128 bytes, with word 31 at offset 124. DXC's push-constant layout also puts them at 4·*k*.
 - A block that declares fewer than 32 words is legal on both APIs: D3D12 sets all 32 root constants, and Vulkan pushes all 128 bytes.
+- **Run on the device.** R4b swapped LRM's own `scale_f32.hlsl` and `args_echo.hlsl` (with `lrm.hlsli` and `lrm_args.g.hlsli`) into a scratch copy of R1's spike. Their typed blocks are 20 and 128 bytes. The spike's gpu tier then passed 124 of 124 on the RTX 4080 (driver 616.92, D3D12 UMD 32.0.16.1692; run `20261018-014350-8e09b518`, spike ShaderSetHash `39566d87…`): every gating case was bit-exact against the CPU on D3D12 and on all 9 Vulkan configurations, and every negative control was caught.
 
 **Flags.** The SPIR-V arguments must contain `-spirv` and `-fspv-target-env=vulkan1.3`. They must contain none of the flags below (`SpirvBinding.forbiddenSpirvFlags`), and the build refuses them before it compiles.
 
