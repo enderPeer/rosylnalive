@@ -64,6 +64,28 @@ let tests =
                     printfn "bench: %-10s %6d records, render %.1f ms" kind log.Events.Length ms
                     Telemetry.gauge "report.render_ms" ms "ms" [ Attr.str "template" kind ]
 
+            testCase "a 20,000-step training report: render time and size"
+            <| fun () ->
+                let log = ChartEdgeTests.trainingLog 20_000 28
+                let mutable output = None
+
+                let ms = best 3 (fun () -> output <- Some(Reports.render "training" log))
+
+                let svgs = output.Value.Svgs
+                let bytes = svgs |> List.sumBy (fun (_, s) -> s.Length)
+
+                for file, svg in svgs do
+                    printfn "bench: %-28s %8d bytes" file svg.Length
+
+                printfn "bench: training, %d records: render %.0f ms, %d SVG bytes" log.Events.Length ms bytes
+                Telemetry.gauge "report.render_ms" ms "ms" [ Attr.str "template" "training-20k" ]
+
+                Telemetry.gauge
+                    "report.svg_bytes"
+                    (float bytes)
+                    TelemetryUnits.Bytes
+                    [ Attr.str "template" "training-20k" ]
+
             testCase "run-log read speed"
             <| fun () ->
                 use tmp = new TempDir()

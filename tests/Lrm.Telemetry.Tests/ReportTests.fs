@@ -11,6 +11,10 @@ open Lrm.Telemetry.Tests.Common
 
 // ---- fixtures -------------------------------------------------------------------------------------------------------
 
+/// Log-space bins over awkward samples: exact zeros, a negative, a NaN.
+let private histogramSample =
+    Builders.Common.bin 12 true [ 1e-6; 2e-6; 1e-4; 0.5; 0.0; 0.0; -1.0; nan; 3e-3 ]
+
 /// One chart of every kind, with awkward values mixed in (NaN, infinities, zeros and negatives on log axes).
 let chartsOfEveryKind: (string * Chart) list =
     [
@@ -134,18 +138,23 @@ let chartsOfEveryKind: (string * Chart) list =
                 ColLabel = "layer"
                 Rows = [ "a"; "b"; "c" ]
                 Cols = [ for l in 0..27 -> string l ]
+                ColValues = []
                 Values =
                     [|
                         for r in 0..2 ->
                             [|
                                 for l in 0..27 ->
-                                    if l = 3 then nan
-                                    elif l = 4 then 0.0
-                                    else float (r * 28 + l + 1)
+                                    if l = 3 then None
+                                    elif l = 4 then Some 0.0
+                                    elif l = 5 then Some nan
+                                    elif l = 6 then Some -infinity
+                                    else Some(float (r * 28 + l + 1))
                             |]
                     |]
                 Log = true
                 ValueFormat = NumFormat.Plain
+                Ceiling = Some(60.0, "over 60")
+                Aggregate = HeatAggregate.Max
             }
         "histogram",
         Chart.Histogram
@@ -154,7 +163,9 @@ let chartsOfEveryKind: (string * Chart) list =
                 Subtitle = ""
                 XLabel = "ratio"
                 XFormat = NumFormat.Pow10
-                Bins = Builders.Common.bins 12 true [ 1e-6; 2e-6; 1e-4; 0.5; 0.0; -1.0; nan; 3e-3 ]
+                Bins = histogramSample.Bins
+                Zeros = histogramSample.Zeros
+                Invalid = histogramSample.Invalid
                 Color = Color.Cat 0
                 Marks = [ { At = 0.0; Label = "bound" } ]
             }
@@ -225,9 +236,10 @@ let chartsOfEveryKind: (string * Chart) list =
                                     for l in 0..27 ->
                                         {
                                             Index = l
-                                            Low = 1e-8
+                                            Low = (if l = 3 then 0.0 else 1e-8)
                                             Mid = 1e-7
                                             High = (if l = 2 then nan else 1e-6)
+                                            Invalid = (if l = 2 || l = 4 then 1 else 0)
                                         }
                                 ]
                         }
@@ -241,6 +253,7 @@ let chartsOfEveryKind: (string * Chart) list =
                                         Low = 1.0
                                         Mid = 1.0
                                         High = 1.0
+                                        Invalid = 0
                                     }
                                 ]
                         }
@@ -307,7 +320,7 @@ let private syntheticRoot =
 
          root)
 
-let private syntheticLog (kind: string) =
+let syntheticLog (kind: string) =
     RunLogReader.loadOrFail (Path.Combine(syntheticRoot.Force(), "synthetic-" + kind))
 
 let private repoSamples () =
@@ -402,8 +415,13 @@ let tests =
                         (name + ": labels")
 
                     Expect.isNotNull (root.SelectSingleNode "//*[local-name()='desc']") (name + ": desc")
-                    Expect.isFalse (svg.Contains "NaN") (name + ": no NaN")
+                    // "NaN" may only appear in the labels of the NaN/inf strips and cells, never as a printed number.
+                    let numbers =
+                        svg.Replace("NaN/inf", "").Replace("NaN or infinite", "").Replace("NaN, infinite", "")
+
+                    Expect.isFalse (numbers.Contains "NaN") (name + ": no NaN")
                     Expect.isFalse (svg.Contains "Infinity") (name + ": no Infinity")
+                    Expect.isFalse (svg.Contains "could not be drawn") (name + ": drawn")
                     Expect.isTrue (svg.EndsWith "</svg>\n") (name + ": ends with a line break")
 
             testCase "charts are byte-identical when rendered twice and under de-DE and tr-TR"

@@ -4,7 +4,7 @@
 
 | Prefill | Decode | First token | FLOPs per token | Achieved |
 | ---: | ---: | ---: | ---: | ---: |
-| 4,984 tok/s | 245.7 tok/s | 102.73 ms | 983.82 MFLOP | 1.56 TFLOP/s |
+| 4,950 tok/s | 245.2 tok/s | 103.43 ms | 983.82 MFLOP | 1.55 TFLOP/s |
 
 ## Speed
 
@@ -14,8 +14,8 @@
 
 | Phase | Steps | Tokens | Time | Rate | Median step |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| prefill | 1 | 512 | 102.73 ms | 4,984 tok/s | 102.73 ms |
-| decode | 64 | 64 | 260.49 ms | 245.7 tok/s | 4.06 ms |
+| prefill | 1 | 512 | 103.43 ms | 4,950 tok/s | 103.43 ms |
+| decode | 64 | 64 | 261.00 ms | 245.2 tok/s | 4.08 ms |
 
 ## Layers
 
@@ -40,7 +40,7 @@ Resource use attributed to node, component and stage (layers summed). Wall time 
 
 | Node | Component | Stage | Wall (self) | GPU | FLOPs | Bytes moved | Tokens | Records |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| n0 | forward | 0 | 363.22 ms | 0 ns | 566.68G | 83.32 GiB | 576 | 2,145 |
+| n0 | forward | 0 | 364.43 ms | 250.01 ms | 566.68G | 83.32 GiB | 576 | 7,605 |
 
 ## Run
 
@@ -51,13 +51,13 @@ Resource use attributed to node, component and stage (layers summed). Wall time 
 | Kind | inference |
 | Status | ok |
 | Started | 2026-10-18T09:00:00.000Z |
-| Ended | 2026-10-18T09:00:00.368Z |
+| Ended | 2026-10-18T09:00:00.369Z |
 | Execution class | vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043 |
 | Class id | `529aef195246` |
 | Driver | 616.92 |
 | Commit | not recorded |
 | Nodes | 1 |
-| Records | 2,279 |
+| Records | 7,739 |
 | Synthetic | yes |
 
 | Parameter | Value |
@@ -72,7 +72,7 @@ Resource use attributed to node, component and stage (layers summed). Wall time 
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| n0 | creator | vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 2,279 | ok | 0 |
+| n0 | creator | vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 7,739 | ok | 0 |
 
 ### Log problems
 

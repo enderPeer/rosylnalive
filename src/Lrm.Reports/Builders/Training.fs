@@ -1,5 +1,7 @@
-/// The training report (Phase 2): loss per curriculum stage, gradient and activation statistics per layer
-/// (ReportTemplates contract, "training"). Reads train.* gauges.
+/// The training report (Phase 2): loss per curriculum stage, the learning rate, gradient and activation statistics
+/// per layer (ReportTemplates contract, "training"). Reads train.* gauges. Built to stay readable and small for runs
+/// that log every layer on every one of tens of thousands of steps: the heatmap bins its step columns and the line
+/// charts thin their paths (ChartSvg).
 module Lrm.Reports.Builders.Training
 
 open System
@@ -17,6 +19,7 @@ let private stepOf (e: RunEvent) =
 /// Builds the training scope.
 let build (log: RunLog) : Scope =
     let loss = gauges log "train.loss"
+    let lr = gauges log "train.lr"
     let grads = gauges log "train.grad_norm"
     let acts = gauges log "train.act_rms"
     let updates = gauges log "train.update_ratio"
@@ -25,12 +28,22 @@ let build (log: RunLog) : Scope =
     let stageOf (e: RunEvent) =
         defaultArg (e.TryText TelemetryKeys.Stage) ""
 
+    let trainLoss = loss |> List.filter (fun e -> splitOf e = "train")
+
     let stages =
-        loss
-        |> List.filter (fun e -> splitOf e = "train")
+        trainLoss
         |> List.groupBy stageOf
         |> List.map (fun (s, xs) -> s, xs |> List.map stepOf |> List.min, xs |> List.map stepOf |> List.max)
         |> List.sortBy (fun (_, lo, _) -> lo)
+
+    let stageBands =
+        stages
+        |> List.map (fun (s, lo, hi) ->
+            {
+                From = float lo
+                To = float hi
+                Label = s
+            })
 
     let lossChart =
         if loss.IsEmpty then
@@ -60,33 +73,63 @@ let build (log: RunLog) : Scope =
                             })
                         |> List.filter (fun s -> not s.Points.IsEmpty)
                     RefLines = []
-                    Bands =
-                        stages
-                        |> List.map (fun (s, lo, hi) ->
-                            {
-                                From = float lo
-                                To = float hi
-                                Label = s
-                            })
+                    Bands = stageBands
                 }
 
-    let layerIds (xs: RunEvent list) =
-        xs
-        |> List.choose (fun e -> e.TryInt TelemetryKeys.Layer)
-        |> List.distinct
-        |> List.sort
+    let lrChart =
+        if lr.IsEmpty then
+            noData "Learning rate" "train.lr gauge"
+        else
+            Chart.Line
+                {
+                    Title = "Learning rate by step"
+                    Subtitle = "The optimizer's learning rate; shaded bands are curriculum stages"
+                    XLabel = "step"
+                    YLabel = "learning rate"
+                    XFormat = NumFormat.Int
+                    YFormat = NumFormat.Plain
+                    YLog = false
+                    YFromZero = true
+                    IntegerX = false
+                    Series =
+                        [
+                            {
+                                Name = "learning rate"
+                                Color = Color.Cat 0
+                                Points = lr |> List.map (fun e -> float (stepOf e), e.Value)
+                            }
+                        ]
+                    RefLines = []
+                    Bands = stageBands
+                }
+
+    let layerOf (e: RunEvent) =
+        e.TryInt TelemetryKeys.Layer |> Option.defaultValue -1L
+
+    // Gradient norms per layer, each in record order: one pass over the records, not one per layer.
+    let gradsByLayer =
+        grads
+        |> List.filter (fun e -> (e.TryInt TelemetryKeys.Layer).IsSome)
+        |> List.groupBy layerOf
+        |> List.sortBy fst
 
     let gradHeat =
-        if grads.IsEmpty then
+        if gradsByLayer.IsEmpty then
             noData "Gradient norm" "train.grad_norm gauge"
         else
-            let layers = layerIds grads
-            let steps = grads |> List.map stepOf |> List.distinct |> List.sort
+            let steps = grads |> List.map stepOf |> List.distinct |> List.sort |> Array.ofList
+            let column = steps |> Array.mapi (fun i s -> s, i) |> dict
 
-            let lookup =
-                grads
-                |> List.map (fun e -> (e.TryInt TelemetryKeys.Layer |> Option.defaultValue -1L, stepOf e), e.Value)
-                |> Map.ofList
+            let values =
+                gradsByLayer
+                |> List.map (fun (_, xs) ->
+                    let row = Array.create steps.Length None
+
+                    for e in xs do
+                        row[column[stepOf e]] <- Some e.Value
+
+                    row)
+                |> Array.ofList
 
             Chart.Heatmap
                 {
@@ -94,22 +137,20 @@ let build (log: RunLog) : Scope =
                     Subtitle = "L2 norm of each layer's gradient"
                     RowLabel = "layer"
                     ColLabel = "step"
-                    Rows = layers |> List.map (fun l -> "L" + Invariant.i64 l)
-                    Cols = steps |> List.map Invariant.i64
-                    Values =
-                        [|
-                            for l in layers -> [| for s in steps -> lookup.TryFind(l, s) |> Option.defaultValue nan |]
-                        |]
+                    Rows = gradsByLayer |> List.map (fun (l, _) -> "L" + Invariant.i64 l)
+                    Cols = steps |> Array.map Invariant.i64 |> List.ofArray
+                    ColValues = steps |> Array.map float |> List.ofArray
+                    Values = values
                     Log = true
                     ValueFormat = NumFormat.Sci
+                    Ceiling = None
+                    Aggregate = HeatAggregate.Max
                 }
 
     let gradSpread =
-        if grads.IsEmpty then
+        if gradsByLayer.IsEmpty then
             noData "Gradient norm spread" "train.grad_norm gauge"
         else
-            let layers = layerIds grads
-
             Chart.ErrorBars
                 {
                     Title = "Gradient norm per layer over the run"
@@ -118,24 +159,20 @@ let build (log: RunLog) : Scope =
                     YLabel = "gradient norm (log)"
                     YFormat = NumFormat.Sci
                     YLog = true
-                    Categories = layers |> List.map Invariant.i64
+                    Categories = gradsByLayer |> List.map (fun (l, _) -> Invariant.i64 l)
                     Series =
                         [
                             {
                                 Name = "gradient norm"
                                 Color = Color.Cat 0
                                 Spreads =
-                                    layers
-                                    |> List.mapi (fun i l ->
-                                        let v =
-                                            grads
-                                            |> List.filter (fun e -> e.TryInt TelemetryKeys.Layer = Some l)
-                                            |> List.map _.Value
+                                    gradsByLayer
+                                    |> List.mapi (fun i (_, xs) ->
+                                        let v = xs |> List.map _.Value
+                                        let p = spread i median v
 
-                                        {
-                                            Index = i
+                                        { p with
                                             Low = quantile 0.05 v
-                                            Mid = median v
                                             High = quantile 0.95 v
                                         })
                             }
@@ -154,7 +191,7 @@ let build (log: RunLog) : Scope =
             Chart.Line
                 {
                     Title = "Activation RMS per layer"
-                    Subtitle = Invariant.format $"At step {last}"
+                    Subtitle = Invariant.format $"At step {Fmt.int last}"
                     XLabel = "layer"
                     YLabel = "RMS"
                     XFormat = NumFormat.Int
@@ -183,15 +220,25 @@ let build (log: RunLog) : Scope =
         if updates.IsEmpty then
             noData "Update ratio" "train.update_ratio gauge"
         else
+            let b = bin 24 true (updates |> List.map _.Value)
+
             Chart.Histogram
                 {
                     Title = "Update-to-weight ratio"
                     Subtitle = "|step update| / |weights| per layer and step, log scale"
                     XLabel = "ratio"
                     XFormat = NumFormat.Pow10
-                    Bins = bins 24 true (updates |> List.map _.Value)
+                    Bins = b.Bins
+                    Zeros = b.Zeros
+                    Invalid = b.Invalid
                     Color = Color.Cat 2
-                    Marks = [ { At = -3.0; Label = "1e-3" } ]
+                    Marks =
+                        [
+                            {
+                                At = -3.0
+                                Label = ChartSvg.format NumFormat.Pow10 -3.0 + " (typical)"
+                            }
+                        ]
                 }
 
     let stageRows =
@@ -205,28 +252,15 @@ let build (log: RunLog) : Scope =
                 |> Option.map (fun e -> Fmt.dp 3 e.Value)
                 |> Option.defaultValue "n/a"
 
-            [
-                s
-                Invariant.i64 lo
-                Invariant.i64 hi
-                at "train" lo
-                at "train" hi
-                at "eval" hi
-            ])
+            [ s; Fmt.int lo; Fmt.int hi; at "train" lo; at "train" hi; at "eval" hi ])
 
-    let lastTrain =
-        loss
-        |> List.filter (fun e -> splitOf e = "train")
-        |> List.sortBy stepOf
-        |> List.tryLast
+    let lastTrain = trainLoss |> List.sortBy stepOf |> List.tryLast
+    let trainSteps = trainLoss |> List.map stepOf |> List.distinct |> List.length
 
     runScope log
     |> Scope.value "final_loss" (lastTrain |> Option.map (fun e -> Fmt.dp 3 e.Value) |> Option.defaultValue "n/a")
-    |> Scope.value
-        "steps"
-        (lastTrain
-         |> Option.map (fun e -> Invariant.i64 (stepOf e))
-         |> Option.defaultValue "0")
+    |> Scope.value "last_step" (lastTrain |> Option.map (stepOf >> Fmt.int) |> Option.defaultValue "n/a")
+    |> Scope.value "steps" (plural trainSteps "training step" "training steps")
     |> Scope.table
         "stages"
         (table
@@ -240,6 +274,7 @@ let build (log: RunLog) : Scope =
             ]
             stageRows)
     |> Scope.chart "loss" lossChart
+    |> Scope.chart "lr" lrChart
     |> Scope.chart "grad_heatmap" gradHeat
     |> Scope.chart "grad_spread" gradSpread
     |> Scope.chart "act_rms" actChart

@@ -7,6 +7,7 @@
     <Compile Include="MeteringTests.fs" />
     <Compile Include="ValuesTests.fs" />
     <Compile Include="ReportTests.fs" />
+    <Compile Include="ChartEdgeTests.fs" />
     <Compile Include="Bench.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>

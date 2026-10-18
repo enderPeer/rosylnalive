@@ -32,6 +32,7 @@ let build (log: RunLog) : Scope =
 
     let passed = checks |> List.filter (fun e -> e.Value = 1.0)
     let ok = not checks.IsEmpty && passed.Length = checks.Length
+    let count (n: int) = Fmt.int (int64 n)
     let groupNames = checks |> List.map groupOf |> sortIn groups
 
     let checkRows =
@@ -121,19 +122,12 @@ let build (log: RunLog) : Scope =
                                 Spreads =
                                     prompts
                                     |> List.mapi (fun i p ->
-                                        let xs =
-                                            logits
-                                            |> List.filter (fun e ->
-                                                e.TryStr TelemetryKeys.Case = Some p
-                                                && defaultArg (e.TryStr TelemetryKeys.Backend) "" = b)
-                                            |> List.choose (fun e -> e.TryFloat "measured")
-
-                                        {
-                                            Index = i
-                                            Low = minOr nan xs
-                                            Mid = maxOr nan xs
-                                            High = maxOr nan xs
-                                        })
+                                        logits
+                                        |> List.filter (fun e ->
+                                            e.TryStr TelemetryKeys.Case = Some p
+                                            && defaultArg (e.TryStr TelemetryKeys.Backend) "" = b)
+                                        |> List.choose (fun e -> e.TryFloat "measured")
+                                        |> spread i List.max)
                             })
                     RefLines =
                         [
@@ -180,9 +174,10 @@ let build (log: RunLog) : Scope =
         (if checks.IsEmpty then
              "No gate checks were recorded."
          elif ok then
-             Invariant.format $"**Gate 1: PASS.** {checks.Length} of {checks.Length} checks pass."
+             Invariant.format $"**Gate 1: PASS.** {count checks.Length} of {count checks.Length} checks pass."
          else
-             Invariant.format $"**Gate 1: FAIL.** {checks.Length - passed.Length} of {checks.Length} checks fail.")
+             Invariant.format
+                 $"**Gate 1: FAIL.** {count (checks.Length - passed.Length)} of {count checks.Length} checks fail.")
     |> Scope.value "passed" (Fmt.int (int64 passed.Length))
     |> Scope.value "total" (Fmt.int (int64 checks.Length))
     |> Scope.table "matrix" matrix

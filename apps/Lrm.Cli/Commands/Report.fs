@@ -59,7 +59,7 @@ let private resolveRun (target: string) =
 
 let private printWritten (paths: string list) =
     match paths with
-    | md :: svgs -> printfn "wrote %s (+%d charts)" md svgs.Length
+    | md :: svgs -> printfn "wrote %s (+%d charts)" (Path.GetFullPath md) svgs.Length
     | [] -> ()
 
 let private renderRun (o: Options) (target: string) =
@@ -101,23 +101,34 @@ let private renderSynthetic (o: Options) (which: string) =
         eprintfn "lrm report: no synthetic generator '%s' (all, %s)" which (String.concat ", " Synthetic.kinds)
         2
     else
+        // Without --runs the synthetic runs go to a fresh temporary folder, deleted once the reports are written.
         let runs =
             o.Runs
             |> Option.defaultWith (fun () ->
                 Path.Combine(Path.GetTempPath(), "lrm-synthetic-runs", Guid.NewGuid().ToString("N")))
 
-        let out = o.Out |> Option.defaultValue (Path.Combine("docs", "reports", "samples"))
+        let out =
+            Path.GetFullPath(o.Out |> Option.defaultValue (Path.Combine("docs", "reports", "samples")))
 
-        if which = "all" then
-            for x in Reports.renderSamples runs out do
-                printfn "wrote %s (+%d charts)" (Path.Combine(out, x.Template + ".md")) x.Svgs.Length
+        try
+            if which = "all" then
+                for x in Reports.renderSamples runs out do
+                    printfn "wrote %s (+%d charts)" (Path.Combine(out, x.Template + ".md")) x.Svgs.Length
 
-            printfn "wrote %s" (Path.Combine(out, "README.md"))
-        else
-            let dir = Synthetic.write which runs
-            printWritten (Reports.write out (Reports.render which (RunLogReader.loadOrFail dir)))
+                printfn "wrote %s" (Path.Combine(out, "README.md"))
+            else
+                let dir = Synthetic.write which runs
+                printWritten (Reports.write out (Reports.render which (RunLogReader.loadOrFail dir)))
 
-        printfn "synthetic runs are in %s" runs
+            if o.Runs.IsSome then
+                printfn "synthetic runs are in %s" (Path.GetFullPath runs)
+        finally
+            if o.Runs.IsNone && Directory.Exists runs then
+                try
+                    Directory.Delete(runs, true)
+                with _ ->
+                    ()
+
         0
 
 let private run (argv: string[]) : int =

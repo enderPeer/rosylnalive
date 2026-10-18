@@ -2,13 +2,15 @@
 # Training: {{value run.title}}
 
 {{value run.banner}}
-Final training loss {{value final_loss}} after {{value steps}} steps.
+Final training loss {{value final_loss}} at step {{value last_step}}, after {{value steps}}.
 
 ## Loss
 
 {{chart loss}}
 
 {{table stages}}
+
+{{chart lr}}
 
 ## Gradients
 

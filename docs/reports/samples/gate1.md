@@ -1,4 +1,4 @@
-# Gate 1: Gate 1 on a fresh clone (synthetic)
+# Gate 1: Fresh clone of main (synthetic)
 
 > **Synthetic data.** This report was rendered from a run log made by a synthetic generator (`lrm report --synthetic`), so the visuals can be reviewed before the real runs exist. None of its numbers are measurements.
 
@@ -54,7 +54,7 @@
 | Field | Value |
 | --- | --- |
 | Run | `synthetic-gate1` |
-| Title | Gate 1 on a fresh clone (synthetic) |
+| Title | Fresh clone of main (synthetic) |
 | Kind | gate1 |
 | Status | ok |
 | Started | 2026-10-18T09:00:00.000Z |

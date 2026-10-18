@@ -116,7 +116,8 @@ module Theme =
             Surface = "#fcfcfb"
             Ink = "#0b0b0b"
             Ink2 = "#52514e"
-            Muted = "#898781"
+            // Axis ticks and labels: 4.98:1 on the light surface (dark: #898781, 4.85:1).
+            Muted = "#6f6e69"
             Grid = "#e1e0d9"
             Axis = "#c3c2b7"
             Border = "#e6e5e0"
@@ -170,6 +171,10 @@ module Theme =
         rule ".ring" ("stroke:" + t.Surface)
         rule ".gap" ("stroke:" + t.Surface)
         rule ".qx" ("fill:" + t.Missing)
+        // An exact zero on a log colour scale: an outlined empty cell.
+        rule ".qz" ("fill:" + t.Surface + ";stroke:" + t.Ink2)
+        // The outline of a timeline outcome to notice (warning, serious, critical).
+        rule ".emph" ("stroke:" + t.Ink2)
         rule ".fn" ("fill:" + t.Neutral)
         rule ".sn" ("stroke:" + t.Neutral)
 
@@ -204,26 +209,39 @@ module Theme =
 type SvgWriter() =
     let sb = StringBuilder(16384)
 
-    /// A coordinate or length: at most two decimals, no trailing zeros, never "-0".
+    /// A coordinate or length: at most two decimals, no trailing zeros, never "-0", within ±1e6.
     static member Num(x: float) =
         if not (Double.IsFinite x) then
             "0"
         else
-            let s = x.ToString("0.##", Invariant.culture)
+            let s = (max -1e6 (min 1e6 x)).ToString("0.##", Invariant.culture)
             if s = "-0" then "0" else s
 
-    /// XML-escapes text (and attribute values): & < > " and drops control characters.
+    /// XML-escapes text (and attribute values): & < > " are escaped, control characters are dropped, and characters
+    /// XML cannot hold (U+FFFE, U+FFFF and unpaired surrogates) become U+FFFD, so any log string makes valid SVG.
     static member Escape(s: string) =
+        let s = if isNull s then "" else s
         let sb = StringBuilder(s.Length)
+        let mutable i = 0
 
-        for c in s do
+        while i < s.Length do
+            let c = s[i]
+
             match c with
             | '&' -> sb.Append "&amp;" |> ignore
             | '<' -> sb.Append "&lt;" |> ignore
             | '>' -> sb.Append "&gt;" |> ignore
             | '"' -> sb.Append "&quot;" |> ignore
             | c when c < ' ' -> ()
+            | '\uFFFE'
+            | '\uFFFF' -> sb.Append '\uFFFD' |> ignore
+            | c when Char.IsHighSurrogate c && i + 1 < s.Length && Char.IsLowSurrogate s[i + 1] ->
+                sb.Append(c).Append(s[i + 1]) |> ignore
+                i <- i + 1
+            | c when Char.IsSurrogate c -> sb.Append '\uFFFD' |> ignore
             | c -> sb.Append c |> ignore
+
+            i <- i + 1
 
         sb.ToString()
 
@@ -310,7 +328,7 @@ module TextMetrics =
 
         w * size
 
-    /// `text` cut to fit `maxWidth` px at `size`, with an ellipsis when cut.
+    /// `text` cut to fit `maxWidth` px at `size`, with an ellipsis when cut. A cut never splits a surrogate pair.
     let fit (size: float) (maxWidth: float) (text: string) =
         if width size text <= maxWidth then
             text
@@ -318,6 +336,19 @@ module TextMetrics =
             let mutable s = text
 
             while s.Length > 1 && width size (s + "…") > maxWidth do
+                let cut =
+                    if
+                        s.Length >= 2
+                        && Char.IsLowSurrogate s[s.Length - 1]
+                        && Char.IsHighSurrogate s[s.Length - 2]
+                    then
+                        2
+                    else
+                        1
+
+                s <- s.Substring(0, s.Length - cut)
+
+            if s.Length > 0 && Char.IsHighSurrogate s[s.Length - 1] then
                 s <- s.Substring(0, s.Length - 1)
 
             s + "…"
