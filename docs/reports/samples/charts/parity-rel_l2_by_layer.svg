@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="parity-rel_l2_by_layer-title parity-rel_l2_by_layer-desc">
+<title id="parity-rel_l2_by_layer-title">rel_l2 by layer</title>
+<desc id="parity-rel_l2_by_layer-desc">Error bars of rel_l2 (log) per layer: 2 series over 28 categories, whiskers from low to high.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="379" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">rel_l2 by layer</text>
+<text class="t2" x="16" y="45" font-size="12">Dot: median over cases and taps of the layer; whiskers: min to max. Lines: each pair's bound.</text>
+<circle class="f0" cx="24" cy="62" r="4"/>
+<text class="t2" x="38" y="66" font-size="12">cpu64-vs-torch64p</text>
+<circle class="f1" cx="172.48" cy="62" r="4"/>
+<text class="t2" x="186.48" y="66" font-size="12">cpu32-vs-torch32</text>
+<line class="grid" x1="56.8" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="48.8" y="338" font-size="11" text-anchor="end">10⁻¹⁴</text>
+<line class="grid" x1="56.8" y1="286.8" x2="696" y2="286.8" stroke-width="1"/>
+<text class="t3" x="48.8" y="290.8" font-size="11" text-anchor="end">10⁻¹²</text>
+<line class="grid" x1="56.8" y1="239.6" x2="696" y2="239.6" stroke-width="1"/>
+<text class="t3" x="48.8" y="243.6" font-size="11" text-anchor="end">10⁻¹⁰</text>
+<line class="grid" x1="56.8" y1="192.4" x2="696" y2="192.4" stroke-width="1"/>
+<text class="t3" x="48.8" y="196.4" font-size="11" text-anchor="end">10⁻⁸</text>
+<line class="grid" x1="56.8" y1="145.2" x2="696" y2="145.2" stroke-width="1"/>
+<text class="t3" x="48.8" y="149.2" font-size="11" text-anchor="end">10⁻⁶</text>
+<line class="grid" x1="56.8" y1="98" x2="696" y2="98" stroke-width="1"/>
+<text class="t3" x="48.8" y="102" font-size="11" text-anchor="end">10⁻⁴</text>
+<line class="ref" x1="56.8" y1="239.6" x2="696" y2="239.6" stroke-width="1" stroke-opacity="0.7"><title>bound cpu64-vs-torch64p 1.0e-10</title></line>
+<text class="t2" x="692" y="234.6" font-size="10" text-anchor="end">bound cpu64-vs-torch64p 1.0e-10</text>
+<line class="ref" x1="56.8" y1="114.5" x2="696" y2="114.5" stroke-width="1" stroke-opacity="0.7"><title>bound cpu32-vs-torch32 2.0e-05</title></line>
+<text class="t2" x="692" y="109.5" font-size="10" text-anchor="end">bound cpu32-vs-torch32 2.0e-05</text>
+<text class="t3" x="56.8" y="88" font-size="11" text-anchor="start">rel_l2 (log)</text>
+<text class="t3" x="376.4" y="370" font-size="11" text-anchor="middle">layer</text>
+<text class="t3" x="68.21" y="351" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="91.04" y="351" font-size="11" text-anchor="middle">1</text>
+<text class="t3" x="113.87" y="351" font-size="11" text-anchor="middle">2</text>
+<text class="t3" x="136.7" y="351" font-size="11" text-anchor="middle">3</text>
+<text class="t3" x="159.53" y="351" font-size="11" text-anchor="middle">4</text>
+<text class="t3" x="182.36" y="351" font-size="11" text-anchor="middle">5</text>
+<text class="t3" x="205.19" y="351" font-size="11" text-anchor="middle">6</text>
+<text class="t3" x="228.01" y="351" font-size="11" text-anchor="middle">7</text>
+<text class="t3" x="250.84" y="351" font-size="11" text-anchor="middle">8</text>
+<text class="t3" x="273.67" y="351" font-size="11" text-anchor="middle">9</text>
+<text class="t3" x="296.5" y="351" font-size="11" text-anchor="middle">10</text>
+<text class="t3" x="319.33" y="351" font-size="11" text-anchor="middle">11</text>
+<text class="t3" x="342.16" y="351" font-size="11" text-anchor="middle">12</text>
+<text class="t3" x="364.99" y="351" font-size="11" text-anchor="middle">13</text>
+<text class="t3" x="387.81" y="351" font-size="11" text-anchor="middle">14</text>
+<text class="t3" x="410.64" y="351" font-size="11" text-anchor="middle">15</text>
+<text class="t3" x="433.47" y="351" font-size="11" text-anchor="middle">16</text>
+<text class="t3" x="456.3" y="351" font-size="11" text-anchor="middle">17</text>
+<text class="t3" x="479.13" y="351" font-size="11" text-anchor="middle">18</text>
+<text class="t3" x="501.96" y="351" font-size="11" text-anchor="middle">19</text>
+<text class="t3" x="524.79" y="351" font-size="11" text-anchor="middle">20</text>
+<text class="t3" x="547.61" y="351" font-size="11" text-anchor="middle">21</text>
+<text class="t3" x="570.44" y="351" font-size="11" text-anchor="middle">22</text>
+<text class="t3" x="593.27" y="351" font-size="11" text-anchor="middle">23</text>
+<text class="t3" x="616.1" y="351" font-size="11" text-anchor="middle">24</text>
+<text class="t3" x="638.93" y="351" font-size="11" text-anchor="middle">25</text>
+<text class="t3" x="661.76" y="351" font-size="11" text-anchor="middle">26</text>
+<text class="t3" x="684.59" y="351" font-size="11" text-anchor="middle">27</text>
+<path class="s0" d="M64.41 315.04V297.14M61.41 315.04h6M61.41 297.14h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="64.41" cy="302.98" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 0: 2.1e-13 (6.4e-14 to 3.6e-13)</title></circle>
+<path class="s0" d="M87.24 310.64V292.71M84.24 310.64h6M84.24 292.71h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="87.24" cy="302.89" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 1: 2.1e-13 (9.8e-14 to 5.6e-13)</title></circle>
+<path class="s0" d="M110.07 314.19V291.52M107.07 314.19h6M107.07 291.52h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="110.07" cy="301.73" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 2: 2.3e-13 (6.9e-14 to 6.3e-13)</title></circle>
+<path class="s0" d="M132.9 311.68V292.85M129.9 311.68h6M129.9 292.85h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="132.9" cy="300.79" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 3: 2.6e-13 (8.8e-14 to 5.5e-13)</title></circle>
+<path class="s0" d="M155.72 305.92V291.17M152.72 305.92h6M152.72 291.17h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="155.72" cy="298.15" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 4: 3.3e-13 (1.5e-13 to 6.5e-13)</title></circle>
+<path class="s0" d="M178.55 306.59V291.63M175.55 306.59h6M175.55 291.63h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="178.55" cy="298.63" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 5: 3.2e-13 (1.4e-13 to 6.2e-13)</title></circle>
+<path class="s0" d="M201.38 311.21V287.46M198.38 311.21h6M198.38 287.46h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="201.38" cy="298" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 6: 3.4e-13 (9.2e-14 to 9.4e-13)</title></circle>
+<path class="s0" d="M224.21 306.85V289.09M221.21 306.85h6M221.21 289.09h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="224.21" cy="297.58" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 7: 3.5e-13 (1.4e-13 to 8.0e-13)</title></circle>
+<path class="s0" d="M247.04 305.89V285.53M244.04 305.89h6M244.04 285.53h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="247.04" cy="297.35" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 8: 3.6e-13 (1.6e-13 to 1.1e-12)</title></circle>
+<path class="s0" d="M269.87 306.07V288.96M266.87 306.07h6M266.87 288.96h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="269.87" cy="295.36" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 9: 4.3e-13 (1.5e-13 to 8.1e-13)</title></circle>
+<path class="s0" d="M292.7 307.05V285.12M289.7 307.05h6M289.7 285.12h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="292.7" cy="295.97" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 10: 4.1e-13 (1.4e-13 to 1.2e-12)</title></circle>
+<path class="s0" d="M315.52 302.45V285.57M312.52 302.45h6M312.52 285.57h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="315.52" cy="295.45" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 11: 4.3e-13 (2.2e-13 to 1.1e-12)</title></circle>
+<path class="s0" d="M338.35 305.6V283.48M335.35 305.6h6M335.35 283.48h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="338.35" cy="293.94" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 12: 5.0e-13 (1.6e-13 to 1.4e-12)</title></circle>
+<path class="s0" d="M361.18 303.31V284.73M358.18 303.31h6M358.18 284.73h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="361.18" cy="294.27" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 13: 4.8e-13 (2.0e-13 to 1.2e-12)</title></circle>
+<path class="s0" d="M384.01 300.78V284.02M381.01 300.78h6M381.01 284.02h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="384.01" cy="292.65" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 14: 5.7e-13 (2.6e-13 to 1.3e-12)</title></circle>
+<path class="s0" d="M406.84 302.44V283.31M403.84 302.44h6M403.84 283.31h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="406.84" cy="294.55" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 15: 4.7e-13 (2.2e-13 to 1.4e-12)</title></circle>
+<path class="s0" d="M429.67 299.5V283.51M426.67 299.5h6M426.67 283.51h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="429.67" cy="292.95" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 16: 5.5e-13 (2.9e-13 to 1.4e-12)</title></circle>
+<path class="s0" d="M452.5 299.05V281.37M449.5 299.05h6M449.5 281.37h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="452.5" cy="292.54" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 17: 5.7e-13 (3.0e-13 to 1.7e-12)</title></circle>
+<path class="s0" d="M475.32 303.08V283.9M472.32 303.08h6M472.32 283.9h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="475.32" cy="291.85" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 18: 6.1e-13 (2.0e-13 to 1.3e-12)</title></circle>
+<path class="s0" d="M498.15 300.09V280.27M495.15 300.09h6M495.15 280.27h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="498.15" cy="291.43" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 19: 6.4e-13 (2.7e-13 to 1.9e-12)</title></circle>
+<path class="s0" d="M520.98 301.9V283.71M517.98 301.9h6M517.98 283.71h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="520.98" cy="291.4" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 20: 6.4e-13 (2.3e-13 to 1.4e-12)</title></circle>
+<path class="s0" d="M543.81 298.79V282.79M540.81 298.79h6M540.81 282.79h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="543.81" cy="289.88" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 21: 7.4e-13 (3.1e-13 to 1.5e-12)</title></circle>
+<path class="s0" d="M566.64 299.37V280.37M563.64 299.37h6M563.64 280.37h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="566.64" cy="289.92" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 22: 7.4e-13 (2.9e-13 to 1.9e-12)</title></circle>
+<path class="s0" d="M589.47 300.5V279.29M586.47 300.5h6M586.47 279.29h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="589.47" cy="291.17" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 23: 6.5e-13 (2.6e-13 to 2.1e-12)</title></circle>
+<path class="s0" d="M612.3 300.93V281.85M609.3 300.93h6M609.3 281.85h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="612.3" cy="290.62" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 24: 6.9e-13 (2.5e-13 to 1.6e-12)</title></circle>
+<path class="s0" d="M635.12 299.07V283.1M632.12 299.07h6M632.12 283.1h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="635.12" cy="289.05" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 25: 8.0e-13 (3.0e-13 to 1.4e-12)</title></circle>
+<path class="s0" d="M657.95 298.03V280.62M654.95 298.03h6M654.95 280.62h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="657.95" cy="288.24" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 26: 8.7e-13 (3.3e-13 to 1.8e-12)</title></circle>
+<path class="s0" d="M680.78 298.06V241.29M677.78 298.06h6M677.78 241.29h6" stroke-width="1.5" fill="none"/>
+<circle class="f0 ring" cx="680.78" cy="289.21" r="4" stroke-width="1.5"><title>cpu64-vs-torch64p, layer 27: 7.9e-13 (3.3e-13 to 8.5e-11)</title></circle>
+<path class="s1" d="M72.02 166.56V147.82M69.02 166.56h6M69.02 147.82h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="72.02" cy="158.89" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 0: 2.6e-07 (1.2e-07 to 7.7e-07)</title></circle>
+<path class="s1" d="M94.85 165.03V145.43M91.85 165.03h6M91.85 145.43h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="94.85" cy="156.51" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 1: 3.3e-07 (1.4e-07 to 9.8e-07)</title></circle>
+<path class="s1" d="M117.68 164.73V145.12M114.68 164.73h6M114.68 145.12h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="117.68" cy="155.41" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 2: 3.7e-07 (1.5e-07 to 1.0e-06)</title></circle>
+<path class="s1" d="M140.5 165.33V145.96M137.5 165.33h6M137.5 145.96h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="140.5" cy="153.3" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 3: 4.5e-07 (1.4e-07 to 9.3e-07)</title></circle>
+<path class="s1" d="M163.33 163.61V143.27M160.33 163.61h6M160.33 143.27h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="163.33" cy="153.26" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 4: 4.6e-07 (1.7e-07 to 1.2e-06)</title></circle>
+<path class="s1" d="M186.16 165.32V143.41M183.16 165.32h6M183.16 143.41h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="186.16" cy="153.57" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 5: 4.4e-07 (1.4e-07 to 1.2e-06)</title></circle>
+<path class="s1" d="M208.99 162.74V145.59M205.99 162.74h6M205.99 145.59h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="208.99" cy="152.27" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 6: 5.0e-07 (1.8e-07 to 9.6e-07)</title></circle>
+<path class="s1" d="M231.82 160.83V142.9M228.82 160.83h6M228.82 142.9h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="231.82" cy="151.23" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 7: 5.6e-07 (2.2e-07 to 1.3e-06)</title></circle>
+<path class="s1" d="M254.65 160.98V141.08M251.65 160.98h6M251.65 141.08h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="254.65" cy="150.43" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 8: 6.0e-07 (2.1e-07 to 1.5e-06)</title></circle>
+<path class="s1" d="M277.48 158.99V139.5M274.48 158.99h6M274.48 139.5h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="277.48" cy="150.16" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 9: 6.2e-07 (2.6e-07 to 1.7e-06)</title></circle>
+<path class="s1" d="M300.3 160.65V138.84M297.3 160.65h6M297.3 138.84h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="300.3" cy="150.1" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 10: 6.2e-07 (2.2e-07 to 1.9e-06)</title></circle>
+<path class="s1" d="M323.13 160.22V140.44M320.13 160.22h6M320.13 140.44h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="323.13" cy="149.27" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 11: 6.7e-07 (2.3e-07 to 1.6e-06)</title></circle>
+<path class="s1" d="M345.96 156.25V138.53M342.96 156.25h6M342.96 138.53h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="345.96" cy="148.65" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 12: 7.1e-07 (3.4e-07 to 1.9e-06)</title></circle>
+<path class="s1" d="M368.79 157.86V141.09M365.79 157.86h6M365.79 141.09h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="368.79" cy="147.72" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 13: 7.8e-07 (2.9e-07 to 1.5e-06)</title></circle>
+<path class="s1" d="M391.62 157.28V135.68M388.62 157.28h6M388.62 135.68h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="391.62" cy="147.87" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 14: 7.7e-07 (3.1e-07 to 2.5e-06)</title></circle>
+<path class="s1" d="M414.45 158.87V138.15M411.45 158.87h6M411.45 138.15h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="414.45" cy="147.07" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 15: 8.3e-07 (2.6e-07 to 2.0e-06)</title></circle>
+<path class="s1" d="M437.28 156.06V139.92M434.28 156.06h6M434.28 139.92h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="437.28" cy="146.2" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 16: 9.1e-07 (3.5e-07 to 1.7e-06)</title></circle>
+<path class="s1" d="M460.1 156.15V137.7M457.1 156.15h6M457.1 137.7h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="460.1" cy="147.34" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 17: 8.1e-07 (3.4e-07 to 2.1e-06)</title></circle>
+<path class="s1" d="M482.93 153.54V137.58M479.93 153.54h6M479.93 137.58h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="482.93" cy="146.21" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 18: 9.1e-07 (4.4e-07 to 2.1e-06)</title></circle>
+<path class="s1" d="M505.76 153.94V136.96M502.76 153.94h6M502.76 136.96h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="505.76" cy="144.85" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 19: 1.0e-06 (4.3e-07 to 2.2e-06)</title></circle>
+<path class="s1" d="M528.59 155.01V135.81M525.59 155.01h6M525.59 135.81h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="528.59" cy="144.92" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 20: 1.0e-06 (3.8e-07 to 2.5e-06)</title></circle>
+<path class="s1" d="M551.42 155.33V133.96M548.42 155.33h6M548.42 133.96h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="551.42" cy="145.79" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 21: 9.4e-07 (3.7e-07 to 3.0e-06)</title></circle>
+<path class="s1" d="M574.25 154.87V132.52M571.25 154.87h6M571.25 132.52h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="574.25" cy="144.49" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 22: 1.1e-06 (3.9e-07 to 3.4e-06)</title></circle>
+<path class="s1" d="M597.08 156.1V134.82M594.08 156.1h6M594.08 134.82h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="597.08" cy="144.68" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 23: 1.1e-06 (3.5e-07 to 2.8e-06)</title></circle>
+<path class="s1" d="M619.9 152.67V134.5M616.9 152.67h6M616.9 134.5h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="619.9" cy="143.73" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 24: 1.2e-06 (4.8e-07 to 2.8e-06)</title></circle>
+<path class="s1" d="M642.73 155V132.23M639.73 155h6M639.73 132.23h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="642.73" cy="145.22" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 25: 1.0e-06 (3.8e-07 to 3.5e-06)</title></circle>
+<path class="s1" d="M665.56 154.23V134.11M662.56 154.23h6M662.56 134.11h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="665.56" cy="143.12" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 26: 1.2e-06 (4.1e-07 to 3.0e-06)</title></circle>
+<path class="s1" d="M688.39 152.73V116.38M685.39 152.73h6M685.39 116.38h6" stroke-width="1.5" fill="none"/>
+<circle class="f1 ring" cx="688.39" cy="142.99" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 27: 1.2e-06 (4.8e-07 to 1.7e-05)</title></circle>
+<line class="axis" x1="56.8" y1="334" x2="696" y2="334" stroke-width="1"/>
+</svg>
