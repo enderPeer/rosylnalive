@@ -302,7 +302,7 @@ module Simulation =
             let nodeId = spec.NodeId
 
             let executor =
-                FakeExecutor(spec.NodeCanHost, (fun u -> policy.Corrupts(nodeId, u)), ignore)
+                FakeExecutor(spec.NodeCanHost, (fun u -> policy.FakeFault(nodeId, u)), ignore)
 
             let node =
                 Node(

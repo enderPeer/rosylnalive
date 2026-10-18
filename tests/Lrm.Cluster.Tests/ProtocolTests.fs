@@ -104,12 +104,14 @@ let private sampleMessages: Message list =
                 ReadyChain = Some chain
                 ReadyHead = WorkUnit.id u1
                 ReadyDigest = digest
+                ReadyOutput = BlobId.ofBytes [| 9uy |]
             }
         Message.Ready
             {
                 ReadyChain = None
                 ReadyHead = UnitId.none
                 ReadyDigest = ContentId.zero
+                ReadyOutput = BlobId.none
             }
     ]
 
@@ -297,11 +299,16 @@ let frameTests =
                 let a = FrameCodec.encode leaseFrame
                 let b = Message.encode (envelope (Message.Assign { Work = u1; WorkInput = "abc"B }))
                 use s = new Trickle(Array.append a b)
-                let first = (FrameStream.readAsync s CancellationToken.None).Result
-                let second = (FrameStream.readAsync s CancellationToken.None).Result
-                let third = (FrameStream.readAsync s CancellationToken.None).Result
-                Expect.equal first (Some a) "first"
-                Expect.equal second (Some b) "second"
+
+                let next () =
+                    (FrameStream.readAsync s CancellationToken.None).Result
+
+                let first = next ()
+                let second = next ()
+                let third = next ()
+                Expect.equal (first |> Option.map fst) (Some a) "first"
+                Expect.equal (first |> Option.map snd) (Some leaseFrame) "first, decoded"
+                Expect.equal (second |> Option.map fst) (Some b) "second"
                 Expect.equal third None "clean end"
 
             testCase "a stream that ends inside a frame raises"
@@ -316,6 +323,29 @@ let frameTests =
                             (FrameStream.readAsync s CancellationToken.None).GetAwaiter().GetResult()
                             |> ignore)
                         (sprintf "cut at %d" cut)
+
+            testCase "a header that announces 64 MiB on a stream that then ends raises"
+            <| fun () ->
+                // A valid header whose length says MaxPayload, then 10 bytes and the end: the reader grows its
+                // buffer with the bytes that arrive, and reports the short frame.
+                let header = Array.sub (FrameCodec.encode leaseFrame) 0 FrameCodec.HeaderSize
+
+                Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(
+                    Span(header, 40, 4),
+                    uint32 FrameCodec.MaxPayload
+                )
+
+                Expect.equal (FrameCodec.tryParseHeaderArray header) (Ok FrameCodec.MaxPayload) "a valid header"
+                use s = new MemoryStream(Array.append header (Array.zeroCreate 10))
+
+                let e =
+                    Expect.throwsC
+                        (fun () ->
+                            (FrameStream.readAsync s CancellationToken.None).GetAwaiter().GetResult()
+                            |> ignore)
+                        id
+
+                Expect.stringContains e.Message "10 of 67108896 bytes" "how much arrived"
         ]
 
 let unitTests =

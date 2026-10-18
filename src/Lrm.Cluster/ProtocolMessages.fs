@@ -147,12 +147,16 @@ type NoticeMsg =
     }
 
 /// 11. Node to coordinator: Ready. With no chain, the node's executor is loaded; with a chain, the node holds that
-/// chain at Head (after a replay). Deadlines of a node's assignments count only from Ready. The frame's UnitId is Head.
+/// chain at Head (after a replay), or reports a replayed unit whose recomputation disagrees with the log. Deadlines of
+/// a node's assignments count only from Ready. The frame's UnitId is Head.
 type ReadyMsg =
     {
         ReadyChain: ChainKey option
         ReadyHead: UnitId
+        /// The chain's state digest after Head.
         ReadyDigest: ContentId
+        /// The blob id of Head's output as this node computed it; BlobId.none when there is no head.
+        ReadyOutput: BlobId
     }
 
 /// A ClusterProtocol message: one case per MessageKind.
@@ -236,6 +240,11 @@ module Message =
         w.Bytes e.Input
         w.Id e.Output.Value
         w.Id e.StateDigest
+
+    /// The encoded size of one Log entry in bytes: the unit's encoding, the u32-prefixed input, the output id and the
+    /// state digest. A Log payload is 14 bytes (chain, reset, final, entry count) plus its entries.
+    let logEntrySize (e: LogEntry) =
+        (WorkUnit.toBytes e.Unit).Length + 4 + e.Input.Length + 64
 
     let private readEntry (r: CanonicalReader) : LogEntry =
         let u = WorkUnit.read r
@@ -334,7 +343,8 @@ module Message =
             | Message.Ready x ->
                 w.Option(x.ReadyChain, writeChain w)
                 w.Id x.ReadyHead.Value
-                w.Id x.ReadyDigest)
+                w.Id x.ReadyDigest
+                w.Id x.ReadyOutput.Value)
 
     /// The frame header's UnitId for a message: the unit for Assign and Result, To for Fetch, Head for Ready, and
     /// ContentId.zero otherwise.
@@ -491,6 +501,7 @@ module Message =
                 let chain = r.Option(fun () -> readChain r)
                 let head = UnitId(r.Id())
                 let digest = r.Id()
+                let output = BlobId(r.Id())
 
                 if head.Value <> f.UnitId then
                     raise (FormatException "Ready frame UnitId is not Head")
@@ -500,6 +511,7 @@ module Message =
                         ReadyChain = chain
                         ReadyHead = head
                         ReadyDigest = digest
+                        ReadyOutput = output
                     }
             | k -> raise (FormatException(sprintf "unknown message kind %d" (uint16 k)))
 

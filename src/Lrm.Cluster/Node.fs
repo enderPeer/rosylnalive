@@ -59,7 +59,9 @@ type internal ChainSlot(job: ContentId, chain: ChainKey, state: IChainState) =
     member _.State = state
     member val Head = UnitId.none with get, set
     member val HeadDigest = state.Digest with get, set
+    /// The output of the head unit, and its blob id (BlobId.none at no head).
     member val LastOutput: byte[] = [||] with get, set
+    member val HeadOutput = BlobId.none with get, set
     member val Applied = HashSet<UnitId>()
     /// A Fetch is outstanding; the slot's queued units wait.
     member val Waiting = false with get, set
@@ -81,9 +83,24 @@ type internal Busy =
     | Executing of WorkItem
     | Replaying of ChainSlot
 
+/// What a replay computed: the units applied, where the chain ended up, and the first logged unit whose recomputed
+/// output or digest differs from the log.
+type internal ReplayOutcome =
+    {
+        Applied: UnitId list
+        Head: UnitId
+        Digest: ContentId
+        LastOutput: byte[]
+        LastOutputId: BlobId
+        /// A logged unit did not follow the chain head: the replay starts over.
+        Broken: bool
+        /// (unit, recomputed output id, recomputed digest) of the first disagreeing unit.
+        Mismatch: (UnitId * BlobId * ContentId) option
+    }
+
 type internal WorkOutcome =
-    | Executed of output: byte[] * digest: ContentId
-    | Replayed of applied: UnitId list * head: UnitId * digest: ContentId * lastOutput: byte[] * broken: bool
+    | Executed of output: byte[] * outputId: BlobId * digest: ContentId
+    | Replayed of ReplayOutcome
 
 /// A node (ClusterProtocol contract): joins with Hello, heartbeats, runs assigned units one at a time on its
 /// executor, replays a chain from the coordinator's unit log before executing a unit whose Prev it does not hold,
@@ -216,7 +233,7 @@ type Node(config: NodeConfig, executor: IStageExecutor) =
                 })
         |> ignore
 
-    let sendReady (chain: ChainKey option) (head: UnitId) (digest: ContentId) =
+    let sendReady (chain: ChainKey option) (head: UnitId) (digest: ContentId) (output: BlobId) =
         send
             FrameFlags.Empty
             (Message.Ready
@@ -224,8 +241,13 @@ type Node(config: NodeConfig, executor: IStageExecutor) =
                     ReadyChain = chain
                     ReadyHead = head
                     ReadyDigest = digest
+                    ReadyOutput = output
                 })
         |> ignore
+
+    /// The node holds `slot`'s chain at its head: the coordinator checks the head's digest and output.
+    let sendChainReady (slot: ChainSlot) =
+        sendReady (Some slot.Chain) slot.Head slot.HeadDigest slot.HeadOutput
 
     let phaseOf (item: WorkItem) =
         match busy with
@@ -294,7 +316,7 @@ type Node(config: NodeConfig, executor: IStageExecutor) =
             },
             (fun () ->
                 let output = state.Apply(work, input)
-                box (Executed(output, state.Digest))),
+                box (Executed(output, BlobId.ofBytes output, state.Digest))),
             token
         )
 
@@ -306,6 +328,7 @@ type Node(config: NodeConfig, executor: IStageExecutor) =
         let state = slot.State
         let startHead = slot.Head
         let startOutput = slot.LastOutput
+        let startOutputId = slot.HeadOutput
         let skip = HashSet<UnitId>(slot.Applied)
 
         ctx.Execute(
@@ -317,7 +340,9 @@ type Node(config: NodeConfig, executor: IStageExecutor) =
                 let applied = ResizeArray<UnitId>()
                 let mutable head = startHead
                 let mutable last = startOutput
+                let mutable lastId = startOutputId
                 let mutable broken = false
+                let mutable mismatch = None
 
                 for e in entries do
                     let id = WorkUnit.id e.Unit
@@ -325,12 +350,29 @@ type Node(config: NodeConfig, executor: IStageExecutor) =
                     if not broken && not (skip.Contains id) then
                         if e.Unit.Prev = head then
                             last <- state.Apply(e.Unit, e.Input)
+                            lastId <- BlobId.ofBytes last
                             head <- id
                             applied.Add id
+                            let digest = state.Digest
+
+                            // Replay recomputes the log: an output or digest that differs is a divergence.
+                            if mismatch.IsNone && (lastId <> e.Output || digest <> e.StateDigest) then
+                                mismatch <- Some(id, lastId, digest)
                         else
                             broken <- true
 
-                box (Replayed(List.ofSeq applied, head, state.Digest, last, broken))),
+                box (
+                    Replayed
+                        {
+                            Applied = List.ofSeq applied
+                            Head = head
+                            Digest = state.Digest
+                            LastOutput = last
+                            LastOutputId = lastId
+                            Broken = broken
+                            Mismatch = mismatch
+                        }
+                )),
             token
         )
 
@@ -429,7 +471,7 @@ type Node(config: NodeConfig, executor: IStageExecutor) =
                 if slot.PendingLog.Count = 0 && log.Final then
                     if slot.Head = slot.FetchTarget then
                         slot.Waiting <- false
-                        sendReady (Some slot.Chain) slot.Head slot.HeadDigest
+                        sendChainReady slot
                     else
                         // The log cannot reach the target from our head: start over from the beginning.
                         let fresh = resetSlot slot
@@ -447,11 +489,12 @@ type Node(config: NodeConfig, executor: IStageExecutor) =
             match busy, result with
             | Executing item, (:? WorkOutcome as o) ->
                 match o with
-                | Executed(output, digest) ->
+                | Executed(output, outputId, digest) ->
                     let slot = item.Slot
                     slot.Head <- item.Id
                     slot.HeadDigest <- digest
                     slot.LastOutput <- output
+                    slot.HeadOutput <- outputId
                     slot.Applied.Add item.Id |> ignore
                     executed <- executed + 1
                     busy <- Idle
@@ -459,20 +502,21 @@ type Node(config: NodeConfig, executor: IStageExecutor) =
                 | Replayed _ -> invalidOp "replay result for an execution"
             | Replaying slot, (:? WorkOutcome as o) ->
                 match o with
-                | Replayed(applied, head, digest, lastOutput, broken) ->
-                    for id in applied do
+                | Replayed r ->
+                    for id in r.Applied do
                         slot.Applied.Add id |> ignore
 
-                    slot.Head <- head
-                    slot.HeadDigest <- digest
-                    slot.LastOutput <- lastOutput
-                    replayed <- replayed + applied.Length
+                    slot.Head <- r.Head
+                    slot.HeadDigest <- r.Digest
+                    slot.LastOutput <- r.LastOutput
+                    slot.HeadOutput <- r.LastOutputId
+                    replayed <- replayed + r.Applied.Length
                     busy <- Idle
 
-                    if tel.Enabled && not applied.IsEmpty then
+                    if tel.Enabled && not r.Applied.IsEmpty then
                         tel.Counter(
                             ClusterNames.ReplayUnits,
-                            float applied.Length,
+                            float r.Applied.Length,
                             TelemetryUnits.Count,
                             [
                                 Attr.int "lane" (int slot.Chain.Lane)
@@ -480,7 +524,13 @@ type Node(config: NodeConfig, executor: IStageExecutor) =
                             ]
                         )
 
-                    if broken then
+                    // A recomputed unit disagrees with the log: report it as a chain Ready at that unit, which the
+                    // coordinator compares with the accepted output and digest (a replay divergence).
+                    match r.Mismatch with
+                    | Some(id, outputId, digest) -> sendReady (Some slot.Chain) id digest outputId
+                    | None -> ()
+
+                    if r.Broken then
                         slot.PendingLog.Clear()
                         let fresh = resetSlot slot
                         fresh.Waiting <- true
@@ -488,7 +538,7 @@ type Node(config: NodeConfig, executor: IStageExecutor) =
                     elif slot.Waiting && slot.Head = slot.FetchTarget then
                         slot.Waiting <- false
                         slot.PendingLog.Clear()
-                        sendReady (Some slot.Chain) slot.Head slot.HeadDigest
+                        sendChainReady slot
                 | Executed _ -> invalidOp "execution result for a replay"
             | _ -> ()
 
@@ -608,7 +658,7 @@ type Node(config: NodeConfig, executor: IStageExecutor) =
                     ready <- true
 
                     if isMember then
-                        sendReady None UnitId.none ContentId.zero
+                        sendReady None UnitId.none ContentId.zero BlobId.none
 
                     pump now
 
@@ -641,7 +691,7 @@ type Node(config: NodeConfig, executor: IStageExecutor) =
                         leaseUntil <- max leaseUntil (from + Ns.ms (int64 w.LeaseMs))
 
                         if ready && not wasMember then
-                            sendReady None UnitId.none ContentId.zero
+                            sendReady None UnitId.none ContentId.zero BlobId.none
                     | Message.Lease l ->
                         adopt now env.Epoch
 

@@ -52,6 +52,12 @@ module BlobId =
 
         BlobId(Canonical.hashBytes Tag bytes)
 
+    /// "No blob": 32 zero bytes, where a message has no output to name (a Ready without a head).
+    let none = BlobId ContentId.zero
+
+    /// True for BlobId.none.
+    let isNone (id: BlobId) = id.Value = ContentId.zero
+
     /// The underlying ContentId.
     let value (id: BlobId) = id.Value
 

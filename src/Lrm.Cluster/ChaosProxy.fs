@@ -117,9 +117,9 @@ type ChaosProxy(listen: IPEndPoint, target: IPEndPoint, policy: ChaosPolicy, clo
 
                         match next with
                         | None -> go <- false
-                        | Some bytes ->
+                        | Some(bytes, frame) ->
                             if fromNode && pair.Node = 0UL then
-                                pair.Node <- BinaryPrimitives.ReadUInt64LittleEndian(ReadOnlySpan(bytes, 24, 8))
+                                pair.Node <- frame.Sender
                                 checkFaults ()
 
                             let node = pair.Node

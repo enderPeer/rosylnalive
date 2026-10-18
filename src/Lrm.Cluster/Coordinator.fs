@@ -26,7 +26,8 @@ type CoordinatorConfig =
         DrainNs: int64
         /// The divergence tripwire: stop the run at the first divergence.
         HaltOnDivergence: bool
-        /// The largest Log batch, in input bytes: 16 MiB.
+        /// The largest Log batch, in encoded entry bytes (unit, input, output id, digest): 16 MiB. A batch holds at
+        /// least one entry, and one entry always fits in a frame.
         LogBatchBytes: int
     }
 
@@ -75,16 +76,35 @@ type Divergence =
 /// How a run ended.
 [<RequireQualifiedAccess>]
 type RunStatus =
+    /// Every unit was accepted, and every live replica that was due to confirm a chain's final state did.
     | Completed
+    /// Every unit was accepted with no divergence, but when the drain ended some live replicas had still not
+    /// confirmed a chain's final state (RunOutcome.Unconfirmed > 0): the cross-check is incomplete.
+    | Unverified
     /// The divergence tripwire fired.
     | Diverged
     | Aborted of reason: string
+
+[<RequireQualifiedAccess>]
+module RunStatus =
+    /// The status as the cluster.run event and the CLI print it: completed, unverified, diverged or aborted.
+    let name (s: RunStatus) =
+        match s with
+        | RunStatus.Completed -> "completed"
+        | RunStatus.Unverified -> "unverified"
+        | RunStatus.Diverged -> "diverged"
+        | RunStatus.Aborted _ -> "aborted"
 
 /// The final state of one chain and the members that confirmed it.
 type ChainFinal =
     {
         Final: ChainHead
+        /// Members whose result or replay matched the final unit (the winner included), in id order.
         ConfirmedBy: uint64 list
+        /// Live replicas that were still computing the final unit when the drain ended (laggards), in id order.
+        PendingBy: uint64 list
+        /// Live replicas that were due to confirm the final unit, were asked again, and never answered, in id order.
+        UnconfirmedBy: uint64 list
     }
 
 /// The result of a run.
@@ -106,22 +126,36 @@ type RunOutcome =
         Replays: int
         /// Frames rejected: stale epoch, unknown member, malformed.
         Rejected: int
+        /// Accepted units that a second member confirmed, by an equal result or by a replay that recomputed them.
+        CrossChecked: int
+        /// Final chain states that were not verified when the run ended: fewer than two members computed them (one
+        /// with Replicas = 1), or a live replica that was assigned the final unit on time neither confirmed it nor
+        /// was still computing it. 0 when the status is Completed.
+        Unconfirmed: int
         Chains: ChainFinal list
     }
 
 [<Sealed; AllowNullLiteral>]
-type internal MemberState(id: uint64, name: string, incarnation: uint64, cls: ExecutionClassId, canHost: Set<uint32>) =
+type internal MemberState
+    (id: uint64, name: string, incarnation: uint64, serial: int64, cls: ExecutionClassId, canHost: Set<uint32>) =
     member _.Id = id
     member _.Name = name
     member _.Incarnation = incarnation
+    /// Distinguishes memberships: every join, rejoin and restart gets a new serial, so obligations of an earlier
+    /// membership (assignments, expected confirmations) end with it.
+    member _.Serial = serial
     member _.Class = cls
     member _.CanHost = canHost
     member val LeaseUntil = 0L with get, set
     member val Ready = false with get, set
+    /// The units the member's last current-epoch heartbeat listed as queued or running.
+    member val Active = Set.empty<UnitId> with get, set
 
 [<Sealed; AllowNullLiteral>]
-type internal AssignmentState(node: uint64, now: int64) =
+type internal AssignmentState(node: uint64, serial: int64, now: int64) =
     member _.Node = node
+    /// The membership (MemberState.Serial) the assignment and its deadline belong to.
+    member val Serial = serial with get, set
     member val AssignedAt = now with get, set
     member val LastSentAt = now with get, set
     member val DeadlineStart = ValueOption<int64>.None with get, set
@@ -138,17 +172,28 @@ type internal PendingState(index: int64, work: WorkUnit, id: UnitId, input: byte
     member val Assignments = SortedDictionary<uint64, AssignmentState>()
 
 [<Sealed; AllowNullLiteral>]
-type internal AcceptedState(work: WorkUnit, id: UnitId, output: BlobId, digest: ContentId, node: uint64, at: int64) =
+type internal AcceptedState
+    (work: WorkUnit, id: UnitId, output: BlobId, digest: ContentId, node: uint64, incarnation: uint64, at: int64) =
     member _.Unit = work
     member _.Id = id
     member _.Output = output
     member _.Digest = digest
+    /// The member whose result was accepted, and its incarnation.
     member _.Node = node
+    member _.NodeIncarnation = incarnation
     member _.AcceptedAt = at
-    /// Members that were assigned the unit when it was accepted.
-    member val Expected = Set.empty<uint64> with get, set
-    /// Members whose result matched.
+    /// (member, membership serial) pairs that were assigned the unit and had not missed its deadline when it was
+    /// accepted: the replicas whose confirmation of a final unit the drain waits for.
+    member val Expected = Set.empty<uint64 * int64> with get, set
+    /// (member, membership serial) pairs that were assigned the unit but had missed its deadline: asked again in
+    /// the drain, never waited for.
+    member val Late = Set.empty<uint64 * int64> with get, set
+    /// Members whose result or chain Ready matched (the winner included).
     member val Confirmed = Set.empty<uint64> with get, set
+    /// (member, membership serial) pairs the drain asked to compute the unit because too few members had.
+    member val Verifiers = Set.empty<uint64 * int64> with get, set
+    /// When the drain last asked the unconfirmed replicas again.
+    member val LastRequestAt = at with get, set
 
 /// The coordinator (ClusterProtocol contract): membership epochs, leases, stage replicas, assignment, Ready-gated
 /// deadlines, reissue of lagging work, first-result-wins with divergence detection, the unit log and replay, and the
@@ -157,6 +202,8 @@ type internal AcceptedState(work: WorkUnit, id: UnitId, output: BlobId, digest: 
 [<Sealed>]
 type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobStore) =
     let tickTag = 1UL
+    /// The coordinator's name in telemetry; no node may take it.
+    let coordinatorName = "coord"
     let members = SortedDictionary<uint64, MemberState>()
     let roles = SortedDictionary<uint32, ResizeArray<uint64>>()
     let pending = SortedDictionary<int64, PendingState>()
@@ -166,6 +213,9 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
     /// (node, chain) pairs whose replay is in progress: the node asked for the chain's log and has not reported the
     /// chain Ready since. Deadlines of those assignments are paused.
     let replaying = HashSet<struct (uint64 * ChainKey)>()
+    /// (node, chain) -> the last step before the entries the coordinator served the node for replay (-1 from the
+    /// start). A replay checks every entry it applies, so a matching chain Ready confirms all of them.
+    let replayServed = Dictionary<struct (uint64 * ChainKey), int>()
     let estimators = Dictionary<uint32, DeadlineEstimator>()
     let lagCounts = Dictionary<struct (uint64 * uint32), int>()
     let unavailable = HashSet<UnitId>()
@@ -184,6 +234,7 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
     let mutable duplicates = 0
     let mutable replays = 0
     let mutable rejected = 0
+    let mutable memberships = 0L
 
     [<VolatileField>]
     let mutable acceptedCount = 0
@@ -197,6 +248,10 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
 
         if workload.Stages < 1u then
             invalidArg "workload" "a workload has at least one stage"
+
+        // A Log payload is 14 bytes plus its entries, so a batch of several entries must leave room for those.
+        if config.LogBatchBytes < 1 || config.LogBatchBytes > FrameCodec.MaxPayload - 14 then
+            invalidArg "config" "LogBatchBytes must be 1 to FrameCodec.MaxPayload - 14"
 
     let stageList = [ for s in 0 .. int workload.Stages - 1 -> uint32 s ]
 
@@ -299,8 +354,8 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
                     | true, a -> evaluate now p a
                     | _ -> ()
 
-    let sendAssign (p: PendingState) (node: uint64) (flags: uint32) =
-        send node flags (Message.Assign { Work = p.Unit; WorkInput = p.Input })
+    let sendUnit (work: WorkUnit) (input: byte[]) (node: uint64) (flags: uint32) =
+        send node flags (Message.Assign { Work = work; WorkInput = input })
 
         if tel.Enabled then
             tel.Counter(
@@ -308,15 +363,28 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
                 1.0,
                 TelemetryUnits.Count,
                 [
-                    stageAttr p.Unit.Stage
+                    stageAttr work.Stage
                     nodeAttr node
                     Attr.bool "retransmit" (flags <> FrameFlags.Empty)
                 ]
             )
 
+    let sendAssign (p: PendingState) (node: uint64) (flags: uint32) = sendUnit p.Unit p.Input node flags
+
+    let serialOf (node: uint64) =
+        match members.TryGetValue node with
+        | true, m -> m.Serial
+        | _ -> 0L
+
+    /// True while `node` is still a member in the membership with this serial.
+    let liveAs (node: uint64) (serial: int64) =
+        match members.TryGetValue node with
+        | true, m -> m.Serial = serial
+        | _ -> false
+
     let assignTo (now: int64) (p: PendingState) (node: uint64) =
         if not (p.Assignments.ContainsKey node) then
-            let a = AssignmentState(node, now)
+            let a = AssignmentState(node, serialOf node, now)
             p.Assignments[node] <- a
             sendAssign p node FrameFlags.Empty
             evaluate now p a
@@ -390,7 +458,9 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
             send m.Id FrameFlags.Empty msg
 
     /// After a membership change: drop assignments to departed members, re-send every pending assignment under the
-    /// new epoch (deadlines restart from Ready), and assign pending units to new replicas.
+    /// new epoch, and assign pending units to new replicas. A member that stayed keeps its deadlines, so churn
+    /// elsewhere never postpones the reissue of its lagging work; only a restarted member (a new incarnation, with no
+    /// state) starts its assignments over, from its Ready.
     let reassignAll (now: int64) =
         for p in List.ofSeq pending.Values do
             for node in List.ofSeq p.Assignments.Keys do
@@ -398,10 +468,16 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
                     p.Assignments.Remove node |> ignore
 
             for a in List.ofSeq p.Assignments.Values do
-                a.AssignedAt <- now
+                let serial = serialOf a.Node
+
+                if a.Serial <> serial then
+                    a.Serial <- serial
+                    a.AssignedAt <- now
+                    a.DeadlineStart <- ValueNone
+                    a.DeadlineAt <- Int64.MaxValue
+                    a.Misses <- 0
+
                 a.LastSentAt <- now
-                a.DeadlineStart <- ValueNone
-                a.DeadlineAt <- Int64.MaxValue
                 sendAssign p a.Node FrameFlags.Retransmit
                 evaluate now p a
 
@@ -435,6 +511,13 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
             r.Remove node |> ignore
 
         replaying.RemoveWhere(fun (struct (n, _)) -> n = node) |> ignore
+
+        for key in List.ofSeq replayServed.Keys do
+            let struct (n, _) = key
+
+            if n = node then
+                replayServed.Remove key |> ignore
+
         refused.RemoveWhere(fun (struct (n, _)) -> n = node) |> ignore
 
     let markReady (now: int64) (m: MemberState) =
@@ -456,6 +539,60 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
                     yield kv.Key, accepted[kv.Value[kv.Value.Count - 1]]
         ]
 
+    /// Independent computations every final chain state needs before the run counts as verified: two, or one when
+    /// the run has one replica per stage.
+    let required = min config.Replicas 2
+
+    /// Of the given (member, membership serial) pairs, the members still in that membership that can still run the
+    /// unit's stage and have not confirmed the unit, in id order.
+    let unconfirmedOf (acc: AcceptedState) (pairs: Set<uint64 * int64>) =
+        pairs
+        |> Seq.filter (fun (n, serial) ->
+            not (acc.Confirmed.Contains n)
+            && liveAs n serial
+            && not (refused.Contains(struct (n, acc.Unit.Stage))))
+        |> Seq.map fst
+        |> List.ofSeq
+
+    /// True when the member's last heartbeat lists the unit as queued or running: it is still computing it.
+    let working (acc: AcceptedState) (node: uint64) =
+        match members.TryGetValue node with
+        | true, m -> m.Active.Contains acc.Id
+        | _ -> false
+
+    /// A final unit needs nothing more: enough members computed it, and every live on-time replica confirmed it.
+    let settled (acc: AcceptedState) =
+        acc.Confirmed.Count >= required && (unconfirmedOf acc acc.Expected).IsEmpty
+
+    /// A final unit is verified at the end of the drain: enough members computed it, and every live on-time replica
+    /// confirmed it or is still computing it (a laggard, reported in ChainFinal.PendingBy).
+    let verified (acc: AcceptedState) =
+        acc.Confirmed.Count >= required
+        && unconfirmedOf acc acc.Expected |> List.forall (working acc)
+
+    /// How often a member's assignments had missed their deadline when another replica won, over all stages.
+    let lagOf (node: uint64) =
+        stageList
+        |> List.sumBy (fun s ->
+            match lagCounts.TryGetValue(struct (node, s)) with
+            | true, c -> c
+            | _ -> 0)
+
+    /// The member asked to compute a final unit because too few had: Ready, eligible, not yet asked; the least
+    /// lagging first, then the fewest roles, then the lowest id. A verifier that lacks the chain replays it from
+    /// the unit log first, and replay checks every logged output and digest it recomputes.
+    let pickVerifier (acc: AcceptedState) =
+        let asked = Set.unionMany [ acc.Expected; acc.Late; acc.Verifiers ] |> Set.map fst
+
+        members.Values
+        |> Seq.filter (fun m ->
+            m.Ready
+            && eligible m acc.Unit.Stage
+            && not (acc.Confirmed.Contains m.Id)
+            && not (asked.Contains m.Id))
+        |> Seq.sortBy (fun m -> lagOf m.Id, rolesHeld m.Id, m.Id)
+        |> Seq.tryHead
+
     let finish (now: int64) (status: RunStatus) =
         if outcome.IsNone then
             let finals =
@@ -469,6 +606,8 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
                                     Digest = acc.Digest
                                 }
                             ConfirmedBy = Set.toList acc.Confirmed
+                            PendingBy = unconfirmedOf acc acc.Expected |> List.filter (working acc)
+                            UnconfirmedBy = unconfirmedOf acc acc.Expected |> List.filter (not << working acc)
                         }
                 ]
 
@@ -495,16 +634,13 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
                     Divergences = List.ofSeq divergences
                     Replays = replays
                     Rejected = rejected
+                    CrossChecked = accepted.Values |> Seq.filter (fun a -> a.Confirmed.Count >= 2) |> Seq.length
+                    Unconfirmed = finalUnits () |> List.filter (fun (_, acc) -> not (verified acc)) |> List.length
                     Chains = finals
                 }
 
             outcome <- Some o
-
-            let statusText =
-                match status with
-                | RunStatus.Completed -> "completed"
-                | RunStatus.Diverged -> "diverged"
-                | RunStatus.Aborted _ -> "aborted"
+            let statusText = RunStatus.name status
 
             for m in List.ofSeq members.Values do
                 send
@@ -528,6 +664,8 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
                         Attr.int "duplicates" o.Duplicates
                         Attr.int "divergences" o.Divergences.Length
                         Attr.int "replays" o.Replays
+                        Attr.int "cross_checked" o.CrossChecked
+                        Attr.int "unconfirmed" o.Unconfirmed
                         Attr.str "run_digest" o.RunDigest.Hex
                         Attr.int64 "end_ns" now
                     ]
@@ -536,47 +674,86 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
             completion.TrySetResult o |> ignore
 
     let diverge (now: int64) (d: Divergence) =
-        divergences.Add d
+        // A frame duplicated by the network reports the same divergence twice: record it once.
+        if not (divergences.Contains d) then
+            divergences.Add d
 
-        if tel.Enabled then
-            tel.Event(
-                ClusterNames.Divergence,
-                [
-                    Attr.str "unit" d.Unit.Value.Hex
-                    Attr.int "lane" (int d.Lane)
-                    stageAttr d.Stage
-                    Attr.int "step" (int d.Step)
-                    Attr.str "first_node" (nameOf d.FirstNode)
-                    Attr.str "other_node" (nameOf d.OtherNode)
-                    Attr.str
-                        "source"
-                        (match d.Source with
-                         | DivergenceSource.Result -> "result"
-                         | DivergenceSource.Replay -> "replay")
-                ]
-            )
+            // The other node's earlier confirmation of the unit (for example from a replay range) no longer holds.
+            match accepted.TryGetValue d.Unit with
+            | true, acc when d.OtherNode <> acc.Node -> acc.Confirmed <- acc.Confirmed.Remove d.OtherNode
+            | _ -> ()
 
-        if config.HaltOnDivergence then
-            finish now RunStatus.Diverged
+            if tel.Enabled then
+                tel.Event(
+                    ClusterNames.Divergence,
+                    [
+                        Attr.str "unit" d.Unit.Value.Hex
+                        Attr.int "lane" (int d.Lane)
+                        stageAttr d.Stage
+                        Attr.int "step" (int d.Step)
+                        Attr.str "first_node" (nameOf d.FirstNode)
+                        Attr.str "other_node" (nameOf d.OtherNode)
+                        Attr.str
+                            "source"
+                            (match d.Source with
+                             | DivergenceSource.Result -> "result"
+                             | DivergenceSource.Replay -> "replay")
+                    ]
+                )
 
+            if config.HaltOnDivergence then
+                finish now RunStatus.Diverged
+
+    /// The end of the run (the drain): once the workload is complete and nothing is pending, wait until every final
+    /// unit is settled, for at most DrainNs. Every ResendNs it asks again the replicas that owe a confirmation (a node
+    /// answers a re-sent Assign of its chain head from its cache), and when too few members have computed a final
+    /// unit (its other replicas left), it asks one more member to compute it.
     let checkDone (now: int64) =
         if started && outcome.IsNone && workload.IsComplete && pending.Count = 0 then
             if drainUntil = Int64.MaxValue then
                 drainUntil <- now + config.DrainNs
 
-            let confirmed =
-                finalUnits ()
-                |> List.forall (fun (_, acc) ->
-                    acc.Expected
-                    |> Set.forall (fun n -> acc.Confirmed.Contains n || not (members.ContainsKey n)))
+            let finals = finalUnits ()
+            let allSettled = finals |> List.forall (fun (_, acc) -> settled acc)
+            let timedOut = now >= drainUntil
 
-            if confirmed || now >= drainUntil then
+            if divergences.Count > 0 && (allSettled || timedOut) then
+                finish now RunStatus.Diverged
+            elif allSettled then
+                finish now RunStatus.Completed
+            elif timedOut then
                 finish
                     now
-                    (if divergences.Count > 0 then
-                         RunStatus.Diverged
+                    (if finals |> List.forall (fun (_, acc) -> verified acc) then
+                         RunStatus.Completed
                      else
-                         RunStatus.Completed)
+                         RunStatus.Unverified)
+            else
+                for _, acc in finals do
+                    if not (settled acc) && now - acc.LastRequestAt >= config.ResendNs then
+                        acc.LastRequestAt <- now
+
+                        let ask =
+                            unconfirmedOf acc (Set.unionMany [ acc.Expected; acc.Late; acc.Verifiers ])
+
+                        // Too few computations: engage one more member each round, rather than wait for a replica
+                        // or a verifier that is behind.
+                        let extra =
+                            if acc.Confirmed.Count < required then
+                                match pickVerifier acc with
+                                | Some m ->
+                                    acc.Verifiers <- acc.Verifiers.Add(m.Id, m.Serial)
+                                    [ m.Id ]
+                                | None -> []
+                            else
+                                []
+
+                        if not (ask.IsEmpty && extra.IsEmpty) then
+                            match blobs.TryGet acc.Unit.Input with
+                            | Some input ->
+                                for n in ask @ extra do
+                                    sendUnit acc.Unit input n FrameFlags.Retransmit
+                            | None -> invalidOp (sprintf "input blob of unit %s is missing" acc.Id.Value.Short)
 
     let maybeStart (now: int64) =
         if not started && members.Count >= config.MinNodes then
@@ -629,6 +806,12 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
 
         if node = 0UL then
             reject node "reserved_id" MessageKind.Hello
+        elif not (SafeName.isValid h.Name) || h.Name = coordinatorName then
+            // Names label the node in Membership and telemetry: they must be safe names, and "coord" is ours.
+            reject node "bad_name" MessageKind.Hello
+        elif members.Values |> Seq.exists (fun m -> m.Name = h.Name && m.Id <> node) then
+            // Two ids with one name would merge in the per-node charts.
+            reject node "duplicate_name" MessageKind.Hello
         else
             match members.TryGetValue node with
             | true, m when m.Incarnation = h.Incarnation ->
@@ -640,11 +823,14 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
                 if found then
                     removeMember node "restart"
 
+                memberships <- memberships + 1L
+
                 let m =
                     MemberState(
                         node,
                         h.Name,
                         h.Incarnation,
+                        memberships,
                         h.Class,
                         Set.ofList h.CanHost,
                         LeaseUntil = now + config.LeaseNs
@@ -693,6 +879,7 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
                 if hb.IsReady then
                     markReady now m
 
+                m.Active <- hb.Active |> List.map fst |> Set.ofList
                 let active = HashSet<UnitId>()
 
                 for id, phase in hb.Active do
@@ -731,27 +918,53 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
                     ]
                 )
 
-            if not (UnitId.isNone r.ReadyHead) then
+            // The node holds the chain at Head with this digest and Head's output, as it computed them (a replay
+            // recomputes every unit it applies, checking each against the log): compare them with the accepted unit.
+            let agrees =
                 match accepted.TryGetValue r.ReadyHead with
-                | true, acc when acc.Digest <> r.ReadyDigest ->
-                    diverge
-                        now
-                        {
-                            Unit = acc.Id
-                            Lane = acc.Unit.Lane
-                            Stage = acc.Unit.Stage
-                            Step = acc.Unit.Step
-                            FirstNode = acc.Node
-                            FirstOutput = acc.Output
-                            FirstDigest = acc.Digest
-                            OtherNode = m.Id
-                            OtherOutput = None
-                            OtherDigest = r.ReadyDigest
-                            Source = DivergenceSource.Replay
-                        }
-                | _ -> ()
+                | true, acc when WorkUnit.chain acc.Unit = chain ->
+                    let outputGiven = not (BlobId.isNone r.ReadyOutput)
 
-            resume now m.Id chain
+                    if acc.Digest <> r.ReadyDigest || (outputGiven && acc.Output <> r.ReadyOutput) then
+                        replayServed.Remove(struct (m.Id, chain)) |> ignore
+
+                        diverge
+                            now
+                            {
+                                Unit = acc.Id
+                                Lane = acc.Unit.Lane
+                                Stage = acc.Unit.Stage
+                                Step = acc.Unit.Step
+                                FirstNode = acc.Node
+                                FirstOutput = acc.Output
+                                FirstDigest = acc.Digest
+                                OtherNode = m.Id
+                                OtherOutput = (if outputGiven then Some r.ReadyOutput else None)
+                                OtherDigest = r.ReadyDigest
+                                Source = DivergenceSource.Replay
+                            }
+
+                        false
+                    else
+                        if outputGiven then
+                            acc.Confirmed <- acc.Confirmed.Add m.Id
+
+                            // The replay that brought the chain here recomputed and checked every entry served.
+                            match replayServed.TryGetValue(struct (m.Id, chain)), chains.TryGetValue chain with
+                            | (true, from), (true, list) ->
+                                replayServed.Remove(struct (m.Id, chain)) |> ignore
+
+                                for i in from + 1 .. min (int acc.Unit.Step) (list.Count - 1) do
+                                    let e = accepted[list[i]]
+                                    e.Confirmed <- e.Confirmed.Add m.Id
+                            | _ -> ()
+
+                        true
+                | _ -> true
+
+            if agrees then
+                resume now m.Id chain
+                checkDone now
 
     let demoteLaggards (stage: uint32) =
         let r = replicasOf stage
@@ -776,6 +989,46 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
                     if tel.Enabled then
                         tel.Event(ClusterNames.Demote, [ stageAttr stage; nodeAttr n ])
 
+    /// Another result for an accepted unit. Equal: it confirms the unit, unless it is the accepted result itself again
+    /// (the same member and incarnation: a network duplicate, or a re-answer from the chain head). Different, from
+    /// whoever (a node keeps its id across restarts): a divergence.
+    let checkResult (now: int64) (m: MemberState) (acc: AcceptedState) (outputId: BlobId) (digest: ContentId) =
+        if acc.Output = outputId && acc.Digest = digest then
+            if m.Id <> acc.Node || m.Incarnation <> acc.NodeIncarnation then
+                duplicates <- duplicates + 1
+                acc.Confirmed <- acc.Confirmed.Add m.Id
+
+                if tel.Enabled then
+                    tel.Counter(
+                        ClusterNames.Duplicate,
+                        1.0,
+                        TelemetryUnits.Count,
+                        [ stageAttr acc.Unit.Stage; nodeAttr m.Id ]
+                    )
+
+                    tel.Histogram(
+                        ClusterNames.Lag,
+                        float (now - acc.AcceptedAt),
+                        TelemetryUnits.Nanoseconds,
+                        [ stageAttr acc.Unit.Stage; nodeAttr m.Id ]
+                    )
+        else
+            diverge
+                now
+                {
+                    Unit = acc.Id
+                    Lane = acc.Unit.Lane
+                    Stage = acc.Unit.Stage
+                    Step = acc.Unit.Step
+                    FirstNode = acc.Node
+                    FirstOutput = acc.Output
+                    FirstDigest = acc.Digest
+                    OtherNode = m.Id
+                    OtherOutput = Some outputId
+                    OtherDigest = digest
+                    Source = DivergenceSource.Result
+                }
+
     let onResult (now: int64) (m: MemberState) (r: ResultMsg) =
         let outputId = BlobId.ofBytes r.ResultOutput
 
@@ -786,30 +1039,59 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
             blobs.Put r.ResultOutput |> ignore
             let stage = p.Unit.Stage
 
-            let start =
+            let winner =
                 match p.Assignments.TryGetValue m.Id with
-                | true, a ->
-                    match a.DeadlineStart with
-                    | ValueSome s -> s
-                    | ValueNone -> a.AssignedAt
-                | _ -> now
+                | true, a -> Some a
+                | _ -> None
+
+            let deadlineStart =
+                winner |> Option.bind (fun a -> ValueOption.toOption a.DeadlineStart)
+
+            // The Gantt chart's start: the deadline start, else the assignment, else (no assignment) the result.
+            let start =
+                match deadlineStart, winner with
+                | Some s, _ -> s
+                | None, Some a -> a.AssignedAt
+                | None, None -> now
 
             let latency = now - start
-            let est = estimator stage
-            let before = est.Current
-            est.Add latency
 
-            if tel.Enabled && est.Current <> before then
-                tel.Gauge(
-                    ClusterNames.Deadline,
-                    float est.Current,
-                    TelemetryUnits.Nanoseconds,
-                    [ stageAttr stage; Attr.int "samples" est.Count ]
-                )
+            // A deadline sample runs from the winning assignment's deadline start; without one (the deadline was
+            // paused, or the winner was not assigned) the time includes cold start or replay, so it is no sample.
+            match deadlineStart with
+            | Some s ->
+                let est = estimator stage
+                let before = est.Current
+                est.Add(now - s)
 
-            let acc = AcceptedState(p.Unit, p.Id, outputId, r.ResultDigest, m.Id, now)
+                if tel.Enabled && est.Current <> before then
+                    tel.Gauge(
+                        ClusterNames.Deadline,
+                        float est.Current,
+                        TelemetryUnits.Nanoseconds,
+                        [ stageAttr stage; Attr.int "samples" est.Count ]
+                    )
+            | None -> ()
 
-            acc.Expected <- p.Assignments.Keys |> Seq.filter (fun n -> members.ContainsKey n) |> Set.ofSeq
+            let acc =
+                AcceptedState(p.Unit, p.Id, outputId, r.ResultDigest, m.Id, m.Incarnation, now)
+
+            let assigned =
+                p.Assignments.Values
+                |> Seq.filter (fun a -> liveAs a.Node a.Serial)
+                |> List.ofSeq
+
+            acc.Expected <-
+                assigned
+                |> Seq.filter (fun a -> a.Misses = 0)
+                |> Seq.map (fun a -> a.Node, a.Serial)
+                |> Set.ofSeq
+
+            acc.Late <-
+                assigned
+                |> Seq.filter (fun a -> a.Misses > 0)
+                |> Seq.map (fun a -> a.Node, a.Serial)
+                |> Set.ofSeq
 
             acc.Confirmed <- Set.singleton m.Id
             accepted[p.Id] <- acc
@@ -858,12 +1140,13 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
                     ]
                 )
 
-                tel.Histogram(
-                    ClusterNames.UnitLatency,
-                    float latency,
-                    TelemetryUnits.Nanoseconds,
-                    [ stageAttr stage; nodeAttr m.Id ]
-                )
+                if deadlineStart.IsSome then
+                    tel.Histogram(
+                        ClusterNames.UnitLatency,
+                        float latency,
+                        TelemetryUnits.Nanoseconds,
+                        [ stageAttr stage; nodeAttr m.Id ]
+                    )
 
             for next in workload.Accept(p.Unit, r.ResultOutput) do
                 plan now next
@@ -873,44 +1156,18 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
             match accepted.TryGetValue r.ResultUnit with
             | true, acc ->
                 resume now m.Id (WorkUnit.chain acc.Unit)
-
-                if acc.Output = outputId && acc.Digest = r.ResultDigest then
-                    duplicates <- duplicates + 1
-                    acc.Confirmed <- acc.Confirmed.Add m.Id
-
-                    if tel.Enabled then
-                        tel.Counter(
-                            ClusterNames.Duplicate,
-                            1.0,
-                            TelemetryUnits.Count,
-                            [ stageAttr acc.Unit.Stage; nodeAttr m.Id ]
-                        )
-
-                        tel.Histogram(
-                            ClusterNames.Lag,
-                            float (now - acc.AcceptedAt),
-                            TelemetryUnits.Nanoseconds,
-                            [ stageAttr acc.Unit.Stage; nodeAttr m.Id ]
-                        )
-                elif m.Id <> acc.Node then
-                    diverge
-                        now
-                        {
-                            Unit = acc.Id
-                            Lane = acc.Unit.Lane
-                            Stage = acc.Unit.Stage
-                            Step = acc.Unit.Step
-                            FirstNode = acc.Node
-                            FirstOutput = acc.Output
-                            FirstDigest = acc.Digest
-                            OtherNode = m.Id
-                            OtherOutput = Some outputId
-                            OtherDigest = r.ResultDigest
-                            Source = DivergenceSource.Result
-                        }
-
+                checkResult now m acc outputId r.ResultDigest
                 checkDone now
             | _ -> reject m.Id "unknown_unit" MessageKind.Result
+
+    /// A Result of a stale epoch is rejected, but results are content-addressed: if its unit is already accepted, it
+    /// is still compared with it (a confirmation or a divergence), since that does not depend on the epoch.
+    let onStaleResult (now: int64) (m: MemberState) (r: ResultMsg) =
+        match accepted.TryGetValue r.ResultUnit with
+        | true, acc ->
+            checkResult now m acc (BlobId.ofBytes r.ResultOutput) r.ResultDigest
+            checkDone now
+        | _ -> ()
 
     let onFetch (m: MemberState) (f: FetchMsg) =
         replays <- replays + 1
@@ -962,21 +1219,25 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
                                 }
                     ]
 
-                // Batches of at most LogBatchBytes of input (at least one entry each).
+                // Batches of at most LogBatchBytes of encoded entries (at least one entry each; one entry always fits
+                // in a frame, since inputs are at most WorkUnit.MaxData and Args at most WorkUnit.MaxArgs).
                 let batches = ResizeArray<LogEntry list>()
                 let current = ResizeArray<LogEntry>()
-                let mutable size = 0
+                let mutable size = 0L
 
                 for e in entries do
-                    if current.Count > 0 && size + e.Input.Length > config.LogBatchBytes then
+                    let n = int64 (Message.logEntrySize e)
+
+                    if current.Count > 0 && size + n > int64 config.LogBatchBytes then
                         batches.Add(List.ofSeq current)
                         current.Clear()
-                        size <- 0
+                        size <- 0L
 
                     current.Add e
-                    size <- size + e.Input.Length
+                    size <- size + n
 
                 batches.Add(List.ofSeq current)
+                replayServed[struct (m.Id, f.FetchChain)] <- iFrom
 
                 batches
                 |> Seq.iteri (fun i batch ->
@@ -1111,6 +1372,19 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
             for struct (n, c) in List.ofSeq replaying do
                 line (sprintf "  replaying node %d chain (%d, %d)" n c.Lane c.Stage)
 
+            if drainUntil <> Int64.MaxValue then
+                for chain, acc in finalUnits () do
+                    if not (settled acc) then
+                        line (
+                            sprintf
+                                "  final (%d, %d) confirmed by %A, owed by %A, verifiers %A"
+                                chain.Lane
+                                chain.Stage
+                                (Set.toList acc.Confirmed)
+                                (unconfirmedOf acc acc.Expected)
+                                (Set.toList acc.Verifiers |> List.map fst)
+                        )
+
             for p in List.ofSeq pending.Values do
                 line (
                     sprintf
@@ -1162,7 +1436,7 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
                     .Child(
                         [
                             Attr.str TelemetryKeys.Component "cluster.coordinator"
-                            Attr.str TelemetryKeys.Node "coord"
+                            Attr.str TelemetryKeys.Node coordinatorName
                         ]
                     )
 
@@ -1173,59 +1447,63 @@ type Coordinator(config: CoordinatorConfig, workload: IWorkload, blobs: IBlobSto
             | Some o ->
                 // The run is over: whoever still talks to us missed the Shutdown (it is sent once and may be lost).
                 if frame.Sender <> 0UL then
-                    let status =
-                        match o.Status with
-                        | RunStatus.Completed -> "completed"
-                        | RunStatus.Diverged -> "diverged"
-                        | RunStatus.Aborted _ -> "aborted"
-
-                    notice frame.Sender NoticeCode.Shutdown 0UL status
+                    notice frame.Sender NoticeCode.Shutdown 0UL (RunStatus.name o.Status)
             | None ->
                 let now = c.Now
 
-                match Message.tryOfFrame frame with
-                | Error _ -> reject frame.Sender "malformed" frame.Kind
-                | Ok env ->
-                    match env.Message with
-                    | Message.Hello h -> onHello now env h
-                    | Message.Heartbeat hb -> onHeartbeat now env hb
-                    | msg ->
-                        match members.TryGetValue env.Sender with
-                        | false, _ ->
-                            reject env.Sender "unknown_member" frame.Kind
-                            notice env.Sender NoticeCode.UnknownMember epoch "send Hello"
-                        | true, m when env.Epoch <> epoch ->
-                            reject m.Id "stale_epoch" frame.Kind
-                            notice m.Id NoticeCode.StaleEpoch epoch "stale epoch"
-                            send m.Id FrameFlags.Empty (membershipMessage ())
-                        | true, m ->
-                            match msg with
-                            | Message.Result r -> onResult now m r
-                            | Message.Ready r -> onReady now m r
-                            | Message.Fetch f -> onFetch m f
-                            | Message.Notice n when n.Code = NoticeCode.Leave ->
-                                removeMember m.Id "leave"
-                                epoch <- epoch + 1UL
-                                membershipChanged now "leave"
-                            | Message.Notice n when n.Code = NoticeCode.WrongClass && n.Value <= uint64 UInt32.MaxValue ->
-                                // The node cannot run units of this stage: never give it the stage again, and move
-                                // its pending work of the stage to replicas that can.
-                                let stage = uint32 n.Value
+                if frame.Sender = 0UL then
+                    // Member 0 is the coordinator itself: never answer, or a frame would loop back to us.
+                    reject 0UL "reserved_id" frame.Kind
+                else
+                    match Message.tryOfFrame frame with
+                    | Error _ -> reject frame.Sender "malformed" frame.Kind
+                    | Ok env ->
+                        match env.Message with
+                        | Message.Hello h -> onHello now env h
+                        | Message.Heartbeat hb -> onHeartbeat now env hb
+                        | msg ->
+                            match members.TryGetValue env.Sender with
+                            | false, _ ->
+                                reject env.Sender "unknown_member" frame.Kind
+                                notice env.Sender NoticeCode.UnknownMember epoch "send Hello"
+                            | true, m when env.Epoch <> epoch ->
+                                reject m.Id "stale_epoch" frame.Kind
+                                notice m.Id NoticeCode.StaleEpoch epoch "stale epoch"
+                                send m.Id FrameFlags.Empty (membershipMessage ())
 
-                                if refused.Add(struct (m.Id, stage)) then
-                                    (replicasOf stage).Remove m.Id |> ignore
+                                match msg with
+                                | Message.Result r -> onStaleResult now m r
+                                | _ -> ()
+                            | true, m ->
+                                match msg with
+                                | Message.Result r -> onResult now m r
+                                | Message.Ready r -> onReady now m r
+                                | Message.Fetch f -> onFetch m f
+                                | Message.Notice n when n.Code = NoticeCode.Leave ->
+                                    removeMember m.Id "leave"
+                                    epoch <- epoch + 1UL
+                                    membershipChanged now "leave"
+                                | Message.Notice n when
+                                    n.Code = NoticeCode.WrongClass && n.Value <= uint64 UInt32.MaxValue
+                                    ->
+                                    // The node cannot run units of this stage: never give it the stage again, and move
+                                    // its pending work of the stage to replicas that can.
+                                    let stage = uint32 n.Value
 
-                                    for p in List.ofSeq pending.Values do
-                                        if p.Unit.Stage = stage then
-                                            p.Assignments.Remove m.Id |> ignore
+                                    if refused.Add(struct (m.Id, stage)) then
+                                        (replicasOf stage).Remove m.Id |> ignore
 
-                                    fillRoles ()
+                                        for p in List.ofSeq pending.Values do
+                                            if p.Unit.Stage = stage then
+                                                p.Assignments.Remove m.Id |> ignore
 
-                                    for p in List.ofSeq pending.Values do
-                                        if p.Unit.Stage = stage then
-                                            for node in List.ofSeq (replicasOf stage) do
-                                                assignTo now p node
-                            | _ -> reject m.Id "unexpected_kind" frame.Kind
+                                        fillRoles ()
+
+                                        for p in List.ofSeq pending.Values do
+                                            if p.Unit.Stage = stage then
+                                                for node in List.ofSeq (replicasOf stage) do
+                                                    assignTo now p node
+                                | _ -> reject m.Id "unexpected_kind" frame.Kind
 
         member _.OnTimer(c: IActorContext, tag: uint64) =
             if tag = tickTag && outcome.IsNone then
