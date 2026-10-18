@@ -49,6 +49,10 @@ module Greedy =
     [<Literal>]
     let GenerateSpan = "model.generate"
 
+    /// The `component` attribute of the model.generate span (the steps' own records are the forward's).
+    [<Literal>]
+    let Component = "generate"
+
     /// The positions a greedy run uses: the prompt and every generated id but the last.
     let positions (promptLength: int) (steps: int) = promptLength + steps - 1
 
@@ -84,6 +88,7 @@ module Greedy =
             Telemetry.span
                 GenerateSpan
                 [
+                    Attr.str TelemetryKeys.Component Component
                     Attr.int "prompt_tokens" prompt.Length
                     Attr.int "steps" options.Steps
                     Attr.bool "stop_at_eos" options.StopAtEos
@@ -105,7 +110,10 @@ module Greedy =
                 Metering.op
                     "model"
                     (Op.Argmax(1L, int64 c.Vocab))
-                    [ Attr.str TelemetryKeys.Component Forward.Component ]
+                    [
+                        Attr.str TelemetryKeys.Component Forward.Component
+                        Attr.int TelemetryKeys.Stage stage.Index
+                    ]
 
             if options.Margins then
                 margins.Add(Metrics.top2MarginRow (ReadOnlySpan((ops.Read logits).ToFloat64())))

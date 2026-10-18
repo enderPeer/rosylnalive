@@ -42,7 +42,7 @@ Status as of 2026-10-18. "v1" or "v1.1" means written in full and in review or m
 | ClusterProtocol | C1 | `cluster.md` | v1 (PR #7) |
 | ConformanceHarness | E1 | `conformance-harness.md` | planned (wave 2) |
 | TokenizerApi | M1 | `tokenizer.md` | planned (wave 2) |
-| ForwardOpsAndQwenModel | M2 | `qwen-model.md` | planned (wave 2) |
+| ForwardOpsAndQwenModel | M2 | `qwen-model.md` | v1 (M2a PR #15; full-model parity in M2b) |
 | GpuExecutor | X1 | `gpu-executor.md` | planned (wave 3) |
 | StagePipeline | C2 | `stage-pipeline.md` | planned (wave 3) |
 | Gate1Evidence | I1, I2, I3 | `gate1-evidence.md` | planned (wave 4) |
