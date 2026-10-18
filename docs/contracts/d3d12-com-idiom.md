@@ -8,21 +8,26 @@ How LRM talks to Direct3D 12 and DXGI from F#: COM objects are plain pointers, e
 
 1. **No COM interop from .NET.** The interop never uses `ComImport`, runtime-callable wrappers, `ComWrappers`, the source-generated COM attributes or the COM helpers of `Marshal` (`GetObjectForIUnknown`, `ReleaseComObject`, `QueryInterface`, `AddRef`, `Release` and the like). A COM object is a `nativeint` whose first word points to its vtable.
 2. **Blittable only.** The assembly carries `DisableRuntimeMarshalling`, so every P/Invoke and unmanaged delegate passes its arguments as they are. Pointers are `nativeint`; `BOOL` is `int`; `WCHAR` is `uint16`; enums are 32-bit F# enums; structs are F# structs whose layout the oracle checks.
-3. **No tail calls in code that passes stack addresses.** A call compiled with the `tail.` prefix frees the caller's frame before the callee runs, so a callee that receives `NativePtr.toNativeInt &&local` reads a dead stack slot. F# cannot see that a `nativeint` came from a local. The interop and its tests set `<Tailcalls>false</Tailcalls>` in their `.lrm.targets`, and a cpu-tier test scans their IL for `tail.` prefixes. Every project that calls the interop with `&&` must do the same. The failure was seen on the RTX 4080: a barrier recorded from such a frame made `Close` return `E_INVALIDARG` (ADR R3-0001).
+3. **A wrapper call is never a tail call.** A call compiled with the `tail.` prefix frees the caller's frame before the callee runs. A callee that receives a stack address (`NativePtr.toNativeInt &&local`, or a span over a local) then reads a dead stack slot. This was seen on the RTX 4080: a barrier recorded from such a frame made `Close` return `E_INVALIDARG` (ADR R3-0001). F# never emits `tail.` for a call that passes a byref argument, so every generated wrapper takes `this` as `inref<ComPtr<'I>>`. Call sites look the same as before (`list.ResourceBarrier &b`), and no wrapper call carries the prefix, whatever the caller's `Tailcalls` setting.
+   - **Verified.** A cpu-tier test compiles a consumer with `--tailcalls+` and scans its IL. The consumer calls the hot wrappers in tail position with stack addresses: through spans, single elements and `…Raw` forms. No wrapper call has the prefix.
+   - **Spans alone are not enough.** F# does tail-call a method whose only stack reference is a `ReadOnlySpan`: a span is a struct, not a byref.
+   - **What the interop cannot protect.** Two kinds of call are still tail-called: a direct call through `Vtbl.get` and a `Fn` delegate, and a project's own functions that pass `&&local` to each other. In the consumer test, the direct delegate call does get `tail.`.
+   - **Defence in depth.** The interop and its tests set `<Tailcalls>false</Tailcalls>` in their `.lrm.targets`, and the cpu tier scans their IL for `tail.`. A project that passes stack addresses to its own functions should do the same. `TailCalls.scan` lists every `tail.` call site of an assembly, so its tests can check the setting took effect.
 4. **Calls go through generated slots and cached delegates.** A method's slot is the position of its `DECLSPEC_XFGVIRT` marker in the SDK's C vtable. `Vtbl.get<'D> this slot` reads the function pointer and returns the delegate of type `'D` for it, created once per (delegate type, function pointer) and reused. One call costs about 10 to 13 ns (bench tier, AddRef and Release on a DXGI factory).
-5. **Struct returns use the hidden RetVal pointer.** On x64 MSVC a method that returns a struct takes a pointer to the result after `This` and returns that pointer. The SDK's C vtables spell this out in their `_WIN32` branch (`T *(STDMETHODCALLTYPE *M)(I *This, T *RetVal)`), and the delegates follow it. The wrapper allocates the result on its stack and returns it by value.
-6. **Failed HRESULTs raise.** A wrapper that sees a negative HRESULT raises `D3D12Exception` with the call, the HRESULT and the device-removed reason (rule 9). Each HRESULT method also has a `…Raw` form that returns the HRESULT and takes the C parameters unchanged, for calls whose failure is expected (`CheckFeatureSupport`, `EnumAdapterByGpuPreference` returning `DXGI_ERROR_NOT_FOUND`).
+5. **Struct returns use the hidden RetVal pointer.** On x64 MSVC a method that returns a struct takes a pointer to the result right after `This`, before its other parameters, and returns that pointer. The SDK's C vtables spell this out in their `_WIN32` branch (`T *(STDMETHODCALLTYPE *M)(I *This, T *RetVal, …)`), and the delegates follow it. The wrapper allocates the result on its stack and returns it by value, whatever parameters follow. For example, `dev.GetResourceAllocationInfo(0u, &desc)` returns a `D3D12_RESOURCE_ALLOCATION_INFO`. The generator stops when a `RetVal` parameter appears anywhere else.
+6. **Failed HRESULTs raise.** A wrapper that sees a negative HRESULT raises `D3D12Exception` with the call, the HRESULT and the device-removed reason (see Vectors). Each HRESULT method also has a `…Raw` form that returns the HRESULT and takes the C parameters unchanged. It is for calls whose failure is expected (`CheckFeatureSupport`, or `EnumAdapterByGpuPreference` returning `DXGI_ERROR_NOT_FOUND`).
 
 ## ComPtr
 
 `ComPtr<'I when 'I :> IUnknown>` is a struct over one `nativeint` (`Ptr`). `'I` is a phantom marker interface: an empty .NET interface per COM interface, never implemented, whose .NET inheritance mirrors the COM inheritance (`ID3D12Resource :> ID3D12Pageable :> ID3D12DeviceChild :> ID3D12Object :> IUnknown`).
 
 - **Ownership.** Exactly one variable owns each reference. Copying a `ComPtr` copies the pointer, not a reference.
-- **Creating references.** These hand the caller a new reference, counted in `Com.liveReferences ()`:
+- **Creating references.** `ComPtr` has no public constructor. These hand the caller a new reference, counted in `Com.liveReferences ()`:
   - wrappers that return a `ComPtr`;
   - `ComPtr.Attach`, for a pointer received from COM;
   - `AddRef ()`;
   - `QueryInterface<'J> ()` and `TryQueryInterface<'J> ()`.
+- **Borrowing.** `ComPtr<'I>.Borrow ptr` wraps a pointer whose reference someone else owns, such as a pointer inside a D3D12 struct, without counting it. A borrowed `ComPtr` must never be released or disposed. Doing so would release a reference it does not own and push `Com.liveReferences ()` below the true count, which hides leaks. `AddRef ()` on it gives an owned copy.
 - **Releasing.** `Release ()` (which returns COM's new count), `Dispose ()` and `use` release one reference. `ComPtr.release &p` releases and clears the variable, so it releases at most once however often it runs. Releasing a null `ComPtr` does nothing.
 - **Null.** `ComPtr<'I>.Null` is the null pointer, for optional interface parameters. A call on a null pointer raises `NullReferenceException`; it never jumps through address 0.
 - **IIDs.** `IidOf<'I>.Value` is the IID of a marker, looked up once per type.
@@ -35,23 +40,34 @@ How LRM talks to Direct3D 12 and DXGI from F#: COM objects are plain pointers, e
 | File | Contents |
 | --- | --- |
 | `D3D12.g.fs` | Enums, structs, inline arrays, marker interfaces; `Iids`; `Slots.<I>.<Method>` and `Slots.<I>.Count`; `Fn.<I>.<Method>`, one unmanaged delegate per method in the C signature |
-| `D3D12Methods.g.fs` | `<I>Methods`: an extension method per method that `<I>` declares, generic over `'I :> <I>` so it applies to every derived interface |
+| `D3D12Methods.g.fs` | `<I>Methods`: an extension method per method that `<I>` declares, generic over `'I :> <I>` so it applies to every derived interface. Each takes `this` as `inref<ComPtr<'I>>` (rule 3) |
 
-The shape of a wrapper follows its C parameters:
+The shape of a wrapper follows its C parameters and their SAL annotations:
 
 | C parameter | Wrapper |
 | --- | --- |
 | `REFIID riid, void **ppv` (`_COM_Outptr_`, last) | Generic result: `dev.CreateFence<_, ID3D12Fence>(…)`, or let the annotation choose: `let f: ComPtr<ID3D12Fence> = dev.CreateFence(0UL, D3D12_FENCE_FLAGS.NONE)` |
 | `J **pp` (`_COM_Outptr_`, last, J bound) | Returns `ComPtr<J>` |
 | `_Out_ T *p`, the only `_Out_` and last, T a scalar, enum or bound struct | Returns `T`: `adapter.GetDesc1 ()`, `queue.GetTimestampFrequency ()` |
+| `_Outptr_… void **pp`, last, no `REFIID` before it | Returns the pointer: `let p = resource.Map(0u, 0n)` |
 | `_In_ const T *p`, T a bound struct | `inref<T>`, pinned for the call: `dev.CreateCommandQueue(&desc)` |
+| `_In_reads_(n) const T *p`, T a bound struct, scalar or enum, `n` a parameter that sizes nothing else | `ReadOnlySpan<T>`, pinned for the call; its length is passed as `n`, which the wrapper drops. For a bound struct there is also a single-element form taking `inref<T>`, with `n` = 1: `list.ResourceBarrier(ReadOnlySpan barriers)` or `list.ResourceBarrier &barrier` |
+| `_In_reads_(n) J *const *pp`, J bound | `ReadOnlySpan<ComPtr<'P>>` with `'P :> J` (a `ComPtr` is one pointer), or a single `ComPtr<'P>`: `queue.ExecuteCommandLists list`, `list.SetDescriptorHeaps heap` |
+| `_In_reads_(n * sizeof(T)) const void *p` | `ReadOnlySpan<T>`, with `n` its length: `list.SetComputeRoot32BitConstants(0u, ReadOnlySpan args, 0u)` |
+| `_In_reads_bytes_(n) const void *p`, or `_In_reads_(n)` on `void` | `ReadOnlySpan<byte>`: `dev.CreateRootSignature(0u, ReadOnlySpan rootsig)` |
+| `const T p[n]` (`_In_`), T a scalar | `ReadOnlySpan<T>` of exactly `n` elements, or empty for null when the parameter is optional. Any other length raises `ArgumentException` before the call: `ClearUnorderedAccessViewUint`'s `Values` |
 | `J *p`, J bound | `ComPtr<'P>` with `'P :> J` |
 | `LPCWSTR` | `string`, pinned for the call |
-| `T *RetVal` | Returns `T` (rule 5) |
-| Any other pointer, array, `_In_opt_` or `_Out_writes_` | `nativeint` |
+| `T *RetVal` (first after `This`) | Returns `T` (rule 5) |
+| Any other pointer: `_In_opt_`, `_Out_writes_`, `_Inout_`, or an array whose count sizes two arrays | `nativeint` |
 | Scalars, enums, structs by value | The F# type |
 
-- **Checked and raw forms.** A checked HRESULT wrapper returns `unit`, the out value or the `ComPtr`. Its `…Raw` twin returns the HRESULT. Methods whose HRESULT is a value (`hresultValues`, today `ID3D12Device::GetDeviceRemovedReason`) have only the value-returning form.
+- **Checked and raw forms.**
+  - A checked HRESULT wrapper returns `unit`, the out value or the `ComPtr`.
+  - Its `…Raw` twin takes the C parameters unchanged and returns the HRESULT.
+  - Methods with span parameters also have a `…Raw` form with the C parameters and return value, for data that already lives in native memory: `list.ResourceBarrierRaw(n, pBarriers)`.
+  - Methods whose HRESULT is a value (`hresultValues`, today `ID3D12Device::GetDeviceRemovedReason`) have only the value-returning form.
+- **Stack addresses in `nativeint` parameters.** Passing `NativePtr.toNativeInt &&local` to a wrapper is safe, because no wrapper call is a tail call (rule 3). Examples are an `_In_opt_` range for `Map` or `Unmap`, or the description of `CreateUnorderedAccessView`.
 - **Renames.** A method whose name an intrinsic member would hide is renamed in `renames`: `ID3D12CommandList::GetType` is `GetCommandListType`.
 - **Enums.** Member names drop the longest common `_`-terminated prefix: `D3D12_HEAP_TYPE.UPLOAD`. When more than a tenth of the members would then start with a digit, the prefix gives up a segment instead (`D3D_FEATURE_LEVEL.LEVEL_12_0`). The few that remain digit-leading get a leading underscore (`DXGI_FORMAT._420_OPAQUE`). `[<CEnum(name, prefix)>]` records the C names. Enums declared with `DEFINE_ENUM_FLAG_OPERATORS` are `[<Flags>]`. `opaqueEnums` (`D3D12_MESSAGE_ID`) are bound as `int`.
 - **Structs.** Structs keep their C type and field names. They are `LayoutKind.Sequential`, or `LayoutKind.Explicit` with the generator's offsets when they contain an anonymous union, whose members become fields of the struct (`barrier.Transition`). C arrays become `[<InlineArray(n)>]` structs named `Array<n>_<element>`; index them with `MemoryMarshal.CreateSpan(&x.e0, n)`. `LUID` and `RECT` come from headers the generator does not read and are modeled by hand. The oracle checks them like the rest.
@@ -71,7 +87,17 @@ The shape of a wrapper follows its C parameters:
 
 ## Generation
 
-- **Headers.** The generator reads `um/d3dcommon.h`, `um/d3d12.h`, `um/d3d12sdklayers.h`, `shared/dxgicommon.h`, `dxgiformat.h`, `dxgitype.h`, `dxgi.h` and `dxgi1_2.h` to `dxgi1_6.h`. They come from Windows SDK 10.0.26100.0, each pinned by SHA-256 in `bindings.json`. If a header is missing or differs, nothing is generated and the exit code is 4.
+- **Headers.** The generator reads `um/d3dcommon.h`, `um/d3d12.h`, `um/d3d12sdklayers.h`, `shared/dxgicommon.h`, `dxgiformat.h`, `dxgitype.h`, `dxgi.h` and `dxgi1_2.h` to `dxgi1_6.h`.
+  - They come from Windows SDK 10.0.26100.0, each pinned by SHA-256 in `bindings.json`.
+  - `sdk.servicing` names the installer that produced the hashes: Windows SDK 10.0.26100.7705 ("Windows Software Development Kit - Windows 10.0.26100.7705"). Another servicing build of 10.0.26100 may change the headers.
+  - If a header is missing or differs, nothing is generated and the exit code is 4. The message names the pinned servicing build and the builds installed on the machine.
+- **Finding the headers.** The generator looks in this order:
+  1. `--sdk <include dir>`;
+  2. `LRM_WINSDK_INCLUDE`;
+  3. the `KitsRoot10` registry value the SDK installer writes, plus `Include/<version>`;
+  4. `Program Files (x86)/Windows Kits/10/Include/<version>`.
+
+  The ABI oracle resolves the Kits root the same way.
 - **Reading.** A small preprocessor evaluates the conditionals as x64 MSVC compiling C (`_WIN32`, `_WIN64`, `_MSC_VER`; no `__cplusplus`, `CINTERFACE` or `COBJMACROS`). It keeps the C vtables (`typedef struct IVtbl { BEGIN_INTERFACE … END_INTERFACE }`), enums, structs, typedefs and `DEFINE_GUID`. A second pass in C++ mode reads `MIDL_INTERFACE("iid") Name : public Base`.
 - **Checks before writing.** The generator stops when any of these fails:
   - every marker names the function pointer after it;
@@ -83,6 +109,7 @@ The shape of a wrapper follows its C parameters:
 - **Commands.**
   - Regenerate: `dotnet run --project tools/d3d12gen/Lrm.Tools.D3D12Gen -c Release`.
   - Codegen diff: `pwsh tools/d3d12gen/check.ps1`. It exits 0 when current, 1 when stale and 4 when the pinned headers are unavailable; `-SkipIfHeadersDiffer` turns 4 into a warning.
+  - The cpu tier runs the same diff. Its result is a `gpu.codegen.d3d12` check in the run log. When the pinned headers are unavailable (exit 4), the test is skipped, which the summary counts as ignored. It also writes a `gpu.codegen.d3d12.skipped` event with the reason and prints a `SKIPPED (not passed)` line, so a skip is never read as a pass.
 - **Determinism.** Output is a pure function of `bindings.json` and the headers, with LF endings, so regeneration is idempotent.
 
 ## ABI oracle
@@ -93,6 +120,8 @@ The shape of a wrapper follows its C parameters:
 | --- | --- | --- |
 | Struct size | `RuntimeHelpers.SizeOf`, equal to `Marshal.SizeOf` | `sizeof(T) == n` |
 | Field offset | `Marshal.OffsetOf` | `offsetof(T, f) == n` |
+| Field size | `RuntimeHelpers.SizeOf` of the field's type | `sizeof(((T *)0)->f) == n` (C), so a field of the wrong width fails even where alignment keeps every offset and the struct size |
+| Field kind | the field's type: pointer-sized, integer or enum, float, or struct | Against `decltype` of the C member (C++17), so `float` for `int` fails |
 | Enum member | the F# literal | `(long long)E == v` |
 | Vtable slot | every `Slots` literal | `offsetof(IVtbl, M) == slot * sizeof(void *)`, and `sizeof(IVtbl) == Count * sizeof(void *)` |
 | Signature | every `Fn` delegate's `Invoke` and every P/Invoke | Return type and each parameter: pointer-sized, integer, float or struct, and its size, against `decltype` of the C vtable member or export (C++17, `CINTERFACE`) |
@@ -103,8 +132,9 @@ The shape of a wrapper follows its C parameters:
   - it fails when the committed `d3d12_abi.g.c` and `d3d12_sig.g.cpp` differ from the dump (`-Update` rewrites them instead);
   - it compiles them with cl.exe from VS 2022 Build Tools (through vswhere and `vcvars64.bat 10.0.26100.0`), using `/W4 /WX` with the SDK headers as external headers;
   - it links `oracle_main.c` and runs it.
-- **Today's result.** 2,733 compile-time checks (1,707 C, 1,026 C++) and 43 IID checks, with 0 failures.
-- **Self-test.** The cpu tier compiles mutants that must fail: a wrong size, offset, slot, enum value, HRESULT, signature or IID. Each must be reported.
+- **Finding the toolchain.** `vcvars64.bat` gets the pinned SDK version (`sdk.version` in `bindings.json`) when that SDK's include folder exists under the Kits root (see Generation).
+- **Today's result.** 3,125 compile-time checks (1,903 C, 1,222 C++) and 43 IID checks, with 0 failures. That includes 196 field sizes and 196 field kinds.
+- **Self-test.** The cpu tier compiles mutants that must fail, and each must be reported. They are a wrong size, offset, field size, slot, enum value, HRESULT, signature, field kind or IID. The field-size mutant gives `D3D12_MESSAGE.ID` 2 bytes, which alignment would otherwise hide.
 
 ## Device check
 
@@ -172,7 +202,7 @@ The cpu tier checks these, plus the IIDs of the allocator, fence, descriptor hea
 | --- | --- |
 | `Desc.buffer 4096UL ALLOW_UNORDERED_ACCESS` | `01000000 00000000 0000000000000000 0010000000000000 01000000 0100 0100 00000000 01000000 00000000 01000000 04000000 00000000` |
 | `Desc.rawBufferUav 0UL 1024u` | `27000000 01000000 0000000000000000 00040000 00000000 0000000000000000 01000000 00000000` |
-| `Desc.transition (0x1122334455667788) COMMON UNORDERED_ACCESS` | `00000000 00000000 8877665544332211 ffffffff 00000000 08000000 00000000` |
+| `Desc.transition (ComPtr.Borrow 0x1122334455667788) COMMON UNORDERED_ACCESS` | `00000000 00000000 8877665544332211 ffffffff 00000000 08000000 00000000` |
 | `Desc.heapProperties UPLOAD` | `02000000` then 16 zero bytes |
 | `Desc.descriptorHeap CBV_SRV_UAV 64u true` | `00000000 40000000 01000000 00000000` |
 
@@ -192,16 +222,28 @@ The cpu tier (CI) checks:
 - the probe vectors above, and that the cl.exe oracle passes with 0 failures and rejects every mutant;
 - that the committed oracle sources and generated files are current;
 - that there is no ComImport, no RCW or ComWrappers use, no Marshal COM helper and no `tail.` prefix in the interop or its tests;
+- tail calls (rule 3):
+  - every generated wrapper takes `this` as `inref<ComPtr<_>>`;
+  - a consumer compiled with `--tailcalls+` (`TailCallConsumer.fs`) has no `tail.` at any wrapper call;
+  - its control, a direct `Fn` delegate call, does have one;
 - that marshalling is disabled, every struct is blittable with equal managed and native sizes, and every delegate is unmanaged and has its slot;
-- ComPtr ownership, AddRef, QueryInterface and the live-reference count on fake COM objects;
-- the generated wrapper path end to end on fake objects: RetVal, inref pinning, riid from the result type, D3D12Exception with the removed reason, and the delegate cache;
+- ComPtr ownership on fake COM objects: AddRef, QueryInterface, the live-reference count, no public constructor, and `Borrow` not counted;
+- the generated wrapper path end to end on fake objects:
+  - RetVal, also when parameters follow it (`GetResourceAllocationInfo`, `GetCustomHeapProperties`);
+  - inref pinning, and riid from the result type;
+  - spans: the length passed as the count, a null pointer for an empty span, the single-element forms, `ComPtr` spans, `uint32` and byte spans;
+  - the fixed-length check on `Values[4]`, and `Map` returning the pointer;
+  - D3D12Exception with the removed reason, and the delegate cache;
 - the description bytes and the device-check rules.
 
 The gpu tier (d3d12 mutex) checks:
 - that the RTX 4080 is accepted;
 - that refcounts balance: after its children are released, the device's last `Release` returns 0 and no live reference remains;
 - that invalid calls on the device and on a device child raise with the removed reason `S_OK`;
+- that RetVal works when parameters follow it. A 1 MiB buffer reports 1 MiB at 64 KiB alignment, two buffers 2 MiB, and the upload heap's custom properties are `CUSTOM`, `WRITE_COMBINE` and `L0`;
 - that DRED is reachable: the settings come from `D3D12GetDebugInterface`, and a device created with auto-breadcrumbs forced on exposes `ID3D12DeviceRemovedExtendedData1`. The defaults are restored afterwards;
-- that a 1 MiB copy round trip and a ResourceDescriptorHeap `C = A + B` dispatch are each bit-identical twice. The dispatch uses 32 root constants at b0, three raw UAVs and timestamps reported as a `gpu.dispatch` GPU interval.
+- that a 1 MiB copy round trip and a ResourceDescriptorHeap `C = A + B` dispatch are each bit-identical twice.
+  - The dispatch uses 32 root constants at b0 (a `uint32` span), three raw UAVs, a root signature from a byte span, one three-barrier span, and single-element barriers, heaps and command lists.
+  - Its timestamps are reported as a `gpu.dispatch` GPU interval.
 
 The bench tier measures the cost of one call (`gpu.interop.call`).
