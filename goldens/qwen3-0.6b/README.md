@@ -52,8 +52,9 @@ All ids are `tokenizers`' `encode(text, add_special_tokens=False).ids` on the pi
 The smallest margin is in float64 over the 64 decision rows; the float32 column is that margin in float32 ulps of the top logit (`generate()` takes its argmax over float32). Every gate prompt's 64 torch32 ids hold at least 21 distinct tokens. `chatml-000` emits EOS (`<|im_end|>`) at step 47, which the goldens ignore; with the checkpoint's own generation config, `generate()` stops there (ADR O1-0001). Logits e_ref is relL2(torch32, torch64p) of the prefill logits; the long prompts' smallest margin is over their rows, which are not gated.
 
 - **Gate prompts** come from the pool: at most 900 tokens, a torch32 top-2 margin of at least 0.05 at all 64 greedy steps and at least 8 distinct tokens among the 64 greedy ids, confirmed by torch64p; per category the first such candidate and the longest. All ten pass the full rule, so the prefix fallback is not used.
-- **Taps** are dumped for the two shortest gate prompts of different categories: `csharp-002` (34 tokens) and `multilingual-002` (61 tokens).
+- **Taps** are dumped for the two shortest gate prompts of different categories: `csharp-002` (34 tokens) and `multilingual-002` (61 tokens). Both are shorter than one 64-key attention block, so no per-layer golden crosses a block boundary. A block-boundary fault shows in the logits of the other eight gate prompts (152 to 708 tokens) and of the long prompts. To localize it per layer, bisect with `gpu-vs-cpu32` against CpuRef F32 taps of a longer prompt, not against torch taps (ADR G2-0002, item 4).
 - **Long prompts** (logits only, single node) are fixed concatenations: `long-design` (design-doc paragraphs) and `long-csharp` (C# snippets).
+- **Reading `prompts`.** Branch on `role` first. A `gate` prompt has `dumps` `taps` or `logits`: its `fwd_*` file holds either all taps or the logits. A `long` prompt has `dumps` `long`, a value the GoldenSet text does not list yet: its files are `long_*`, and it has no `fwd_*` or `tf_*` file (ADR G2-0002, Consequences).
 - **Calibration prompts** (`calibration.json`): `csharp-000`, `csharp-012`, `license-000`, `license-002`, `design-000`, `design-001`, `multilingual-001`, `multilingual-000`, `chatml-002`, `chatml-000`, `design-013` and `chatml-027` (17 to 835 tokens), fixed by category and length before any model ran. Three gate prompts are among them (`design-001`, `chatml-000`, `chatml-027`); the other seven gate prompts and both long prompts are holdouts.
 
 The pool (`pool.json`):
@@ -73,7 +74,7 @@ Eligible: at most 900 tokens, a margin of at least 0.05 at all 64 steps, and at 
 The pair names and bounds come from `tolerances.json` through `ToleranceSpec.load` (the tap kind is the part of a tap name after `L{i}.`).
 
 - **Logits.** A candidate's prefill logits [T, 151,936] against `fwd_*.<prompt>`: relL2, max |Δlogit| and the largest per-row KL(P_reference ‖ P_candidate), with the pair's `logits` bounds.
-- **Taps.** For the two taps prompts, relL2 per tap with the bound of its tap kind.
+- **Taps.** For the two taps prompts, relL2 per tap with the bound of its tap kind. Across the two GPU backends (`vulkan-vs-d3d12`), activations are compared by relL2 only. That pair bounds max |Δ| on `logits` alone, so `TryBound(vulkan-vs-d3d12, <an activation kind>, maxAbs)` returns None on purpose (ADR G2-0001, item 5).
 - **Greedy.** The canonical schedule (one prefill, then single-token decode steps, EOS never checked) gives 64 ids equal to `<prompt>.ids.<oracle>` in `greedy.safetensors` over the prompt's gated steps (all 64 for every g1 prompt).
 - **Teacher forcing.** A forward over each `tf_*` file's `input_ids`: the candidate's argmax equals the reference's at every row whose reference `margin` is at least `greedy.teacher_forced_min_margin` (0.02).
 - **Long prompts.** `final_norm.out` for every row, `logits` at `logits.rows`, and the teacher-forced argmax over every row with a margin of at least 0.02.
@@ -92,7 +93,9 @@ The pair names and bounds come from `tolerances.json` through `ToleranceSpec.loa
 | `vulkan-vs-d3d12` | fixed | 0.0001 | 0.0001 | 0.01 | none |
 
 - e_ref per tap kind is the largest relL2(torch32, torch64p) over the 12 calibration prompts and 28 layers (ADR G2-0001); every calibrated bound is clamp(k·e_ref, floor, 10·floor) and carries its e_ref.
-- The CPU32 relL2 floor is 3e-5, not the plan's 1e-5: CpuRef F32 measured up to 1.4e-5 on the residual stream, where torch32 itself is about 2e-6 from the truth. All other k and floors are the plan's.
+- The CPU32 relL2 floor is 3e-5, not the plan's 1e-5. On this set, CpuRef F32 measured up to 1.21e-5 from torch64p and 1.02e-5 from torch32 on the residual stream (`L27.out` of `multilingual-002`, probe run `20261018-091611-7cb55719`), where torch32 itself is about 2e-6 from the truth. That tap kind, `out`, is the only one that fails at 1e-5. The rule has one floor per pair and metric, so every CPU32 relL2 bound at the floor, the logits' included, loosens with it. All other k and floors are the plan's.
+- `vulkan-vs-d3d12` bounds max |Δlogit| at 1e-2 on `logits` only. The contract's fixed-bound line and its sample put that maxAbs in the pair's `default`, but residual-stream activations reach 1e3 and more.
+- Both departures (the CPU32 floor from the plan, the `vulkan-vs-d3d12` maxAbs from the contract text) wait for sign-off at the plan's "tolerances reviewed" gate. ADR G2-0001 is "proposed" until then and gives the alternative: per-kind floors, an O2 schema change, for g2.
 - τ_logit = 0.01 (the largest logits maxAbs bound, from the GPU floor), so the gate margin rule is max(0.05, 4·τ_logit) = 0.05 and the teacher-forced threshold 2·τ_logit = 0.02.
 
 ## Measured
@@ -136,8 +139,10 @@ python -I tools/goldens/verify_goldens.py                                   # co
 python -I tools/goldens/verify_goldens.py --data C:/Users/end/dev/lrm-data   # and the LRM_DATA files
 dotnet fsi tools/goldens/qwen/check_set.fsx                                 # Goldens.Open, VerifyAll, ToleranceSpec.load, T_spec = CpuRef
 dotnet fsi tools/goldens/qwen/cpuref_probe.fsx --long                       # CpuRef F32 and F64 under these tolerances
-pwsh tools/goldens/run.ps1 qwen/make_qwen.py --check                        # regenerate (about 1 h 50 min) and compare
+pwsh tools/goldens/run.ps1 qwen/make_qwen.py --check                        # regenerate (about 2 h) and compare
 ```
+
+A plain `make_qwen.py` run never rewrites `LRM_DATA/golden/qwen3-0.6b/g1`, which every worktree shares. If the folder already holds files, the run only hashes the data files it produces and writes the committed files only when all 45 are byte-identical to the folder's; `--force` is for smoke folders and new versions ([tools README](../../tools/goldens/qwen/README.md)). The committed bytes at this head come from such a run: run `20261018-120457-85a6c443` (2 h 0 min) regenerated the set after the tool and text fixes of PR #19's review. Every stage's double run was identical at 8 threads with the same digests as before, all 45 data files equalled the folder's (`goldens.data_unchanged`), and only `tolerances.json` (its `calibration` text) and the manifest (that file's hash and the two changed generator files' hashes) changed.
 
 `--check` passes only on the generation machine with the same `LRM_DATA` (GoldenSet, Verification): the manifest records the machine, and torch's kernels depend on its code path. On the generation machine it passed for g1 (run `20261018-095500-e277b974`, 1 h 48 min): every committed byte and every data file's SHA-256 regenerated identically ([`reports/make-qwen-check/goldens.md`](reports/make-qwen-check/goldens.md)).
 
@@ -151,7 +156,7 @@ pwsh tools/goldens/run.ps1 qwen/make_qwen.py --check                        # re
 | `csharp-002` prompt ids (34) | `262 1667 762 2033 284 2535 2943 78533 25797 11 20251 568 49684 3576 317 262 2033 22834 19098 7188 15872 543 262 470 2535 2033 12614 88136 40583 568 49684 3576 317 92` |
 | `csharp-002` greedy ids, steps 0..11, both oracles | `4710 3983 358 2776 537 2704 421 419 374 279 1850 1616` |
 | `multilingual-002` greedy ids, steps 0..11, both oracles | `4710 27473 419 1119 6364 382 785 19415 13719 678 5975 11` |
-| `tolerances.json` | 24,269 bytes, SHA-256 `e7c8c2cb8c35b54c21e3d128183b4183d7a210d65b1dcbcaa4edadd2f3412f99` |
+| `tolerances.json` | 24,807 bytes, SHA-256 `6d0d8a687696fb2ff350b646c14566f55b39c8e69bdc2bdf3b8d1dfbc37713a0` |
 
 The manifest lists the size and SHA-256 of every other file.
 
