@@ -1,9 +1,9 @@
 # Parity: Tiny model: the Qwen forward (M2a) on cpu-f64 and cpu-f32
 
 
-**PASS.** All 250 comparisons are within their bounds. All 12 oracle self-tests pass.
+**PASS.** All 254 comparisons are within their bounds. All 12 oracle self-tests pass.
 
-- Comparisons: 250, failed: 0
+- Comparisons: 254, failed: 0
 - Pairs: cpu64-vs-torch64p, cpu32-vs-torch32, cpu32-vs-torch64p; cases: 3
 - Closest to its bound: cpu32-vs-torch64p p0 L1.mlp.down.out rel_l2: 0.088 of the bound
 
@@ -19,13 +19,13 @@ Every per-layer tap's rel_l2 against the golden, summarized per layer over all c
 
 ### cpu64-vs-torch64p: PASS
 
-81 comparisons, 0 failed, worst ratio 0.001 of the bound.
+83 comparisons, 0 failed, worst ratio 0.001 of the bound.
 
 ![Worst measured/bound by tap and layer, cpu64-vs-torch64p](charts/parity-pairs-0-heatmap.svg)
 
 ### cpu32-vs-torch32: PASS
 
-87 comparisons, 0 failed, worst ratio 0.081 of the bound.
+89 comparisons, 0 failed, worst ratio 0.081 of the bound.
 
 ![Worst measured/bound by tap and layer, cpu32-vs-torch32](charts/parity-pairs-1-heatmap.svg)
 
@@ -39,8 +39,8 @@ Every per-layer tap's rel_l2 against the golden, summarized per layer over all c
 
 | Case | Checks | Failed | Worst comparison | Worst ratio | Logits rel_l2 | Greedy match |
 | --- | ---: | ---: | --- | ---: | --- | --- |
-| p0 | 123 | 0 | cpu32-vs-torch64p L1.mlp.down.out rel_l2 | 0.088 | cpu64-vs-torch64p 9.73e-16, cpu32-vs-torch32 5.57e-07, cpu32-vs-torch64p 5.98e-07 | 64/64, 64/64 |
-| p1 | 123 | 0 | cpu32-vs-torch32 L1.mlp.down.in rel_l2 | 0.073 | cpu64-vs-torch64p 6.31e-16, cpu32-vs-torch32 3.90e-07, cpu32-vs-torch64p 3.93e-07 | 64/64, 64/64 |
+| p0 | 125 | 0 | cpu32-vs-torch64p L1.mlp.down.out rel_l2 | 0.088 | cpu64-vs-torch64p 9.73e-16, cpu32-vs-torch32 5.57e-07, cpu32-vs-torch64p 5.98e-07 | 64/64, 16/16, 64/64, 16/16 |
+| p1 | 125 | 0 | cpu32-vs-torch32 L1.mlp.down.in rel_l2 | 0.073 | cpu64-vs-torch64p 6.31e-16, cpu32-vs-torch32 3.90e-07, cpu32-vs-torch64p 3.93e-07 | 64/64, 16/16, 64/64, 16/16 |
 | p2 | 4 | 0 | cpu32-vs-torch32 logits rel_l2 | 0.072 | cpu64-vs-torch64p 1.19e-15, cpu32-vs-torch32 7.17e-07 | n/a |
 
 ## Oracle self-tests
@@ -99,18 +99,18 @@ The smallest margin is 0.0567 (p0, cpu-f64). No float32 argmax agreement was rec
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-051350-1c9f3dd8` |
+| Run | `20261018-060450-cfb11171` |
 | Title | Tiny model: the Qwen forward (M2a) on cpu-f64 and cpu-f32 |
 | Kind | parity |
 | Status | ok |
-| Started | 2026-10-18T05:13:50.322Z |
-| Ended | 2026-10-18T05:13:52.360Z |
+| Started | 2026-10-18T06:04:50.205Z |
+| Ended | 2026-10-18T06:04:52.288Z |
 | Execution class | cpu-f64 cpu, .NET 10.0.13, win-x64+avx2+fma |
 | Class id | `f705487c3bfc` |
 | Driver | .NET 10.0.13 |
-| Commit | `27d074bf7e3f5d932506def124accaa4111d7d61` |
+| Commit | `2b52580cbf2cc1d6451435d6bb4c46f047a13cc6` |
 | Nodes | 2 |
-| Records | 66,796 |
+| Records | 66,800 |
 | Synthetic | no |
 
 | Parameter | Value |
@@ -125,8 +125,8 @@ The smallest margin is 0.0567 (p0, cpu-f64). No float32 argmax agreement was rec
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| n0 | creator | cpu-f64 cpu, .NET 10.0.13, win-x64+avx2+fma | 32,414 | ok | 0 |
-| n1 | joined | cpu-f32 cpu, .NET 10.0.13, win-x64+avx2+fma | 34,382 | ok | 0 |
+| n0 | creator | cpu-f64 cpu, .NET 10.0.13, win-x64+avx2+fma | 32,416 | ok | 0 |
+| n1 | joined | cpu-f32 cpu, .NET 10.0.13, win-x64+avx2+fma | 34,384 | ok | 0 |
 
 ### Log problems
 
