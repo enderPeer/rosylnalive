@@ -1,6 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: T2. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
-    <Compile Include="Placeholder.fs" />
+    <Compile Include="Html.fs" />
+    <Compile Include="Markdown.fs" />
+    <Compile Include="Catalog.fs" />
+    <Compile Include="Records.fs" />
+    <Compile Include="RunView.fs" />
+    <Compile Include="Assets.fs" />
+    <Compile Include="Page.fs" />
+    <Compile Include="Dashboard.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The records template, read at run time as dashboard/records.md. -->
+    <EmbeddedResource Include="templates/records.md" LogicalName="dashboard/records.md" />
   </ItemGroup>
 </Project>
