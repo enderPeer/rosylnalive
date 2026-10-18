@@ -182,7 +182,7 @@ The cpu tier (CI) checks:
 
 The gpu tier (vulkan mutex) checks that the RTX 4080 is accepted; that the recipe's device is created with the full feature chain and destroyed cleanly twice, with every enabled device command and every enabled instance command loaded; that recording 3,000 wrapper calls into a real command buffer allocates no managed memory; that hello-compute is bit-identical twice and equals KAT-4 with no poison left, and its negative control fails; and that debug utils, the diagnostics device (device fault and memory budget), cooperative-matrix properties and calibrated timestamps work. Its run log (kind `kernels`) carries the `gpu.dispatch` interval of `args_echo` and the device records.
 
-The bench tier measures the cost of a wrapper call into the driver (`gpu.interop.call`): about 59 ns for `vkCmdPushDataEXT` and 152 ns for `vkCmdPipelineBarrier2` on the RTX 4080, driver work included.
+The bench tier measures the cost of a wrapper call into the driver (`gpu.interop.call`): 60 to 80 ns for `vkCmdPushDataEXT` and 150 to 170 ns for `vkCmdPipelineBarrier2` on the RTX 4080 across runs, driver work included.
 
 ## Open points
 
