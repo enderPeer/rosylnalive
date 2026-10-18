@@ -34,22 +34,22 @@ Resource use attributed to node, component and stage (layers summed). Wall time 
 
 | Node | Component | Stage | Wall (self) | GPU | FLOPs | Bytes moved | Tokens | Records |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| n0 | (none) |  | 2.32 s | 34.72 ms | 0 | 5.64 GiB | 0 | 20,896 |
+| n0 | (none) |  | 2.09 s | 34.72 ms | 0 | 5.64 GiB | 0 | 20,896 |
 
 ## Run
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-051025-85c086f7` |
+| Run | `20261018-051521-4e953457` |
 | Title | D3D12 backend: selftests, probe, soak and transfers (D1) |
 | Kind | kernels |
 | Status | ok |
-| Started | 2026-10-18T05:10:25.004Z |
-| Ended | 2026-10-18T05:10:35.200Z |
+| Started | 2026-10-18T05:15:21.370Z |
+| Ended | 2026-10-18T05:15:33.793Z |
 | Execution class | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders b12cabbf300b |
 | Class id | `9469669b5935` |
 | Driver | 32.0.16.1692 |
-| Commit | `8823dc74bdd530d864c21011bb68dc8fd8efe951` |
+| Commit | `2095ab0bfc468e33185c07f77892179623b88fb4` |
 | Nodes | 1 |
 | Records | 21,279 |
 | Synthetic | no |

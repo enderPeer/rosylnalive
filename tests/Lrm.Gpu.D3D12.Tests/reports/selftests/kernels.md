@@ -54,31 +54,31 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Kernel | Backend | Layer | Step | Duration | Of budget |
 | --- | --- | ---: | ---: | ---: | ---: |
-| groups_echo | d3d12 |  |  | 66.34 µs | 0.1% |
+| groups_echo | d3d12 |  |  | 66.56 µs | 0.1% |
 | groups_echo | d3d12 |  | 1 | 65.54 µs | 0.1% |
 | groups_echo | d3d12 |  | 2 | 65.54 µs | 0.1% |
 | groups_echo | d3d12 |  | 1 | 65.54 µs | 0.1% |
 | groups_echo | d3d12 |  | 2 | 65.54 µs | 0.1% |
 | groups_echo | d3d12 |  | 4 | 65.54 µs | 0.1% |
 | groups_echo | d3d12 |  | 1 | 65.54 µs | 0.1% |
-| scale_f32 | d3d12 |  |  | 4.10 µs | 0.0% |
-| scale_f32 | d3d12 |  | 1 | 4.10 µs | 0.0% |
-| scale_f32 | d3d12 |  |  | 3.39 µs | 0.0% |
+| scale_f32 | d3d12 |  |  | 4.00 µs | 0.0% |
+| scale_f32 | d3d12 |  |  | 3.94 µs | 0.0% |
+| scale_f32 | d3d12 |  |  | 3.07 µs | 0.0% |
 
 ## Run
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-051025-85c086f7` |
+| Run | `20261018-051521-4e953457` |
 | Title | D3D12 backend: selftests, probe, soak and transfers (D1) |
 | Kind | kernels |
 | Status | ok |
-| Started | 2026-10-18T05:10:25.004Z |
-| Ended | 2026-10-18T05:10:35.200Z |
+| Started | 2026-10-18T05:15:21.370Z |
+| Ended | 2026-10-18T05:15:33.793Z |
 | Execution class | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders b12cabbf300b |
 | Class id | `9469669b5935` |
 | Driver | 32.0.16.1692 |
-| Commit | `8823dc74bdd530d864c21011bb68dc8fd8efe951` |
+| Commit | `2095ab0bfc468e33185c07f77892179623b88fb4` |
 | Nodes | 1 |
 | Records | 21,279 |
 | Synthetic | no |

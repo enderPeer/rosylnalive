@@ -19,14 +19,14 @@
 <text class="t3" x="97.04" y="68" font-size="11" text-anchor="start">kernel</text>
 <text class="t3" x="368.52" y="244" font-size="11" text-anchor="middle">GPU time</text>
 <text class="t2" x="89.04" y="95" font-size="12" text-anchor="end">scale_f32</text>
-<path class="f4" d="M97.04 83H556.21Q560.21 83 560.21 87V95Q560.21 99 556.21 99H97.04Z"><title>scale_f32, d3d12: 34.12 ms</title></path>
-<text class="t2" x="566.21" y="95" font-size="11">34.12 ms</text>
+<path class="f4" d="M97.04 83H556.22Q560.22 83 560.22 87V95Q560.22 99 556.22 99H97.04Z"><title>scale_f32, d3d12: 34.12 ms</title></path>
+<text class="t2" x="566.22" y="95" font-size="11">34.12 ms</text>
 <text class="t2" x="89.04" y="121" font-size="12" text-anchor="end">groups_echo</text>
-<path class="f4" d="M97.04 109H100.24Q103.44 109 103.44 112.2V121.8Q103.44 125 100.24 125H97.04Z"><title>groups_echo, d3d12: 471.84 µs</title></path>
-<text class="t2" x="109.44" y="121" font-size="11">471.84 µs</text>
+<path class="f4" d="M97.04 109H100.24Q103.45 109 103.45 112.2V121.8Q103.45 125 100.24 125H97.04Z"><title>groups_echo, d3d12: 472.06 µs</title></path>
+<text class="t2" x="109.45" y="121" font-size="11">472.06 µs</text>
 <text class="t2" x="89.04" y="147" font-size="12" text-anchor="end">table_echo</text>
-<path class="f4" d="M97.04 135H97.25Q97.46 135 97.46 135.21V150.79Q97.46 151 97.25 151H97.04Z"><title>table_echo, d3d12: 30.72 µs</title></path>
-<text class="t2" x="103.46" y="147" font-size="11">30.72 µs</text>
+<path class="f4" d="M97.04 135H97.26Q97.48 135 97.48 135.22V150.78Q97.48 151 97.26 151H97.04Z"><title>table_echo, d3d12: 32.77 µs</title></path>
+<text class="t2" x="103.48" y="147" font-size="11">32.77 µs</text>
 <text class="t2" x="89.04" y="173" font-size="12" text-anchor="end">bf16_unpack</text>
 <path class="f4" d="M97.04 161H97.12Q97.21 161 97.21 161.08V176.92Q97.21 177 97.12 177H97.04Z"><title>bf16_unpack, d3d12: 12.29 µs</title></path>
 <text class="t2" x="103.21" y="173" font-size="11">12.29 µs</text>
