@@ -256,6 +256,88 @@ let tests =
                     [ "kernel"; "bound_kind"; "measured"; "bound"; "ref_error"; "elements" ]
                     "conformance.case attributes"
 
+            testCase "the fp32 arithmetic kernels match any NaN; the other bit-exact kernels compare NaN bits"
+            <| fun () ->
+                let arithmetic =
+                    KernelBounds.all
+                    |> List.filter _.Fp32Arithmetic
+                    |> List.map _.Kernel
+                    |> Set.ofList
+
+                Expect.equal arithmetic (set [ "scale_f32"; "add" ]) "fp32 arithmetic kernels"
+
+                let f32 (bits: uint32 list) =
+                    HostTensor.f32
+                        (Shape.vector bits.Length)
+                        (bits |> List.map BitConverter.UInt32BitsToSingle |> Array.ofList)
+
+                let gpuNaN = f32 [ 0x3F800000u; 0x7FFFFFFFu ]
+                let cpuNaN = f32 [ 0x3F800000u; 0x7FC00001u ]
+                Expect.isTrue (KernelBounds.check "add" gpuNaN cpuNaN None).Passed "add: NaN 7fffffff matches 7fc00001"
+
+                Expect.isTrue
+                    (KernelBounds.check "scale_f32" (f32 [ 0xFFC00000u ]) (f32 [ 0x7FC00000u ]) None).Passed
+                    "scale_f32: the sign of a NaN does not matter"
+
+                let copy = KernelBounds.check "copy_rows" gpuNaN cpuNaN None
+                Expect.equal (copy.Measured, copy.Passed) (1.0, false) "copy_rows: NaN payloads are bits"
+
+                Expect.isFalse
+                    (KernelBounds.check "add" (f32 [ 0x7FFFFFFFu ]) (f32 [ 0x3F800000u ]) None).Passed
+                    "add: a NaN against a number fails"
+
+                Expect.isFalse
+                    (KernelBounds.check "add" (f32 [ 0x00000000u ]) (f32 [ 0x00000001u ]) None).Passed
+                    "add: a flushed denormal against CpuRef as it is fails (the caller passes CpuRef in the class's mode)"
+
+            testCase "relative bounds cover flushed denormal results, an absolute 2^-126 per value"
+            <| fun () ->
+                Expect.equal
+                    KernelBounds.SmallestNormalF32
+                    (float (BitConverter.UInt32BitsToSingle 0x00800000u))
+                    "SmallestNormalF32 is 2^-126"
+
+                Expect.equal
+                    (KernelBounds.flushAllowance (ReadOnlySpan gpu))
+                    0.0
+                    "no allowance without denormal results"
+
+                let r64 = [| 1e-39; -2e-39 |]
+                let r32 = r64 |> Array.map (fun x -> float (float32 x))
+                let flushed = [| 0.0; -0.0 |]
+                Expect.equal (KernelBounds.flushableCount (ReadOnlySpan r64)) 2L "two flushable results"
+
+                let c =
+                    KernelBounds.checkRelative
+                        "rmsnorm_rows"
+                        (ReadOnlySpan flushed)
+                        (ReadOnlySpan r32)
+                        (ReadOnlySpan r64)
+
+                let allowance =
+                    KernelBounds.SmallestNormalF32 * sqrt 2.0 / sqrt (1e-39 * 1e-39 + 2e-39 * 2e-39)
+
+                Expect.equal c.Measured 1.0 "every result flushed: relL2 1"
+
+                Expect.equal
+                    c.Bound
+                    (KernelBounds.relativeBound c.ReferenceError + allowance)
+                    "bound with the allowance"
+
+                Expect.isTrue c.Passed "a flushed denormal result passes"
+
+                let mixed = [| 1.0; 1e-39 |]
+                let wrong = [| 0.5; 0.0 |]
+
+                Expect.isFalse
+                    (KernelBounds.checkRelative
+                        "rmsnorm_rows"
+                        (ReadOnlySpan wrong)
+                        (ReadOnlySpan mixed)
+                        (ReadOnlySpan mixed))
+                        .Passed
+                    "the allowance does not hide an error in a normal result"
+
             testCase "CpuRef F32 is within its own bound of CpuRef F64 on a matmul case"
             <| fun () ->
                 let x = random<float> 3UL "kb/x" (17 * 256) 1.0
