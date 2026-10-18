@@ -279,7 +279,7 @@ The cluster reports through the Lrm.Core facade with the reserved `cluster.*` na
 - **Pull-based replay.** The node that lacks a chain asks for exactly the missing suffix; the coordinator does not track node state beyond replays in progress.
 - **One job per coordinator run.** Fetch, Log and chain heads name chains by (lane, stage) within that job.
 - **Unauthenticated localhost.** The sender field is self-declared. Phase 1 runs on trusted links: a peer can still make the reader allocate up to a 64 MiB frame by sending that much, and SHA-256 runs once per received frame.
-- **The cross-check is complete only for executors that keep the digest rule.** An executor that breaks it (CorruptOutput) escapes when every other computation of the corrupted unit was lost and no later replay covered it. In a sweep of `Simulation.standard` seeds 1 to 400, each with one extra random corruption, that happened in 1 seed. With the rule kept (Corrupt), every seed whose corruption reached an accepted result ended Diverged; the cpu tier runs the first 200 of those seeds.
+- **The cross-check is complete only for executors that keep the digest rule.** An executor that breaks it (CorruptOutput) escapes when every other computation of the corrupted unit was lost and no later replay covered it. Two sweeps of `Simulation.standard` seeds 1 to 400, each seed with one extra corruption drawn from one of two DetRng streams, gave 800 runs per kind: CorruptOutput escaped in 1, Corrupt (the rule kept) in none; every other run whose corruption reached an accepted result ended Diverged. The cpu tier runs seeds 1 to 200 with Corrupt from the stream `lrm.cluster.test.corrupt`.
 
 ## Verification
 
