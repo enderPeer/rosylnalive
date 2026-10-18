@@ -14,8 +14,16 @@
 /// - **Adversarial magnitudes**: scores in the thousands and near 1e24 (a softmax without the maximum subtracted
 ///   overflows), scores around -113 everywhere (a softmax without it gives 0 / 0), a running maximum that rises in
 ///   every block, one dominant key first (later blocks underflow, partly to denormals) and last (the last query
-///   rescales every earlier block by about exp(-94)), all scores equal (q = 0) over 2,001 keys, tied keys, and values
-///   near 1e30, 1e-30 and denormal.
+///   rescales every earlier block by about exp(-94)), all scores equal (q = 0) over 2,001 keys, tied keys, values near
+///   1e30, 1e-30 and denormal, and denormal values on every other key with normal ones on the rest.
+///
+/// **What the value cases check.** The kernel keeps the weighted sum of values unnormalized until the end, so its
+/// precondition is finite scores and a sum of |v| over the keys below FLT_MAX (ADR K3-0001, decision 2); values near
+/// 1e30 over at most 103 keys stay far inside it. `adv_denormal_values` has every result below 2^-126, so KernelBounds'
+/// flushed-denormal allowance makes its bound at least 1 in every class (13.4 on D3D12): there it checks the two runs,
+/// the batch-invariance splits and that no NaN appears, not the accuracy. `adv_mixed_denormal_values` sends denormal
+/// values through the same loads and mads next to normal ones, with every result normal, so its bound has no allowance.
+/// No relL2 bound can judge a denormal result next to normal ones: such a result moves relL2 by about 1e-38.
 ///
 /// **Why no larger dispatch is gated.** The harness times each case on a GPU that has idled through the case's CPU
 /// references, and the RTX 4080 then runs the dispatch at its idle clock (210 to 700 MHz instead of about 2.8 GHz, up
@@ -162,6 +170,19 @@ let private denormalValues: Data =
 
         q, k, v
 
+/// The values of the even keys uniform in [-1, 1) and those of the odd keys denormal as in `denormalValues` (q and k in
+/// [-1, 1)): every result is a normal number, so no flushed-denormal allowance loosens the bound, and in a flush class
+/// the reference reads the odd keys' values as zeros.
+let private mixedDenormalValues: Data =
+    fun r h rows keys ->
+        let q, k, denormal = denormalValues r h rows keys
+        let normal = CaseGen.uniform r (keys * h.KvCols) -1.0f 1.0f
+
+        let v =
+            Array.init (keys * h.KvCols) (fun e -> if e / h.KvCols % 2 = 0 then normal[e] else denormal[e])
+
+        q, k, v
+
 /// One case: `rows` queries from q row `q0` at positions past .. past + rows - 1, with q and y holding q0 + rows + 2
 /// rows and the caches past + rows + 64 rows; every row the dispatch must not read holds the quiet NaN.
 let private case (name: string) (h: Heads) (rows: int) (q0: int) (past: int) (data: Data) (doc: string) : KernelCase =
@@ -305,9 +326,31 @@ let private adversarialCases =
             "The last key (position 149) dominates: the last query rescales its state by about exp(-94) at the end"
         case "adv_zero_queries" qwen 3 0 2000 zeroQueries "q = 0: all 2,001 weights are exactly 1; y is the mean of v"
         case "adv_tied_keys" qwen 2 0 300 tiedKeys "Every key equal: the scores of a query tie in every block"
-        case "adv_large_values" qwen 3 0 100 (uniform 1.0f 1.0f 1e30f) "Values near 1e30"
+        case
+            "adv_large_values"
+            qwen
+            3
+            0
+            100
+            (uniform 1.0f 1.0f 1e30f)
+            "Values near 1e30: the sum of |v| over 103 keys stays below FLT_MAX, the kernel's precondition"
         case "adv_small_values" qwen 3 0 100 (uniform 1.0f 1.0f 1e-30f) "Values near 1e-30"
-        case "adv_denormal_values" qwen 2 0 70 denormalValues "Denormal values: y is denormal"
+        case
+            "adv_denormal_values"
+            qwen
+            2
+            0
+            70
+            denormalValues
+            "Denormal values: every result is denormal, so the allowance makes the bound at least 1 (runs, splits, no NaN)"
+        case
+            "adv_mixed_denormal_values"
+            qwen
+            3
+            0
+            70
+            mixedDenormalValues
+            "Denormal values on the odd keys, normal ones on the even keys: every result is normal and the bound is tight"
     ]
 
 /// Every case of K3.

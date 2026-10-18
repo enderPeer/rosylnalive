@@ -20,8 +20,12 @@
 //     is the sum of mad(e_j, v_j[d], .) in increasing j from +0, per output dimension d;
 //   - the online-softmax state is updated once per block, from l = o = +0: l = mad(l, alpha, block sum) and
 //     o[d] = mad(o[d], alpha, block value[d]); after the last block y[d] = o[d] / l.
-// There is no -inf (the running maximum starts at the first block's maximum) and no NaN from finite inputs: the key
-// that holds the maximum adds exp(0) = 1 to l, and no later block rescales it (alpha = exp(0) once m is reached).
+// There is no -inf: the running maximum starts at the first block's maximum. There is no NaN or Inf when the scores are
+// finite and sum_j |v_j[d]| over the keys 0 .. p stays below FLT_MAX (max |v| * (p + 1) < FLT_MAX is enough, about
+// 8e34 at 4,096 keys). l >= 1, because the key that holds the maximum adds exp(0) = 1 to l and no later block rescales
+// it (alpha = exp(0) once m is reached), and l <= p + 1. But o is kept unnormalized (every e_j <= 1, so |o[d]| <=
+// sum_j |v_j[d]|) and is divided by l only at the end, so values past that sum overflow o to Inf where y = o / l and
+// CpuRef, which divides first, are finite. Model activations are many orders of magnitude inside it.
 // DXIL arithmetic is fast-math (ADR int-0001), so the compiler may contract or reassociate what is written here; it
 // compiles one instruction sequence that every (row, head) runs, so the result still depends only on p and the data.
 //
