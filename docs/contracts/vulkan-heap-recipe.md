@@ -1,7 +1,7 @@
 # VulkanHeapRecipe contract
 
 - **Owner:** R1.
-- **Status:** v1, proposed for contracts-v1.1, together with R4b.
+- **Status:** v1.1, for the contracts-v1.1 tag, together with R4b's ShaderBuildAndSourceConvention v1.1. v1.1 changes only section 7: the argument block is each kernel's typed block, which the device reads at the same bytes as v1's `uint4 d[8]` (change log below).
 - **Consumers:**
   - V1 (`src/Lrm.Gpu.Vulkan`) implements this exactly;
   - R4b finalizes the SPIR-V `LRM_BUF` and its inspector from it;
@@ -124,11 +124,11 @@ mapping = VkDescriptorSetAndBindingMappingEXT {
 ## 7. Shader side (for R4b)
 
 - **SPIR-V binding.** `[[vk::binding(0, 0)]] RWByteAddressBuffer g_buf[] : register(u0, space0);` with `#define LRM_BUF(slot) g_buf[slot]`, and no `NonUniformResourceIndex`. Slot indices must be dynamically uniform. DXIL keeps `ResourceDescriptorHeap[slot]`.
-- **ArgBlock.** `struct LrmArgBlock { uint4 d[8]; };`, declared as `ConstantBuffer<LrmArgBlock> : register(b0, space0)`, with `[[vk::push_constant]]` only under `#if defined(__spirv__)`. Dword *k* is `d[k >> 2][k & 3]`. A flat `uint d[32]` is not allowed: DXIL packs it into 500 bytes.
+- **ArgBlock.** Each kernel declares its generated block `lrm_args_<kernel>` (KernelAbiAndCatalog, `lrm_args.g.hlsli`): `uint lrm_groups_x`, then one 32-bit scalar per catalog field, as `ConstantBuffer<lrm_args_<kernel>> lrm_args : register(b0, space0)`, with `[[vk::push_constant]]` only under `#if defined(__spirv__)`. Dword *k* is member *k*, at byte 4·*k* in both the D3D cbuffer layout and DXC's push-constant layout; the spike's `struct { uint4 d[8]; }`, read as `d[k >> 2][k & 3]`, puts the same dwords at the same bytes. A flat `uint d[32]` is not allowed: DXIL packs it into 500 bytes.
 - **DXC flags.** `-T cs_6_6 -HV 2021 -O3 -WX -spirv -fspv-target-env=vulkan1.3`, with neither `-fvk-bind-resource-heap` nor `-fspv-use-descriptor-heap`.
 - **What every module must satisfy:**
   1. exactly one variable with DescriptorSet or Binding decorations: storage class StorageBuffer, set 0, binding 0, not NonWritable;
-  2. the PushConstant block has one member at Offset 0, ArrayStride 16, 128 bytes in total;
+  2. the PushConstant block is `lrm_args_<kernel>`: member *i* at Offset 4·*i*, named and typed as the catalog, at most 128 bytes in total (ShaderBuildAndSourceConvention v1.1, rule `push-block`). Push data is always the whole 128-byte ArgBlock (section 6), whatever size the block declares;
   3. LocalSize equals the catalog's thread count;
   4. the module declares `RuntimeDescriptorArray`.
 
@@ -191,3 +191,8 @@ The output's SHA-256 is `74f5e898a05c7e2063639a11cbdaed2cd75d077e98c5c27296542f5
 - This contract changes only through a `contract-change` PR, with a CHANGELOG entry and updated KATs.
 - A new device or driver whose limits differ (section 3) does not change the contract: the rules are written in terms of the queried limits.
 - Moving to direct heap indexing (`SPV_EXT_descriptor_heap`) would be a new contract version. It needs a DXC that supports UAVs on non-emulated heaps; 1.9.2609.5 does not.
+
+## Change log
+
+- **v1** (R1, PR #5): first version, from the spike.
+- **v1.1** (integrator, `int/wave1-fixes`, on R4b's request in PR #12): section 7's ArgBlock bullet and rule 2 name each kernel's typed block `lrm_args_<kernel>` (member *i* at Offset 4·*i*, named and typed as the catalog, at most 128 bytes) instead of the spike's `uint4 d[8]` with one member at Offset 0 and ArrayStride 16. The device reads the same dwords at the same bytes either way: R4b ran LRM's typed blocks through this spike on the RTX 4080, 124 of 124 cases, bit-exact on D3D12 and all 8 Vulkan configurations (`src/Lrm.Shaders.Build/typed-args-spike.ps1`, runs `20261018-021142-c850f044` and `20261018-022059-82e7bd2c`). The recipe, the backend and the KATs are unchanged.
