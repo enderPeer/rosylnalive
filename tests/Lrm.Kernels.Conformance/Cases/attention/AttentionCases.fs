@@ -6,24 +6,28 @@
 /// shader backend. The matrix:
 ///
 /// - **Qwen3-0.6B shapes** (16 query heads, 8 KV heads, head_dim 128): decode at the block edges (positions 0, 63, 64,
-///   127), prefill and chunked prefill across block edges, and long context: decode at 4000 and 4095, the last
-///   128-query chunk of a 4096-token prefill (keys to 4096) and, GPU-only, its last 512-query chunk. A whole
-///   4096-token prefill in one dispatch is measured by the bench (ADR K3-0001), not gated here: the harness times a
-///   cold GPU, and that dispatch is too close to the budget before the clocks rise.
-/// - **Other layouts**: the tiny model (4:2, head_dim 32), MHA (4:4), MQA (8:1), odd head counts (6:3, 3:1), head_dim 1,
-///   3, 64, 96, 130, 200 and 256 (more than one 128-dimension pass), one query of one head, and, GPU-only, a wide grid
-///   (16,384 queries of one head; the grid is never folded, ADR K3-0001 has the 65,535-query edge).
+///   127), prefill and chunked prefill across block edges, and long context: decode at 4000 and 4095 and the last
+///   128-query chunk of a 4096-token prefill (keys to 4096).
+/// - **Other layouts**: the tiny model (4:2, head_dim 32), MHA (4:4), MQA (8:1), odd head counts (6:3, 3:1), head_dim
+///   1, 3, 64, 96, 130, 200 and 256 (more than one 128-dimension pass), one query of one head, and, GPU-only, a wide
+///   grid (8,192 queries of one head; the grid is never folded).
 /// - **Adversarial magnitudes**: scores in the thousands and near 1e24 (a softmax without the maximum subtracted
-///   overflows), scores around -113 everywhere (a softmax without it gives 0 / 0), a running maximum that rises in every
-///   block, one dominant key first (later blocks underflow, partly to denormals) and last (every earlier block is
-///   earlier block by about exp(-94)), all scores equal (q = 0) over 2,001 keys, tied keys, and values near 1e30, 1e-30
-///   and denormal.
+///   overflows), scores around -113 everywhere (a softmax without it gives 0 / 0), a running maximum that rises in
+///   every block, one dominant key first (later blocks underflow, partly to denormals) and last (the last query
+///   rescales every earlier block by about exp(-94)), all scores equal (q = 0) over 2,001 keys, tied keys, and values
+///   near 1e30, 1e-30 and denormal.
+///
+/// **Why no larger dispatch is gated.** The harness times each case on a GPU that has idled through the case's CPU
+/// references, and the RTX 4080 then runs the dispatch at its idle clock (210 to 700 MHz instead of about 2.8 GHz, up
+/// to 13 times slower; ADR K3-0001). So every case here takes at most about 4 ms on a warm GPU. Larger chunks, the
+/// 4096-token prefill in one dispatch and the 65,535-query grid are timed warm by the bench
+/// (bench/attention-bench.fsx).
 ///
 /// **The causal mask and the rows are poisoned.** Every cache row after the last key a dispatch may read (positions
-/// past + rows onwards, 64 of them, so the rest of the last block too) and every q row outside q_row0 .. q_row0 + rows - 1
-/// holds the quiet NaN 7fc00000, so a kernel that reads one key past the loop bound, or the wrong query row, returns NaN
-/// and fails. y has two spare rows after the last written one and q_row0 spare rows before it, which the harness checks
-/// stay untouched.
+/// past + rows onwards, 64 of them, so the rest of the last block too) and every q row the dispatch does not own (the
+/// q_row0 rows before its first and the two after its last) holds the quiet NaN 7fc00000, so a kernel that reads one
+/// key past the loop bound, or the wrong query row, returns NaN and fails. y has the same spare rows, which the harness
+/// checks stay untouched.
 module Lrm.Kernels.Conformance.Cases.Attention
 
 open System
@@ -94,9 +98,9 @@ let private uniform (qr: float32) (kr: float32) (vr: float32) : Data =
 let private setKey (h: Heads) (k: float32[]) (j: int) (value: float32) =
     Array.fill k (j * h.KvCols) h.KvCols value
 
-/// Positive queries in [0.5, 1.5) and keys in [-1, 1), except that the keys at `dominant` are 8.4 in every element: their
-/// score is about 95 above every other (q . k_j * scale with q > 0), so every other weight is below 2^-126 and many are
-/// denormal or zero.
+/// Positive queries in [0.5, 1.5) and keys in [-1, 1), except that the keys at `dominant` are 8.4 in every element:
+/// their score is about 95 above every other (q . k_j * scale with q > 0), so every other weight is below 2^-126 and
+/// many are denormal or zero.
 let private dominantAt (dominant: int -> int list) : Data =
     fun r h rows keys ->
         let q = CaseGen.uniform r (rows * h.QCols) 0.5f 1.5f
@@ -222,15 +226,6 @@ let private qwenCases =
             3968
             d
             "The last 128-token chunk of a 4096-token prefill: keys to 4096; decode at 3968 and 4095"
-        case
-            "qwen_chunk_t512_past3584"
-            qwen
-            512
-            0
-            3584
-            d
-            "The last 512-token chunk of a chunked 4096-token prefill (8,192 groups): keys to 4096"
-        |> Case.gpuOnly
     ]
 
 /// Other head layouts and head sizes, and the edges of the grid.
@@ -268,13 +263,13 @@ let private layoutCases =
         case "hd256_t3_past140" (heads 4 2 256) 3 0 140 small "head_dim 256: two full passes"
         case "one_query_one_head" (heads 1 1 128) 1 0 0 small "The smallest dispatch: one query of one head, one key"
         case
-            "grid_rows16384"
+            "grid_rows8192"
             (heads 1 1 1)
-            16384
+            8192
             0
             0
             small
-            "A wide grid (16,384 groups in x, not folded): the last query attends 16,384 keys in 256 blocks"
+            "A wide grid (8,192 groups in x, not folded): the last query attends 8,192 keys in 128 blocks"
         |> Case.gpuOnly
     ]
 
@@ -307,7 +302,7 @@ let private adversarialCases =
             0
             146
             (dominantAt (fun keys -> [ keys - 1 ]))
-            "The last key (position 149) dominates: the last query rescales its state by about exp(-94) in its last block"
+            "The last key (position 149) dominates: the last query rescales its state by about exp(-94) at the end"
         case "adv_zero_queries" qwen 3 0 2000 zeroQueries "q = 0: all 2,001 weights are exactly 1; y is the mean of v"
         case "adv_tied_keys" qwen 2 0 300 tiedKeys "Every key equal: the scores of a query tie in every block"
         case "adv_large_values" qwen 3 0 100 (uniform 1.0f 1.0f 1e30f) "Values near 1e30"

@@ -1,7 +1,7 @@
 // The attention bench (K3, ADR K3-0001): attention_gqa_causal on the D3D12 backend with a warm GPU, for the
 // Qwen3-0.6B layout (16 query heads, 8 KV heads, head_dim 128) at decode, chunked-prefill and prefill sizes up to 4096
-// keys, plus the one-head head_dim-1 grids of 16,384 and 65,535 queries. Informational, like the bench tier (TestTiers):
-// it gates nothing; the conformance cases gate correctness and the budget.
+// keys, plus one-head head_dim-1 grids of 8,192, 16,384 and 65,535 queries. Informational, like the bench tier
+// (TestTiers): it gates nothing; the conformance cases gate correctness and the budget.
 //
 // Each configuration is dispatched `reps` times back to back in one submission (a barrier between dispatches), first
 // with telemetry off to raise the GPU clocks, then again inside the run log, where the backend's gpu.dispatch
@@ -80,9 +80,14 @@ let configs =
         qwen "prefill_t1024" 1024 0
         qwen "prefill_t2048" 2048 0
         qwen "prefill_t4096" 4096 0
+        oneHead "hd1_rows8192" 8192
         oneHead "hd1_rows16384" 16384
         oneHead "hd1_rows65535" 65535
     ]
+
+/// One line for the run manifest: what a configuration dispatches.
+let describe (c: Config) =
+    Invariant.format $"{c.Name}: rows {c.Rows}, past {c.Past}, heads {c.QHeads}:{c.KvHeads}, head_dim {c.HeadDim}"
 
 let git (args: string) =
     try
@@ -207,12 +212,7 @@ let run =
                     "backend", ExecutionBackend.name cls.Backend
                     "device", backend.Info.Name
                     "reps", Invariant.i32 reps
-                    yield!
-                        configs
-                        |> List.mapi (fun i c ->
-                            Invariant.format $"step {i}",
-                            Invariant.format
-                                $"{c.Name}: rows {c.Rows}, past {c.Past}, heads {c.QHeads}:{c.KvHeads}, head_dim {c.HeadDim}")
+                    yield! configs |> List.mapi (fun i c -> Invariant.format $"step {i}", describe c)
                 ]
         }
     )
