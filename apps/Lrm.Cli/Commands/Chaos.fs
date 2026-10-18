@@ -52,7 +52,14 @@ let private sim (opts: (string * string) list) =
         | Some o when o.Status = RunStatus.Completed && o.RunDigest = reference.RunDigest -> ()
         | Some o ->
             bad <- bad + 1
-            printfn "seed %d: %A, digest %s, %d divergence(s)" r.Seed o.Status o.RunDigest.Hex o.Divergences.Length
+
+            printfn
+                "seed %d: %s, digest %s, %d divergence(s), %d unconfirmed final state(s)"
+                r.Seed
+                (RunStatus.name o.Status)
+                o.RunDigest.Hex
+                o.Divergences.Length
+                o.Unconfirmed
         | None ->
             bad <- bad + 1
             printfn "seed %d: did not finish: %A" r.Seed r.Failure
@@ -79,6 +86,17 @@ let private sim (opts: (string * string) list) =
          |> List.map (fun r -> r.Outcome |> Option.map _.Epoch |> Option.defaultValue 0UL)
          |> List.max)
 
+    let units =
+        sum (fun r -> r.Outcome |> Option.map (fun o -> int64 o.Units) |> Option.defaultValue 0L)
+
+    printfn
+        "  %d of %d accepted units cross-checked by a second member"
+        (sum (fun r ->
+            r.Outcome
+            |> Option.map (fun o -> int64 o.CrossChecked)
+            |> Option.defaultValue 0L))
+        units
+
     if bad = 0 then 0 else 1
 
 let private trace (opts: (string * string) list) =
@@ -93,6 +111,8 @@ let private trace (opts: (string * string) list) =
         runs
         traces.Length
         (traces |> List.map _.Hex |> String.concat ", ")
+
+    printfn "  %A" results.Head.Stats
 
     if traces.Length = 1 then 0 else 1
 
@@ -155,8 +175,8 @@ let private local (opts: (string * string) list) =
                 && o.ReplicaDigest = r.Reference.ReplicaDigest
 
             printfn
-                "lrm chaos local: %A in %d ms, run digest %s (%s), epoch %d, %d reissues, %d replays"
-                o.Status
+                "lrm chaos local: %s in %d ms, run digest %s (%s), epoch %d, %d reissues, %d replays"
+                (RunStatus.name o.Status)
                 r.ElapsedMs
                 o.RunDigest.Hex
                 (if same then

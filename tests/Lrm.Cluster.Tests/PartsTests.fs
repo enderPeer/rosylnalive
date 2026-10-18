@@ -306,23 +306,34 @@ let fakeTests =
                 // Skipping a step changes the state, so the output differs: the hash chain matters.
                 Expect.notEqual (other.Apply(u1, "y"B)) a1 "skipped step"
 
-            testCase "a corrupting executor changes the output but not the digest"
+            testCase "a corrupting executor changes the output, and its digest follows unless it breaks the rule"
             <| fun () ->
                 let job = Vectors.smallJob
                 let w = FakeWorkload job :> IWorkload
+                let chain = { Lane = 0u; Stage = 0u }
 
-                let honest =
-                    (FakeExecutor([ 0u ]) :> IStageExecutor).Open(w.Job, { Lane = 0u; Stage = 0u })
+                let open' (fault: FakeFault) =
+                    (FakeExecutor([ 0u ], (fun _ -> fault), ignore) :> IStageExecutor).Open(w.Job, chain)
 
-                let faulty =
-                    (FakeExecutor([ 0u ], (fun _ -> true), ignore) :> IStageExecutor)
-                        .Open(w.Job, { Lane = 0u; Stage = 0u })
+                let honest = open' FakeFault.Honest
+                let faulty = open' FakeFault.WrongOutput
+                let breaksRule = open' FakeFault.WrongOutputHonestDigest
 
                 let u =
                     WorkUnit.fwdStage w.Job w.Class 0u 0u 0u UnitId.none (BlobId.ofBytes "x"B) (FakeJob.args job 0)
 
-                Expect.notEqual (faulty.Apply(u, "x"B)) (honest.Apply(u, "x"B)) "output"
-                Expect.equal faulty.Digest honest.Digest "digest"
+                let good = honest.Apply(u, "x"B)
+                let bad = faulty.Apply(u, "x"B)
+                Expect.notEqual bad good "output"
+                Expect.notEqual faulty.Digest honest.Digest "the digest follows the wrong output"
+
+                Expect.equal
+                    faulty.Digest
+                    (FakeStage.stateAfter (FakeStage.initialDigest w.Job chain) u (BlobId.ofBytes bad))
+                    "the digest of the wrong output"
+
+                Expect.equal (breaksRule.Apply(u, "x"B)) bad "the same wrong output"
+                Expect.equal breaksRule.Digest honest.Digest "an honest digest: the rule is broken"
 
             testCase "the workload plans every unit exactly once, in chain order"
             <| fun () ->

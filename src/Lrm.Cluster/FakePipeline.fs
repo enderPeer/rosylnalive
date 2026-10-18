@@ -79,9 +79,17 @@ module FakeStage =
 
         int n
 
+    /// The digest after a unit with output `outputId`: Canonical.hash "lrm.fake.state/1" (digest, step, input blob id,
+    /// output blob id). It chains over the outputs, so it changes whenever an output changes and stays changed.
+    let stateAfter (digest: ContentId) (u: WorkUnit) (outputId: BlobId) =
+        Canonical.hash StateTag (fun w ->
+            w.Id digest
+            w.U32 u.Step
+            w.Id u.Input.Value
+            w.Id outputId.Value)
+
     /// One step: h = Canonical.hash "lrm.fake.out/1" (job, lane, stage, step, digest, input bytes); the output is
-    /// expand h (output size); the new digest is Canonical.hash "lrm.fake.state/1" (digest, step, input blob id,
-    /// output blob id).
+    /// expand h (output size); the new digest is stateAfter digest u (the output's blob id).
     let apply (digest: ContentId) (u: WorkUnit) (input: byte[]) : byte[] * ContentId =
         let h =
             Canonical.hash OutTag (fun w ->
@@ -93,16 +101,7 @@ module FakeStage =
                 w.Bytes input)
 
         let output = expand h (outputBytes u)
-        let outputId = BlobId.ofBytes output
-
-        let next =
-            Canonical.hash StateTag (fun w ->
-                w.Id digest
-                w.U32 u.Step
-                w.Id u.Input.Value
-                w.Id outputId.Value)
-
-        output, next
+        output, stateAfter digest u (BlobId.ofBytes output)
 
 [<RequireQualifiedAccess>]
 module FakeJob =
@@ -184,9 +183,21 @@ module FakeJob =
         let n = if stage = job.Stages - 1 then 4 else job.HiddenBytes
         Canonical.encode (fun w -> w.U32(uint32 n))
 
+/// How a fake executor computes one unit (tripwire tests).
+[<RequireQualifiedAccess>]
+type FakeFault =
+    /// Correctly.
+    | Honest
+    /// A faulty device that honours the digest rule: the output is wrong and the state digest follows it, so this
+    /// replica's digests differ from the honest ones from this unit on.
+    | WrongOutput
+    /// An executor that breaks the digest rule: the output is wrong and the digest honest. Only the output
+    /// comparisons (duplicate results, chain Ready, replay) can catch it.
+    | WrongOutputHonestDigest
+
 /// A fake chain state: just the running digest.
 [<Sealed>]
-type FakeChainState(job: ContentId, chain: ChainKey, corrupt: WorkUnit -> bool) =
+type FakeChainState(job: ContentId, chain: ChainKey, fault: WorkUnit -> FakeFault) =
     let mutable digest = FakeStage.initialDigest job chain
 
     interface IChainState with
@@ -194,29 +205,33 @@ type FakeChainState(job: ContentId, chain: ChainKey, corrupt: WorkUnit -> bool) 
 
         member _.Apply(work: WorkUnit, input: byte[]) =
             let output, next = FakeStage.apply digest work input
-            digest <- next
 
-            if corrupt work && output.Length > 0 then
-                // A faulty device: the output is wrong, the digest honest. Divergence detection must catch it.
+            match fault work with
+            | FakeFault.WrongOutput when output.Length > 0 ->
                 output[0] <- output[0] ^^^ 0xFFuy
+                digest <- FakeStage.stateAfter digest work (BlobId.ofBytes output)
+            | FakeFault.WrongOutputHonestDigest when output.Length > 0 ->
+                output[0] <- output[0] ^^^ 0xFFuy
+                digest <- next
+            | _ -> digest <- next
 
             output
 
         member _.Dispose() = ()
 
-/// The fake executor. `corrupt` marks units whose output this executor gets wrong (tripwire tests); `delay` runs
+/// The fake executor. `fault` says which units this executor gets wrong, and how (tripwire tests); `delay` runs
 /// before each Apply, on the executing thread, to give real processes a cost.
 [<Sealed>]
-type FakeExecutor(canHost: uint32 list, corrupt: WorkUnit -> bool, delay: WorkUnit -> unit) =
+type FakeExecutor(canHost: uint32 list, fault: WorkUnit -> FakeFault, delay: WorkUnit -> unit) =
     /// An honest executor that can host the given stages.
-    new(canHost: uint32 list) = FakeExecutor(canHost, (fun _ -> false), ignore)
+    new(canHost: uint32 list) = FakeExecutor(canHost, (fun _ -> FakeFault.Honest), ignore)
 
     interface IStageExecutor with
         member _.Class = FakeJob.executionClass
         member _.CanHost = canHost
 
         member _.Open(job: ContentId, chain: ChainKey) =
-            let inner = new FakeChainState(job, chain, corrupt) :> IChainState
+            let inner = new FakeChainState(job, chain, fault) :> IChainState
 
             { new IChainState with
                 member _.Digest = inner.Digest

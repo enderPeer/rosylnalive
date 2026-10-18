@@ -50,16 +50,57 @@ let tests =
             testCase "200 chaos seeds are bit-identical with 2 replicas per stage"
             <| fun () ->
                 let results = Simulation.runAll [ for s in 1UL .. 200UL -> Simulation.standard s ]
-                let expected = (standardRef ()).RunDigest
+                let reference = standardRef ()
+                let finals = reference.Chains |> List.map (fun c -> c.Chain, c) |> Map.ofList
 
                 let bad =
                     results
                     |> List.filter (fun r ->
                         match r.Outcome with
-                        | Some o -> o.Status <> RunStatus.Completed || o.RunDigest <> expected
+                        | Some o -> o.Status <> RunStatus.Completed || o.RunDigest <> reference.RunDigest
                         | None -> true)
 
                 Expect.isEmpty (bad |> List.map describe) "every seed matches the reference"
+
+                for r in results do
+                    let o = r.Outcome.Value
+
+                    for c in o.Chains do
+                        // Completed means verified: at least two members computed every chain's final state.
+                        Expect.isGreaterThanOrEqual
+                            c.ConfirmedBy.Length
+                            2
+                            (sprintf "seed %d chain %A confirmations" r.Seed c.Final.Chain)
+
+                        Expect.isEmpty c.UnconfirmedBy (sprintf "seed %d chain %A unanswered" r.Seed c.Final.Chain)
+
+                    // The replicas themselves, from the nodes' own reports: every live node that holds a chain at its
+                    // final unit holds the reference state, and every chain survives on some live node.
+                    for n in r.Nodes do
+                        for h in n.Chains do
+                            if h.Head = finals[h.Chain].Head then
+                                Expect.equal
+                                    h.Digest
+                                    finals[h.Chain].Digest
+                                    (sprintf "seed %d: %s holds chain %A" r.Seed n.Name h.Chain)
+
+                    for KeyValue(chain, f) in finals do
+                        let held =
+                            r.Nodes
+                            |> List.exists (fun n ->
+                                n.Chains |> List.exists (fun h -> h.Chain = chain && h.Head = f.Head))
+
+                        Expect.isTrue held (sprintf "seed %d: chain %A is held at its final unit" r.Seed chain)
+
+                // Cross-check coverage: accepted units that a second member's result or replay confirmed.
+                let units = results |> List.sumBy (fun r -> r.Outcome.Value.Units)
+                let checkedUnits = results |> List.sumBy (fun r -> r.Outcome.Value.CrossChecked)
+
+                Expect.isGreaterThanOrEqual
+                    (float checkedUnits / float units)
+                    0.95
+                    (sprintf "%d of %d units cross-checked" checkedUnits units)
+
                 // The seeds really were chaotic.
                 Expect.isGreaterThan (results |> List.sumBy (fun r -> r.Stats.Kills)) 100 "kills"
                 Expect.isGreaterThan (results |> List.sumBy (fun r -> r.Stats.Restarts)) 30 "restarts"
@@ -69,12 +110,54 @@ let tests =
                 Expect.isGreaterThan (results |> List.sumBy (fun r -> r.Outcome.Value.Reissues)) 5 "reissues"
                 Expect.isGreaterThan (results |> List.map (fun r -> r.Outcome.Value.Epoch) |> List.max) 8UL "epochs"
 
-            testCase "the trace hash is stable over 100 runs of one seed"
+            testCase "200 chaos seeds with one corrupt replica each: a wrong result never completes"
+            <| fun () ->
+                // Each seed adds Corrupt(node, stage, step) drawn from its own stream to the standard chaos. Whenever
+                // the corruption reaches an accepted result, a duplicate, a replay or the drain must catch it.
+                let corrupt (seed: uint64) =
+                    let r = DetRng(seed, DetRng.streamOf "lrm.cluster.test.corrupt")
+                    let node = 1UL + uint64 (r.NextBelow 7u)
+                    let stage = r.NextBelow 3u
+                    let step = r.NextBelow 8u
+                    Fault.Corrupt(node, stage, step)
+
+                let results =
+                    Simulation.runAll
+                        [
+                            for s in 1UL .. 200UL ->
+                                let c = Simulation.standard s
+
+                                { c with
+                                    Faults = corrupt s :: c.Faults
+                                }
+                        ]
+
+                let expected = (standardRef ()).RunDigest
+
+                let silent =
+                    results
+                    |> List.filter (fun r ->
+                        match r.Outcome with
+                        | Some o -> o.Status <> RunStatus.Diverged && o.RunDigest <> expected
+                        | None -> true)
+
+                Expect.isEmpty (silent |> List.map describe) "no seed ends without the tripwire and with a wrong digest"
+
+                let diverged =
+                    results |> List.filter (fun r -> r.Outcome.Value.Status = RunStatus.Diverged)
+
+                Expect.isGreaterThan diverged.Length 40 "the tripwire fired in many seeds"
+
+            testCase "the trace hash is stable over 100 runs of one seed, and is the known answer"
             <| fun () ->
                 let results = Simulation.runAll [ for _ in 1..100 -> Simulation.standard 7UL ]
                 let traces = results |> List.map _.TraceHash |> List.distinct
                 Expect.equal traces.Length 1 "one trace hash"
                 Expect.equal (results |> List.map digestOf |> List.distinct) [ (standardRef ()).RunDigest ] "digest"
+
+                // Pinned, so drift across processes, machines and runtimes (an iteration order, a timer) shows.
+                Expect.equal traces.Head.Hex Vectors.seed7Trace "the seed-7 trace hash (cluster.md)"
+                Expect.equal results.Head.Stats Vectors.seed7Stats "the seed-7 stats (cluster.md)"
 
                 let other = Simulation.run (Simulation.standard 8UL)
                 Expect.notEqual other.TraceHash traces.Head "another seed has another schedule"
@@ -189,6 +272,86 @@ let tests =
                 expectReference "lag" r
                 Expect.isGreaterThan r.Outcome.Value.Reissues 0 "reissued"
                 Expect.isLessThan r.Stats.VirtualNs (Ns.seconds 20L) "finished before the laggards recovered"
+
+            testCase "a corrupt result accepted first is caught when a takeover node replays its chain"
+            <| fun () ->
+                // n4 dies before it is Ready, so n3 alone computes stage 1 (and gets step 2 wrong) until n4's lease
+                // runs out; then the spare n7 takes the stage over and replays the chain from the unit log. 50 ms per
+                // unit keeps the run going past the lease. Both kinds of corruption are caught by that replay.
+                for fault in [ Fault.CorruptOutput(3UL, 1u, 2u); Fault.Corrupt(3UL, 1u, 2u) ] do
+                    let sink = InMemorySink()
+
+                    let r =
+                        Simulation.run
+                            { seven 21UL [ Fault.Kill(4UL, Ns.ms 5L); fault ] with
+                                StageCostNs = [ Ns.ms 50L ]
+                                Sink = Some sink
+                            }
+
+                    let o = r.Outcome.Value
+                    Expect.equal o.Status RunStatus.Diverged (sprintf "%A: tripwire (%s)" fault (describe r))
+                    let d = o.Divergences.Head
+                    Expect.equal d.Source DivergenceSource.Replay (sprintf "%A: found by the replay" fault)
+                    Expect.equal (d.Stage, d.FirstNode, d.OtherNode) (1u, 3UL, 7UL) (sprintf "%A: who disagreed" fault)
+                    Expect.isSome d.OtherOutput (sprintf "%A: the replayed output is reported" fault)
+
+                    let events = sink.Records |> List.filter (fun x -> x.Name = ClusterNames.Divergence)
+
+                    Expect.equal events.Length 1 (sprintf "%A: one cluster.divergence event" fault)
+
+                    Expect.isTrue
+                        (events.Head.Attrs |> List.contains (Attr.str "source" "replay"))
+                        (sprintf "%A: source=replay" fault)
+
+            testCase "a wrong output with an honest digest is caught by the duplicate comparison"
+            <| fun () ->
+                let r = Simulation.run (seven 22UL [ Fault.CorruptOutput(5UL, 2u, 3u) ])
+                let o = r.Outcome.Value
+                Expect.equal o.Status RunStatus.Diverged "tripwire"
+                let d = o.Divergences |> List.exactlyOne
+                Expect.equal (d.Source, d.Stage, d.Step) (DivergenceSource.Result, 2u, 3u) "the corrupted unit"
+                Expect.isTrue (d.FirstNode = 5UL || d.OtherNode = 5UL) "the corrupt node is named"
+
+            testCase "a final unit whose other replica died is computed again by another member"
+            <| fun () ->
+                // n6 dies at 285 ms, while the last units of stage 2 run: n5 alone computed them. The drain asks n6
+                // again until its lease runs out, then asks the spare n7, which replays each chain and computes the
+                // final unit, so every final state is still checked by two members.
+                let r = Simulation.run (seven 13UL [ Fault.Kill(6UL, Ns.ms 285L) ])
+                expectReference "final replica lost" r
+                let o = r.Outcome.Value
+                Expect.isGreaterThan o.Replays 0 "the verifier replayed the unit log"
+
+                for c in o.Chains do
+                    if c.Final.Chain.Stage = 2u then
+                        Expect.equal
+                            c.ConfirmedBy
+                            [ 5UL; 7UL ]
+                            (sprintf "chain %A confirmed by n5 and n7" c.Final.Chain)
+
+                    Expect.isGreaterThanOrEqual c.ConfirmedBy.Length 2 (sprintf "chain %A" c.Final.Chain)
+
+            testCase "churn does not postpone the reissue of stuck work: a flapping spare and stuck replicas"
+            <| fun () ->
+                // Both stage-1 replicas are stuck from the start, before the stage has 8 samples, so the deadline is
+                // the initial 30 s. The spare is cut off for 1.2 s of every 1.5 s, past its lease, so the membership
+                // changes about every 0.75 s. Deadlines of members that stay are kept across those epochs, so the
+                // stuck work is reissued after 30 s and the run ends.
+                let stuck n =
+                    Fault.Lag(n, 0L, Ns.seconds 1000L, 100000)
+
+                let flaps =
+                    [
+                        for k in 0L .. 100L ->
+                            Fault.Partition(7UL, Ns.ms 100L + k * Ns.ms 1500L, Ns.ms 1300L + k * Ns.ms 1500L)
+                    ]
+
+                let r = Simulation.run (seven 23UL (stuck 3UL :: stuck 4UL :: flaps))
+                expectReference "flapping spare" r
+                let o = r.Outcome.Value
+                Expect.isGreaterThan o.Reissues 0 "reissued"
+                Expect.isGreaterThan o.Epoch 30UL "the membership churned"
+                Expect.isLessThan r.Stats.VirtualNs (Ns.seconds 60L) "done soon after the 30 s deadline"
 
             testCase "a partitioned node is expelled, rejoins, and the run still matches"
             <| fun () ->

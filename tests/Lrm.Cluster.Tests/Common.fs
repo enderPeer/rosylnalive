@@ -98,6 +98,21 @@ module Vectors =
     let standardReplicas =
         "b0a5410211781844069c973e94a169274ba43db3f50ba3b44a6976b5068f344f"
 
+    /// The trace hash of Simulation.standard 7 (lrm chaos trace --seed 7), and its stats.
+    let seed7Trace = "a9ddaf85bf537630191ff9d4d0b0e76b21ad565548ae034b055392d24986e9f2"
+
+    let seed7Stats: SimStats =
+        {
+            Events = 1110L
+            VirtualNs = 3372932801L
+            FramesSent = 778L
+            FramesDelivered = 721L
+            FramesDropped = 67L
+            FramesDuplicated = 16L
+            Kills = 2
+            Restarts = 0
+        }
+
 /// U1 of the vectors: fwd.stage v1, lane 1, stage 2, step 0, input "abc", Args u32 4.
 let u1 =
     WorkUnit.fwdStage

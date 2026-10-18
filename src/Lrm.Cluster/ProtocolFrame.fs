@@ -284,10 +284,16 @@ module FrameCodec =
 /// Frames over byte streams (TCP): frames are self-delimiting, since the header carries the payload length.
 [<RequireQualifiedAccess>]
 module FrameStream =
-    /// Reads the next whole frame from `stream` and checks it. Returns its bytes, or None at a clean end of stream
-    /// before the first header byte. Raises FormatException for a malformed or truncated frame; the stream cannot be
-    /// resynchronized after that, so the caller closes it.
-    let readAsync (stream: Stream) (ct: CancellationToken) : Task<byte[] option> =
+    /// The read buffer starts at this size and doubles as bytes arrive: 1 MiB.
+    [<Literal>]
+    let InitialBuffer = 1048576
+
+    /// Reads the next whole frame from `stream` and checks it once (header, then the trailer over the whole frame).
+    /// Returns its bytes and the decoded frame, or None at a clean end of stream before the first header byte. Raises
+    /// FormatException for a malformed or truncated frame; the stream cannot be resynchronized after that, so the
+    /// caller closes it. The buffer grows with the bytes that really arrive, so a header that announces a large
+    /// payload costs memory only as its payload comes in.
+    let readAsync (stream: Stream) (ct: CancellationToken) : Task<(byte[] * Frame) option> =
         task {
             let header = Array.zeroCreate<byte> FrameCodec.HeaderSize
 
@@ -302,17 +308,34 @@ module FrameStream =
                 match FrameCodec.tryParseHeaderArray header with
                 | Error e -> return raise (FormatException(FrameError.describe e))
                 | Ok n ->
-                    let bytes = Array.zeroCreate<byte>(FrameCodec.frameSize n)
+                    let total = FrameCodec.frameSize n
+                    let mutable bytes = Array.zeroCreate<byte>(min total InitialBuffer)
                     Buffer.BlockCopy(header, 0, bytes, 0, FrameCodec.HeaderSize)
-                    let rest = n + FrameCodec.TrailerSize
+                    let mutable filled = FrameCodec.HeaderSize
+                    let mutable ended = false
 
-                    let! got2 =
-                        stream.ReadAtLeastAsync(bytes.AsMemory(FrameCodec.HeaderSize, rest), rest, false, ct)
+                    while not ended && filled < total do
+                        if filled = bytes.Length then
+                            let grown = Array.zeroCreate<byte>(min total (2 * bytes.Length))
+                            Buffer.BlockCopy(bytes, 0, grown, 0, filled)
+                            bytes <- grown
 
-                    if got2 < rest then
-                        return raise (FormatException(sprintf "stream ended inside a frame (%d of %d bytes)" got2 rest))
+                        let! read = stream.ReadAsync(bytes.AsMemory(filled, bytes.Length - filled), ct)
+
+                        if read = 0 then ended <- true else filled <- filled + read
+
+                    if filled < total then
+                        return
+                            raise (
+                                FormatException(
+                                    sprintf
+                                        "stream ended inside a frame (%d of %d bytes)"
+                                        (filled - FrameCodec.HeaderSize)
+                                        (total - FrameCodec.HeaderSize)
+                                )
+                            )
                     else
                         match FrameCodec.tryDecodeArray bytes with
                         | Error e -> return raise (FormatException(FrameError.describe e))
-                        | Ok _ -> return Some bytes
+                        | Ok frame -> return Some(bytes, frame)
         }

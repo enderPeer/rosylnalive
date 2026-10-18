@@ -152,13 +152,15 @@ let tests =
                 use client = new TcpClientTransport("127.0.0.1", proxy.Port)
                 (client :> ITransport).Start ignore
 
+                // Warm-up probes use seqs from 1,000,000 up, so probes still in flight when the connection is known to
+                // work can never be mistaken for the 100 frames under test (seqs 1 to 100).
+                let probe = ref 1_000_000UL
+
                 waitFor "the first frame gets through" (fun () ->
-                    (client :> ITransport).Send(0UL, frameFrom 5UL 0UL [||])
+                    probe.Value <- probe.Value + 1UL
+                    (client :> ITransport).Send(0UL, frameFrom 5UL probe.Value [||])
                     Thread.Sleep 10
                     not atServer.IsEmpty)
-
-                while atServer.TryDequeue() |> fst do
-                    ()
 
                 let frames =
                     [ for i in 1..100 -> frameFrom 5UL (uint64 i) (BitConverter.GetBytes i) ]
@@ -166,9 +168,18 @@ let tests =
                 for f in frames do
                     (client :> ITransport).Send(0UL, f)
 
-                waitFor "100 frames arrive" (fun () -> atServer.Count >= 100)
-                let got = [ for _ in 1..100 -> snd (atServer.TryDequeue()) ]
+                let tested () =
+                    atServer.ToArray() |> Array.filter (fun f -> f.Seq <= 100UL)
+
+                waitFor "100 frames arrive" (fun () -> (tested ()).Length >= 100)
+                let got = tested () |> List.ofArray
                 Expect.equal (got |> List.map FrameCodec.encode) frames "byte for byte, in order"
+
+                Expect.isTrue
+                    (atServer.ToArray()
+                     |> Array.forall (fun f -> f.Seq <= 100UL || f.Seq > 1_000_000UL))
+                    "only probes and the frames under test arrive"
+
                 Expect.equal proxy.Stats.Dropped 0L "nothing dropped without chaos"
 
             testCase "a Sever fault cuts the node's connection once and the node reconnects"

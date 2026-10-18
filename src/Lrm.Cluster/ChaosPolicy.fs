@@ -86,8 +86,11 @@ type Fault =
     | Partition of node: uint64 * fromNs: int64 * untilNs: int64
     /// The node's executor runs `factor` times slower in [fromNs, untilNs).
     | Lag of node: uint64 * fromNs: int64 * untilNs: int64 * factor: int
-    /// The node's executor gets the output of (stage, step) wrong in every lane (simulator only; tripwire tests).
+    /// The node's executor gets the output of (stage, step) wrong in every lane, and its state digest follows the
+    /// wrong output as the digest rule requires (simulator only; tripwire tests).
     | Corrupt of node: uint64 * stage: uint32 * step: uint32
+    /// Like Corrupt, but the digest stays honest: an executor that breaks the digest rule (simulator only).
+    | CorruptOutput of node: uint64 * stage: uint32 * step: uint32
     /// The node's TCP connection is cut at atNs (ChaosProxy only); the node reconnects.
     | Sever of node: uint64 * atNs: int64
 
@@ -149,12 +152,21 @@ type ChaosPolicy(seed: uint64, config: ChaosConfig, faults: Fault list) =
                 | _ -> f)
             1
 
-    /// True when the node's executor corrupts this unit.
-    member _.Corrupts(node: uint64, u: WorkUnit) =
+    /// How the node's fake executor computes this unit: Corrupt and CorruptOutput faults make it wrong (Corrupt wins
+    /// when both name the unit).
+    member _.FakeFault(node: uint64, u: WorkUnit) =
+        let hits (n: uint64) (stage: uint32) (step: uint32) =
+            n = node && stage = u.Stage && step = u.Step
+
         faults
-        |> List.exists (function
-            | Fault.Corrupt(n, stage, step) -> n = node && stage = u.Stage && step = u.Step
-            | _ -> false)
+        |> List.fold
+            (fun f fault ->
+                match fault with
+                | Fault.Corrupt(n, stage, step) when hits n stage step -> FakeFault.WrongOutput
+                | Fault.CorruptOutput(n, stage, step) when hits n stage step && f = FakeFault.Honest ->
+                    FakeFault.WrongOutputHonestDigest
+                | _ -> f)
+            FakeFault.Honest
 
     /// The fate of the next frame on link (src, dst) sent at `now`. Partitions drop it without drawing.
     member p.Decide(src: uint64, dst: uint64, now: int64) : FrameFate =

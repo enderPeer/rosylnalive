@@ -221,7 +221,7 @@ module Harness =
             else
                 ignore
 
-        let executor = FakeExecutor(o.Stages, (fun _ -> false), delay)
+        let executor = FakeExecutor(o.Stages, (fun _ -> FakeFault.Honest), delay)
         let node = Node(NodeConfig.create o.Id o.Name o.Incarnation, executor)
         use transport = new TcpClientTransport(o.Host, o.Port)
         use host = new ActorHost(node, transport, SystemClock.Instance)

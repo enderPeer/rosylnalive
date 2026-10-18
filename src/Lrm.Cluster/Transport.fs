@@ -186,10 +186,7 @@ type internal FrameConnection
 
                         match next with
                         | None -> go <- false
-                        | Some bytes ->
-                            match FrameCodec.tryDecodeArray bytes with
-                            | Ok frame -> onFrame this frame
-                            | Error _ -> go <- false
+                        | Some(_, frame) -> onFrame this frame
                 with _ ->
                     ()
 
