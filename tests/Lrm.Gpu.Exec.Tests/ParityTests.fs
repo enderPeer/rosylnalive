@@ -172,12 +172,47 @@ let tinyChunks =
         AttentionPairsPerDispatch = 7L
     }
 
+/// The golden comparisons of a prefill's logits and taps on cpu-device with a torch32 golden file (pair
+/// gpu-vs-torch32, the GPU floors of ToleranceSpec: relL2 1e-4 per tap, max |delta logit| 1e-2, KL 1e-6), each a
+/// golden.compare check; fails unless every one passes.
+let goldenChecks (prompt: string) (logits: IHostTensor) (taps: (string * IHostTensor) list) =
+    use f =
+        tiny.Force().OpenSafetensors(Invariant.format $"fwd_f32.{prompt}.safetensors")
+
+    let bound (_: string) (metric: ToleranceMetric) =
+        match metric with
+        | ToleranceMetric.RelL2 -> Some 1e-4
+        | ToleranceMetric.MaxAbs -> Some 1e-2
+        | ToleranceMetric.Kl -> Some 1e-6
+
+    let attrs (name: string) =
+        [
+            Attr.str "pair" (TolerancePair.name TolerancePair.GpuVsTorch32)
+            Attr.str "backend" "cpu-device"
+            Attr.str "prompt" prompt
+            Attr.str "tap" name
+            Attr.int TelemetryKeys.Layer (ActivationNames.layer name)
+            Attr.str "kind" "chain"
+        ]
+
+    let results = GoldenCheck.tensors f (("logits", logits) :: taps) bound attrs true
+
+    for r in results do
+        for c in r.Checks do
+            Expect.isTrue c.Passed (Invariant.format $"{prompt} {r.Name} {c.Metric}: {c.Measured} <= {c.Bound}")
+
+    results |> List.sumBy _.Checks.Length
+
+/// A test whose records also go to the acceptance run (AcceptanceRun).
+let private accept (name: string) (body: unit -> unit) =
+    testCase name (fun () -> AcceptanceRun.within body)
+
 let tests =
     testList
         "acceptance"
         [
             for prompt in [ "p0"; "p1" ] do
-                testCase (
+                accept (
                     Invariant.format $"{prompt}: prefill with every tap and 16 greedy steps on cpu-device = cpu-f32"
                 )
                 <| fun () ->
@@ -189,13 +224,14 @@ let tests =
                     Expect.equal a.Taps.Length 39 "39 taps"
                     Expect.equal a.Ids b.Ids "greedy ids"
                     Expect.equal a.Digest b.Digest "cache digests"
+                    Expect.isGreaterThan (goldenChecks prompt a.Prefill a.Taps) 40 "every tap against torch32"
 
                     exactCheck
                         (Invariant.format
                             $"cpu-device = cpu-f32 ({prompt}, {ids.Length} tokens + 15 decode steps: logits, 39 taps, caches)")
                         (pairsOf a b)
 
-            testCase "greedy decoding on cpu-device: 16 steps of p0 and p1 equal cpu-f32 and the torch32 golden"
+            accept "greedy decoding on cpu-device: 16 steps of p0 and p1 equal cpu-f32 and the torch32 golden"
             <| fun () ->
                 for prompt in [ "p0"; "p1" ] do
                     let ids = promptIds prompt
@@ -216,7 +252,7 @@ let tests =
                         (Array.truncate 16 (goldenGreedy prompt "torch32"))
                         (prompt + ": the torch32 golden's first 16")
 
-            testCase "prefill = decode = chunked prefill on cpu-device, and = cpu-f32 (p2, 70 tokens)"
+            accept "prefill = decode = chunked prefill on cpu-device, and = cpu-f32 (p2, 70 tokens)"
             <| fun () ->
                 let ids = promptIds "p2"
                 use g = gpu (tinyOptions ())
@@ -238,7 +274,7 @@ let tests =
                     "cpu-device = cpu-f32 (p2, 70-token prefill: logits, caches, 39 taps)"
                     (chunkPairs "prefill" prefill (chunked c ids [ ids.Length ]))
 
-            testCase "the last-row head equals the last row of the full head (p2)"
+            accept "the last-row head equals the last row of the full head (p2)"
             <| fun () ->
                 let ids = promptIds "p2"
                 let model = tinyModel ()
@@ -257,7 +293,7 @@ let tests =
                     "cpu-device last-row head = last row of the full head (p2)"
                     [ "logits", last, rowsOf all (ids.Length - 1) ids.Length ]
 
-            testCase "two stages through the host = one stage on cpu-device, and = cpu-f32 (p0, prefill + 16 steps)"
+            accept "two stages through the host = one stage on cpu-device, and = cpu-f32 (p0, prefill + 16 steps)"
             <| fun () ->
                 let ids = promptIds "p0"
                 let model = tinyModel ()
@@ -325,7 +361,7 @@ let tests =
                             yield Invariant.format $"step {i} cpu-device = cpu-f32", a[i], b[i]
                     ]
 
-            testCase "small dispatch budgets split every matmul and attention and change no bit (p2)"
+            accept "small dispatch budgets split every matmul and attention and change no bit (p2)"
             <| fun () ->
                 let ids = promptIds "p2"
                 use small = gpuWith tinyChunks (tinyOptions ())
@@ -340,7 +376,7 @@ let tests =
 
                 exactCheck "cpu-device with split dispatches = without (p2, prefill + 15 steps)" (pairsOf a b)
 
-            testCase "the CpuDevice thread count changes no bit (p2)"
+            accept "the CpuDevice thread count changes no bit (p2)"
             <| fun () ->
                 let ids = promptIds "p2"
 
