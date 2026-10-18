@@ -63,3 +63,19 @@ Device: NVIDIA GeForce RTX 4080 (`pci:10de:2704`), UMD 32.0.16.1692 (driver 616.
 
 - **Flush everywhere** (no `-denorm` on DXIL either, and CpuRef modelling flush). Rejected: it gives up an exact match that the D3D12 hardware provides, and CpuRef would then need a second mode for every arithmetic op.
 - **Require `shaderDenormPreserveFloat32` on Vulkan.** Rejected by R4a already: the RTX 4080 does not report it under 616.92, so the only GPU would be rejected.
+
+## Addendum: the Vulkan class measured (V1, 2026-10-18)
+
+- **What was run.** V1's backend runs the probe of GpuBackendInterface right after `LoadKernels`, on the embedded shader set's SPIR-V `scale_f32` (SPIR-V ShaderSetHash `a1a15c99c3fb545f908085c72e58afeeca4563dee6e546eca0e359d4c06064c9` on `ws/V1-vulkan`; no float-controls execution mode), with the outputs poisoned first. Device: NVIDIA GeForce RTX 4080 (`pci:10de:2704`), Vulkan 1.4.351, driver 616.92, `shaderDenormPreserveFloat32 = false`. Runs `20261018-154459-f8574c3a` (V1's gpu tier, commit `42a93ba`, the probe bit-identical twice) and `20261018-154506-7e7d4311` (the conformance harness's own probe).
+- **The mode is `flush`,** as decision 2 expected: `3f000000 00800000 00000000 80000000 00000000 80000000 00000000`, the Flush column of the table above in every run. The Vulkan class of this device and driver is therefore `flush`, and the D3D12 class `preserve`. V1's nine selftest cases are bit-exact against the CPU in each class's mode, and across the two backends 201,365 selftest words are identical; the 27 elements of `scale_f32` with a denormal input or a tiny product (below) are class-only (decision 3).
+- **Flush detects tininess before rounding.** Inputs at the bottom of the normal range, scaled by 0.5 on the Vulkan class (V1's gpu test "the flush class flushes products below 2^-126 before rounding", recorded as `gpu.fp32_tininess`):
+
+  | Input | IEEE (CPU, D3D12 preserve) | Flush after rounding (`Fp32Denormals.flushBits`) | Vulkan, measured |
+  | --- | --- | --- | --- |
+  | `80ffffff` | `80800000` | `80800000` | `80000000` |
+  | `00ffffff` | `00800000` | `00800000` | `00000000` |
+  | `00fffffe` | `007fffff` | `00000000` | `00000000` |
+  | `01000000` (control) | `00800000` | `00800000` | `00800000` |
+
+  `0x00FFFFFF * 0.5` is exactly 2^-126 × (1 − 2^-24). IEEE rounds it up to the smallest normal; the Vulkan class flushes it, because its exact value is below 2^-126. IEEE 754 allows tininess to be detected before or after rounding, and the probe's seven inputs cannot tell the two apart. So a flush-mode reference that rounds first and then flushes the result (as `Fp32Denormals.flushBits` composes, and as the conformance harness's CpuRef in flush mode does) predicts the smallest normal where the device returns zero. The flush model of a bit-exact fp32 multiply is: a denormal input, or a non-zero exact product (exact in fp64) below 2^-126, gives zero of the product's sign; otherwise the IEEE product. Adds are not affected: the exact sum of two fp32 values below 2^-126 is itself representable, so nothing rounds there. Kernels with relative bounds (KernelBounds) absorb these elements through the 2^-126 allowance.
+- **Consequence.** E1's harness fails the gating case `scale_f32/denormals` on the Vulkan class at element 11 (`0x80FFFFFF`), runs `20261018-154506-7e7d4311` and `20261018-154101-9eb7a6c2` (214 of 215 cases pass, with every K1 to K3 kernel). The fix belongs to the flush-mode reference of bit-exact fp32 multiplies (E1's `References`, and KernelBounds' wording "every denormal input and result set to zero"), not to the backend: V1 requests it.
