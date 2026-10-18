@@ -4,11 +4,11 @@ A contract is the agreed interface between workstreams: types, encodings, file f
 
 - **How a contract changes:** `ownership-and-contract-change.md`. In short, contracts are drafts until the tag `contracts-v1`. After the tag, a contract file changes only through a PR labelled `contract-change`, which adds an entry to `CHANGELOG.md` and updates the vectors. The hygiene job enforces the label and the entry.
 - **The record of every version** is `CHANGELOG.md`. Any family may append its entry at the end; only S0 rewrites lines or inserts them elsewhere.
-- **Freeze tags.** The plan names `contracts-v1` for the S1, R4a, O2 and C1 contracts at the end of wave 1, and `contracts-v1.1` for R4b's SPIR-V binding (ShaderBuildAndSourceConvention) after R1's ADR. Mechanically, a tag freezes **every** contract file on `main` when it is set, drafts included. Any contract text that lands or changes after `contracts-v1`, such as O1's, T1's, R1's or R3's drafts if their PRs merge later, needs a `contract-change` PR with a CHANGELOG entry.
+- **Freeze tags.** The plan names `contracts-v1` for the S1, R4a, O2 and C1 contracts at the end of wave 1, and `contracts-v1.1` for R4b's SPIR-V binding (ShaderBuildAndSourceConvention) after R1's ADR. Mechanically, a tag freezes **every** contract file on `main` when it is set, drafts included. So the integrator sets `contracts-v1` only once every wave-1 PR (#2 to #12) and the cross-cutting fixes of `int/wave1-fixes` are on `main`: O1's, T1's, R1's and R3's texts then join the tag instead of needing `contract-change` PRs afterwards. `contracts-v1.1` freezes the texts marked v1.1 below (R4b's three and R1's VulkanHeapRecipe); both tags can point at the same commit.
 
 ## Index
 
-Status as of 2026-10-18. "v1" means written in full and in review or merged; "draft" means a text exists on an open draft PR; "planned" means not written yet. The integrator updates this table as PRs land.
+Status as of 2026-10-18. "v1" or "v1.1" means written in full and in review or merged; "planned" means not written yet. Every wave-1 text is on its workstream PR (#4 to #12) and combined on the integration preview `int/wave1` (PR #13), with the cross-cutting fixes of `int/wave1-fixes`; none is on `main` or tagged yet. The integrator updates this table as PRs land.
 
 | Contract | Owner | Text | Status |
 | --- | --- | --- | --- |
@@ -20,25 +20,25 @@ Status as of 2026-10-18. "v1" means written in full and in review or merged; "dr
 | LrmCore | S1 | `lrm-core.md` | v1 (PR #3) |
 | TelemetryFacade | S1 | `telemetry-facade.md` | v1 (PR #3) |
 | ExecutionClass | S1 (type); R4a (GPU fill rule) | `execution-class.md` | v1 (PR #3) |
-| RunLog | T1 | `run-log.md` | draft (PR #8) |
-| ReportTemplates | T1 | `report-templates.md` | draft (PR #8) |
-| HostTensorAndSafetensors | O2 | `host-tensor.md` | planned |
-| CpuReferenceSemantics | O2 | `cpu-reference.md` | planned |
-| ComparatorsAndGoldenReader | O2 | `comparators.md` | planned |
-| KernelBounds | O2 | `kernel-bounds.md` | planned |
-| ToleranceSpec | O2 (types); G2 (numbers) | `tolerance-spec.md` | planned |
-| ReferenceOracles | O1 | `reference-oracles.md` | draft (PR #4) |
-| GoldenSet | O1 (format); G2 (Qwen content) | `golden-set.md` | draft (PR #4) |
-| ActivationNames | O1 | `activation-names.md` | draft (PR #4) |
-| HeapLayoutAndTensorTable | R4 | `heap-and-tensor-table.md` | planned |
-| KernelAbiAndCatalog | R4 | `kernel-abi.md` | planned |
-| GpuBackendInterface | R4 | `gpu-backend.md` | planned |
-| ShaderBuildAndSourceConvention | R4 (SPIR-V `LRM_BUF`: R4b) | `shader-build.md` | planned |
-| BatchInvariance | R4 | `batch-invariance.md` | planned |
-| VulkanHeapRecipe | R1 | `vulkan-heap-recipe.md` | draft (PR #5) |
+| RunLog | T1 | `run-log.md` | v1 (PR #8; `run.*` reserved in TelemetryFacade) |
+| ReportTemplates | T1 | `report-templates.md` | v1 (PR #8; parity and kernels reading rules extended in `int/wave1-fixes`) |
+| HostTensorAndSafetensors | O2 | `host-tensor.md` | v1 (PR #11) |
+| CpuReferenceSemantics | O2 | `cpu-reference.md` | v1 (PR #11) |
+| ComparatorsAndGoldenReader | O2 | `comparators.md` | v1 (PR #11) |
+| KernelBounds | O2 | `kernel-bounds.md` | v1 (PR #11) |
+| ToleranceSpec | O2 (types); G2 (numbers) | `tolerance-spec.md` | v1 (PR #11; numbers in wave 2) |
+| ReferenceOracles | O1 | `reference-oracles.md` | v1 (PR #4; RunLog-format telemetry in `int/wave1-fixes`) |
+| GoldenSet | O1 (format); G2 (Qwen content) | `golden-set.md` | v1 (PR #4) |
+| ActivationNames | O1 | `activation-names.md` | v1 (PR #4) |
+| HeapLayoutAndTensorTable | R4 | `heap-and-tensor-table.md` | v1.1 (R4a PR #10; R4b PR #12) |
+| KernelAbiAndCatalog | R4 | `kernel-abi.md` | v1.1 (R4a PR #10; R4b PR #12) |
+| GpuBackendInterface | R4 | `gpu-backend.md` | v1 (PR #10) |
+| ShaderBuildAndSourceConvention | R4 (SPIR-V `LRM_BUF`: R4b) | `shader-build.md` | v1.1 (R4a PR #10; R4b PR #12) |
+| BatchInvariance | R4 | `batch-invariance.md` | v1 (PR #10) |
+| VulkanHeapRecipe | R1 | `vulkan-heap-recipe.md` | v1.1 (R1 PR #5; section 7 amended in `int/wave1-fixes`) |
 | VulkanInteropApi | R2 | `vulkan-interop.md` | planned |
-| D3D12ComIdiom | R3 | `d3d12-com-idiom.md` | draft (PR #6) |
-| ClusterProtocol | C1 | `cluster.md` | draft (PR #7) |
+| D3D12ComIdiom | R3 | `d3d12-com-idiom.md` | v1 (PR #6) |
+| ClusterProtocol | C1 | `cluster.md` | v1 (PR #7) |
 | ConformanceHarness | E1 | `conformance-harness.md` | planned (wave 2) |
 | TokenizerApi | M1 | `tokenizer.md` | planned (wave 2) |
 | ForwardOpsAndQwenModel | M2 | `qwen-model.md` | planned (wave 2) |
