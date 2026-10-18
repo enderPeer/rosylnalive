@@ -47,7 +47,13 @@ A gpu-tier run takes about 4 s at 4 processors. It writes two run logs under `LR
   - from the hardware comparison, with `backend = d3d12`: the hardware run's records.
 - **E1's conformance run log** has `conformance.case` checks and the backend's records, all `d3d12-warp`.
 
-The rendered reports are committed under [`reports/`](reports/): [`reports/warp-selftests/kernels.md`](reports/warp-selftests/kernels.md) and [`reports/warp-conformance/kernels.md`](reports/warp-conformance/kernels.md). The kernels template does not read `gpu.device.check`, `gpu.selftest` or `gpu.warp.versus_hardware`, so the ADR tabulates them (a request to the integrator, like D1's).
+The rendered reports are committed under [`reports/`](reports/):
+
+- [`warp-selftests`](reports/warp-selftests/kernels.md): the spike's run at 4 processors (the probe and control bit table next to the RTX 4080's, GPU time per kernel, the selftest timeline, the slowest dispatches);
+- [`warp-conformance`](reports/warp-conformance/kernels.md): E1's harness on d3d12-warp (the matrix, the denormal mode, GPU time);
+- [`warp-throughput-2cpu`](reports/warp-throughput-2cpu/kernels.md) and [`warp-throughput-8cpu`](reports/warp-throughput-8cpu/kernels.md): the throughput series alone at 2 and 8 processors (`--filter-test-case throughput`).
+
+The kernels template does not read `gpu.device.check`, `gpu.selftest` or `gpu.warp.versus_hardware`, so the ADR tabulates them (a request to the integrator, like D1's).
 
 `ci-probe.ps1` is what a one-off run on a windows-latest runner executes. It prints the OS build and the in-box versions, builds the spike and the CLI, runs `warp-info` and both tiers (`LRM_WARP_CPUS=all` by default there), renders every new run log, and writes `summary.md` (and the GitHub step summary). It changes no setting and downloads nothing; the workflow's bootstrap step provides DXC.
 
