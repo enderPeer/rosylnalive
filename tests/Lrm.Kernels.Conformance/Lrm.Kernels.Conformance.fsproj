@@ -12,8 +12,8 @@
     <Compile Include="Harness/Session.fs" />
     <Compile Include="Harness/Discovery.fs" />
     <Compile Include="Cases/**/*.fs" />
-    <Compile Include="HarnessTests.fs" />
     <Compile Include="Suites.fs" />
+    <Compile Include="HarnessTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 </Project>

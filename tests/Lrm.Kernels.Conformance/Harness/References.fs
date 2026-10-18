@@ -119,6 +119,9 @@ module References =
         member _.AnyDenormal16(field: string, n: int64) =
             cast<uint16> (r.Input field) n |> Array.exists isDenormal16
 
+        /// True when an f32 argument is a denormal (a mixed class may flush it: an input like any other).
+        member _.DenormalArg(field: string) = isDenormal32 r.Args[r.Spec.Word field]
+
     let private output field (touched: ElementSet) bits f64 within =
         {
             Field = field
@@ -130,9 +133,24 @@ module References =
 
     let private range (n: int64) = ElementSet.Range(0L, n)
 
+    /// The NaN rule of scale_f32 and add (ConformanceHarness contract, "fp32 denormals and NaN"): with a NaN operand the
+    /// result is the first NaN operand (x before a, a before b) with its quiet bit set, chosen with integer operations so
+    /// that the JIT's operand order (which tiered compilation changes within a process) never decides the payload.
+    let nanRule (op: float32 -> float32 -> float32) (lhs: uint32) (rhs: uint32) =
+        let isNaN (w: uint32) = w &&& 0x7FFFFFFFu > 0x7F800000u
+
+        if isNaN lhs then
+            lhs ||| 0x00400000u
+        elif isNaN rhs then
+            rhs ||| 0x00400000u
+        else
+            BitConverter.SingleToUInt32Bits(
+                op (BitConverter.UInt32BitsToSingle lhs) (BitConverter.UInt32BitsToSingle rhs)
+            )
+
     /// An element-wise fp32 arithmetic kernel (scale_f32, add) over the bits of its one or two inputs and its scalar,
     /// in the class's mode: flush flushes the inputs and the result; mixed leaves out every element whose input or
-    /// result is a denormal.
+    /// result is a denormal. NaN operands follow nanRule.
     let private elementwise
         (r: RefInputs)
         (a: uint32[])
@@ -154,10 +172,7 @@ module References =
                 | ValueSome s -> s
                 | ValueNone -> bs[i]
 
-            let v =
-                op (BitConverter.UInt32BitsToSingle(mapIn a[i])) (BitConverter.UInt32BitsToSingle(mapIn rhs))
-
-            let w = BitConverter.SingleToUInt32Bits v
+            let w = nanRule op (mapIn a[i]) (mapIn rhs)
             result[i] <- if flush then Fp32Denormals.flushBits w else w
 
         let within =
@@ -287,7 +302,12 @@ module References =
             let shape = Shape.matrix rows cols
             let y32 = CpuRef.rmsNorm<float32> exec (HostTensor.f32 shape x) w eps
             let y64 = CpuRef.rmsNorm<float> exec (HostTensor.f64 shape (widen x)) w (float eps)
-            let den = inp.AnyDenormal32("x", n) || inp.AnyDenormal16("w", int64 cols)
+
+            let den =
+                inp.AnyDenormal32("x", n)
+                || inp.AnyDenormal16("w", int64 cols)
+                || inp.DenormalArg "eps"
+
             [ relative "y" (range n) y32.Data y64.Data den ]
         | "rope_apply" ->
             let rows = r.U "rows"
@@ -399,6 +419,7 @@ module References =
                 q |> Array.exists (BitConverter.SingleToUInt32Bits >> isDenormal32)
                 || inp.AnyDenormal32("k", int64 tk * int64 kvc)
                 || inp.AnyDenormal32("v", int64 tk * int64 kvc)
+                || inp.DenormalArg "scale"
 
             [
                 relative "y" (ElementSet.Range(int64 q0 * int64 qc, int64 (q0 + rows) * int64 qc)) y32.Data y64.Data den

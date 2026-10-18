@@ -64,6 +64,18 @@ let private scaleCases =
         scale "a_denormal" (uniform 64) 64L 0x00000003u "A denormal scale factor"
         scale "a_negative_zero" (uniform 33) 33L 0x80000000u "a = -0: every result is a signed zero"
         scale "a_nan" (uniform 5) 5L 0x7FC00042u "a = NaN with a payload: every result is NaN"
+        scale
+            "both_nan"
+            (Array.init 600 (fun i ->
+                match i % 6 with
+                | 0 -> 0xFFC00005u
+                | 1 -> 0x7F800001u
+                | 2 -> 0x3F800000u
+                | 3 -> 0x7F800000u
+                | _ -> 0x7FC00001u))
+            600L
+            0x7FC00003u
+            "NaN x and NaN a with other payloads (and a few other x): the first NaN operand, quieted (the NaN rule)"
         (scale "in_place" (uniform 300) 300L (f32 -1.5f) "y aliases x (declared alias): in place"
          |> fun c ->
              { c with

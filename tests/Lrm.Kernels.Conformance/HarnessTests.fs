@@ -13,6 +13,15 @@ open Lrm.Tensor
 open Lrm.Tensor.CpuReference
 open Lrm.Testing
 
+/// A provider whose constructor throws, as a backend's would without its native library: discovery must report it.
+type ThrowingProvider() =
+    do raise (DllNotFoundException "no device library")
+
+    interface IGpuBackendProvider with
+        member _.Backend = ExecutionBackend.D3D12
+        member _.Enumerate() = []
+        member _.Create(_, _) = invalidOp "never created"
+
 /// What a faulty backend does differently from the CpuDevice it wraps.
 type Faults =
     {
@@ -298,6 +307,7 @@ let private faultTests =
                 Expect.isTrue o.Passed o.Detail
                 Expect.isFalse o.BudgetGating "emulation time says nothing about a GPU"
                 Expect.equal o.TimeNs 150_000_000L "the faster run's dispatch time"
+                Expect.equal o.TimeSource "emulated" "CpuDevice's timers are emulation time, not GPU time"
 
             testCase "an in-place case whose results equal its inputs is refused"
             <| fun () ->
@@ -468,6 +478,45 @@ let private referenceTests =
                 Expect.equal out.WithinClassOnly (Some [| true; true |]) "the whole case"
                 Expect.isSome out.F64 "a relative kernel has an F64 reference"
 
+            testCase "the NaN rule: the first NaN operand, quieted, whatever the other operand"
+            <| fun () ->
+                let mul = References.nanRule (fun a b -> a * b)
+                let add = References.nanRule (fun a b -> a + b)
+                Expect.equal (mul 0x7FC00001u 0x7FC00003u) 0x7FC00001u "two quiet NaNs: the first"
+                Expect.equal (mul 0x3F800000u 0x7F800003u) 0x7FC00003u "a signalling NaN second: quieted"
+                Expect.equal (add 0xFF800007u 0xFFC00008u) 0xFFC00007u "the sign stays"
+                Expect.equal (add 0x3F800000u 0x3F800000u) 0x40000000u "no NaN: the float32 operation"
+
+            testCase "two NaN operands give the same bits in every run for 1.5 s of one process"
+            <| fun () ->
+                // Tiered compilation recompiles the emulators and the references partway through a process; before
+                // the NaN rule, x64's choice of NaN operand then flipped (scale_f32 from about run 150 to 1,100).
+                let cases =
+                    Discovery.cases typeof<KernelCase>.Assembly
+                    |> List.filter (fun c -> c.Name = "both_nan" || c.Name = "e1_both_nan")
+
+                Expect.equal (cases |> List.map _.Kernel |> List.sort) [ "add"; "scale_f32" ] "both cases"
+                use s = sessionOn (cpu ()) cases
+                let failures = ResizeArray<string>()
+
+                let clock = Diagnostics.Stopwatch.StartNew()
+                let mutable i = 0
+
+                while i < 2000 || (clock.ElapsedMilliseconds < 1500L && i < 50000) do
+                    if i % 200 = 0 then
+                        Threading.Thread.Sleep 20
+
+                    for c in cases do
+                        let o = s.Run c
+
+                        if not o.Passed && failures.Count < 3 then
+                            failures.Add(sprintf "run %d of %s: %s" i c.Id o.Detail)
+
+                    i <- i + 1
+
+                if failures.Count > 0 then
+                    failtestf "runs that failed: %s" (String.Join("; ", failures))
+
             testCase "every catalog kernel has a KernelBounds entry, an emulator, a reference and a case"
             <| fun () ->
                 let cases = Discovery.cases typeof<KernelCase>.Assembly
@@ -636,6 +685,43 @@ let private validationTests =
                      |> Case.f32 "y" [| 1.0f |]
                      |> Case.u32 "n" 1u
                      |> Case.f32Arg "a" 1.0f)
+            testCase "a case below a kernel's minimum element count, GPU-only or not, names the rule"
+            <| fun () ->
+                let undersized =
+                    Case.create "rmsnorm_rows" "v"
+                    |> Case.f32 "x" (Array.create 64 1.0f)
+                    |> Case.bf16 "w" (Array.create 64 0x3F80us)
+                    |> Case.output "y" 4L
+                    |> Case.u32 "rows" 1u
+                    |> Case.u32 "cols" 64u
+                    |> Case.f32Arg "eps" 1e-6f
+
+                raises "rule y >= rows * cols" undersized
+                raises "rmsnorm_rows/v" (undersized |> Case.gpuOnly)
+
+                raises
+                    "x >= n"
+                    (Case.create "scale_f32" "v"
+                     |> Case.f32 "x" [| 1.0f |]
+                     |> Case.output "y" 16L
+                     |> Case.u32 "n" 16u
+                     |> Case.f32Arg "a" 1.0f
+                     |> Case.gpuOnly)
+
+            testCase "a case that breaks a kernel's argument rule names the rule"
+            <| fun () ->
+                raises
+                    "heads must divide rows"
+                    (Case.create "rope_apply" "v"
+                     |> Case.f32 "x" (Array.zeroCreate 12)
+                     |> Case.f32 "cos_table" (Array.zeroCreate 8)
+                     |> Case.f32 "sin_table" (Array.zeroCreate 8)
+                     |> Case.output "y" 12L
+                     |> Case.u32 "rows" 3u
+                     |> Case.u32 "heads" 2u
+                     |> Case.u32 "head_dim" 4u
+                     |> Case.u32 "pos0" 0u)
+
             testCase "two cases with one id"
             <| fun () ->
                 Expect.throwsT<ArgumentException>
@@ -658,6 +744,64 @@ let private discoveryTests =
             <| fun () ->
                 for b, _ in Discovery.assemblies do
                     Discovery.provider b |> ignore
+
+            testCase "a provider that throws is reported as an error, not dropped"
+            <| fun () ->
+                let found = Discovery.discoverIn typeof<ThrowingProvider>.Assembly
+                Expect.isFalse (found.Providers |> List.exists (fun p -> p :? ThrowingProvider)) "not a provider"
+
+                Expect.isTrue
+                    (found.Errors
+                     |> List.exists (fun e -> e.Contains "ThrowingProvider" && e.Contains "no device library"))
+                    (sprintf "the error names the type and the exception: %A" found.Errors)
+
+            testCase "the gpu tier fails a required backend that has no provider"
+            <| fun () ->
+                let groups = Suites.gpuWith [ Backend.D3D12; Backend.Vulkan ]
+
+                for backend, testing in
+                    [
+                        ExecutionBackend.D3D12, Backend.D3D12
+                        ExecutionBackend.Vulkan, Backend.Vulkan
+                    ] do
+                    let name = ExecutionBackend.name backend
+                    let tests = groups |> List.filter (fst >> (=) testing) |> List.collect snd
+                    Expect.isNonEmpty tests (name + " has gpu tests")
+
+                    match Discovery.discover backend with
+                    | Some _, _ -> ()
+                    | None, _ ->
+                        // No provider yet (D1 and V1 add them): the group is a test that fails and says why.
+                        let code =
+                            tests
+                            |> List.tryPick (function
+                                | TestLabel(n, TestCase(Sync f, _), _) when
+                                    n.EndsWith "a required backend has a provider"
+                                    ->
+                                    Some f
+                                | _ -> None)
+
+                        match code with
+                        | None -> failtestf "%s: no failing provider test among %A" name tests
+                        | Some f ->
+                            let message =
+                                try
+                                    f ()
+                                    None
+                                with :? AssertException as e ->
+                                    Some e.Message
+
+                            Expect.isTrue
+                                (message |> Option.exists (fun m -> m.Contains "LRM_REQUIRED_BACKENDS"))
+                                (sprintf "%s: the test fails naming LRM_REQUIRED_BACKENDS (%A)" name message)
+
+                Expect.isEmpty
+                    (Suites.gpuWith []
+                     |> List.collect snd
+                     |> List.choose (function
+                         | TestLabel(n, _, _) when n.EndsWith "a required backend has a provider" -> Some n
+                         | _ -> None))
+                    "nothing is required without LRM_REQUIRED_BACKENDS"
 
             testCase "the case modules are found, ids are unique"
             <| fun () ->

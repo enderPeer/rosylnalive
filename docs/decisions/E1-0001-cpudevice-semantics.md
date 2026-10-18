@@ -15,13 +15,16 @@ CpuDevice is the executing counterpart of RecordingBackend: the only backend in 
 3. **Memory starts as `7fbadbad` words**, not zeros (`UninitializedWord`), because Vulkan memory and a reused page are undefined.
 4. **GPU arithmetic models are options, never the default.** `Fp32Denormals = Flush` models a flushing class (denormal fp32 and bf16 inputs and f32 arguments of the kernels that compute on fp32 values read as zero of the same sign, and their fp32 results are flushed); `CanonicalNaN` returns `7fffffff` for every NaN result of an fp32 arithmetic kernel. A model appends `+ftz` or `+nan-canonical` to the class's `Arch`, so its results never share a class, and no bit-identity claim, with the default CpuDevice, whose class is `ExecutionClass.forCpu cpu-device` exactly.
 5. **Every catalog kernel has an emulator**, sources or not, so X1 and the harness run the whole catalog in CI before K1 to K3 land; `MirrorShaderSet` gives a shader backend's view instead.
-6. **The dispatch budget gates only shader backends.** CpuDevice reports emulation time as `gpu.dispatch` (host time) and in `conformance.case`, but 100 ms of emulation says nothing about a GPU.
+6. **The dispatch budget gates only shader backends.** CpuDevice reports emulation time as `gpu.dispatch` (host time) and in `conformance.case` with `time_source` `emulated`, but 100 ms of emulation says nothing about a GPU.
+7. **NaN results of `scale_f32` and `add` are fixed by integer operations** (the NaN rule): with a NaN operand, the first NaN operand in field order, quieted. Left to the float32 operation, x64 returns the first source operand's NaN, and the JIT's operand order for a commutative operation changes when tiered compilation recompiles the emulator, so two NaN operands with different payloads gave different bits partway through a process.
+8. **After `Dispose` every call raises `ObjectDisposedException`**: the backend's, the heap's, the kernel set's and those of command lists begun earlier. A use after `Dispose` would touch freed memory on a GPU; on CpuDevice it fails in CI, and freed pages are never quietly allocated again.
 
 ## Evidence
 
 - Every rule above has a cpu-tier test in `tests/Lrm.Gpu.CpuDevice.Tests` (`DispatchRuleTests.fs`, `InterfaceTests.fs`, `EmulatorTests.fs`).
 - Mutation check on this branch: making the minimum-count check one element lax failed all 34 "one element short" tests; corrupting one element of `scale_f32` and one of `matmul_bf16w` (only when m > 1) failed the emulator tests, A1, the harness's fault-free control and three conformance cases, including the m = 37 matmul through its M = 1 batch split.
-- The harness's model tests run every case on a flushing, a NaN-canonical and a combined CpuDevice: the probe measures flush where it should, and every case passes against references built in that mode.
+- The harness's model tests run every case on a flushing, a NaN-canonical and a combined CpuDevice: the probe measures flush where it should, and every case passes against references built in that mode. Making the flushed reference of `rmsnorm_rows` (its `x` or `eps`) or `matmul_bf16w` (its `x` or `w`) read the unflushed inputs fails the flushing model's test, through the denormal relative cases.
+- NaN rule: with the emulators as they were before it, `scale_f32` of NaN x and NaN a flipped from the first operand's payload to the second's after about 1,400 harness runs (and 5,600 direct dispatches) in one process; with the rule, both loops pass in every run for 1.5 s.
 
 ## Consequences
 

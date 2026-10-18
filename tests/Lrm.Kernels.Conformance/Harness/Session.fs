@@ -299,6 +299,40 @@ and [<Sealed>] Session
         then
             fail "the harness judges kernels with exactly one written field"
 
+        // The kernel ABI's argument rules and minimum element counts (kernel-abi.md, "Tensor access"; KernelRules), so
+        // that a case breaking one is refused here by name on every backend: a GPU-only case never reaches CpuDevice's
+        // dispatch checks, and a GPU would run it out of bounds.
+        let words = Array.zeroCreate<uint32> ArgBlock.WordCount
+
+        spec.Fields
+        |> List.iteri (fun i f ->
+            match c.Scalars |> List.tryFind (fun (n, _) -> n = f.Name) with
+            | Some(_, v) -> words[i + 1] <- v
+            | None -> ())
+
+        let tensorOf (field: string) =
+            let read =
+                c.Io.InPlace
+                |> List.tryFind (fun (w, _) -> w = field)
+                |> Option.map snd
+                |> Option.defaultValue field
+
+            c.Io.Tensors |> List.tryFind (fun t -> t.Field = read)
+
+        try
+            KernelRules.check
+                spec
+                (ArgBlock.OfWords words)
+                (fun f -> tensorOf f |> Option.map _.Elements |> Option.defaultValue 0L)
+                (fun f -> tensorOf f |> Option.map _.DType)
+                (fun f ->
+                    tensorOf f
+                    |> Option.map (fun t -> c.Id + "/" + t.Field)
+                    |> Option.defaultValue f)
+            |> ignore
+        with :? GpuContractException as e ->
+            fail "%s" e.Message
+
         id, spec
 
     /// The scale_f32 denormal probe as a case (GpuBackendInterface): x = Fp32Denormals.probeInputs, a = 0.5.
@@ -826,10 +860,12 @@ and [<Sealed>] Session
             if failures.Count = before then
                 matched <- matched + 1
 
-        // Timing: the faster of the two runs, per dispatch, from the GPU timers when the backend has them.
+        // Timing: the faster of the two runs, per dispatch, from the backend's gpu.dispatch timers when it has them.
+        // CpuDevice's timers are host time around each emulated dispatch, so they are labelled emulated, not gpu.
         let timeNs, source =
             match r1.DispatchNs, r2.DispatchNs with
-            | xs, ys when not xs.IsEmpty && xs.Length = ys.Length -> List.map2 min xs ys |> List.max, "gpu"
+            | xs, ys when not xs.IsEmpty && xs.Length = ys.Length ->
+                List.map2 min xs ys |> List.max, (if strict then "emulated" else "gpu")
             | _ -> min r1.HostNs r2.HostNs, "host"
 
         if shaderBackend && not control && timeNs >= options.BudgetNs then

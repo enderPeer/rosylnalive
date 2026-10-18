@@ -128,20 +128,63 @@ let cpuDevice () =
     )
     |> suite
 
+/// The backends LRM_REQUIRED_BACKENDS names (TestTiers); an unparsable list names none here, because the runner and
+/// tools/test.ps1 already fail it.
+let requiredBackends () =
+    match Env.tryGet "LRM_REQUIRED_BACKENDS" with
+    | Some s ->
+        match Backend.parseList s with
+        | Ok bs -> bs
+        | Error _ -> []
+    | None -> []
+
+/// A test that fails with the reason a backend cannot be judged (discovery errors, or no provider for a required
+/// backend), so the gpu tier never passes with a backend's conformance tests silently missing.
+let private broken (name: string) (title: string) (reasons: string list) =
+    testCase ("conformance." + name + ": " + title)
+    <| fun () -> failtestf "%s" (String.Join("; ", reasons))
+
 /// The gpu-tier suites: one per GPU backend whose provider exists (D1 and V1 add them), on its first accepted device.
-let gpu () : (Backend * Test list) list =
+/// Discovery errors become a failing test of that backend, and so does a backend in `required` whose assembly exposes
+/// no provider.
+let gpuWith (required: Backend list) : (Backend * Test list) list =
     [
         for backend, testing in
             [
                 ExecutionBackend.D3D12, Backend.D3D12
                 ExecutionBackend.Vulkan, Backend.Vulkan
             ] do
-            match Discovery.provider backend with
-            | None -> ()
+            let name = ExecutionBackend.name backend
+            let provider, errors = Discovery.discover backend
+
+            let errorTests =
+                if errors.IsEmpty then
+                    []
+                else
+                    [ broken name "provider discovery raised no errors" errors ]
+
+            match provider with
+            | None when List.contains testing required ->
+                let assembly = Discovery.assemblies |> List.find (fst >> (=) backend) |> snd
+
+                yield
+                    testing,
+                    broken
+                        name
+                        "a required backend has a provider"
+                        [
+                            sprintf
+                                "LRM_REQUIRED_BACKENDS names %s, but %s exposes no IGpuBackendProvider, so no conformance case ran on it"
+                                name
+                                assembly
+                        ]
+                    :: errorTests
+            | None ->
+                if not errorTests.IsEmpty then
+                    yield testing, errorTests
             | Some provider ->
                 let registry = BackendRegistry()
                 registry.Register provider
-                let name = ExecutionBackend.name backend
 
                 let create () =
                     match
@@ -157,5 +200,11 @@ let gpu () : (Backend * Test list) list =
                     let c = b.ExecutionClass
                     Devices.record testing b.Info.Name c.Driver (c.ShaderSetHash |> Option.map _.Hex)
 
-                testing, [ BackendRun(name, create, "Conformance on " + name, record) |> suite ]
+                yield
+                    testing,
+                    (BackendRun(name, create, "Conformance on " + name, record) |> suite)
+                    :: errorTests
     ]
+
+/// The gpu-tier suites, with the backends LRM_REQUIRED_BACKENDS names required.
+let gpu () = gpuWith (requiredBackends ())

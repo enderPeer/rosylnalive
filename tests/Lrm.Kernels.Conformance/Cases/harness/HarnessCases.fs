@@ -1,7 +1,10 @@
 /// The harness's own cases for the K1 to K3 kernels: a few small cases per kernel, so that every catalog kernel runs
 /// through the harness on CpuDevice in CI (relative bounds with CpuRef F64, two-dimensional grids, strided rows,
-/// in-place aliases, folded row grids and the decode = prefill splits). K1 to K3 own the real case matrices under
-/// Cases/basic, Cases/matmul and Cases/attention; these stay as the harness's regression set.
+/// in-place aliases, folded row grids, the decode = prefill splits, NaN operands and denormal inputs in every mode). K1
+/// to K3 own the real case matrices under Cases/basic, Cases/matmul and Cases/attention; these stay as the harness's
+/// regression set. Every name here starts with `e1_`, a prefix the contract reserves for this file ("Where cases
+/// live"), so a K1 to K3 case can never take one of these ids (Session.Create refuses a repeated id for the whole
+/// session).
 module Lrm.Kernels.Conformance.Cases.Harness
 
 open System
@@ -14,6 +17,16 @@ let private rng (name: string) = CaseGen.rng ("harness." + name)
 
 let private bits (xs: float32[]) =
     xs |> Array.map BitConverter.SingleToUInt32Bits
+
+/// fp32 denormals in the upper part of the range, [2^-128, 2^-126), with random signs: a scale of 1000 makes them normal.
+let private upperDenormals (r: DetRng) (n: int) =
+    CaseGen.words r n
+    |> Array.map (fun w -> (w &&& 0x80000000u) ||| 0x00200000u ||| (w &&& 0x001FFFFFu))
+
+/// fp32 values of magnitude [2^e, 2^(e+1)) with random signs and mantissas.
+let private binade (r: DetRng) (n: int) (e: int) =
+    CaseGen.words r n
+    |> Array.map (fun w -> (w &&& 0x80000000u) ||| (uint32 (127 + e) <<< 23) ||| (w &&& 0x007FFFFFu))
 
 let private embedCases =
     let r = rng "embed"
@@ -46,7 +59,43 @@ let private rmsnormCases =
         |> Case.f32Arg "eps" 1e-6f
         |> Case.doc doc
 
+    let cols = 64
+    // Row 0 is all denormals: preserve gives normal results (x * 1000), flush gives signed zeros. Row 1 has a few
+    // denormals among normal values; w holds two bf16 denormals.
+    let x0 = upperDenormals r cols
+    let x1 = CaseGen.uniform r cols -3.0f 3.0f |> bits
+    let x2 = CaseGen.uniform r cols -3.0f 3.0f |> bits
+
+    for c in [ 5; 17; 40 ] do
+        x1[c] <- (upperDenormals r 1)[0]
+
+    let w = CaseGen.uniformBf16 r cols 0.5f 1.5f
+    w[3] <- 0x0011us
+    w[60] <- 0x8040us
+
+    // x^2 stays normal (|x| >= 2^-63), the mean is about 2.6e-38 and eps = 0x00400000 (5.9e-39) a denormal of a fifth
+    // of it: flushing eps changes every result by about a tenth, and nothing becomes 0 / 0 in either mode.
+    let tiny =
+        CaseGen.uniform r (2 * cols) 1.2e-19f 2.0e-19f
+        |> Array.mapi (fun i v -> if i % 3 = 0 then -v else v)
+
     [
+        Case.create "rmsnorm_rows" "denormal_rows"
+        |> Case.f32Bits "x" (Array.concat [ x0; x1; x2 ])
+        |> Case.bf16 "w" w
+        |> Case.output "y" (3L * int64 cols)
+        |> Case.u32 "rows" 3u
+        |> Case.u32 "cols" (uint32 cols)
+        |> Case.f32Arg "eps" 1e-6f
+        |> Case.doc "fp32 and bf16 denormal inputs: a flushing class's reference flushes them (row 0 becomes zeros)"
+        Case.create "rmsnorm_rows" "denormal_eps"
+        |> Case.f32 "x" tiny
+        |> Case.bf16 "w" (CaseGen.uniformBf16 r cols 0.5f 1.5f)
+        |> Case.output "y" (2L * int64 cols)
+        |> Case.u32 "rows" 2u
+        |> Case.u32 "cols" (uint32 cols)
+        |> Case.f32ArgBits "eps" 0x00400000u
+        |> Case.doc "A denormal eps that decides a tenth of every result: a flushing class's reference flushes it"
         norm "rows7_cols300" 7 300 "A reduction longer than the group"
         norm "rows1_cols1024" 1 1024 "Decode: one row of Qwen3's hidden size"
         norm "rows70000_cols2" 70000 2 "70,000 rows: a folded linear grid (35000 x 2)"
@@ -150,6 +199,33 @@ let private addCases =
         |> Case.output "y" 6L
         |> Case.u32 "n" 6u
         |> Case.doc "NaN payloads, inf - inf, denormal sums and signed zeros"
+        Case.create "add" "both_nan"
+        |> Case.f32Bits
+            "a"
+            (Array.init 600 (fun i ->
+                [|
+                    0x7FC00001u
+                    0x7F800001u
+                    0xFFC00002u
+                    0x3F800000u
+                    0x7FC00004u
+                    0xFF800007u
+                |][i % 6]))
+        |> Case.f32Bits
+            "b"
+            (Array.init 600 (fun i ->
+                [|
+                    0x7FC00002u
+                    0x7FC00003u
+                    0x7F800005u
+                    0x7FC00006u
+                    0x3F800000u
+                    0xFFC00008u
+                |][i % 6]))
+        |> Case.output "y" 600L
+        |> Case.u32 "n" 600u
+        |> Case.doc
+            "Two NaN operands with different payloads: CpuDevice and CpuRef give the first NaN operand, quieted (the NaN rule)"
         Case.create "add" "in_place"
         |> Case.f32 "a" (CaseGen.uniform r 513 -1.0f 1.0f)
         |> Case.f32 "b" (CaseGen.uniform r 513 1.0f 2.0f)
@@ -251,7 +327,31 @@ let private matmulCases =
         |> Case.u32 "k" (uint32 k)
         |> Case.doc doc
 
+    let k = 8
+    // Row 0 of x is fp32 denormals, row 1 is about 2^30; w's rows are about 2^30, bf16 denormals and about 1. The
+    // products 2^-128 * 2^30 and 2^30 * 2^-129 are normal, so preserve and flush give different results there.
+    let x = Array.append (upperDenormals r k) (binade r k 30)
+
+    let w =
+        Array.concat
+            [
+                CaseGen.words r k
+                |> Array.map (fun v -> uint16 ((v &&& 0x8000u) ||| (uint32 (127 + 30) <<< 7) ||| (v &&& 0x7Fu)))
+                CaseGen.words r k
+                |> Array.map (fun v -> uint16 ((v &&& 0x8000u) ||| 0x10u ||| (v &&& 0x6Fu)))
+                CaseGen.uniformBf16 r k -1.0f 1.0f
+            ]
+
     [
+        Case.create "matmul_bf16w" "denormals"
+        |> Case.f32Bits "x" x
+        |> Case.bf16 "w" w
+        |> Case.output "y" 6L
+        |> Case.u32 "m" 2u
+        |> Case.u32 "n" 3u
+        |> Case.u32 "k" (uint32 k)
+        |> Case.doc
+            "fp32 and bf16 denormal inputs whose products are normal: a flushing class's reference flushes the inputs"
         mm "m37_n70_k64" 37 70 64 "Two tiles in n; the M = 1 splits are decode rows"
         mm "m1_n130_k256" 1 130 256 "Decode: one row, three tiles"
         mm "m3_n5_k0" 3 5 0 "k = 0: every output is +0"
@@ -293,7 +393,11 @@ let private attentionCases =
         attn "decode_past70" 1 0 70 2 1 8 80 "Decode at position 70: two 64-key blocks"
     ]
 
-/// Every harness case.
+/// The prefix the contract reserves for the names of this file's cases.
+[<Literal>]
+let Prefix = "e1_"
+
+/// Every harness case, each name with the reserved prefix.
 let cases: KernelCase list =
     embedCases
     @ rmsnormCases
@@ -304,3 +408,4 @@ let cases: KernelCase list =
     @ argmaxCases
     @ matmulCases
     @ attentionCases
+    |> List.map (fun c -> { c with Name = Prefix + c.Name })
