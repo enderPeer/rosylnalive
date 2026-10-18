@@ -1,6 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: D1. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
-    <Compile Include="Placeholder.fs" />
+    <Compile Include="Errors.fs" />
+    <Compile Include="Dred.fs" />
+    <Compile Include="Plan.fs" />
+    <Compile Include="Adapters.fs" />
+    <Compile Include="Context.fs" />
+    <Compile Include="Heap.fs" />
+    <Compile Include="Kernels.fs" />
+    <Compile Include="Backend.fs" />
+    <Compile Include="SelfTests.fs" />
+    <Compile Include="Hello.fs" />
   </ItemGroup>
 </Project>
