@@ -1,0 +1,14 @@
+<Project>
+  <!--
+    Lrm.Tokenizer (owner M1). The TokenizerApi pin comes from tools/bootstrap/toolchain.json through
+    build/Toolchain.g.props (DataRootAndToolchain: builds read the pins and never repeat a path or a hash):
+      - Lrm.TokenizerSha256, the pinned SHA-256 that QwenTokenizer.load checks;
+      - Lrm.TokenizerPath, $(LrmTokenizerJson) relative to $(LrmData), so the assembly holds no machine path and
+        QwenTokenizer.defaultPath resolves it under LRM_DATA at run time.
+  -->
+  <ItemGroup>
+    <AssemblyMetadata Include="Lrm.TokenizerSha256" Value="$(LrmTokenizerSha256)" />
+    <AssemblyMetadata Include="Lrm.TokenizerPath"
+                      Value="$([MSBuild]::MakeRelative('$(LrmData)/', '$(LrmTokenizerJson)').Replace('\', '/'))" />
+  </ItemGroup>
+</Project>
