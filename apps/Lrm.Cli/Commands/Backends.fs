@@ -100,6 +100,21 @@ module Cli =
 
         up (DirectoryInfo Environment.CurrentDirectory)
 
+    /// A path for run parameters and messages: repo-relative with forward slashes inside the repo around the
+    /// current folder (so a committed report names no clone), else the full path.
+    let displayPath (path: string) =
+        let full = Path.GetFullPath path
+
+        match repoRoot () with
+        | Some r ->
+            let rel = Path.GetRelativePath(r, full)
+
+            if rel.StartsWith("..", StringComparison.Ordinal) || Path.IsPathRooted rel then
+                full
+            else
+                rel.Replace(Path.DirectorySeparatorChar, '/')
+        | None -> full
+
     /// A model folder: `qwen3-0.6b` (the default) is LRM_DATA/models/Qwen3-0.6B, `tiny` is goldens/tiny/g1/model of the
     /// repo around the current folder, anything else a path.
     let modelDir (arg: string option) =
