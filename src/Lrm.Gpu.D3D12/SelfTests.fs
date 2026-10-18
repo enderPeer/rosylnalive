@@ -532,6 +532,8 @@ module SelfTests =
                             Attr.int "class_only" c.ClassOnly
                             Attr.str "mode" (Fp32Denormals.name mode)
                             Attr.str "detail" c.Detail
+                            // The negative control's cases fail by design; a report counts them apart.
+                            Attr.bool "negative_control" (not dispatch)
                         ]
 
                     ignore index
