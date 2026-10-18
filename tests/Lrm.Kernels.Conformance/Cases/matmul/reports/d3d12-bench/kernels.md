@@ -1,10 +1,10 @@
 # Kernels: matmul_bf16w throughput on d3d12
 
 
-No conformance cases were recorded. Every dispatch is under the 100 ms budget.
+No conformance cases were recorded. **4 dispatches exceed the 100 ms budget.**
 
 - Conformance cases: 0, failed: 0
-- GPU dispatches: 441, total GPU time 373.36 ms
+- GPU dispatches: 1,353, total GPU time 2.80 s
 
 ## Conformance matrix
 
@@ -54,33 +54,33 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Kernel | Backend | Layer | Step | Duration | Of budget |
 | --- | --- | ---: | ---: | ---: | ---: |
-| matmul_bf16w | d3d12 |  |  | 21.82 ms | 21.8% |
-| matmul_bf16w | d3d12 |  |  | 21.80 ms | 21.8% |
-| matmul_bf16w | d3d12 |  |  | 21.70 ms | 21.7% |
-| matmul_bf16w | d3d12 |  |  | 21.46 ms | 21.5% |
-| matmul_bf16w | d3d12 |  |  | 21.39 ms | 21.4% |
-| matmul_bf16w | d3d12 |  |  | 21.30 ms | 21.3% |
-| matmul_bf16w | d3d12 |  |  | 10.81 ms | 10.8% |
-| matmul_bf16w | d3d12 |  |  | 10.80 ms | 10.8% |
-| matmul_bf16w | d3d12 |  |  | 10.79 ms | 10.8% |
-| matmul_bf16w | d3d12 |  |  | 10.73 ms | 10.7% |
+| matmul_bf16w | d3d12 |  |  | 322.11 ms | 322.1% |
+| matmul_bf16w | d3d12 |  |  | 183.13 ms | 183.1% |
+| matmul_bf16w | d3d12 |  |  | 180.59 ms | 180.6% |
+| matmul_bf16w | d3d12 |  |  | 167.99 ms | 168.0% |
+| matmul_bf16w | d3d12 |  |  | 84.98 ms | 85.0% |
+| matmul_bf16w | d3d12 |  |  | 83.69 ms | 83.7% |
+| matmul_bf16w | d3d12 |  |  | 43.49 ms | 43.5% |
+| matmul_bf16w | d3d12 |  |  | 43.43 ms | 43.4% |
+| matmul_bf16w | d3d12 |  |  | 25.72 ms | 25.7% |
+| matmul_bf16w | d3d12 |  |  | 25.10 ms | 25.1% |
 
 ## Run
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-132542-33830713` |
+| Run | `20261018-140617-1ce83fea` |
 | Title | matmul_bf16w throughput on d3d12 |
 | Kind | kernels |
 | Status | ok |
-| Started | 2026-10-18T13:25:42.403Z |
-| Ended | 2026-10-18T13:25:43.972Z |
+| Started | 2026-10-18T14:06:17.133Z |
+| Ended | 2026-10-18T14:07:39.156Z |
 | Execution class | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders 2d513d812671 |
 | Class id | `4b1614e079f0` |
 | Driver | 32.0.16.1692 |
-| Commit | `558815bd640c4dee35eea5bfc49ee9d65ab113ac` |
+| Commit | `3f84e1547f7c12e41fb1417cd0ef1233eb9947af` |
 | Nodes | 1 |
-| Records | 1,026 |
+| Records | 2,082 |
 | Synthetic | no |
 
 | Parameter | Value |
@@ -94,7 +94,7 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| n0 | creator | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders 2d513d812671 | 1,026 | ok | 0 |
+| n0 | creator | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders 2d513d812671 | 2,082 | ok | 0 |
 
 ### Log problems
 

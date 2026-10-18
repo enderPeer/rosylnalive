@@ -1,10 +1,10 @@
 # Kernels: Conformance on CpuDevice (every case, bit-exact to CpuRef F32)
 
 
-**PASS.** All 79 conformance cases pass. Every dispatch is under the 100 ms budget.
+**PASS.** All 83 conformance cases pass. Every dispatch is under the 100 ms budget.
 
-- Conformance cases: 79, failed: 0
-- GPU dispatches: 322, total GPU time 605.95 ms
+- Conformance cases: 83, failed: 0
+- GPU dispatches: 341, total GPU time 399.62 ms
 
 ## Conformance matrix
 
@@ -12,7 +12,7 @@ Passing cases out of all cases, per kernel and backend.
 
 | Kernel | Family | cpu-device |
 | --- | --- | --- |
-| matmul_bf16w | matmul | ✓ 29/29 |
+| matmul_bf16w | matmul | ✓ 33/33 |
 | attention_gqa_causal | attention | ✓ 2/2 |
 | rmsnorm_rows | norm | ✓ 6/6 |
 | rope_apply | rope | ✓ 2/2 |
@@ -69,39 +69,39 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Kernel | Backend | Layer | Step | Duration | Of budget |
 | --- | --- | ---: | ---: | ---: | ---: |
-| matmul_bf16w | cpu-device |  |  | 63.43 ms | 63.4% |
-| matmul_bf16w | cpu-device |  |  | 51.09 ms | 51.1% |
-| matmul_bf16w | cpu-device |  |  | 50.61 ms | 50.6% |
-| matmul_bf16w | cpu-device |  |  | 47.96 ms | 48.0% |
-| matmul_bf16w | cpu-device |  |  | 45.37 ms | 45.4% |
-| matmul_bf16w | cpu-device |  |  | 43.27 ms | 43.3% |
-| matmul_bf16w | cpu-device |  |  | 42.98 ms | 43.0% |
-| matmul_bf16w | cpu-device |  |  | 42.68 ms | 42.7% |
-| matmul_bf16w | cpu-device |  |  | 24.51 ms | 24.5% |
-| matmul_bf16w | cpu-device |  |  | 24.24 ms | 24.2% |
+| matmul_bf16w | cpu-device |  |  | 43.23 ms | 43.2% |
+| matmul_bf16w | cpu-device |  |  | 42.58 ms | 42.6% |
+| matmul_bf16w | cpu-device |  |  | 39.91 ms | 39.9% |
+| matmul_bf16w | cpu-device |  |  | 35.05 ms | 35.1% |
+| matmul_bf16w | cpu-device |  |  | 27.52 ms | 27.5% |
+| matmul_bf16w | cpu-device |  |  | 24.93 ms | 24.9% |
+| matmul_bf16w | cpu-device |  |  | 21.59 ms | 21.6% |
+| matmul_bf16w | cpu-device |  |  | 21.49 ms | 21.5% |
+| matmul_bf16w | cpu-device |  |  | 13.11 ms | 13.1% |
+| matmul_bf16w | cpu-device |  |  | 11.07 ms | 11.1% |
 
 ## Run
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-131829-8cc803cc` |
+| Run | `20261018-140141-3dc48e1e` |
 | Title | Conformance on CpuDevice (every case, bit-exact to CpuRef F32) |
 | Kind | kernels |
 | Status | ok |
-| Started | 2026-10-18T13:18:29.929Z |
-| Ended | 2026-10-18T13:18:33.656Z |
+| Started | 2026-10-18T14:01:41.627Z |
+| Ended | 2026-10-18T14:01:44.522Z |
 | Execution class | cpu-device cpu, .NET 10.0.13, win-x64+avx2+fma |
 | Class id | `00f093f75ec2` |
 | Driver | .NET 10.0.13 |
-| Commit | `558815bd640c4dee35eea5bfc49ee9d65ab113ac` |
+| Commit | `e1f776aec4a8b527cbf32d208e984db6cf2bf398` |
 | Nodes | 1 |
-| Records | 2,717 |
+| Records | 2,900 |
 | Synthetic | no |
 
 | Parameter | Value |
 | --- | --- |
 | backend | cpu-device |
-| cases | 79 |
+| cases | 83 |
 | device | CPU device (emulated kernel catalog) |
 | source | tests/Lrm.Kernels.Conformance (ConformanceHarness) |
 
@@ -109,7 +109,7 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| n0 | creator | cpu-device cpu, .NET 10.0.13, win-x64+avx2+fma | 2,717 | ok | 0 |
+| n0 | creator | cpu-device cpu, .NET 10.0.13, win-x64+avx2+fma | 2,900 | ok | 0 |
 
 ### Log problems
 

@@ -8,35 +8,41 @@
 <text class="t2" x="16" y="45" font-size="12">The start of the same step, close up</text>
 <rect class="f5" x="19" y="57" width="10" height="10" rx="2"/>
 <text class="t2" x="38" y="66" font-size="12">memory</text>
-<line class="grid" x1="87.97" y1="102" x2="87.97" y2="124" stroke-width="1"/>
-<line class="grid" x1="295.1" y1="102" x2="295.1" y2="124" stroke-width="1"/>
-<line class="grid" x1="502.24" y1="102" x2="502.24" y2="124" stroke-width="1"/>
+<line class="grid" x1="101.4" y1="102" x2="101.4" y2="124" stroke-width="1"/>
+<line class="grid" x1="208.72" y1="102" x2="208.72" y2="124" stroke-width="1"/>
+<line class="grid" x1="316.03" y1="102" x2="316.03" y2="124" stroke-width="1"/>
+<line class="grid" x1="423.35" y1="102" x2="423.35" y2="124" stroke-width="1"/>
+<line class="grid" x1="530.67" y1="102" x2="530.67" y2="124" stroke-width="1"/>
+<line class="grid" x1="637.98" y1="102" x2="637.98" y2="124" stroke-width="1"/>
 <text class="t2" x="51.6" y="117" font-size="12" text-anchor="end">d3d12</text>
-<rect class="f5" x="59.6" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
-<rect class="f5" x="84.29" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 4.10 µs</title></rect>
-<rect class="f5" x="115.43" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
-<rect class="f5" x="145.59" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 4.10 µs</title></rect>
-<rect class="f5" x="168.79" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
-<rect class="f5" x="189.15" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
-<rect class="f5" x="207.78" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
-<rect class="f5" x="230.09" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
-<rect class="f5" x="251.94" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 4.10 µs</title></rect>
-<rect class="f5" x="280.53" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 5.12 µs</title></rect>
-<rect class="f5" x="308.19" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
-<rect class="f5" x="337.63" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
-<rect class="f5" x="369.66" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
-<rect class="f5" x="399.65" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 4.10 µs</title></rect>
-<rect class="f5" x="448.18" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
-<rect class="f5" x="478.3" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
-<rect class="f5" x="506.93" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
-<rect class="f5" x="562.12" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
-<rect class="f5" x="596.31" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 4.10 µs</title></rect>
-<rect class="f5" x="630.93" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
-<rect class="f5" x="661.64" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
+<rect class="f5" x="59.6" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 5.12 µs</title></rect>
+<rect class="f5" x="86.85" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 3.07 µs</title></rect>
+<rect class="f5" x="119.2" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 5.12 µs</title></rect>
+<rect class="f5" x="148.26" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 4.10 µs</title></rect>
+<rect class="f5" x="176.08" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 5.12 µs</title></rect>
+<rect class="f5" x="202.5" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
+<rect class="f5" x="229.14" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 5.12 µs</title></rect>
+<rect class="f5" x="274.81" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
+<rect class="f5" x="303.82" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 4.10 µs</title></rect>
+<rect class="f5" x="332.04" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 5.12 µs</title></rect>
+<rect class="f5" x="360.13" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 5.12 µs</title></rect>
+<rect class="f5" x="387.82" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 5.12 µs</title></rect>
+<rect class="f5" x="419.21" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 5.12 µs</title></rect>
+<rect class="f5" x="446.06" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 4.10 µs</title></rect>
+<rect class="f5" x="479.73" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
+<rect class="f5" x="508.79" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 5.12 µs</title></rect>
+<rect class="f5" x="539.47" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
+<rect class="f5" x="572.53" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 5.12 µs</title></rect>
+<rect class="f5" x="601.05" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 4.10 µs</title></rect>
+<rect class="f5" x="634.81" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
+<rect class="f5" x="664.62" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
 <rect class="f5" x="695" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
-<text class="t3" x="87.97" y="141" font-size="11" text-anchor="middle">41.020 s</text>
-<text class="t3" x="295.1" y="141" font-size="11" text-anchor="middle">41.025 s</text>
-<text class="t3" x="502.24" y="141" font-size="11" text-anchor="middle">41.030 s</text>
+<text class="t3" x="101.4" y="141" font-size="11" text-anchor="middle">41.7425 s</text>
+<text class="t3" x="208.72" y="141" font-size="11" text-anchor="middle">41.7450 s</text>
+<text class="t3" x="316.03" y="141" font-size="11" text-anchor="middle">41.7475 s</text>
+<text class="t3" x="423.35" y="141" font-size="11" text-anchor="middle">41.7500 s</text>
+<text class="t3" x="530.67" y="141" font-size="11" text-anchor="middle">41.7525 s</text>
+<text class="t3" x="637.98" y="141" font-size="11" text-anchor="middle">41.7550 s</text>
 <line class="axis" x1="59.6" y1="124" x2="696" y2="124" stroke-width="1"/>
 <text class="t3" x="377.8" y="160" font-size="11" text-anchor="middle">GPU time</text>
 </svg>

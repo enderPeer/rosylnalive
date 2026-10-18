@@ -1,10 +1,10 @@
 # Kernels: Conformance on d3d12
 
 
-**PASS.** All 69 conformance cases pass. Every dispatch is under the 100 ms budget.
+**PASS.** All 73 conformance cases pass. Every dispatch is under the 100 ms budget.
 
-- Conformance cases: 69, failed: 0
-- GPU dispatches: 283, total GPU time 292.58 ms
+- Conformance cases: 73, failed: 0
+- GPU dispatches: 302, total GPU time 319.62 ms
 
 ## Conformance matrix
 
@@ -12,7 +12,7 @@ Passing cases out of all cases, per kernel and backend.
 
 | Kernel | Family | d3d12 |
 | --- | --- | --- |
-| matmul_bf16w | matmul | ✓ 41/41 |
+| matmul_bf16w | matmul | ✓ 45/45 |
 | scale_f32 | elementwise | ✓ 11/11 |
 | bf16_unpack | memory | ✓ 5/5 |
 | args_echo | other | ✓ 2/2 |
@@ -61,39 +61,39 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Kernel | Backend | Layer | Step | Duration | Of budget |
 | --- | --- | ---: | ---: | ---: | ---: |
-| matmul_bf16w | d3d12 |  |  | 28.30 ms | 28.3% |
-| matmul_bf16w | d3d12 |  |  | 26.01 ms | 26.0% |
-| matmul_bf16w | d3d12 |  |  | 23.48 ms | 23.5% |
-| matmul_bf16w | d3d12 |  |  | 23.16 ms | 23.2% |
-| matmul_bf16w | d3d12 |  |  | 22.69 ms | 22.7% |
-| matmul_bf16w | d3d12 |  |  | 13.76 ms | 13.8% |
-| matmul_bf16w | d3d12 |  |  | 12.18 ms | 12.2% |
-| matmul_bf16w | d3d12 |  |  | 9.61 ms | 9.6% |
-| matmul_bf16w | d3d12 |  |  | 9.39 ms | 9.4% |
-| matmul_bf16w | d3d12 |  |  | 9.09 ms | 9.1% |
+| matmul_bf16w | d3d12 |  |  | 25.02 ms | 25.0% |
+| matmul_bf16w | d3d12 |  |  | 23.49 ms | 23.5% |
+| matmul_bf16w | d3d12 |  |  | 23.41 ms | 23.4% |
+| matmul_bf16w | d3d12 |  |  | 22.22 ms | 22.2% |
+| matmul_bf16w | d3d12 |  |  | 19.51 ms | 19.5% |
+| matmul_bf16w | d3d12 |  |  | 17.48 ms | 17.5% |
+| matmul_bf16w | d3d12 |  |  | 16.52 ms | 16.5% |
+| matmul_bf16w | d3d12 |  |  | 11.06 ms | 11.1% |
+| matmul_bf16w | d3d12 |  |  | 10.85 ms | 10.8% |
+| matmul_bf16w | d3d12 |  |  | 10.16 ms | 10.2% |
 
 ## Run
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-132406-e1c048e8` |
+| Run | `20261018-140156-4152f402` |
 | Title | Conformance on d3d12 |
 | Kind | kernels |
 | Status | ok |
-| Started | 2026-10-18T13:24:06.972Z |
-| Ended | 2026-10-18T13:25:28.257Z |
+| Started | 2026-10-18T14:01:56.176Z |
+| Ended | 2026-10-18T14:03:17.173Z |
 | Execution class | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders 2d513d812671 |
 | Class id | `4b1614e079f0` |
 | Driver | 32.0.16.1692 |
-| Commit | `558815bd640c4dee35eea5bfc49ee9d65ab113ac` |
+| Commit | `e1f776aec4a8b527cbf32d208e984db6cf2bf398` |
 | Nodes | 1 |
-| Records | 3,817 |
+| Records | 4,114 |
 | Synthetic | no |
 
 | Parameter | Value |
 | --- | --- |
 | backend | d3d12 |
-| cases | 91 |
+| cases | 95 |
 | device | NVIDIA GeForce RTX 4080 |
 | source | tests/Lrm.Kernels.Conformance (ConformanceHarness) |
 
@@ -101,7 +101,7 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| n0 | creator | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders 2d513d812671 | 3,817 | ok | 0 |
+| n0 | creator | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders 2d513d812671 | 4,114 | ok | 0 |
 
 ### Log problems
 

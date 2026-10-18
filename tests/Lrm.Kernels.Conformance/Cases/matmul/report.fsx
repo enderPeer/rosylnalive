@@ -325,7 +325,7 @@ let build (log: RunLog) : Scope =
                      Title = "lm_head from idle clocks"
                      Subtitle =
                          Invariant.format
-                             $"The slowest and fastest of {samples} dispatches, each alone after {idle} idle, and the fastest warm one; X1 dispatches only the rows left of the band"
+                             $"Cold ({samples} dispatches, each after {idle} idle) and warm; X1's dispatches stay left of the band"
                      XLabel = "m, rows of x (log)"
                      YLabel = "time (log)"
                      XFormat = NumFormat.Pow10
@@ -383,7 +383,7 @@ let build (log: RunLog) : Scope =
                      Title = "Cold dispatches X1 makes"
                      Subtitle =
                          Invariant.format
-                             $"The points nearest the budget that X1 dispatches: the slowest of {samples} dispatches, each after {idle} idle, and the fastest warm one (budget 100 ms)"
+                             $"Slowest of {samples} dispatches, each after {idle} idle, and the fastest warm one; budget 100 ms"
                      CategoryLabel = "shape and m"
                      ValueLabel = "time"
                      ValueFormat = NumFormat.Duration
