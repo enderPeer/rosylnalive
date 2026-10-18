@@ -1,6 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: M1. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
-    <Compile Include="Placeholder.fs" />
+    <Compile Include="OracleNfc.g.fs" />
+    <Compile Include="ByteLevel.fs" />
+    <Compile Include="CharClass.fs" />
+    <Compile Include="Nfc.fs" />
+    <Compile Include="PreTokenizer.fs" />
+    <Compile Include="AddedTokens.fs" />
+    <Compile Include="Bpe.fs" />
+    <Compile Include="TokenizerJson.fs" />
+    <Compile Include="QwenTokenizer.fs" />
   </ItemGroup>
 </Project>
