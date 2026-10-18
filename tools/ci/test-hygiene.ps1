@@ -284,6 +284,7 @@ try {
     $hygOut = Join-Path $tmpRoot 'hygiene-out'
     Test-Script 'hygiene-self-granted-map' 'hygiene.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-self-grant', '-Base', 'main', '-Head', 'ws/O1-fixture-self-grant', '-Labels', '', '-Only', 'ownership,contract-label', '-OutDir', $hygOut) 1 '(?s)(?=.*hygiene\.ownership \| \*\*FAIL\*\*)(?=.*hygiene\.contract_label \| \*\*FAIL\*\*)(?=.*without the .contract-change. label: src/Lrm\.Core/Hash\.fs)'
     Test-Script 'hygiene-unknown-check' 'hygiene.ps1' @('-RepoRoot', $o, '-Only', 'ownership,typo', '-OutDir', $hygOut) 2 'unknown check\(s\) .typo.'
+    Test-Script 'hygiene-single-check' 'hygiene.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-append', '-Base', 'main', '-Head', 'ws/O1-fixture-append', '-Labels', '', '-Only', 'ownership', '-OutDir', $hygOut) 0 'hygiene\.ownership \| pass'
     Git $o @('tag', '-d', 'contracts-v1')
     Test-Script 'ownership-current-branch' 'check-ownership.ps1' @('-RepoRoot', $o, '-Base', 'main') 1 'branch ws/O1-fixture-move \(family O1\)'
 
