@@ -1,6 +1,6 @@
 # ProjectGraph contract
 
-Owner: S0 (S0a). Status: v1. Consumers: every workstream.
+Owner: S0 (S0a; the hygiene layering check and its fixtures are S0b's). Status: v1. Consumers: every workstream.
 
 `docs/project-graph.json` is the only source of ProjectReferences and PackageReferences. Every project, its kind, its owner and its edges are listed there, and nowhere else.
 
@@ -70,6 +70,29 @@ These are checked on the transitive closure of `refs` and `buildRefs`:
 - **CI.** These steps fail the build-test job:
   - `gen-project-graph.ps1 -Check` fails on a rule violation, an unregistered fsproj, an fsproj holding more than file items, a stray `.lrm.targets`, or generated files that are out of date;
   - the locked restore fails on stale lock files.
+- **Hygiene.** The `hygiene` job (ubuntu-latest) runs the same validator as its layering check (`tools/ci/check-layering.ps1`), so a layering break fails both required checks. Its self-test (`tools/ci/test-hygiene.ps1`) edits a temporary copy of the graph inputs and proves that each rule fails as designed; the table below lists the cases.
+
+### Vectors
+
+Each edit below, applied to a copy of the v1 graph, must fail `gen-project-graph.ps1 -Check` with the message shown (`tools/ci/fixtures/layering/cases.json`). The unmodified copy must pass.
+
+| Edit | Fails with |
+| --- | --- |
+| `src/Lrm.Tokenizer/Lrm.Tokenizer.fsproj` gains `<ProjectReference Include="../Lrm.Gpu.Core/Lrm.Gpu.Core.fsproj" />` | `<ProjectReference> is not allowed` |
+| `src/Lrm.Tensor/Lrm.Tensor.fsproj` gains a `<PropertyGroup>` | `<PropertyGroup> is not allowed` |
+| `Lrm.Models.Qwen` refs `Lrm.Gpu.Core` | `rule model-and-cluster-never-gpu: Lrm.Models.Qwen -> Lrm.Gpu.Core` |
+| `Lrm.Cluster` refs `Lrm.Tensor`, and `Lrm.Tensor` refs `Lrm.Gpu.Core` | `rule model-and-cluster-never-gpu: Lrm.Cluster -> Lrm.Tensor -> Lrm.Gpu.Core` (transitive) |
+| `Lrm.Core` refs `Lrm.Telemetry` | `rule core-is-leaf: Lrm.Core -> Lrm.Telemetry`, and a cycle |
+| `Lrm.Gpu.Exec` refs `Lrm.Gpu.CpuDevice` | `rule exec-never-backend` |
+| `Lrm.Serving` refs `Lrm.Gpu.Vulkan` | `rule only-apps-and-tests-wire-backends` |
+| `Lrm.Gpu.Core` refs `Lrm.Gpu.D3D12.Interop` | `rule interop-only-under-its-backend` |
+| `Lrm.Reports` refs `Lrm.Cli` | `rule no-refs-to-executables` |
+| `Lrm.Gpu.Core` buildRefs `Lrm.Shaders.Build` | `rule build-only-edges: … is not an allowed build-only edge` |
+| `Lrm.Tensor` refs `Lrm.Tensor.CpuReference` | `cycle: … Lrm.Tensor -> Lrm.Tensor.CpuReference -> Lrm.Tensor` |
+| a new `src/Lrm.Rogue/Lrm.Rogue.fsproj` on disk | `is not registered in docs/project-graph.json` |
+| a project at `spikes/vk-heap/VkHeapSpike.fsproj` in the graph | `rule no-spikes` |
+| `Lrm.Tokenizer` names the package `Newtonsoft.Json` | `is not in the top-level packages list` |
+| an allowed new edge, `Lrm.Tokenizer` refs `Lrm.Telemetry`, without regenerating | `build/ProjectGraph.g.props is out of date` |
 
 ## Changing the graph
 
