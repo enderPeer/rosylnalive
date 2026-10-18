@@ -13,24 +13,28 @@
 <rect class="fn" x="216.12" y="57" width="10" height="10" rx="2"/>
 <text class="t2" x="235.12" y="66" font-size="12">other</text>
 <line class="grid" x1="93.92" y1="102" x2="93.92" y2="146" stroke-width="1"/>
-<line class="grid" x1="272.12" y1="102" x2="272.12" y2="146" stroke-width="1"/>
-<line class="grid" x1="450.32" y1="102" x2="450.32" y2="146" stroke-width="1"/>
-<line class="grid" x1="628.52" y1="102" x2="628.52" y2="146" stroke-width="1"/>
+<line class="grid" x1="203.42" y1="102" x2="203.42" y2="146" stroke-width="1"/>
+<line class="grid" x1="312.93" y1="102" x2="312.93" y2="146" stroke-width="1"/>
+<line class="grid" x1="422.43" y1="102" x2="422.43" y2="146" stroke-width="1"/>
+<line class="grid" x1="531.93" y1="102" x2="531.93" y2="146" stroke-width="1"/>
+<line class="grid" x1="641.43" y1="102" x2="641.43" y2="146" stroke-width="1"/>
 <text class="t2" x="85.92" y="117" font-size="12" text-anchor="end">d3d12</text>
 <text class="t2" x="85.92" y="139" font-size="12" text-anchor="end">d3d12-warp</text>
-<rect class="f4" x="93.92" y="128" width="22.37" height="14" rx="3"><title>scale_f32: 655.60 µs</title></rect>
-<rect class="f4" x="117.31" y="128" width="1" height="14" rx="0.5"><title>scale_f32: 8.50 µs</title></rect>
-<rect class="fn" x="117.7" y="128" width="8.31" height="14" rx="3"><title>table_echo: 261.20 µs</title></rect>
-<rect class="fn" x="127.03" y="128" width="1" height="14" rx="0.5"><title>table_echo: 5.60 µs</title></rect>
-<rect class="fn" x="127.26" y="128" width="1" height="14" rx="0.5"><title>table_echo: 6.60 µs</title></rect>
-<rect class="fn" x="127.51" y="128" width="1" height="14" rx="0.5"><title>args_echo: 5.60 µs</title></rect>
-<rect class="fn" x="127.72" y="128" width="1" height="14" rx="0.5"><title>groups_echo: 43.00 µs</title></rect>
-<rect class="fn" x="129.35" y="128" width="555.38" height="14" rx="3"><title>groups_echo: 15.61 ms</title></rect>
-<rect class="f5" x="685.79" y="128" width="9.21" height="14" rx="3"><title>bf16_unpack: 286.50 µs</title></rect>
+<rect class="f4" x="93.92" y="128" width="30.16" height="14" rx="3"><title>scale_f32: 711.50 µs</title></rect>
+<rect class="f4" x="125.12" y="128" width="1" height="14" rx="0.5"><title>scale_f32: 15.20 µs</title></rect>
+<rect class="fn" x="125.81" y="128" width="11.44" height="14" rx="3"><title>table_echo: 283.90 µs</title></rect>
+<rect class="fn" x="138.26" y="128" width="1" height="14" rx="0.5"><title>table_echo: 5.40 µs</title></rect>
+<rect class="fn" x="138.61" y="128" width="1" height="14" rx="0.5"><title>table_echo: 6.10 µs</title></rect>
+<rect class="fn" x="138.89" y="128" width="1" height="14" rx="0.5"><title>args_echo: 3.80 µs</title></rect>
+<rect class="fn" x="139.08" y="128" width="1" height="14" rx="0.5"><title>groups_echo: 42.80 µs</title></rect>
+<rect class="fn" x="140.97" y="128" width="542.17" height="14" rx="3"><title>groups_echo: 12.40 ms</title></rect>
+<rect class="f5" x="684.17" y="128" width="10.83" height="14" rx="3"><title>bf16_unpack: 270.10 µs</title></rect>
 <text class="t3" x="93.92" y="163" font-size="11" text-anchor="middle">0</text>
-<text class="t3" x="272.12" y="163" font-size="11" text-anchor="middle">5 ms</text>
-<text class="t3" x="450.32" y="163" font-size="11" text-anchor="middle">10 ms</text>
-<text class="t3" x="628.52" y="163" font-size="11" text-anchor="middle">15 ms</text>
+<text class="t3" x="203.42" y="163" font-size="11" text-anchor="middle">2.5 ms</text>
+<text class="t3" x="312.93" y="163" font-size="11" text-anchor="middle">5.0 ms</text>
+<text class="t3" x="422.43" y="163" font-size="11" text-anchor="middle">7.5 ms</text>
+<text class="t3" x="531.93" y="163" font-size="11" text-anchor="middle">10.0 ms</text>
+<text class="t3" x="641.43" y="163" font-size="11" text-anchor="middle">12.5 ms</text>
 <line class="axis" x1="93.92" y1="146" x2="696" y2="146" stroke-width="1"/>
 <text class="t3" x="394.96" y="182" font-size="11" text-anchor="middle">GPU time</text>
 </svg>

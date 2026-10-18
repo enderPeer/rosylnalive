@@ -21,20 +21,20 @@
 <text class="t3" x="97.04" y="68" font-size="11" text-anchor="start">kernel</text>
 <text class="t3" x="368.52" y="244" font-size="11" text-anchor="middle">GPU time</text>
 <text class="t2" x="89.04" y="95" font-size="12" text-anchor="end">groups_echo</text>
-<path class="f5" d="M97.04 83H567.4Q571.4 83 571.4 87V95Q571.4 99 567.4 99H97.04Z"><title>groups_echo, d3d12-warp: 87.37 ms</title></path>
-<text class="t2" x="577.4" y="95" font-size="11">87.37 ms</text>
-<text class="t2" x="89.04" y="121" font-size="12" text-anchor="end">scale_f32</text>
-<path class="f5" d="M97.04 109H100.26Q103.49 109 103.49 112.22V121.78Q103.49 125 100.26 125H97.04Z"><title>scale_f32, d3d12-warp: 1.19 ms</title></path>
-<text class="t2" x="109.49" y="121" font-size="11">1.19 ms</text>
-<text class="t2" x="89.04" y="147" font-size="12" text-anchor="end">args_echo</text>
-<path class="f5" d="M97.04 135H99.58Q102.12 135 102.12 137.54V148.46Q102.12 151 99.58 151H97.04Z"><title>args_echo, d3d12-warp: 935.40 µs</title></path>
-<text class="t2" x="108.12" y="147" font-size="11">935.40 µs</text>
-<text class="t2" x="89.04" y="173" font-size="12" text-anchor="end">table_echo</text>
-<path class="f5" d="M97.04 161H99.41Q101.78 161 101.78 163.37V174.63Q101.78 177 99.41 177H97.04Z"><title>table_echo, d3d12-warp: 873.00 µs</title></path>
-<text class="t2" x="107.78" y="173" font-size="11">873.00 µs</text>
+<path class="f5" d="M97.04 83H560.57Q564.57 83 564.57 87V95Q564.57 99 560.57 99H97.04Z"><title>groups_echo, d3d12-warp: 86.11 ms</title></path>
+<text class="t2" x="570.57" y="95" font-size="11">86.11 ms</text>
+<text class="t2" x="89.04" y="121" font-size="12" text-anchor="end">table_echo</text>
+<path class="f5" d="M97.04 109H100.6Q104.16 109 104.16 112.56V121.44Q104.16 125 100.6 125H97.04Z"><title>table_echo, d3d12-warp: 1.31 ms</title></path>
+<text class="t2" x="110.16" y="121" font-size="11">1.31 ms</text>
+<text class="t2" x="89.04" y="147" font-size="12" text-anchor="end">scale_f32</text>
+<path class="f5" d="M97.04 135H100.34Q103.64 135 103.64 138.3V147.7Q103.64 151 100.34 151H97.04Z"><title>scale_f32, d3d12-warp: 1.22 ms</title></path>
+<text class="t2" x="109.64" y="147" font-size="11">1.22 ms</text>
+<text class="t2" x="89.04" y="173" font-size="12" text-anchor="end">args_echo</text>
+<path class="f5" d="M97.04 161H99.6Q102.17 161 102.17 163.56V174.44Q102.17 177 99.6 177H97.04Z"><title>args_echo, d3d12-warp: 944.80 µs</title></path>
+<text class="t2" x="108.17" y="173" font-size="11">944.80 µs</text>
 <text class="t2" x="89.04" y="199" font-size="12" text-anchor="end">bf16_unpack</text>
-<path class="f5" d="M97.04 187H99.08Q101.12 187 101.12 189.04V200.96Q101.12 203 99.08 203H97.04Z"><title>bf16_unpack, d3d12-warp: 752.10 µs</title></path>
-<text class="t2" x="107.12" y="199" font-size="11">752.10 µs</text>
+<path class="f5" d="M97.04 187H97.6Q98.15 187 98.15 187.56V202.44Q98.15 203 97.6 203H97.04Z"><title>bf16_unpack, d3d12-warp: 204.80 µs</title></path>
+<text class="t2" x="104.15" y="199" font-size="11">204.80 µs</text>
 <line class="axis" x1="97.04" y1="78" x2="97.04" y2="78" stroke-width="1"/>
 <line class="axis" x1="97.04" y1="78" x2="97.04" y2="208" stroke-width="1"/>
 </svg>
