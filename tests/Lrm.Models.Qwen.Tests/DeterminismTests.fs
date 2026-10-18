@@ -392,6 +392,13 @@ let tests =
                 Expect.throwsT<ArgumentException> (fun () -> Stage.split c [ 28 ] |> ignore) "boundary at the end"
                 Expect.throwsT<ArgumentException> (fun () -> Stage.split c [ 14; 14 ] |> ignore) "repeated"
 
+            testCase "phaseOf: decode is a single-token call after position 0, everything else a prefill"
+            <| fun () ->
+                Expect.equal
+                    ([ 13, 0; 1, 0; 1, 13; 6, 64 ] |> List.map (fun (r, p) -> Forward.phaseOf r p))
+                    [ "prefill"; "prefill"; "decode"; "prefill" ]
+                    "phases"
+
             testCase "the forward is bit-identical at 1, 7 and 32 threads (both modes)"
             <| fun () ->
                 let w = tinyWeights.Value
@@ -486,6 +493,60 @@ let tests =
                     )
 
                 Expect.notEqual (KvCache.digest ops cache) d1 "one bit"
+
+            testCase "KvCache.digest matches the contract's vectors K1 to K4 (computed with Python hashlib)"
+            <| fun () ->
+                // Layers 3 and 4, two valid rows of two columns; rows 2 and 3 hold values the digest must ignore.
+                let k3 = [| 1.0; 2.0; 3.0; 4.0; 99.0; 99.0; 99.0; 99.0 |]
+                let v3 = [| -1.0; -2.0; -3.0; -4.0; 99.0; 99.0; 99.0; 99.0 |]
+                let k4 = [| 0.5; 0.25; 0.0; -0.0; 99.0; 99.0; 99.0; 99.0 |]
+                let v4 = [| 8.0; 16.0; 32.0; 64.0; 99.0; 99.0; 99.0; 99.0 |]
+                let shape = Shape.matrix 4 2
+
+                let f32 (xs: float[]) =
+                    HostTensor.f32 shape (xs |> Array.map float32)
+
+                let c32 =
+                    KvCache<HostTensor<float32>>(3, [| f32 k3; f32 k4 |], [| f32 v3; f32 v4 |], 4, 2, Length = 2)
+
+                let c64 =
+                    KvCache<HostTensor<float>>(
+                        3,
+                        [| HostTensor.f64 shape k3; HostTensor.f64 shape k4 |],
+                        [| HostTensor.f64 shape v3; HostTensor.f64 shape v4 |],
+                        4,
+                        2,
+                        Length = 2
+                    )
+
+                let ops32 = tinyF32 ()
+
+                Expect.equal
+                    (KvCache.digest ops32 c32).Hex
+                    "fe32a706cc6ab5e9638beaa88e0a2b4c9a589195986c4c493bd959b5f5abf893"
+                    "K1"
+
+                Expect.equal
+                    (KvCache.digest (tinyF64 ()) c64).Hex
+                    "a8b5f2a491a1feb61f56e5d9d83be920b69961bc2062350a2127ad8cb386b3c0"
+                    "K2"
+
+                c32.Length <- 1
+
+                Expect.equal
+                    (KvCache.digest ops32 c32).Hex
+                    "6091fb9e00a1d9c26335f9bab1c10d1e157ab531de22bdada3a144d5f9de401f"
+                    "K3"
+
+                let empty =
+                    KvCache.create ops32 (tinyModel ()) (Stage.whole (tinyModel ()).Config) 1
+
+                Expect.equal
+                    (KvCache.digest ops32 empty).Hex
+                    "6512ddd1f2a5f8be07b058ced48aa376662e2564eddaecffbae06c89a9591f9b"
+                    "K4"
+
+                Expect.throwsT<ArgumentOutOfRangeException> (fun () -> c32.Length <- 5) "beyond MaxPos"
 
             testCase "the forward's op sequence depends only on T and pos0, never on the values (a static plan)"
             <| fun () ->

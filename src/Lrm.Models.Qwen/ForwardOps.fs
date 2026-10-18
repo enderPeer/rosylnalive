@@ -178,10 +178,16 @@ type KvCache<'t>(firstLayer: int, keys: 't[], values: 't[], maxPos: int, cols: i
     /// KvHeads * HeadDim.
     member _.Cols = cols
 
-    /// The positions written so far: the next forward starts at a position at most this.
+    /// The positions written so far: the next forward starts at a position at most this. The forward sets it; set it
+    /// directly only to rewind (a replay from an earlier position) or after filling rows another way, such as
+    /// restoring a snapshot. 0 .. MaxPos.
     member _.Length
         with get () = length
-        and internal set v = length <- v
+        and set v =
+            if v < 0 || v > maxPos then
+                raise (ArgumentOutOfRangeException("Length", sprintf "length %d outside 0 .. %d" v maxPos))
+
+            length <- v
 
     /// K of model layer `layer`.
     member _.Keys(layer: int) =

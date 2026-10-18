@@ -163,6 +163,7 @@ module Forward =
             Telemetry.span
                 ForwardSpan
                 [
+                    yield Attr.str TelemetryKeys.Component Component
                     yield Attr.str "phase" phase
                     match options.Step with
                     | Some s -> yield Attr.int "step" s

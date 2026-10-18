@@ -3,11 +3,12 @@
 ///
 ///     lrm generate [--model DIR|tiny|qwen3-0.6b] [--backend cpu-f32[,cpu-f64,...]]
 ///                  (--ids 1,2,3 | --ids-from FILE[:TENSOR] | --prompt TEXT) [--steps 16] [--stop-at-eos] [--margins]
-///                  [--expect FILE:TENSOR] [--case NAME] [--threads 8] [--run-log] [--title TEXT]
+///                  [--expect FILE:TENSOR] [--case NAME] [--threads 8] [--warmup 0] [--run-log] [--title TEXT]
 ///
 /// EOS is ignored unless --stop-at-eos is given (parity runs ignore it). --expect compares the ids with an integer
 /// tensor, such as goldens/tiny/g1/greedy.safetensors:p0.ids.torch32, and records a greedy_match golden.compare check.
-/// --run-log writes a run log of kind inference (LRM_DATA/runs), one node per backend, for `lrm report`.
+/// --run-log writes a run log of kind inference (LRM_DATA/runs), one node per backend, for `lrm report`. --warmup N
+/// runs N untimed, unrecorded greedy steps first, so JIT compilation and the weight copies stay out of the rates.
 module Lrm.Cli.Commands.Generate
 
 open System
@@ -31,6 +32,7 @@ let private usage () =
     eprintfn "  --steps       tokens to generate (default 16)"
     eprintfn "  --stop-at-eos stop after the config's EOS id (parity runs ignore EOS)"
     eprintfn "  --margins     print each step's top-2 logit margin"
+    eprintfn "  --warmup      untimed, unrecorded greedy steps before the measured run (default 0)"
     eprintfn "  --expect      the ids the run must give, as FILE:TENSOR; exit 1 when they differ"
     eprintfn "  --run-log     write a run log of kind inference under LRM_DATA/runs"
     2
@@ -43,6 +45,7 @@ let private values =
         "ids-from"
         "prompt"
         "steps"
+        "warmup"
         "expect"
         "case"
         "threads"
@@ -94,23 +97,24 @@ let private run (argv: string[]) : int =
                 let! backends = Cli.backends (p.Get "backend")
                 let! steps = Cli.intOption p "steps" 16
                 let! threads = Cli.intOption p "threads" (min 8 Environment.ProcessorCount)
+                let! warmup = Cli.intOption p "warmup" 0
 
-                if steps < 1 || threads < 1 then
-                    return! Error "--steps and --threads must be at least 1"
+                if steps < 1 || threads < 1 || warmup < 0 then
+                    return! Error "--steps and --threads must be at least 1, --warmup at least 0"
                 else
                     let! expected =
                         match p.Get "expect" with
                         | None -> Ok None
                         | Some spec -> Cli.idsFrom spec "" |> Result.map (fun ids -> Some(spec, ids))
 
-                    return dir, backends, steps, threads, expected
+                    return dir, backends, steps, threads, warmup, expected
             }
 
         match setup with
         | Error e ->
             eprintfn "lrm generate: %s" e
             2
-        | Ok(dir, backends, steps, threads, expected) ->
+        | Ok(dir, backends, steps, threads, warmup, expected) ->
             try
                 use w = Qwen3Weights.Open dir
 
@@ -152,6 +156,7 @@ let private run (argv: string[]) : int =
                                 "steps", Invariant.i32 steps
                                 "stop_at_eos", (if options.StopAtEos then "true" else "false")
                                 "threads", Invariant.i32 threads
+                                "warmup_steps", Invariant.i32 warmup
                                 "backends", backends |> List.map _.Name |> String.concat ","
                                 "command", "lrm generate"
                             ]
@@ -179,6 +184,9 @@ let private run (argv: string[]) : int =
                                 }
 
                         printfn "%s: %s" f.Name (Cli.describe runner.ExecutionClass)
+
+                        if warmup > 0 then
+                            runner.Greedy(prompt, GreedyOptions.parity (min warmup steps)) |> ignore
 
                         do
                             use _ = host.Install(i, runner.ExecutionClass)
