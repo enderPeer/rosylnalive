@@ -1,6 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: E1. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
+    <Compile Include="Common.fs" />
+    <Compile Include="InterfaceTests.fs" />
+    <Compile Include="DispatchRuleTests.fs" />
+    <Compile Include="EmulatorTests.fs" />
+    <Compile Include="AbiTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 </Project>
