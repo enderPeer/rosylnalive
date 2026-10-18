@@ -176,6 +176,73 @@ let tests =
                         let kl = Rows.kl (ro [| 0.0; 0.0 |]) (ro [| 0.0; log 3.0 |])
                         Expect.floatClose { absolute = 1e-15; relative = 1e-14 } kl (0.5 * log (4.0 / 3.0)) "KL(P||Q)"
 
+                    testCase "logSumExp and KL with infinite logits (masked vocabulary), as torch and Metrics.klRow"
+                    <| fun () ->
+                        // logSumExp: an infinite maximum is the answer (the formula would give inf - inf = NaN).
+                        Expect.equal (Rows.logSumExp (ro [| 1.0; infinity |])) infinity "+inf"
+                        Expect.equal (Rows.logSumExp (ro [| -infinity; -infinity |])) -infinity "all -inf"
+                        Expect.equal (Rows.logSumExp (ro [| -infinityf; 0.0f |])) 0.0f "-inf adds nothing"
+                        Expect.isTrue (Double.IsNaN(Rows.logSumExp (ro [| infinity; nan |]))) "NaN beats +inf"
+                        Expect.isTrue (Double.IsNaN(Rows.logSumExp (ro [| nan; -infinity |]))) "NaN first"
+
+                        // KL: a logit masked in both rows contributes 0 * log 0 = 0.
+                        let p = [| 1.0; -infinity; 0.0 |]
+                        let q = [| 1.0; -infinity; 0.5 |]
+                        let finite = Rows.kl (ro p) (ro q)
+                        Expect.isTrue (Double.IsFinite finite && finite > 0.0) "finite and positive"
+
+                        Expect.equal
+                            finite
+                            (Rows.kl (ro [| 1.0; 0.0 |]) (ro [| 1.0; 0.5 |]))
+                            "the masked entry adds nothing"
+
+                        Expect.floatClose
+                            { absolute = 1e-15; relative = 1e-13 }
+                            finite
+                            (Metrics.klRow (ro q) (ro p))
+                            "equal to Metrics.klRow (candidate q, reference p)"
+
+                        let f32 =
+                            Rows.kl (ro [| 1.0f; -infinityf; 0.0f |]) (ro [| 1.0f; -infinityf; 0.5f |])
+
+                        Expect.isTrue (Single.IsFinite f32) "F32 too"
+
+                        Expect.equal
+                            (Rows.kl (ro [| 0.0; 0.0 |]) (ro [| 0.0; -infinity |]))
+                            infinity
+                            "P has mass where Q has none"
+
+                        Expect.isTrue (Double.IsNaN(Rows.kl (ro [| 0.0; nan |]) (ro [| 0.0; 0.0 |]))) "NaN spreads"
+
+                        let kl =
+                            CpuRef.kl
+                                CpuExec.Serial
+                                (m 1 3 [| 1.0f; -infinityf; 0.0f |])
+                                (m 1 3 [| 1.0f; -infinityf; 0.5f |])
+
+                        Expect.isTrue (Single.IsFinite kl.Data[0]) "CpuRef.kl"
+
+                    testCase "the row ops refuse rank 0 and 1 instead of reading [n] as n rows of one"
+                    <| fun () ->
+                        let v = HostTensor.f32 (Shape.vector 3) [| 1.0f; 5.0f; 2.0f |]
+                        let s = HostTensor.f32 Shape.Scalar [| 1.0f |]
+
+                        for label, f in
+                            [
+                                "argmax", (fun (t: HostTensor<float32>) -> CpuRef.argmax t |> ignore)
+                                "argmaxRows", (fun t -> CpuRef.argmaxRows t |> ignore)
+                                "softmax", (fun t -> CpuRef.softmax CpuExec.Serial t |> ignore)
+                                "logSumExp", (fun t -> CpuRef.logSumExp CpuExec.Serial t |> ignore)
+                                "topK", (fun t -> CpuRef.topK t 1 |> ignore)
+                                "kl", (fun t -> CpuRef.kl CpuExec.Serial t t |> ignore)
+                            ] do
+                            Expect.throwsT<ArgumentException> (fun () -> f v) (label + " of a vector")
+                            Expect.throwsT<ArgumentException> (fun () -> f s) (label + " of a scalar")
+
+                        // The same data as [1, 3] is one row.
+                        Expect.sequenceEqual (CpuRef.argmax (m 1 3 v.Data)) [| 1 |] "[1, 3]"
+                        Expect.sequenceEqual (CpuRef.argmax (m 3 1 v.Data)) [| 0; 0; 0 |] "[3, 1] is three rows of one"
+
                     testCase "argmax takes the lowest index on ties and raises on NaN"
                     <| fun () ->
                         Expect.equal (Rows.argmax (ro [| 1.0f; 3.0f; 3.0f |])) 1 "tie"

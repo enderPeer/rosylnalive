@@ -135,6 +135,34 @@ let tests =
                 let r = Compare.relL2 0.0 [] (f32 [ 0.5f; 0.25f ]) (f64 [ 0.5; 0.25 ])
                 Expect.isTrue r.Passed "f32 widened exactly"
 
+            testCase "row metrics refuse rank 0 and 1, so a logits vector cannot pass KL trivially"
+            <| fun () ->
+                let a = f64 [ 1.0; 2.0; 3.0; 4.0 ]
+                let b = f64 [ 4.0; 3.0; 2.0; 1.0 ]
+                let s = HostTensor.f64 Shape.Scalar [| 1.0 |]
+
+                for label, f in
+                    [
+                        "kl", (fun (x: HostTensor<float>) (y: HostTensor<float>) -> Compare.kl 1e-7 [] x y |> ignore)
+                        "topKAgreement", (fun x y -> Compare.topKAgreement 1 1.0 [] x y |> ignore)
+                        "top2Margin", (fun x _ -> Compare.top2Margin 0.0 [] x |> ignore)
+                    ] do
+                    Expect.throwsT<ArgumentException> (fun () -> f a b) (label + " of vectors")
+                    Expect.throwsT<ArgumentException> (fun () -> f s s) (label + " of scalars")
+
+                // The same data as one row [1, 4] is measured, and fails the KL bound.
+                let r =
+                    Compare.kl 1e-7 [] (rows 1 [ 1.0; 2.0; 3.0; 4.0 ]) (rows 1 [ 4.0; 3.0; 2.0; 1.0 ])
+
+                Expect.isFalse r.Passed "[1, 4] fails"
+                Expect.isGreaterThan r.Measured 1.0 "KL of reversed rows"
+
+            testCase "klRow skips masked logits (-inf in both rows) and stays finite"
+            <| fun () ->
+                let k = Metrics.klRow (ro [ 1.0; -infinity; 0.5 ]) (ro [ 1.0; -infinity; 0.0 ])
+                Expect.isTrue (Double.IsFinite k && k > 0.0) "finite"
+                Expect.equal k (Metrics.klRow (ro [ 1.0; 0.5 ]) (ro [ 1.0; 0.0 ])) "the masked entry adds nothing"
+
             Props.testProperty "relL2 is 0 for identical inputs and invariant under power-of-two scaling"
             <| fun (xs: NormalFloat list) (e: int) ->
                 let a = xs |> List.map (fun x -> Math.IEEERemainder(x.Get, 1e6)) |> Array.ofList

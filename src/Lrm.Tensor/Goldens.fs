@@ -143,7 +143,12 @@ type Goldens =
 
     static member private Str(o: JsonElement, key: string, where: string) =
         match o.TryGetProperty key with
-        | true, v when v.ValueKind = JsonValueKind.String -> v.GetString()
+        | true, v when v.ValueKind = JsonValueKind.String ->
+            // System.Text.Json decodes lazily: invalid UTF-8 or a lone surrogate escape raises here.
+            try
+                v.GetString()
+            with :? InvalidOperationException as e ->
+                Goldens.Fail(sprintf "%s: '%s' is not valid Unicode: %s" where key e.Message)
         | _ -> Goldens.Fail(sprintf "%s: '%s' is missing or not a string" where key)
 
     /// Opens goldens/<set>/<version> (the folder holding manifest.json). Validates the manifest: schema lrm.golden/1,

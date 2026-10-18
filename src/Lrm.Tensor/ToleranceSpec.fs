@@ -153,6 +153,28 @@ module ToleranceSpec =
                 fail (sprintf "%s: %s is not a non-negative finite number" where (e.GetRawText()))
         | _ -> fail (sprintf "%s: %s is not a number" where (e.GetRawText()))
 
+    /// Raises for a duplicate key in any object of the tree, arrays included (the contract's "a duplicate key
+    /// anywhere"): JsonDocument keeps every duplicate, and TryGetProperty would silently return the last one.
+    let rec private noDuplicates (path: string) (e: JsonElement) =
+        match e.ValueKind with
+        | JsonValueKind.Object ->
+            let seen = Collections.Generic.HashSet<string>(StringComparer.Ordinal)
+
+            for p in e.EnumerateObject() do
+                if not (seen.Add p.Name) then
+                    fail (
+                        sprintf "duplicate key '%s' %s" p.Name (if path = "" then "at the top level" else "in " + path)
+                    )
+
+                noDuplicates (if path = "" then p.Name else path + "." + p.Name) p.Value
+        | JsonValueKind.Array ->
+            let mutable i = 0
+
+            for x in e.EnumerateArray() do
+                noDuplicates (Invariant.format $"{path}[{i}]") x
+                i <- i + 1
+        | _ -> ()
+
     let private objectOf (where: string) (e: JsonElement) =
         if e.ValueKind <> JsonValueKind.Object then
             fail (sprintf "%s is not an object" where)
@@ -214,9 +236,7 @@ module ToleranceSpec =
             metric, { Bound = bound; ERef = eRef })
         |> Map.ofList
 
-    /// Parses and validates tolerances.json text: the schema, known pairs and metrics, positive finite bounds, and for
-    /// every pair with a rule, bound = clamp(k * e_ref, floor, 10 * floor) exactly for every entry.
-    let parse (json: string) : ToleranceSpec =
+    let private parseCore (json: string) : ToleranceSpec =
         let doc =
             try
                 JsonDocument.Parse json
@@ -225,6 +245,11 @@ module ToleranceSpec =
 
         use doc = doc
         let root = doc.RootElement.Clone()
+
+        if root.ValueKind <> JsonValueKind.Object then
+            fail "the file is not a JSON object"
+
+        noDuplicates "" root
 
         let str (key: string) =
             match root.TryGetProperty key with
@@ -265,6 +290,10 @@ module ToleranceSpec =
                     field "rule"
                     |> Option.map (fun r ->
                         let rf = objectOf (at + ".rule") r
+
+                        for f in rf do
+                            if f.Name <> "k" && f.Name <> "floors" then
+                                fail (sprintf "%s.rule: unknown field '%s'" at f.Name)
 
                         let k =
                             match rf |> List.tryFind (fun f -> f.Name = "k") with
@@ -315,6 +344,18 @@ module ToleranceSpec =
                 | true, g -> Some g
                 | _ -> None
         }
+
+    /// Parses and validates tolerances.json text: the schema, known pairs and metrics, positive finite bounds, no
+    /// duplicate key anywhere, and for every pair with a rule, bound = clamp(k * e_ref, floor, 10 * floor) exactly for
+    /// every entry. Every violation raises ToleranceFormatException.
+    let parse (json: string) : ToleranceSpec =
+        try
+            parseCore json
+        with
+        // System.Text.Json decodes keys and strings lazily: a lone surrogate escape raises InvalidOperationException
+        // when it is read, and a lone surrogate in the text itself raises ArgumentException when it is transcoded.
+        | :? InvalidOperationException as e -> fail ("the file is not valid Unicode: " + e.Message)
+        | :? ArgumentException as e -> fail ("the file is not valid Unicode: " + e.Message)
 
     /// Loads goldens/<set>/<version>/tolerances.json (or any path).
     let load (path: string) = parse (File.ReadAllText path)
