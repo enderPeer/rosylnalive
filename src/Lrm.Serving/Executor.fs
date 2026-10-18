@@ -30,6 +30,9 @@ type StageExecutorOptions =
         Threads: int
         /// Allow IFastRebuild.Rebuild on the chain states (off by default: exact replay is the primary rebuild).
         FastRebuild: bool
+        /// The most rows of one fast-rebuild forward; 0 for the automatic limit (MaxContext, and on the head stage at
+        /// most 64 MiB of logits). A unit with more rows is a forward of its own.
+        RebuildChunkRows: int
         /// Milliseconds each unit sleeps before it runs, to give a test run a cost; 0 for none. It changes no value.
         CostMs: int
     }
@@ -46,6 +49,7 @@ module StageExecutorOptions =
             MaxChains = 16
             Threads = min 8 Environment.ProcessorCount
             FastRebuild = false
+            RebuildChunkRows = 0
             CostMs = 0
         }
 
@@ -69,8 +73,8 @@ module StageExecutorOptions =
                 Error "at least one chain"
             elif o.Threads < 1 then
                 Error "at least one thread"
-            elif o.CostMs < 0 then
-                Error "a negative cost"
+            elif o.CostMs < 0 || o.RebuildChunkRows < 0 then
+                Error "a negative cost or rebuild chunk"
             else
                 Ok o
 
@@ -340,7 +344,9 @@ type QwenStageExecutor<'t>(ops: IForwardOps<'t>, model: Qwen3Model, modelId: Con
 
     /// The most rows of one rebuild forward: MaxContext, and on the head stage at most 64 MiB of logits.
     let rebuildRows (stage: Stage) =
-        if Stage.hasHead c stage then
+        if options.RebuildChunkRows > 0 then
+            options.RebuildChunkRows
+        elif Stage.hasHead c stage then
             max 1 (min options.MaxContext ((64 * 1024 * 1024) / (c.Vocab * DType.size dtype)))
         else
             options.MaxContext

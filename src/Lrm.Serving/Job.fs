@@ -309,7 +309,7 @@ type StageArgs =
 [<RequireQualifiedAccess>]
 module StageArgs =
     /// The canonical bytes: model id (32 raw bytes); layers, first layer, last layer, pos0, rows (u32); head (bool);
-    /// the dtype code (u8). 55 bytes.
+    /// the dtype code (u8). 54 bytes.
     let encode (a: StageArgs) : byte[] =
         Canonical.encode (fun w ->
             w.Id a.Model

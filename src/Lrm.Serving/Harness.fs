@@ -396,14 +396,24 @@ module ServingHarness =
                     }
                 ]
 
-        // A partition ends before the last steps: a node that is out while the final units are accepted, after it was
-        // assigned them, is never engaged again as a drain verifier (C1's pickVerifier counts it as asked by member id
-        // across memberships), so with only one other replica left the run would end Unverified with every digest equal.
+        // A partition never takes away the second confirmation of a final unit. C1's drain (pickVerifier) counts a
+        // member asked in an earlier membership as asked by its id, so a node that is partitioned while it owes the
+        // final unit of a chain, expelled and rejoined, is never engaged again as a verifier; with no other replica
+        // left the run would end Unverified although every digest is equal (StagePipeline, "Limits"; requested of C1).
+        // So the partitioned node is any node of a one-replica split, a stage-0 replica of bothlost5 (the spare can
+        // verify stage 0), and in replicated3 only when the killed node comes back. Partitions start early and are
+        // short, so they end before the last steps.
         let partition =
-            let on = r.NextBelow 2u = 1u
-            let n = 1 + int (r.NextBelow(uint32 nodes.Length))
+            let draw = r.NextBelow 2u = 1u
+            let pick = 1 + int (r.NextBelow(uint32 nodes.Length))
             let from = startMs + ms 100 700
             let length = ms 300 1000
+
+            let n, on =
+                match t with
+                | Topology.Split2 -> pick, draw
+                | Topology.Replicated3 -> pick, draw && kills |> List.forall (fun k -> k.RestartAfterMs.IsSome)
+                | Topology.BothLost5 -> 1 + (pick % 2), draw
 
             if on then
                 [ Fault.Partition(uint64 n, Ns.ms (int64 from), Ns.ms (int64 (from + length))) ]
