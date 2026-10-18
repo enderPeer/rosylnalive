@@ -1,0 +1,68 @@
+<Project>
+  <!--
+    LrmCompileShaders (ShaderBuildAndSourceConvention contract, docs/contracts/shader-build.md). Owner: R4.
+
+    Runs `Lrm.Shaders.Build compile` (built first through the build-only ProjectReference):
+      - only the pinned DXC, $(LrmDxcExe), checked by the exact version line dxc prints and the SHA-256 pins of
+        tools/bootstrap/toolchain.json; a missing or different DXC fails the build;
+      - every catalog kernel whose source exists, linted, then compiled to DXIL (cs_6_6) and SPIR-V (vulkan1.3);
+      - rootsig/rootsig.hlsl to rootsig.bin, which must equal the canonical bytes;
+      - shaders.manifest.json with each blob's SHA-256 and the ShaderSetHash of each target.
+    Everything is embedded as lrm.shaders/<path> and read back by Lrm.Shaders.Shaders.embedded.
+
+    Incremental: the target is skipped when no input changed (a no-change rebuild never starts dxc), and the tool
+    reuses every blob whose inputs are unchanged (content-keyed cache in $(IntermediateOutputPath)shaders/).
+  -->
+  <ItemGroup>
+    <LrmShaderInput Include="$(MSBuildThisFileDirectory)include/**/*.hlsli" />
+    <LrmShaderInput Include="$(MSBuildThisFileDirectory)hlsl/**/*.hlsl" />
+    <LrmShaderInput Include="$(MSBuildThisFileDirectory)hlsl/**/*.hlsli" />
+    <LrmShaderInput Include="$(MSBuildThisFileDirectory)rootsig/rootsig.hlsl" />
+    <LrmShaderInput Include="$(LrmRepoRoot)src/Lrm.Gpu.Core/Catalog/catalog.json" />
+    <LrmShaderInput Include="$(LrmRepoRoot)src/Lrm.Gpu.Core/Kernels.g.fs" />
+    <LrmShaderInput Include="$(LrmRepoRoot)tools/bootstrap/toolchain.json" />
+  </ItemGroup>
+
+  <Target Name="LrmCheckDxc">
+    <Error Condition="!Exists('$(LrmDxcExe)')"
+           Text="The pinned DXC $(LrmDxcVersion) is missing at $(LrmDxcExe). Run: pwsh tools/bootstrap/bootstrap.ps1 (ShaderBuildAndSourceConvention)." />
+  </Target>
+
+  <Target Name="LrmResolveShaderTool" DependsOnTargets="ResolveProjectReferences">
+    <MSBuild Projects="@(ProjectReference)" Condition="'%(ProjectReference.LrmBuildOnly)' == 'true'" Targets="GetTargetPath">
+      <Output TaskParameter="TargetOutputs" PropertyName="LrmShadersBuildDll" />
+    </MSBuild>
+    <Error Condition="'$(LrmShadersBuildDll)' == '' or !Exists('$(LrmShadersBuildDll)')"
+           Text="Lrm.Shaders.Build was not built (expected '$(LrmShadersBuildDll)')." />
+    <PropertyGroup>
+      <LrmShadersOut>$([System.IO.Path]::GetFullPath('$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'shaders'))'))</LrmShadersOut>
+      <LrmDotnet>$(DOTNET_HOST_PATH)</LrmDotnet>
+      <LrmDotnet Condition="'$(LrmDotnet)' == ''">dotnet</LrmDotnet>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="LrmCompileShadersCore"
+          DependsOnTargets="LrmCheckDxc;LrmResolveShaderTool"
+          Inputs="@(LrmShaderInput);$(LrmShadersBuildDll);$(LrmDxcExe)"
+          Outputs="$(LrmShadersOut)/shaders.manifest.json">
+    <Exec Command="&quot;$(LrmDotnet)&quot; &quot;$(LrmShadersBuildDll)&quot; compile --repo &quot;$(LrmRepoRoot).&quot; --out &quot;$(LrmShadersOut)&quot; --dxc &quot;$(LrmDxcExe)&quot; --dxc-version &quot;$(LrmDxcVersionOutput)&quot; --toolchain &quot;$(LrmRepoRoot)tools/bootstrap/toolchain.json&quot;" />
+    <Touch Files="$(LrmShadersOut)/shaders.manifest.json" />
+  </Target>
+
+  <Target Name="LrmCompileShaders"
+          DependsOnTargets="LrmCompileShadersCore"
+          BeforeTargets="PrepareResourceNames"
+          Condition="'$(LrmIsSpike)' != 'true'">
+    <!-- A helper item type first: unqualified %(Filename) on EmbeddedResource itself would batch over every
+         EmbeddedResource item and cross the logical names. -->
+    <ItemGroup>
+      <_LrmShaderFile Include="$(LrmShadersOut)/shaders.manifest.json;$(LrmShadersOut)/rootsig.bin" LrmPrefix="lrm.shaders/" />
+      <_LrmShaderFile Include="$(LrmShadersOut)/dxil/*.dxil" LrmPrefix="lrm.shaders/dxil/" />
+      <_LrmShaderFile Include="$(LrmShadersOut)/spirv/*.spv" LrmPrefix="lrm.shaders/spirv/" />
+      <EmbeddedResource Include="@(_LrmShaderFile)"
+                        LogicalName="%(_LrmShaderFile.LrmPrefix)%(_LrmShaderFile.Filename)%(_LrmShaderFile.Extension)"
+                        WithCulture="false" Type="Non-Resx" />
+      <FileWrites Include="$(LrmShadersOut)/**/*" />
+    </ItemGroup>
+  </Target>
+</Project>
