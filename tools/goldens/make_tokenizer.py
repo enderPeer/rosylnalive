@@ -32,6 +32,7 @@ import unicodedata
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import common as c  # noqa: E402  (runs the process guards first)
+from verify_goldens import SET_BUDGETS  # noqa: E402  (the committed-size budgets CI checks)
 
 SET, VERSION = "tokenizer", "g1"
 OUT_REL = f"goldens/{SET}/{VERSION}"
@@ -630,8 +631,15 @@ def main() -> int:
     files["manifest.json"] = c.json_bytes(man)
     for cat, n in sorted(by_cat.items()):
         log.gauge("goldens.tokenizer.cases", n, "count", category=cat)
+    for kind, n in sorted(by_kind.items()):
+        log.gauge("goldens.tokenizer.case_kinds", n, "count", kind=kind)
+    log.check("goldens.tokenizer.transformers", not cross["differ"], agree=cross["agree"], differ=len(cross["differ"]),
+              tokenizer_class=cross["class"])
+    log.check("goldens.double_run_identical", dbl["identical"], set="tokenizer", threads=dbl["threads"])
     total = sum(len(b) for b in files.values())
-    log.gauge("goldens.set_bytes", total, "B", set="tokenizer")
+    for n, b in sorted(files.items()):
+        log.gauge("goldens.file_bytes", len(b), "B", file=f"{OUT_REL}/{n}")
+    log.gauge("goldens.set_bytes", total, "B", set="tokenizer", budget=SET_BUDGETS["tokenizer"])
     print(f"{len(corpus.cases)} cases ({', '.join(f'{k} {v}' for k, v in sorted(by_kind.items()))}); "
           f"{len(by_cat)} categories; {total} bytes; transformers agrees on {cross['agree']}")
     if args.check:

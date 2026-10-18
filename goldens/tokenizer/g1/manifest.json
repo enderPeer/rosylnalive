@@ -239,7 +239,7 @@
     "command": "pwsh tools/goldens/run.ps1 make_tokenizer.py",
     "files": {
       "tools/goldens/common.py": "3bdb6fa52838e4d298414a4d5d425d95a9b9167bfc9a8c5f215d8fc1aeb97186",
-      "tools/goldens/make_tokenizer.py": "e1714d185cd31d0cc26ceaa8d6f1954547bd0b1fcc492906642eb249247bc309",
+      "tools/goldens/make_tokenizer.py": "b853fe91b405cbfa13f5b4605557fcb29665ddeff6b78c0f83d09c78286f254e",
       "tools/goldens/tokenizer/csharp.txt": "66904bdc441535cad637c72318b1bf25eaa428bcf3ef5dfd9811d1f5831c959d",
       "tools/goldens/tokenizer/il.txt": "88703a9a3c55912cb1da3150d1a87a5ae452d6db4cc21eadb94cf4d322c52689",
       "tools/goldens/tokenizer/multilingual.txt": "b26d6bc4293e1984d0cbfb675094e6db15078ac5025be65cd56f379957c4614f",

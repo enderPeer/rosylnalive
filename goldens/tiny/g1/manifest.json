@@ -177,7 +177,7 @@
     "command": "pwsh tools/goldens/run.ps1 make_tiny.py",
     "files": {
       "tools/goldens/common.py": "3bdb6fa52838e4d298414a4d5d425d95a9b9167bfc9a8c5f215d8fc1aeb97186",
-      "tools/goldens/make_tiny.py": "dc37c2c19dfb1e968641bf50c2c474b2a0106b3e484edde29a71d6ccec8e3f08",
+      "tools/goldens/make_tiny.py": "3d633d754fb038c12eac6c5a05a9439e3b600f26e717165ed6e921d28ebced71",
       "tools/goldens/selftest.py": "b1cdc002c6146855502436cc11c8a20a075518ad0f0596af9cb374ca43360af3",
       "tools/goldens/tiny_model.py": "2665abe710c4f31ace7132be33f08bc0ab09729d26df5dd7fed0886ae9b9b0b3"
     }
