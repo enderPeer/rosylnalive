@@ -350,11 +350,7 @@ module Markdown =
                         match figure label target with
                         | Some html -> sb.Append html |> ignore
                         | None -> sb.Append(Html.text label) |> ignore
-                    elif
-                        target.StartsWith('#')
-                        || not (target.Contains ':')
-                        || target.StartsWith("file:", StringComparison.Ordinal)
-                    then
+                    elif Html.isLocalHref target then
                         sb
                             .Append("<a href=\"")
                             .Append(Html.attr target)
@@ -363,7 +359,8 @@ module Markdown =
                             .Append("</a>")
                         |> ignore
                     else
-                        // A link to the network stays text: the dashboard never points outside the machine.
+                        // A link to the network (a scheme, a network path such as //host or \\host, or anything a
+                        // browser could turn into one) stays text: the dashboard never points outside the machine.
                         sb
                             .Append(inlineHtml figure label)
                             .Append(" (<code>")

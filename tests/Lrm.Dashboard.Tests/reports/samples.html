@@ -7,9 +7,9 @@
 <title>LRM dashboard</title>
 <script>try{var m=localStorage.getItem('lrm.dashboard.theme');if(m==='light'||m==='dark')document.documentElement.setAttribute('data-theme',m)}catch(e){}</script>
 <style>
-:root{--bg:#f4f3f0;--surface:#fcfcfb;--surface2:#f0efec;--border:#e6e5e0;--ink:#0b0b0b;--ink2:#52514e;--muted:#6f6e69;--link:#1c5cab;color-scheme:light;--good:#0ca30c;--warn:#fab219;--serious:#ec835a;--crit:#d03b3b}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#111110;--surface:#1a1a19;--surface2:#242423;--border:#2c2c2a;--ink:#f0efec;--ink2:#c3c2b7;--muted:#898781;--link:#86b6ef;color-scheme:dark}}
-:root[data-theme=dark]{--bg:#111110;--surface:#1a1a19;--surface2:#242423;--border:#2c2c2a;--ink:#f0efec;--ink2:#c3c2b7;--muted:#898781;--link:#86b6ef;color-scheme:dark}
+:root{--bg:#f4f3f0;--surface:#fcfcfb;--surface2:#f0efec;--border:#e6e5e0;--ink:#0b0b0b;--ink2:#52514e;--muted:#6a6964;--link:#1c5cab;color-scheme:light;--good:#0ca30c;--warn:#fab219;--serious:#ec835a;--crit:#d03b3b}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#111110;--surface:#1a1a19;--surface2:#242423;--border:#2c2c2a;--ink:#f0efec;--ink2:#c3c2b7;--muted:#918f89;--link:#86b6ef;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#111110;--surface:#1a1a19;--surface2:#242423;--border:#2c2c2a;--ink:#f0efec;--ink2:#c3c2b7;--muted:#918f89;--link:#86b6ef;color-scheme:dark}
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
@@ -18,18 +18,25 @@ a{color:var(--link)}
 code{font:.88em ui-monospace,SFMono-Regular,Consolas,monospace;background:var(--surface2);padding:0 .25em;border-radius:4px}
 pre{overflow-x:auto;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
 pre code{background:none;padding:0}
-a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,figure:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,figure:focus-visible,h2:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+h2[tabindex]:focus:not(:focus-visible){outline:none}
+.d-skip{position:absolute;left:16px;top:-48px;z-index:3;background:var(--surface);color:var(--link);border:1px solid var(--border);border-radius:6px;padding:4px 10px}
+.d-skip:focus{top:8px}
 .d-top{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--border)}
 .d-bar,.d-nav,main,footer{max-width:1120px;margin:0 auto;padding-left:16px;padding-right:16px}
 .d-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding-top:10px;padding-bottom:6px}
-.d-brand{font-weight:650;font-size:17px;color:var(--ink);text-decoration:none}
+.d-brand{font-weight:650;font-size:17px;line-height:1.3;margin:0}
+.d-brand a{color:var(--ink);text-decoration:none}
 .d-sum{color:var(--muted);font-size:13px}
 .d-live{font-size:13px;color:var(--ink2);display:inline-flex;align-items:center;gap:6px}
 .d-live::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--good)}
+.d-live[data-paused]::before{background:var(--warn)}
+.d-live[data-paused]::after{content:"(waiting: a field has focus, a chart is zoomed or text is selected)";color:var(--muted)}
 #d-theme{margin-left:auto;font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 10px;cursor:pointer}
-.d-nav{display:flex;flex-wrap:wrap;gap:6px;padding-top:2px;padding-bottom:10px}
-.d-nav a{font-size:13px;color:var(--ink2);text-decoration:none;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:1px 10px;white-space:nowrap}
-.d-nav a b{font-weight:600;color:var(--muted);margin-left:5px}
+.d-nav{position:relative;display:flex;flex-wrap:wrap;gap:6px;padding-top:2px;padding-bottom:10px}
+.d-nav a{display:inline-flex;max-width:100%;min-width:0;font-size:13px;color:var(--ink2);text-decoration:none;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:1px 10px;white-space:nowrap}
+.d-nav a span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.d-nav a b{flex:none;font-weight:600;color:var(--muted);margin-left:5px}
 .d-nav a[aria-current]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .d-nav a[aria-current] b{color:inherit}
 main{padding-top:12px;padding-bottom:40px}
@@ -44,7 +51,8 @@ blockquote p{margin:4px 0}
 .d-crumbs{font-size:13px;color:var(--muted);margin:0}
 .d-crumbs a{color:var(--muted)}
 .d-tags{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:6px 0 0;font-size:13px}
-.d-tag{font-size:12px;border:1px solid var(--border);background:var(--surface);border-radius:4px;padding:0 6px;color:var(--ink2);white-space:nowrap}
+.d-tag{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;border:1px solid var(--border);background:var(--surface);border-radius:4px;padding:0 6px;color:var(--ink2);white-space:nowrap}
+.d-small{font-size:12px;margin:-6px 0 10px}
 .d-st{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .d-st::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
 .d-st-ok::before{background:var(--good)}.d-st-failed::before{background:var(--crit)}
@@ -88,7 +96,8 @@ figure.d-chart.d-zoom{cursor:zoom-out}figure.d-chart.d-zoom svg{max-width:none}
 main.d-js .d-view{display:none!important}
 main.d-js .d-view.d-on{display:block!important}
 @media (max-width:900px){.d-pair-grid{grid-template-columns:1fr}}
-@media (max-width:640px){h2{font-size:19px}h3{font-size:17px}.d-hint{display:block}.d-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.d-rows thead{display:none}.d-rows,.d-rows tbody,.d-rows tr,.d-rows td{display:block;width:100%}.d-rows{background:none}.d-rows tr{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin:0 0 8px;padding:6px 10px}.d-rows td{border:0;padding:1px 0;text-align:left!important;overflow-wrap:anywhere}.d-rows td::before{color:var(--muted);font-size:12px}.d-rows td:nth-child(1)::before{content:"Started "}.d-rows td:nth-child(2)::before{content:"Run "}.d-rows td:nth-child(3)::before{content:"Kind "}.d-rows td:nth-child(4)::before{content:"Status "}.d-rows td:nth-child(5)::before{content:"Duration "}.d-rows td:nth-child(6)::before{content:"Nodes "}.d-rows td:nth-child(7)::before{content:"Class "}.d-rows td:nth-child(8)::before{content:"Title "}.d-nokind td:nth-child(1)::before{content:"Started "}.d-nokind td:nth-child(2)::before{content:"Run "}.d-nokind td:nth-child(3)::before{content:"Status "}.d-nokind td:nth-child(4)::before{content:"Duration "}.d-nokind td:nth-child(5)::before{content:"Nodes "}.d-nokind td:nth-child(6)::before{content:"Class "}.d-nokind td:nth-child(7)::before{content:"Title "}}
+@media (max-height:500px){.d-top{position:static}}
+@media (max-width:640px){.d-top{position:static}.d-bar{padding-top:8px;padding-bottom:4px;gap:4px 12px}.d-nav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;padding-bottom:8px}.d-nav a{flex:none}h2{font-size:19px}h3{font-size:17px}.d-hint{display:block}.d-tiles{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:10px 0}.d-tile{padding:5px 8px}.d-tile span{font-size:11.5px}.d-tile b{font-size:15px}.d-rows thead{display:none}.d-rows,.d-rows tbody,.d-rows tr,.d-rows td{display:block;width:100%}.d-rows{background:none}.d-rows tr{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin:0 0 8px;padding:6px 10px}.d-rows td{border:0;padding:1px 0;text-align:left!important;overflow-wrap:anywhere}.d-rows td::before{color:var(--muted);font-size:12px}.d-rows td:nth-child(1)::before{content:"Started "}.d-rows td:nth-child(2)::before{content:"Run "}.d-rows td:nth-child(3)::before{content:"Kind "}.d-rows td:nth-child(4)::before{content:"Status "}.d-rows td:nth-child(5)::before{content:"Duration "}.d-rows td:nth-child(6)::before{content:"Nodes "}.d-rows td:nth-child(7)::before{content:"Class "}.d-rows td:nth-child(8)::before{content:"Title "}.d-nokind td:nth-child(1)::before{content:"Started "}.d-nokind td:nth-child(2)::before{content:"Run "}.d-nokind td:nth-child(3)::before{content:"Status "}.d-nokind td:nth-child(4)::before{content:"Duration "}.d-nokind td:nth-child(5)::before{content:"Nodes "}.d-nokind td:nth-child(6)::before{content:"Class "}.d-nokind td:nth-child(7)::before{content:"Title "}}
 @media print{.d-top{position:static}#d-theme,.d-filters{display:none}}
 </style>
 <style>
@@ -98,14 +107,15 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </style>
 </head>
 <body>
+<a class="d-skip" href="#d-main" hidden>Skip to the view</a>
 <header class="d-top">
-<div class="d-bar"><a class="d-brand" href="#runs">LRM dashboard</a><span class="d-sum">9 runs · 9 views · 0 comparisons</span><button id="d-theme" type="button">Theme: auto</button></div>
-<nav class="d-nav" aria-label="Views"><a href="#runs">Runs<b>9</b></a><a href="#kind-parity">parity<b>1</b></a><a href="#kind-inference">inference<b>1</b></a><a href="#kind-kernels">kernels<b>1</b></a><a href="#kind-cluster">cluster<b>1</b></a><a href="#kind-gate1">gate1<b>1</b></a><a href="#kind-goldens">goldens<b>1</b></a><a href="#kind-training">training<b>1</b></a><a href="#kind-routing">routing<b>1</b></a><a href="#kind-thinking">thinking<b>1</b></a><a href="#compare">Compare<b>0</b></a></nav>
+<div class="d-bar"><h1 class="d-brand"><a href="#runs">LRM dashboard</a></h1><span class="d-sum">9 runs · 9 views · 0 comparisons</span><button id="d-theme" type="button">Theme: auto</button></div>
+<nav class="d-nav" aria-label="Views"><a href="#runs" title="Runs"><span>Runs</span><b>9</b></a><a href="#kind-parity" title="parity"><span>parity</span><b>1</b></a><a href="#kind-inference" title="inference"><span>inference</span><b>1</b></a><a href="#kind-kernels" title="kernels"><span>kernels</span><b>1</b></a><a href="#kind-cluster" title="cluster"><span>cluster</span><b>1</b></a><a href="#kind-gate1" title="gate1"><span>gate1</span><b>1</b></a><a href="#kind-goldens" title="goldens"><span>goldens</span><b>1</b></a><a href="#kind-training" title="training"><span>training</span><b>1</b></a><a href="#kind-routing" title="routing"><span>routing</span><b>1</b></a><a href="#kind-thinking" title="thinking"><span>thinking</span><b>1</b></a><a href="#compare" title="Compare"><span>Compare</span><b>0</b></a></nav>
 </header>
-<main>
+<main id="d-main">
 <section class="d-view" id="kind-parity" data-nav="kind-parity">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <span>parity</span></nav>
-<h2>parity <span class="d-tag">phase 1</span></h2>
+<h2 tabindex="-1">parity <span class="d-tag">phase 1</span></h2>
 <p>Agreement with the goldens, tap by tap and layer by layer.</p>
 <div class="d-card"><p><b>No measured parity runs yet.</b> Runs of this kind appear here once a host records one with kind <code>parity</code>. The synthetic sample below shows what this view will show; its numbers are made up.</p></div>
 <div class="d-tiles"><div class="d-tile"><span>Runs</span><b>1</b></div><div class="d-tile"><span>ok</span><b>1</b></div><div class="d-tile"><span>failed</span><b>0</b></div><div class="d-tile"><span>With a view</span><b>1</b></div></div>
@@ -119,7 +129,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </section>
 <section class="d-view" id="kind-inference" data-nav="kind-inference">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <span>inference</span></nav>
-<h2>inference <span class="d-tag">phase 1</span></h2>
+<h2 tabindex="-1">inference <span class="d-tag">phase 1</span></h2>
 <p>Prefill and decode speed, per-layer time, memory per arena and metering.</p>
 <div class="d-card"><p><b>No measured inference runs yet.</b> Runs of this kind appear here once a host records one with kind <code>inference</code>. The synthetic sample below shows what this view will show; its numbers are made up.</p></div>
 <div class="d-tiles"><div class="d-tile"><span>Runs</span><b>1</b></div><div class="d-tile"><span>ok</span><b>1</b></div><div class="d-tile"><span>failed</span><b>0</b></div><div class="d-tile"><span>With a view</span><b>1</b></div></div>
@@ -133,7 +143,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </section>
 <section class="d-view" id="kind-kernels" data-nav="kind-kernels">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <span>kernels</span></nav>
-<h2>kernels <span class="d-tag">phase 1</span></h2>
+<h2 tabindex="-1">kernels <span class="d-tag">phase 1</span></h2>
 <p>The conformance matrix and GPU time by kernel, layer and dispatch.</p>
 <div class="d-card"><p><b>No measured kernels runs yet.</b> Runs of this kind appear here once a host records one with kind <code>kernels</code>. The synthetic sample below shows what this view will show; its numbers are made up.</p></div>
 <div class="d-tiles"><div class="d-tile"><span>Runs</span><b>1</b></div><div class="d-tile"><span>ok</span><b>0</b></div><div class="d-tile"><span>failed</span><b>1</b></div><div class="d-tile"><span>With a view</span><b>1</b></div></div>
@@ -147,7 +157,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </section>
 <section class="d-view" id="kind-cluster" data-nav="kind-cluster">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <span>cluster</span></nav>
-<h2>cluster <span class="d-tag">phase 1</span></h2>
+<h2 tabindex="-1">cluster <span class="d-tag">phase 1</span></h2>
 <p>The stage Gantt chart, node loss and reissue, step latency and per-node load.</p>
 <div class="d-card"><p><b>No measured cluster runs yet.</b> Runs of this kind appear here once a host records one with kind <code>cluster</code>. The synthetic sample below shows what this view will show; its numbers are made up.</p></div>
 <div class="d-tiles"><div class="d-tile"><span>Runs</span><b>1</b></div><div class="d-tile"><span>ok</span><b>1</b></div><div class="d-tile"><span>failed</span><b>0</b></div><div class="d-tile"><span>With a view</span><b>1</b></div></div>
@@ -161,7 +171,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </section>
 <section class="d-view" id="kind-gate1" data-nav="kind-gate1">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <span>gate1</span></nav>
-<h2>gate1 <span class="d-tag">phase 1</span></h2>
+<h2 tabindex="-1">gate1 <span class="d-tag">phase 1</span></h2>
 <p>Every Gate 1 check by group and backend, and logits agreement per gate prompt.</p>
 <div class="d-card"><p><b>No measured gate1 runs yet.</b> Runs of this kind appear here once a host records one with kind <code>gate1</code>. The synthetic sample below shows what this view will show; its numbers are made up.</p></div>
 <div class="d-tiles"><div class="d-tile"><span>Runs</span><b>1</b></div><div class="d-tile"><span>ok</span><b>1</b></div><div class="d-tile"><span>failed</span><b>0</b></div><div class="d-tile"><span>With a view</span><b>1</b></div></div>
@@ -175,7 +185,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </section>
 <section class="d-view" id="kind-goldens" data-nav="kind-goldens">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <span>goldens</span></nav>
-<h2>goldens <span class="d-tag">phase 1</span></h2>
+<h2 tabindex="-1">goldens <span class="d-tag">phase 1</span></h2>
 <p>A golden tool's run: set size against the budget, regeneration, self-tests, the tokenizer corpus.</p>
 <div class="d-card"><p><b>No measured goldens runs yet.</b> Runs of this kind appear here once a host records one with kind <code>goldens</code>. The synthetic sample below shows what this view will show; its numbers are made up.</p></div>
 <div class="d-tiles"><div class="d-tile"><span>Runs</span><b>1</b></div><div class="d-tile"><span>ok</span><b>1</b></div><div class="d-tile"><span>failed</span><b>0</b></div><div class="d-tile"><span>With a view</span><b>1</b></div></div>
@@ -189,7 +199,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </section>
 <section class="d-view" id="kind-training" data-nav="kind-training">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <span>training</span></nav>
-<h2>training <span class="d-tag">phase 2</span></h2>
+<h2 tabindex="-1">training <span class="d-tag">phase 2</span></h2>
 <p>Loss per curriculum stage, gradient and activation statistics per layer.</p>
 <div class="d-card"><p><b>No measured training runs yet.</b> Training runs start in Phase 2 (the backward pass and training). The synthetic sample below shows what this view will show; its numbers are made up.</p></div>
 <div class="d-tiles"><div class="d-tile"><span>Runs</span><b>1</b></div><div class="d-tile"><span>ok</span><b>1</b></div><div class="d-tile"><span>failed</span><b>0</b></div><div class="d-tile"><span>With a view</span><b>1</b></div></div>
@@ -203,7 +213,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </section>
 <section class="d-view" id="kind-routing" data-nav="kind-routing">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <span>routing</span></nav>
-<h2>routing <span class="d-tag">phase 3</span></h2>
+<h2 tabindex="-1">routing <span class="d-tag">phase 3</span></h2>
 <p>Roslyn expert usage and router entropy per layer.</p>
 <div class="d-card"><p><b>No measured routing runs yet.</b> Runs of this kind come with the LRM itself, in Phase 3 (Roslyn experts). The synthetic sample below shows what this view will show; its numbers are made up.</p></div>
 <div class="d-tiles"><div class="d-tile"><span>Runs</span><b>1</b></div><div class="d-tile"><span>ok</span><b>1</b></div><div class="d-tile"><span>failed</span><b>0</b></div><div class="d-tile"><span>With a view</span><b>1</b></div></div>
@@ -217,7 +227,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </section>
 <section class="d-view" id="kind-thinking" data-nav="kind-thinking">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <span>thinking</span></nav>
-<h2>thinking <span class="d-tag">phase 3</span></h2>
+<h2 tabindex="-1">thinking <span class="d-tag">phase 3</span></h2>
 <p>Roslyn calls made from inside the model, as a trace with outcomes.</p>
 <div class="d-card"><p><b>No measured thinking runs yet.</b> Runs of this kind come with the LRM itself, in Phase 3 (Roslyn experts). The synthetic sample below shows what this view will show; its numbers are made up.</p></div>
 <div class="d-tiles"><div class="d-tile"><span>Runs</span><b>1</b></div><div class="d-tile"><span>ok</span><b>1</b></div><div class="d-tile"><span>failed</span><b>0</b></div><div class="d-tile"><span>With a view</span><b>1</b></div></div>
@@ -231,15 +241,16 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </section>
 <section class="d-view" id="compare" data-nav="compare">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <span>Compare</span></nav>
-<h2>Compare</h2>
+<h2 tabindex="-1">Compare</h2>
 <p>Two runs of the same kind side by side: what changed in the run, its headline values, its metering totals and every chart. Every pair of runs with a view is listed; synthetic runs are compared only with synthetic runs.</p>
 <div class="d-card"><p>No two runs of one kind have a view yet.</p></div>
 </section>
 <section class="d-view" id="run-synthetic-training" data-nav="kind-training">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <a href="#kind-training">training</a> › <span>synthetic-training</span></nav>
-<h2>Pretraining curriculum, 600 steps (synthetic, Phase 2 preview)</h2>
-<p class="d-tags"><span class="d-st d-st-ok">ok</span> <span class="d-tag">training</span> <span class="d-tag">synthetic</span> <span title="vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043">vulkan <span class="d-muted">616.92</span></span> <code>synthetic-training</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
-<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>246.41 s</b></div><div class="d-tile"><span>Nodes</span><b>1</b></div><div class="d-tile"><span>Records</span><b>3,408</b></div><div class="d-tile"><span>Wall (self)</span><b>0 ns</b></div><div class="d-tile"><span>GPU</span><b>0 ns</b></div><div class="d-tile"><span>FLOPs</span><b>0</b></div><div class="d-tile"><span>Bytes moved</span><b>0 B</b></div><div class="d-tile"><span>Tokens</span><b>0</b></div><div class="d-tile"><span>Log problems</span><b>0</b></div></div>
+<h2 tabindex="-1">Pretraining curriculum, 600 steps (synthetic, Phase 2 preview)</h2>
+<p class="d-tags"><span class="d-st d-st-ok">ok</span> <span class="d-tag" title="training">training</span> <span class="d-tag">synthetic</span> <span title="vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043">vulkan <span class="d-muted">616.92</span></span> <code>synthetic-training</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
+<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>246.41 s</b></div><div class="d-tile"><span>Nodes</span><b>1</b></div><div class="d-tile"><span>Records</span><b>3,408</b></div></div>
+<p class="d-muted d-small">Nothing metered for wall time, GPU time, FLOPs, bytes moved, tokens, metered time.</p>
 <p class="d-links">Markdown report: <a href="../../../docs/reports/samples/training.md">training.md</a>, rendered by <code>lrm report synthetic-training</code>.</p>
 <nav class="d-toc" aria-label="Sections"><a href="#run-synthetic-training-loss">Loss</a><a href="#run-synthetic-training-gradients">Gradients</a><a href="#run-synthetic-training-activations">Activations</a><a href="#run-synthetic-training-run">Run</a></nav>
 <p class="d-hint">Tap a chart to see it at full size; tap again to fit it.</p>
@@ -249,7 +260,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </blockquote>
 <p>Final training loss 1.321 at step 599, after 600 training steps.</p>
 <h3 id="run-synthetic-training-loss">Loss</h3>
-<figure class="d-chart" id="r-synthetic-training-training-loss-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-training-training-loss-title r-synthetic-training-training-loss-desc">
+<figure class="d-chart" id="r-synthetic-training-training-loss-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Loss by step" aria-describedby="r-synthetic-training-training-loss-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-training-training-loss-title r-synthetic-training-training-loss-desc">
 <title id="r-synthetic-training-training-loss-title">Loss by step</title>
 <desc id="r-synthetic-training-training-loss-desc">Line chart of loss (nats per token) against step: 2 series, 624 points.</desc>
 <rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
@@ -322,7 +333,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <tr><td>pretrain-il</td><td class="d-r">250</td><td class="d-r">449</td><td class="d-r">2.123</td><td class="d-r">1.504</td><td class="d-r">1.582</td></tr>
 <tr><td>alignment</td><td class="d-r">450</td><td class="d-r">599</td><td class="d-r">1.935</td><td class="d-r">1.321</td><td class="d-r">1.392</td></tr>
 </tbody></table></div>
-<figure class="d-chart" id="r-synthetic-training-training-lr-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-training-training-lr-title r-synthetic-training-training-lr-desc">
+<figure class="d-chart" id="r-synthetic-training-training-lr-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Learning rate by step" aria-describedby="r-synthetic-training-training-lr-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-training-training-lr-title r-synthetic-training-training-lr-desc">
 <title id="r-synthetic-training-training-lr-title">Learning rate by step</title>
 <desc id="r-synthetic-training-training-lr-desc">Line chart of learning rate against step: 1 series, 600 points.</desc>
 <rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
@@ -358,7 +369,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <path class="line s0" d="M60.32 328.88 L61.38 323.77 L62.44 318.67 L63.5 313.58 L64.56 308.5 L65.63 303.43 L66.69 298.38 L67.75 293.33 L68.81 288.29 L69.87 283.26 L70.93 278.24 L71.99 273.24 L73.05 268.24 L74.12 263.25 L75.18 258.28 L76.24 253.31 L77.3 248.35 L78.36 243.41 L79.42 238.47 L80.48 233.55 L81.54 228.63 L82.61 223.73 L83.67 218.83 L84.73 213.95 L85.79 209.07 L86.85 204.21 L87.91 199.35 L88.97 194.51 L90.03 189.68 L91.1 184.85 L92.16 180.04 L93.22 175.24 L94.28 170.45 L95.34 165.66 L96.4 160.89 L97.46 156.13 L98.52 151.38 L99.59 146.64 L100.65 141.91 L101.71 137.19 L102.77 132.48 L103.83 127.78 L104.89 123.09 L105.95 118.41 L107.01 113.74 L108.08 109.08 L109.14 104.43 L110.2 99.79 L111.26 95.16 L112.32 90.54 L113.38 90.8 L114.44 91.06 L115.5 91.31 L116.57 91.57 L117.63 91.82 L118.69 92.08 L119.75 92.34 L120.81 92.59 L121.87 92.85 L122.93 93.1 L123.99 93.36 L125.06 93.62 L126.12 93.87 L127.18 94.13 L128.24 94.38 L129.3 94.64 L130.36 94.9 L131.42 95.15 L132.48 95.41 L133.55 95.66 L134.61 95.92 L135.67 96.18 L136.73 96.43 L137.79 96.69 L138.85 96.94 L139.91 97.2 L140.97 97.46 L142.04 97.71 L143.1 97.97 L144.16 98.22 L145.22 98.48 L146.28 98.74 L147.34 98.99 L148.4 99.25 L149.46 99.5 L150.53 99.76 L151.59 100.02 L152.65 100.27 L153.71 100.53 L154.77 100.78 L155.83 101.04 L156.89 101.3 L157.95 101.55 L159.01 101.81 L160.08 102.06 L161.14 102.32 L162.2 102.58 L163.26 102.83 L164.32 103.09 L165.38 103.34 L166.44 103.6 L167.5 103.86 L168.57 104.11 L169.63 104.37 L170.69 104.62 L171.75 104.88 L172.81 105.14 L173.87 105.39 L174.93 105.65 L175.99 105.9 L177.06 106.16 L178.12 106.42 L179.18 106.67 L180.24 106.93 L181.3 107.18 L182.36 107.44 L183.42 107.7 L184.48 107.95 L185.55 108.21 L186.61 108.46 L187.67 108.72 L188.73 108.98 L189.79 109.23 L190.85 109.49 L191.91 109.74 L192.97 110 L194.04 110.26 L195.1 110.51 L196.16 110.77 L197.22 111.02 L198.28 111.28 L199.34 111.54 L200.4 111.79 L201.46 112.05 L202.53 112.3 L203.59 112.56 L204.65 112.82 L205.71 113.07 L206.77 113.33 L207.83 113.58 L208.89 113.84 L209.95 114.1 L211.02 114.35 L212.08 114.61 L213.14 114.86 L214.2 115.12 L215.26 115.38 L216.32 115.63 L217.38 115.89 L218.44 116.14 L219.51 116.4 L220.57 116.66 L221.63 116.91 L222.69 117.17 L223.75 117.42 L224.81 117.68 L225.87 117.94 L226.93 118.19 L228 118.45 L229.06 118.7 L230.12 118.96 L231.18 119.22 L232.24 119.47 L233.3 119.73 L234.36 119.98 L235.42 120.24 L236.49 120.5 L237.55 120.75 L238.61 121.01 L239.67 121.26 L240.73 121.52 L241.79 121.78 L242.85 122.03 L243.91 122.29 L244.97 122.54 L246.04 122.8 L247.1 123.06 L248.16 123.31 L249.22 123.57 L250.28 123.82 L251.34 124.08 L252.4 124.34 L253.46 124.59 L254.53 124.85 L255.59 125.1 L256.65 125.36 L257.71 125.62 L258.77 125.87 L259.83 126.13 L260.89 126.38 L261.95 126.64 L263.02 126.9 L264.08 127.15 L265.14 127.41 L266.2 127.66 L267.26 127.92 L268.32 128.18 L269.38 128.43 L270.44 128.69 L271.51 128.94 L272.57 129.2 L273.63 129.46 L274.69 129.71 L275.75 129.97 L276.81 130.22 L277.87 130.48 L278.93 130.74 L280 130.99 L281.06 131.25 L282.12 131.5 L283.18 131.76 L284.24 132.02 L285.3 132.27 L286.36 132.53 L287.42 132.78 L288.49 133.04 L289.55 133.3 L290.61 133.55 L291.67 133.81 L292.73 134.06 L293.79 134.32 L294.85 134.58 L295.91 134.83 L296.98 135.09 L298.04 135.34 L299.1 135.6 L300.16 135.86 L301.22 136.11 L302.28 136.37 L303.34 136.62 L304.4 136.88 L305.47 137.14 L306.53 137.39 L307.59 137.65 L308.65 137.9 L309.71 138.16 L310.77 138.42 L311.83 138.67 L312.89 138.93 L313.96 139.18 L315.02 139.44 L316.08 139.7 L317.14 139.95 L318.2 140.21 L319.26 140.46 L320.32 140.72 L321.38 140.98 L322.45 141.23 L323.51 141.49 L324.57 141.74 L325.63 142 L326.69 142.26 L327.75 142.51 L328.81 142.77 L329.87 143.02 L330.94 143.28 L332 143.54 L333.06 143.79 L334.12 144.05 L335.18 144.3 L336.24 144.56 L337.3 144.82 L338.36 145.07 L339.42 145.33 L340.49 145.58 L341.55 145.84 L342.61 146.1 L343.67 146.35 L344.73 146.61 L345.79 146.86 L346.85 147.12 L347.91 147.38 L348.98 147.63 L350.04 147.89 L351.1 148.14 L352.16 148.4 L353.22 148.66 L354.28 148.91 L355.34 149.17 L356.4 149.42 L357.47 149.68 L358.53 149.94 L359.59 150.19 L360.65 150.45 L361.71 150.7 L362.77 150.96 L363.83 151.22 L364.89 151.47 L365.96 151.73 L367.02 151.98 L368.08 152.24 L369.14 152.5 L370.2 152.75 L371.26 153.01 L372.32 153.26 L373.38 153.52 L374.45 153.78 L375.51 154.03 L376.57 154.29 L377.63 154.54 L378.69 154.8 L379.75 155.06 L380.81 155.31 L381.87 155.57 L382.94 155.82 L384 156.08 L385.06 156.34 L386.12 156.59 L387.18 156.85 L388.24 157.1 L389.3 157.36 L390.36 157.62 L391.43 157.87 L392.49 158.13 L393.55 158.38 L394.61 158.64 L395.67 158.9 L396.73 159.15 L397.79 159.41 L398.85 159.66 L399.92 159.92 L400.98 160.18 L402.04 160.43 L403.1 160.69 L404.16 160.94 L405.22 161.2 L406.28 161.46 L407.34 161.71 L408.41 161.97 L409.47 162.22 L410.53 162.48 L411.59 162.74 L412.65 162.99 L413.71 163.25 L414.77 163.5 L415.83 163.76 L416.9 164.02 L417.96 164.27 L419.02 164.53 L420.08 164.78 L421.14 165.04 L422.2 165.3 L423.26 165.55 L424.32 165.81 L425.38 166.06 L426.45 166.32 L427.51 166.58 L428.57 166.83 L429.63 167.09 L430.69 167.34 L431.75 167.6 L432.81 167.86 L433.87 168.11 L434.94 168.37 L436 168.62 L437.06 168.88 L438.12 169.14 L439.18 169.39 L440.24 169.65 L441.3 169.9 L442.36 170.16 L443.43 170.42 L444.49 170.67 L445.55 170.93 L446.61 171.18 L447.67 171.44 L448.73 171.7 L449.79 171.95 L450.85 172.21 L451.92 172.46 L452.98 172.72 L454.04 172.98 L455.1 173.23 L456.16 173.49 L457.22 173.74 L458.28 174 L459.34 174.26 L460.41 174.51 L461.47 174.77 L462.53 175.02 L463.59 175.28 L464.65 175.54 L465.71 175.79 L466.77 176.05 L467.83 176.3 L468.9 176.56 L469.96 176.82 L471.02 177.07 L472.08 177.33 L473.14 177.58 L474.2 177.84 L475.26 178.1 L476.32 178.35 L477.39 178.61 L478.45 178.86 L479.51 179.12 L480.57 179.38 L481.63 179.63 L482.69 179.89 L483.75 180.14 L484.81 180.4 L485.88 180.66 L486.94 180.91 L488 181.17 L489.06 181.42 L490.12 181.68 L491.18 181.94 L492.24 182.19 L493.3 182.45 L494.37 182.7 L495.43 182.96 L496.49 183.22 L497.55 183.47 L498.61 183.73 L499.67 183.98 L500.73 184.24 L501.79 184.5 L502.86 184.75 L503.92 185.01 L504.98 185.26 L506.04 185.52 L507.1 185.78 L508.16 186.03 L509.22 186.29 L510.28 186.54 L511.35 186.8 L512.41 187.06 L513.47 187.31 L514.53 187.57 L515.59 187.82 L516.65 188.08 L517.71 188.34 L518.77 188.59 L519.83 188.85 L520.9 189.1 L521.96 189.36 L523.02 189.62 L524.08 189.87 L525.14 190.13 L526.2 190.38 L527.26 190.64 L528.32 190.9 L529.39 191.15 L530.45 191.41 L531.51 191.66 L532.57 191.92 L533.63 192.18 L534.69 192.43 L535.75 192.69 L536.81 192.94 L537.88 193.2 L538.94 193.46 L540 193.71 L541.06 193.97 L542.12 194.22 L543.18 194.48 L544.24 194.74 L545.3 194.99 L546.37 195.25 L547.43 195.5 L548.49 195.76 L549.55 196.02 L550.61 196.27 L551.67 196.53 L552.73 196.78 L553.79 197.04 L554.86 197.3 L555.92 197.55 L556.98 197.81 L558.04 198.06 L559.1 198.32 L560.16 198.58 L561.22 198.83 L562.28 199.09 L563.35 199.34 L564.41 199.6 L565.47 199.86 L566.53 200.11 L567.59 200.37 L568.65 200.62 L569.71 200.88 L570.77 201.14 L571.84 201.39 L572.9 201.65 L573.96 201.9 L575.02 202.16 L576.08 202.42 L577.14 202.67 L578.2 202.93 L579.26 203.18 L580.33 203.44 L581.39 203.7 L582.45 203.95 L583.51 204.21 L584.57 204.46 L585.63 204.72 L586.69 204.98 L587.75 205.23 L588.82 205.49 L589.88 205.74 L590.94 206 L592 206.26 L593.06 206.51 L594.12 206.77 L595.18 207.02 L596.24 207.28 L597.31 207.54 L598.37 207.79 L599.43 208.05 L600.49 208.3 L601.55 208.56 L602.61 208.82 L603.67 209.07 L604.73 209.33 L605.79 209.58 L606.86 209.84 L607.92 210.1 L608.98 210.35 L610.04 210.61 L611.1 210.86 L612.16 211.12 L613.22 211.38 L614.28 211.63 L615.35 211.89 L616.41 212.14 L617.47 212.4 L618.53 212.66 L619.59 212.91 L620.65 213.17 L621.71 213.42 L622.77 213.68 L623.84 213.94 L624.9 214.19 L625.96 214.45 L627.02 214.7 L628.08 214.96 L629.14 215.22 L630.2 215.47 L631.26 215.73 L632.33 215.98 L633.39 216.24 L634.45 216.5 L635.51 216.75 L636.57 217.01 L637.63 217.26 L638.69 217.52 L639.75 217.78 L640.82 218.03 L641.88 218.29 L642.94 218.54 L644 218.8 L645.06 219.06 L646.12 219.31 L647.18 219.57 L648.24 219.82 L649.31 220.08 L650.37 220.34 L651.43 220.59 L652.49 220.85 L653.55 221.1 L654.61 221.36 L655.67 221.62 L656.73 221.87 L657.8 222.13 L658.86 222.38 L659.92 222.64 L660.98 222.9 L662.04 223.15 L663.1 223.41 L664.16 223.66 L665.22 223.92 L666.29 224.18 L667.35 224.43 L668.41 224.69 L669.47 224.94 L670.53 225.2 L671.59 225.46 L672.65 225.71 L673.71 225.97 L674.78 226.22 L675.84 226.48 L676.9 226.74 L677.96 226.99 L679.02 227.25 L680.08 227.5 L681.14 227.76 L682.2 228.02 L683.27 228.27 L684.33 228.53 L685.39 228.78 L686.45 229.04 L687.51 229.3 L688.57 229.55 L689.63 229.81 L690.69 230.06 L691.76 230.32 L692.82 230.58 L693.88 230.83 L694.94 231.09 L696 231.34"><title>learning rate</title></path>
 </svg></figure>
 <h3 id="run-synthetic-training-gradients">Gradients</h3>
-<figure class="d-chart" id="r-synthetic-training-training-grad_heatmap-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="446" viewBox="0 0 720 446" role="img" aria-labelledby="r-synthetic-training-training-grad_heatmap-title r-synthetic-training-training-grad_heatmap-desc">
+<figure class="d-chart" id="r-synthetic-training-training-grad_heatmap-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Gradient norm by layer and step" aria-describedby="r-synthetic-training-training-grad_heatmap-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="446" viewBox="0 0 720 446" role="img" aria-labelledby="r-synthetic-training-training-grad_heatmap-title r-synthetic-training-training-grad_heatmap-desc">
 <title id="r-synthetic-training-training-grad_heatmap-title">Gradient norm by layer and step</title>
 <desc id="r-synthetic-training-training-grad_heatmap-desc">Heatmap of 28 layer rows by 30 step columns, 840 cells with values.</desc>
 <rect class="bg" x="0" y="0" width="720" height="446" rx="8"/>
@@ -1249,7 +1260,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <text class="t3" x="605.24" y="416" font-size="11" text-anchor="middle">500</text>
 <text class="t3" x="374.79" y="436" font-size="11" text-anchor="middle">step</text>
 </svg></figure>
-<figure class="d-chart" id="r-synthetic-training-training-grad_spread-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-training-training-grad_spread-title r-synthetic-training-training-grad_spread-desc">
+<figure class="d-chart" id="r-synthetic-training-training-grad_spread-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Gradient norm per layer over the run" aria-describedby="r-synthetic-training-training-grad_spread-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-training-training-grad_spread-title r-synthetic-training-training-grad_spread-desc">
 <title id="r-synthetic-training-training-grad_spread-title">Gradient norm per layer over the run</title>
 <desc id="r-synthetic-training-training-grad_spread-desc">Error bars of gradient norm (log) per layer: 1 series over 28 categories, whiskers from low to high.</desc>
 <rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
@@ -1350,7 +1361,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <circle class="f0 ring" cx="684.32" cy="235" r="4" stroke-width="1.5"><title>gradient norm, layer 27: 5.9e-01 (4.4e-01 to 9.2e-01)</title></circle>
 <line class="axis" x1="41.84" y1="334" x2="696" y2="334" stroke-width="1"/>
 </svg></figure>
-<figure class="d-chart" id="r-synthetic-training-training-update_hist-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="r-synthetic-training-training-update_hist-title r-synthetic-training-training-update_hist-desc">
+<figure class="d-chart" id="r-synthetic-training-training-update_hist-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Update-to-weight ratio" aria-describedby="r-synthetic-training-training-update_hist-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="r-synthetic-training-training-update_hist-title r-synthetic-training-training-update_hist-desc">
 <title id="r-synthetic-training-training-update_hist-title">Update-to-weight ratio</title>
 <desc id="r-synthetic-training-training-update_hist-desc">Histogram of ratio: 840 samples, 840 in 24 bins.</desc>
 <rect class="bg" x="0" y="0" width="720" height="320" rx="8"/>
@@ -1397,7 +1408,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <line class="axis" x1="44.48" y1="274" x2="696" y2="274" stroke-width="1"/>
 </svg></figure>
 <h3 id="run-synthetic-training-activations">Activations</h3>
-<figure class="d-chart" id="r-synthetic-training-training-act_rms-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-training-training-act_rms-title r-synthetic-training-training-act_rms-desc">
+<figure class="d-chart" id="r-synthetic-training-training-act_rms-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Activation RMS per layer" aria-describedby="r-synthetic-training-training-act_rms-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-training-training-act_rms-title r-synthetic-training-training-act_rms-desc">
 <title id="r-synthetic-training-training-act_rms-title">Activation RMS per layer</title>
 <desc id="r-synthetic-training-training-act_rms-desc">Line chart of RMS against layer: 3 series, 84 points.</desc>
 <rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
@@ -1558,9 +1569,10 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </section>
 <section class="d-view" id="run-synthetic-thinking" data-nav="kind-thinking">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <a href="#kind-thinking">thinking</a> › <span>synthetic-thinking</span></nav>
-<h2>Roslyn calls while writing one method (synthetic, Phase 3 preview)</h2>
-<p class="d-tags"><span class="d-st d-st-ok">ok</span> <span class="d-tag">thinking</span> <span class="d-tag">synthetic</span> <span title="vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043">vulkan <span class="d-muted">616.92</span></span> <code>synthetic-thinking</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
-<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>745.00 ms</b></div><div class="d-tile"><span>Nodes</span><b>1</b></div><div class="d-tile"><span>Records</span><b>76</b></div><div class="d-tile"><span>Wall (self)</span><b>568.45 ms</b></div><div class="d-tile"><span>GPU</span><b>0 ns</b></div><div class="d-tile"><span>FLOPs</span><b>0</b></div><div class="d-tile"><span>Bytes moved</span><b>0 B</b></div><div class="d-tile"><span>Tokens</span><b>0</b></div><div class="d-tile"><span>Log problems</span><b>0</b></div></div>
+<h2 tabindex="-1">Roslyn calls while writing one method (synthetic, Phase 3 preview)</h2>
+<p class="d-tags"><span class="d-st d-st-ok">ok</span> <span class="d-tag" title="thinking">thinking</span> <span class="d-tag">synthetic</span> <span title="vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043">vulkan <span class="d-muted">616.92</span></span> <code>synthetic-thinking</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
+<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>745.00 ms</b></div><div class="d-tile"><span>Nodes</span><b>1</b></div><div class="d-tile"><span>Records</span><b>76</b></div><div class="d-tile"><span>Wall (self)</span><b>568.45 ms</b></div></div>
+<p class="d-muted d-small">Nothing metered for GPU time, FLOPs, bytes moved, tokens, metered time.</p>
 <p class="d-links">Markdown report: <a href="../../../docs/reports/samples/thinking.md">thinking.md</a>, rendered by <code>lrm report synthetic-thinking</code>.</p>
 <nav class="d-toc" aria-label="Sections"><a href="#run-synthetic-thinking-trace">Trace</a><a href="#run-synthetic-thinking-by-api">By API</a><a href="#run-synthetic-thinking-first-calls">First calls</a><a href="#run-synthetic-thinking-run">Run</a></nav>
 <p class="d-hint">Tap a chart to see it at full size; tap again to fit it.</p>
@@ -1570,7 +1582,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </blockquote>
 <p>72 Roslyn calls from 4 layers, 94.4% of them ok; 4 thinking steps.</p>
 <h3 id="run-synthetic-thinking-trace">Trace</h3>
-<figure class="d-chart" id="r-synthetic-thinking-thinking-trace-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="314" viewBox="0 0 720 314" role="img" aria-labelledby="r-synthetic-thinking-thinking-trace-title r-synthetic-thinking-thinking-trace-desc">
+<figure class="d-chart" id="r-synthetic-thinking-thinking-trace-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Roslyn call trace" aria-describedby="r-synthetic-thinking-thinking-trace-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="314" viewBox="0 0 720 314" role="img" aria-labelledby="r-synthetic-thinking-thinking-trace-title r-synthetic-thinking-thinking-trace-desc">
 <title id="r-synthetic-thinking-thinking-trace-title">Roslyn call trace</title>
 <desc id="r-synthetic-thinking-thinking-trace-desc">Timeline of 72 intervals on 7 lanes, 4 event marks.</desc>
 <rect class="bg" x="0" y="0" width="720" height="314" rx="8"/>
@@ -1687,7 +1699,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <line class="axis" x1="216.32" y1="268" x2="696" y2="268" stroke-width="1"/>
 <text class="t3" x="456.16" y="304" font-size="11" text-anchor="middle">time since the run started</text>
 </svg></figure>
-<figure class="d-chart" id="r-synthetic-thinking-thinking-by_api-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="326" viewBox="0 0 720 326" role="img" aria-labelledby="r-synthetic-thinking-thinking-by_api-title r-synthetic-thinking-thinking-by_api-desc">
+<figure class="d-chart" id="r-synthetic-thinking-thinking-by_api-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Calls per API by outcome" aria-describedby="r-synthetic-thinking-thinking-by_api-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="326" viewBox="0 0 720 326" role="img" aria-labelledby="r-synthetic-thinking-thinking-by_api-title r-synthetic-thinking-thinking-by_api-desc">
 <title id="r-synthetic-thinking-thinking-by_api-title">Calls per API by outcome</title>
 <desc id="r-synthetic-thinking-thinking-by_api-desc">Bar chart of calls for 7 API values, 4 series.</desc>
 <rect class="bg" x="0" y="0" width="720" height="326" rx="8"/>
@@ -1741,7 +1753,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <line class="axis" x1="216.32" y1="98" x2="216.32" y2="98" stroke-width="1"/>
 <line class="axis" x1="216.32" y1="98" x2="216.32" y2="280" stroke-width="1"/>
 </svg></figure>
-<figure class="d-chart" id="r-synthetic-thinking-thinking-latency-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="r-synthetic-thinking-thinking-latency-title r-synthetic-thinking-thinking-latency-desc">
+<figure class="d-chart" id="r-synthetic-thinking-thinking-latency-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Call latency" aria-describedby="r-synthetic-thinking-thinking-latency-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="r-synthetic-thinking-thinking-latency-title r-synthetic-thinking-thinking-latency-desc">
 <title id="r-synthetic-thinking-thinking-latency-title">Call latency</title>
 <desc id="r-synthetic-thinking-thinking-latency-desc">Histogram of duration: 72 samples, 72 in 20 bins.</desc>
 <rect class="bg" x="0" y="0" width="720" height="320" rx="8"/>
@@ -1872,9 +1884,10 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </section>
 <section class="d-view" id="run-synthetic-routing" data-nav="kind-routing">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <a href="#kind-routing">routing</a> › <span>synthetic-routing</span></nav>
-<h2>Roslyn expert routing through training (synthetic, Phase 3 preview)</h2>
-<p class="d-tags"><span class="d-st d-st-ok">ok</span> <span class="d-tag">routing</span> <span class="d-tag">synthetic</span> <span title="vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043">vulkan <span class="d-muted">616.92</span></span> <code>synthetic-routing</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
-<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>360.00 s</b></div><div class="d-tile"><span>Nodes</span><b>1</b></div><div class="d-tile"><span>Records</span><b>1,344</b></div><div class="d-tile"><span>Wall (self)</span><b>0 ns</b></div><div class="d-tile"><span>GPU</span><b>0 ns</b></div><div class="d-tile"><span>FLOPs</span><b>0</b></div><div class="d-tile"><span>Bytes moved</span><b>0 B</b></div><div class="d-tile"><span>Tokens</span><b>0</b></div><div class="d-tile"><span>Log problems</span><b>0</b></div></div>
+<h2 tabindex="-1">Roslyn expert routing through training (synthetic, Phase 3 preview)</h2>
+<p class="d-tags"><span class="d-st d-st-ok">ok</span> <span class="d-tag" title="routing">routing</span> <span class="d-tag">synthetic</span> <span title="vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043">vulkan <span class="d-muted">616.92</span></span> <code>synthetic-routing</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
+<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>360.00 s</b></div><div class="d-tile"><span>Nodes</span><b>1</b></div><div class="d-tile"><span>Records</span><b>1,344</b></div></div>
+<p class="d-muted d-small">Nothing metered for wall time, GPU time, FLOPs, bytes moved, tokens, metered time.</p>
 <p class="d-links">Markdown report: <a href="../../../docs/reports/samples/routing.md">routing.md</a>, rendered by <code>lrm report synthetic-routing</code>.</p>
 <nav class="d-toc" aria-label="Sections"><a href="#run-synthetic-routing-expert-usage">Expert usage</a><a href="#run-synthetic-routing-router-entropy">Router entropy</a><a href="#run-synthetic-routing-top-expert-per-layer">Top expert per layer</a><a href="#run-synthetic-routing-run">Run</a></nav>
 <p class="d-hint">Tap a chart to see it at full size; tap again to fit it.</p>
@@ -1884,7 +1897,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </blockquote>
 <p>7 experts over 28 layers; the charts show step 2500 unless they say otherwise.</p>
 <h3 id="run-synthetic-routing-expert-usage">Expert usage</h3>
-<figure class="d-chart" id="r-synthetic-routing-routing-usage_heatmap-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="328" viewBox="0 0 720 328" role="img" aria-labelledby="r-synthetic-routing-routing-usage_heatmap-title r-synthetic-routing-routing-usage_heatmap-desc">
+<figure class="d-chart" id="r-synthetic-routing-routing-usage_heatmap-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Expert share by layer" aria-describedby="r-synthetic-routing-routing-usage_heatmap-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="328" viewBox="0 0 720 328" role="img" aria-labelledby="r-synthetic-routing-routing-usage_heatmap-title r-synthetic-routing-routing-usage_heatmap-desc">
 <title id="r-synthetic-routing-routing-usage_heatmap-title">Expert share by layer</title>
 <desc id="r-synthetic-routing-routing-usage_heatmap-desc">Heatmap of 7 expert rows by 28 layer columns, 196 cells with values.</desc>
 <rect class="bg" x="0" y="0" width="720" height="328" rx="8"/>
@@ -2140,7 +2153,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <text class="t3" x="693.52" y="298" font-size="11" text-anchor="middle">27</text>
 <text class="t3" x="410.54" y="318" font-size="11" text-anchor="middle">layer</text>
 </svg></figure>
-<figure class="d-chart" id="r-synthetic-routing-routing-expert_mix-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-routing-routing-expert_mix-title r-synthetic-routing-routing-expert_mix-desc">
+<figure class="d-chart" id="r-synthetic-routing-routing-expert_mix-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Expert mix per layer" aria-describedby="r-synthetic-routing-routing-expert_mix-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-routing-routing-expert_mix-title r-synthetic-routing-routing-expert_mix-desc">
 <title id="r-synthetic-routing-routing-expert_mix-title">Expert mix per layer</title>
 <desc id="r-synthetic-routing-routing-expert_mix-desc">Bar chart of share of tokens for 28 layer values, 7 series.</desc>
 <rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
@@ -2402,7 +2415,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <line class="axis" x1="50.64" y1="334" x2="696" y2="334" stroke-width="1"/>
 </svg></figure>
 <h3 id="run-synthetic-routing-router-entropy">Router entropy</h3>
-<figure class="d-chart" id="r-synthetic-routing-routing-entropy_by_layer-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-routing-routing-entropy_by_layer-title r-synthetic-routing-routing-entropy_by_layer-desc">
+<figure class="d-chart" id="r-synthetic-routing-routing-entropy_by_layer-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Router entropy per layer" aria-describedby="r-synthetic-routing-routing-entropy_by_layer-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-routing-routing-entropy_by_layer-title r-synthetic-routing-routing-entropy_by_layer-desc">
 <title id="r-synthetic-routing-routing-entropy_by_layer-title">Router entropy per layer</title>
 <desc id="r-synthetic-routing-routing-entropy_by_layer-desc">Line chart of entropy (nats) against layer: 6 series, 168 points.</desc>
 <rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
@@ -2617,7 +2630,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <circle class="f5 ring" cx="671.77" cy="182.06" r="4" stroke-width="2"><title>step 2500, layer 26: 1.288</title></circle>
 <circle class="f5 ring" cx="696" cy="196.33" r="4" stroke-width="2"><title>step 2500, layer 27: 1.167</title></circle>
 </svg></figure>
-<figure class="d-chart" id="r-synthetic-routing-routing-entropy_over_steps-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-routing-routing-entropy_over_steps-title r-synthetic-routing-routing-entropy_over_steps-desc">
+<figure class="d-chart" id="r-synthetic-routing-routing-entropy_over_steps-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Mean router entropy over training" aria-describedby="r-synthetic-routing-routing-entropy_over_steps-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-routing-routing-entropy_over_steps-title r-synthetic-routing-routing-entropy_over_steps-desc">
 <title id="r-synthetic-routing-routing-entropy_over_steps-title">Mean router entropy over training</title>
 <desc id="r-synthetic-routing-routing-entropy_over_steps-desc">Line chart of entropy (nats) against step: 1 series, 6 points.</desc>
 <rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
@@ -2721,9 +2734,10 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </section>
 <section class="d-view" id="run-synthetic-parity" data-nav="kind-parity">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <a href="#kind-parity">parity</a> › <span>synthetic-parity</span></nav>
-<h2>CPU reference vs the goldens (synthetic)</h2>
-<p class="d-tags"><span class="d-st d-st-ok">ok</span> <span class="d-tag">parity</span> <span class="d-tag">synthetic</span> <span title="cpu-f32 cpu, .NET 10.0.13, win-x64+avx2+fma">cpu-f32 <span class="d-muted">.NET 10.0.13</span></span> <code>synthetic-parity</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
-<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>127.00 ms</b></div><div class="d-tile"><span>Nodes</span><b>1</b></div><div class="d-tile"><span>Records</span><b>2,829</b></div><div class="d-tile"><span>Wall (self)</span><b>126.72 ms</b></div><div class="d-tile"><span>GPU</span><b>0 ns</b></div><div class="d-tile"><span>FLOPs</span><b>0</b></div><div class="d-tile"><span>Bytes moved</span><b>0 B</b></div><div class="d-tile"><span>Tokens</span><b>0</b></div><div class="d-tile"><span>Log problems</span><b>0</b></div></div>
+<h2 tabindex="-1">CPU reference vs the goldens (synthetic)</h2>
+<p class="d-tags"><span class="d-st d-st-ok">ok</span> <span class="d-tag" title="parity">parity</span> <span class="d-tag">synthetic</span> <span title="cpu-f32 cpu, .NET 10.0.13, win-x64+avx2+fma">cpu-f32 <span class="d-muted">.NET 10.0.13</span></span> <code>synthetic-parity</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
+<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>127.00 ms</b></div><div class="d-tile"><span>Nodes</span><b>1</b></div><div class="d-tile"><span>Records</span><b>2,829</b></div><div class="d-tile"><span>Wall (self)</span><b>126.72 ms</b></div></div>
+<p class="d-muted d-small">Nothing metered for GPU time, FLOPs, bytes moved, tokens, metered time.</p>
 <p class="d-links">Markdown report: <a href="../../../docs/reports/samples/parity.md">parity.md</a>, rendered by <code>lrm report synthetic-parity</code>.</p>
 <nav class="d-toc" aria-label="Sections"><a href="#run-synthetic-parity-error-by-layer">Error by layer</a><a href="#run-synthetic-parity-per-pair">Per pair</a><a href="#run-synthetic-parity-per-case">Per case</a><a href="#run-synthetic-parity-oracle-self-tests">Oracle self-tests</a><a href="#run-synthetic-parity-greedy-margins">Greedy margins</a><a href="#run-synthetic-parity-closest-to-the-bound">Closest to the bound</a><a href="#run-synthetic-parity-run">Run</a></nav>
 <p class="d-hint">Tap a chart to see it at full size; tap again to fit it.</p>
@@ -2739,7 +2753,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </ul>
 <h3 id="run-synthetic-parity-error-by-layer">Error by layer</h3>
 <p>Every per-layer tap's rel_l2 against the golden, summarized per layer over all cases and taps. A pair passes when every dot and whisker stays under its bound line.</p>
-<figure class="d-chart" id="r-synthetic-parity-parity-rel_l2_by_layer-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-parity-parity-rel_l2_by_layer-title r-synthetic-parity-parity-rel_l2_by_layer-desc">
+<figure class="d-chart" id="r-synthetic-parity-parity-rel_l2_by_layer-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: rel_l2 by layer" aria-describedby="r-synthetic-parity-parity-rel_l2_by_layer-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-parity-parity-rel_l2_by_layer-title r-synthetic-parity-parity-rel_l2_by_layer-desc">
 <title id="r-synthetic-parity-parity-rel_l2_by_layer-title">rel_l2 by layer</title>
 <desc id="r-synthetic-parity-parity-rel_l2_by_layer-desc">Error bars of rel_l2 (log) per layer: 2 series over 28 categories, whiskers from low to high.</desc>
 <rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
@@ -2910,7 +2924,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <circle class="f1 ring" cx="688.39" cy="142.99" r="4" stroke-width="1.5"><title>cpu32-vs-torch32, layer 27: 1.2e-06 (4.8e-07 to 1.7e-05)</title></circle>
 <line class="axis" x1="56.8" y1="334" x2="696" y2="334" stroke-width="1"/>
 </svg></figure>
-<figure class="d-chart" id="r-synthetic-parity-parity-ratio_histogram-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="r-synthetic-parity-parity-ratio_histogram-title r-synthetic-parity-parity-ratio_histogram-desc">
+<figure class="d-chart" id="r-synthetic-parity-parity-ratio_histogram-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Distance to the bound, every comparison" aria-describedby="r-synthetic-parity-parity-ratio_histogram-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="r-synthetic-parity-parity-ratio_histogram-title r-synthetic-parity-parity-ratio_histogram-desc">
 <title id="r-synthetic-parity-parity-ratio_histogram-title">Distance to the bound, every comparison</title>
 <desc id="r-synthetic-parity-parity-ratio_histogram-desc">Histogram of measured / bound: 2754 samples, 2738 in 24 bins, 16 exactly 0.</desc>
 <rect class="bg" x="0" y="0" width="720" height="320" rx="8"/>
@@ -2962,7 +2976,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <h3 id="run-synthetic-parity-per-pair">Per pair</h3>
 <h4 id="run-synthetic-parity-cpu64-vs-torch64p-pass">cpu64-vs-torch64p: PASS</h4>
 <p>1,384 comparisons, 0 failed, worst ratio 0.848 of the bound.</p>
-<figure class="d-chart" id="r-synthetic-parity-parity-pairs-0-heatmap-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="302" viewBox="0 0 720 302" role="img" aria-labelledby="r-synthetic-parity-parity-pairs-0-heatmap-title r-synthetic-parity-parity-pairs-0-heatmap-desc">
+<figure class="d-chart" id="r-synthetic-parity-parity-pairs-0-heatmap-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Worst measured/bound by tap and layer, cpu64-vs-torch64p" aria-describedby="r-synthetic-parity-parity-pairs-0-heatmap-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="302" viewBox="0 0 720 302" role="img" aria-labelledby="r-synthetic-parity-parity-pairs-0-heatmap-title r-synthetic-parity-parity-pairs-0-heatmap-desc">
 <title id="r-synthetic-parity-parity-pairs-0-heatmap-title">Worst measured/bound by tap and layer, cpu64-vs-torch64p</title>
 <desc id="r-synthetic-parity-parity-pairs-0-heatmap-desc">Heatmap of 6 tap rows by 28 layer columns, 168 cells with values.</desc>
 <rect class="bg" x="0" y="0" width="720" height="302" rx="8"/>
@@ -3191,7 +3205,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </svg></figure>
 <h4 id="run-synthetic-parity-cpu32-vs-torch32-pass">cpu32-vs-torch32: PASS</h4>
 <p>1,384 comparisons, 0 failed, worst ratio 0.832 of the bound.</p>
-<figure class="d-chart" id="r-synthetic-parity-parity-pairs-1-heatmap-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="302" viewBox="0 0 720 302" role="img" aria-labelledby="r-synthetic-parity-parity-pairs-1-heatmap-title r-synthetic-parity-parity-pairs-1-heatmap-desc">
+<figure class="d-chart" id="r-synthetic-parity-parity-pairs-1-heatmap-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Worst measured/bound by tap and layer, cpu32-vs-torch32" aria-describedby="r-synthetic-parity-parity-pairs-1-heatmap-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="302" viewBox="0 0 720 302" role="img" aria-labelledby="r-synthetic-parity-parity-pairs-1-heatmap-title r-synthetic-parity-parity-pairs-1-heatmap-desc">
 <title id="r-synthetic-parity-parity-pairs-1-heatmap-title">Worst measured/bound by tap and layer, cpu32-vs-torch32</title>
 <desc id="r-synthetic-parity-parity-pairs-1-heatmap-desc">Heatmap of 6 tap rows by 28 layer columns, 168 cells with values.</desc>
 <rect class="bg" x="0" y="0" width="720" height="302" rx="8"/>
@@ -3444,7 +3458,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </tbody></table></div>
 <h3 id="run-synthetic-parity-greedy-margins">Greedy margins</h3>
 <p>The smallest margin is 0.1172 (g01, torch32). The float32 argmax agrees with the oracle at every step of every prompt.</p>
-<figure class="d-chart" id="r-synthetic-parity-parity-greedy-0-margins-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-parity-parity-greedy-0-margins-title r-synthetic-parity-parity-greedy-0-margins-desc">
+<figure class="d-chart" id="r-synthetic-parity-parity-greedy-0-margins-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Smallest top-2 margin over the greedy steps" aria-describedby="r-synthetic-parity-parity-greedy-0-margins-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-parity-parity-greedy-0-margins-title r-synthetic-parity-parity-greedy-0-margins-desc">
 <title id="r-synthetic-parity-parity-greedy-0-margins-title">Smallest top-2 margin over the greedy steps</title>
 <desc id="r-synthetic-parity-parity-greedy-0-margins-desc">Bar chart of top-1 minus top-2 logit for 8 prompt values, 2 series.</desc>
 <rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
@@ -3571,9 +3585,10 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </section>
 <section class="d-view" id="run-synthetic-kernels" data-nav="kind-kernels">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <a href="#kind-kernels">kernels</a> › <span>synthetic-kernels</span></nav>
-<h2>Kernel conformance and decode dispatch timing (synthetic)</h2>
-<p class="d-tags"><span class="d-st d-st-failed">failed</span> <span class="d-tag">kernels</span> <span class="d-tag">synthetic</span> <span title="vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043">vulkan <span class="d-muted">616.92</span></span> <code>synthetic-kernels</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
-<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>169.00 ms</b></div><div class="d-tile"><span>Nodes</span><b>2</b></div><div class="d-tile"><span>Records</span><b>1,974</b></div><div class="d-tile"><span>Wall (self)</span><b>0 ns</b></div><div class="d-tile"><span>GPU</span><b>11.94 ms</b></div><div class="d-tile"><span>FLOPs</span><b>0</b></div><div class="d-tile"><span>Bytes moved</span><b>0 B</b></div><div class="d-tile"><span>Tokens</span><b>0</b></div><div class="d-tile"><span>Log problems</span><b>0</b></div></div>
+<h2 tabindex="-1">Kernel conformance and decode dispatch timing (synthetic)</h2>
+<p class="d-tags"><span class="d-st d-st-failed">failed</span> <span class="d-tag" title="kernels">kernels</span> <span class="d-tag">synthetic</span> <span title="vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043">vulkan <span class="d-muted">616.92</span></span> <code>synthetic-kernels</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
+<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>169.00 ms</b></div><div class="d-tile"><span>Nodes</span><b>2</b></div><div class="d-tile"><span>Records</span><b>1,974</b></div><div class="d-tile"><span>GPU</span><b>11.94 ms</b></div></div>
+<p class="d-muted d-small">Nothing metered for wall time, FLOPs, bytes moved, tokens, metered time.</p>
 <p class="d-links">Markdown report: <a href="../../../docs/reports/samples/kernels.md">kernels.md</a>, rendered by <code>lrm report synthetic-kernels</code>.</p>
 <nav class="d-toc" aria-label="Sections"><a href="#run-synthetic-kernels-conformance-matrix">Conformance matrix</a><a href="#run-synthetic-kernels-fp32-denormals">fp32 denormals</a><a href="#run-synthetic-kernels-gpu-time">GPU time</a><a href="#run-synthetic-kernels-timeline">Timeline</a><a href="#run-synthetic-kernels-run">Run</a></nav>
 <p class="d-hint">Tap a chart to see it at full size; tap again to fit it.</p>
@@ -3628,7 +3643,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <tr><td><code>00400000</code></td><td>00200000</td><td>00000000</td><td>00000000</td><td>00200000</td></tr>
 </tbody></table></div>
 <h3 id="run-synthetic-kernels-gpu-time">GPU time</h3>
-<figure class="d-chart" id="r-synthetic-kernels-kernels-gpu_by_kernel-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="352" viewBox="0 0 720 352" role="img" aria-labelledby="r-synthetic-kernels-kernels-gpu_by_kernel-title r-synthetic-kernels-kernels-gpu_by_kernel-desc">
+<figure class="d-chart" id="r-synthetic-kernels-kernels-gpu_by_kernel-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: GPU time by kernel" aria-describedby="r-synthetic-kernels-kernels-gpu_by_kernel-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="352" viewBox="0 0 720 352" role="img" aria-labelledby="r-synthetic-kernels-kernels-gpu_by_kernel-title r-synthetic-kernels-kernels-gpu_by_kernel-desc">
 <title id="r-synthetic-kernels-kernels-gpu_by_kernel-title">GPU time by kernel</title>
 <desc id="r-synthetic-kernels-kernels-gpu_by_kernel-desc">Bar chart of GPU time for 8 kernel values, 2 series.</desc>
 <rect class="bg" x="0" y="0" width="720" height="352" rx="8"/>
@@ -3680,7 +3695,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <line class="axis" x1="146" y1="98" x2="146" y2="98" stroke-width="1"/>
 <line class="axis" x1="146" y1="98" x2="146" y2="306" stroke-width="1"/>
 </svg></figure>
-<figure class="d-chart" id="r-synthetic-kernels-kernels-layer_stack-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-kernels-kernels-layer_stack-title r-synthetic-kernels-kernels-layer_stack-desc">
+<figure class="d-chart" id="r-synthetic-kernels-kernels-layer_stack-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: GPU time per layer by kernel family, vulkan" aria-describedby="r-synthetic-kernels-kernels-layer_stack-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-kernels-kernels-layer_stack-title r-synthetic-kernels-kernels-layer_stack-desc">
 <title id="r-synthetic-kernels-kernels-layer_stack-title">GPU time per layer by kernel family, vulkan</title>
 <desc id="r-synthetic-kernels-kernels-layer_stack-desc">Bar chart of GPU time for 28 layer values, 5 series.</desc>
 <rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
@@ -3880,7 +3895,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <line class="axis" x1="60.1" y1="334" x2="696" y2="334" stroke-width="1"/>
 </svg></figure>
 <h3 id="run-synthetic-kernels-timeline">Timeline</h3>
-<figure class="d-chart" id="r-synthetic-kernels-kernels-timeline-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="192" viewBox="0 0 720 192" role="img" aria-labelledby="r-synthetic-kernels-kernels-timeline-title r-synthetic-kernels-kernels-timeline-desc">
+<figure class="d-chart" id="r-synthetic-kernels-kernels-timeline-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Kernel timeline, step 1" aria-describedby="r-synthetic-kernels-kernels-timeline-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="192" viewBox="0 0 720 192" role="img" aria-labelledby="r-synthetic-kernels-kernels-timeline-title r-synthetic-kernels-kernels-timeline-desc">
 <title id="r-synthetic-kernels-kernels-timeline-title">Kernel timeline, step 1</title>
 <desc id="r-synthetic-kernels-kernels-timeline-desc">Timeline of 960 intervals on 2 lanes, 0 event marks.</desc>
 <rect class="bg" x="0" y="0" width="720" height="192" rx="8"/>
@@ -4874,7 +4889,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <line class="axis" x1="63.44" y1="146" x2="696" y2="146" stroke-width="1"/>
 <text class="t3" x="379.72" y="182" font-size="11" text-anchor="middle">GPU time</text>
 </svg></figure>
-<figure class="d-chart" id="r-synthetic-kernels-kernels-timeline_zoom-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="192" viewBox="0 0 720 192" role="img" aria-labelledby="r-synthetic-kernels-kernels-timeline_zoom-title r-synthetic-kernels-kernels-timeline_zoom-desc">
+<figure class="d-chart" id="r-synthetic-kernels-kernels-timeline_zoom-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Kernel timeline, embedding and layers 0 to 1, step 1" aria-describedby="r-synthetic-kernels-kernels-timeline_zoom-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="192" viewBox="0 0 720 192" role="img" aria-labelledby="r-synthetic-kernels-kernels-timeline_zoom-title r-synthetic-kernels-kernels-timeline_zoom-desc">
 <title id="r-synthetic-kernels-kernels-timeline_zoom-title">Kernel timeline, embedding and layers 0 to 1, step 1</title>
 <desc id="r-synthetic-kernels-kernels-timeline_zoom-desc">Timeline of 70 intervals on 2 lanes, 0 event marks.</desc>
 <rect class="bg" x="0" y="0" width="720" height="192" rx="8"/>
@@ -4978,7 +4993,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <line class="axis" x1="63.44" y1="146" x2="696" y2="146" stroke-width="1"/>
 <text class="t3" x="379.72" y="182" font-size="11" text-anchor="middle">GPU time</text>
 </svg></figure>
-<figure class="d-chart" id="r-synthetic-kernels-kernels-dispatch_hist-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="r-synthetic-kernels-kernels-dispatch_hist-title r-synthetic-kernels-kernels-dispatch_hist-desc">
+<figure class="d-chart" id="r-synthetic-kernels-kernels-dispatch_hist-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Dispatch durations" aria-describedby="r-synthetic-kernels-kernels-dispatch_hist-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="r-synthetic-kernels-kernels-dispatch_hist-title r-synthetic-kernels-kernels-dispatch_hist-desc">
 <title id="r-synthetic-kernels-kernels-dispatch_hist-title">Dispatch durations</title>
 <desc id="r-synthetic-kernels-kernels-dispatch_hist-desc">Histogram of duration: 1920 samples, 1920 in 24 bins.</desc>
 <rect class="bg" x="0" y="0" width="720" height="320" rx="8"/>
@@ -5071,9 +5086,10 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </section>
 <section class="d-view" id="run-synthetic-inference" data-nav="kind-inference">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <a href="#kind-inference">inference</a> › <span>synthetic-inference</span></nav>
-<h2>Prefill 512 tokens, then 64 greedy steps on Vulkan (synthetic)</h2>
-<p class="d-tags"><span class="d-st d-st-ok">ok</span> <span class="d-tag">inference</span> <span class="d-tag">synthetic</span> <span title="vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043">vulkan <span class="d-muted">616.92</span></span> <code>synthetic-inference</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
-<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>369.00 ms</b></div><div class="d-tile"><span>Nodes</span><b>1</b></div><div class="d-tile"><span>Records</span><b>7,739</b></div><div class="d-tile"><span>Wall (self)</span><b>364.43 ms</b></div><div class="d-tile"><span>GPU</span><b>250.01 ms</b></div><div class="d-tile"><span>FLOPs</span><b>566.68G</b></div><div class="d-tile"><span>Bytes moved</span><b>83.32 GiB</b></div><div class="d-tile"><span>Tokens</span><b>576</b></div><div class="d-tile"><span>Log problems</span><b>0</b></div></div>
+<h2 tabindex="-1">Prefill 512 tokens, then 64 greedy steps on Vulkan (synthetic)</h2>
+<p class="d-tags"><span class="d-st d-st-ok">ok</span> <span class="d-tag" title="inference">inference</span> <span class="d-tag">synthetic</span> <span title="vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043">vulkan <span class="d-muted">616.92</span></span> <code>synthetic-inference</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
+<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>369.00 ms</b></div><div class="d-tile"><span>Nodes</span><b>1</b></div><div class="d-tile"><span>Records</span><b>7,739</b></div><div class="d-tile"><span>Wall (self)</span><b>364.43 ms</b></div><div class="d-tile"><span>GPU</span><b>250.01 ms</b></div><div class="d-tile"><span>FLOPs</span><b>566.68G</b></div><div class="d-tile"><span>Bytes moved</span><b>83.32 GiB</b></div><div class="d-tile"><span>Tokens</span><b>576</b></div></div>
+<p class="d-muted d-small">Nothing metered for metered time.</p>
 <p class="d-links">Markdown report: <a href="../../../docs/reports/samples/inference.md">inference.md</a>, rendered by <code>lrm report synthetic-inference</code>.</p>
 <nav class="d-toc" aria-label="Sections"><a href="#run-synthetic-inference-speed">Speed</a><a href="#run-synthetic-inference-layers">Layers</a><a href="#run-synthetic-inference-memory">Memory</a><a href="#run-synthetic-inference-metering">Metering</a><a href="#run-synthetic-inference-run">Run</a></nav>
 <p class="d-hint">Tap a chart to see it at full size; tap again to fit it.</p>
@@ -5087,7 +5103,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <tr><td class="d-r">4,950 tok/s</td><td class="d-r">245.2 tok/s</td><td class="d-r">103.43 ms</td><td class="d-r">983.82 MFLOP</td><td class="d-r">1.55 TFLOP/s</td></tr>
 </tbody></table></div>
 <h3 id="run-synthetic-inference-speed">Speed</h3>
-<figure class="d-chart" id="r-synthetic-inference-inference-decode_latency-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-inference-inference-decode_latency-title r-synthetic-inference-inference-decode_latency-desc">
+<figure class="d-chart" id="r-synthetic-inference-inference-decode_latency-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Decode step latency" aria-describedby="r-synthetic-inference-inference-decode_latency-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-inference-inference-decode_latency-title r-synthetic-inference-inference-decode_latency-desc">
 <title id="r-synthetic-inference-inference-decode_latency-title">Decode step latency</title>
 <desc id="r-synthetic-inference-inference-decode_latency-desc">Line chart of latency against step: 1 series, 64 points.</desc>
 <rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
@@ -5114,7 +5130,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <text class="t3" x="373.54" y="370" font-size="11" text-anchor="middle">step</text>
 <path class="line s0" d="M51.08 128.1 L61.32 124.5 L71.55 122.01 L81.79 130.95 L92.03 126.48 L102.26 122.06 L112.5 125.85 L122.74 123.97 L132.97 125.82 L143.21 129.59 L153.45 121.34 L163.69 129.09 L173.92 126 L184.16 125.06 L194.4 126.92 L204.63 128.21 L214.87 125 L225.11 126.85 L235.34 125.39 L245.58 121.42 L255.82 125.6 L266.05 129.23 L276.29 127.2 L286.53 131.33 L296.76 127.15 L307 130.18 L317.24 124.4 L327.47 130.5 L337.71 125.12 L347.95 129.43 L358.18 119.97 L368.42 121.92 L378.66 123.19 L388.9 124.49 L399.13 124.17 L409.37 124.79 L419.61 120.32 L429.84 124.52 L440.08 122.29 L450.32 124.99 L460.55 123 L470.79 127.13 L481.03 122.69 L491.26 128.83 L501.5 125.43 L511.74 126.57 L521.97 126.81 L532.21 120.8 L542.45 124.77 L552.68 124.73 L562.92 122.2 L573.16 127.08 L583.39 121.07 L593.63 125.93 L603.87 125.83 L614.11 120.6 L624.34 121.7 L634.58 122.02 L644.82 127.15 L655.05 129.42 L665.29 120.63 L675.53 119.37 L685.76 126.27 L696 127.34"><title>n0 (vulkan)</title></path>
 </svg></figure>
-<figure class="d-chart" id="r-synthetic-inference-inference-latency_hist-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="r-synthetic-inference-inference-latency_hist-title r-synthetic-inference-inference-latency_hist-desc">
+<figure class="d-chart" id="r-synthetic-inference-inference-latency_hist-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Decode latency distribution" aria-describedby="r-synthetic-inference-inference-latency_hist-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="r-synthetic-inference-inference-latency_hist-title r-synthetic-inference-inference-latency_hist-desc">
 <title id="r-synthetic-inference-inference-latency_hist-title">Decode latency distribution</title>
 <desc id="r-synthetic-inference-inference-latency_hist-desc">Histogram of step latency: 64 samples, 64 in 20 bins.</desc>
 <rect class="bg" x="0" y="0" width="720" height="320" rx="8"/>
@@ -5168,7 +5184,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <tr><td>decode</td><td class="d-r">64</td><td class="d-r">64</td><td class="d-r">261.00 ms</td><td class="d-r">245.2 tok/s</td><td class="d-r">4.08 ms</td></tr>
 </tbody></table></div>
 <h3 id="run-synthetic-inference-layers">Layers</h3>
-<figure class="d-chart" id="r-synthetic-inference-inference-layer_time-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-inference-inference-layer_time-title r-synthetic-inference-inference-layer_time-desc">
+<figure class="d-chart" id="r-synthetic-inference-inference-layer_time-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Layer time per token" aria-describedby="r-synthetic-inference-inference-layer_time-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-inference-inference-layer_time-title r-synthetic-inference-inference-layer_time-desc">
 <title id="r-synthetic-inference-inference-layer_time-title">Layer time per token</title>
 <desc id="r-synthetic-inference-inference-layer_time-desc">Line chart of time per token against layer: 2 series, 56 points.</desc>
 <rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
@@ -5262,7 +5278,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <text class="t2" x="665.04" y="135.25" font-size="11">decode</text>
 </svg></figure>
 <h3 id="run-synthetic-inference-memory">Memory</h3>
-<figure class="d-chart" id="r-synthetic-inference-inference-arena_peak-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="280" viewBox="0 0 720 280" role="img" aria-labelledby="r-synthetic-inference-inference-arena_peak-title r-synthetic-inference-inference-arena_peak-desc">
+<figure class="d-chart" id="r-synthetic-inference-inference-arena_peak-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Peak memory per arena" aria-describedby="r-synthetic-inference-inference-arena_peak-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="280" viewBox="0 0 720 280" role="img" aria-labelledby="r-synthetic-inference-inference-arena_peak-title r-synthetic-inference-inference-arena_peak-desc">
 <title id="r-synthetic-inference-inference-arena_peak-title">Peak memory per arena</title>
 <desc id="r-synthetic-inference-inference-arena_peak-desc">Bar chart of bytes for 6 arena values, 1 series.</desc>
 <rect class="bg" x="0" y="0" width="720" height="280" rx="8"/>
@@ -5356,9 +5372,10 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </section>
 <section class="d-view" id="run-synthetic-goldens" data-nav="kind-goldens">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <a href="#kind-goldens">goldens</a> › <span>synthetic-goldens</span></nav>
-<h2>make_tokenizer --check (synthetic)</h2>
-<p class="d-tags"><span class="d-st d-st-ok">ok</span> <span class="d-tag">goldens</span> <span class="d-tag">synthetic</span> <span class="d-muted">not recorded</span> <code>synthetic-goldens</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
-<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>5.24 s</b></div><div class="d-tile"><span>Nodes</span><b>1</b></div><div class="d-tile"><span>Records</span><b>25</b></div><div class="d-tile"><span>Wall (self)</span><b>5.24 s</b></div><div class="d-tile"><span>GPU</span><b>0 ns</b></div><div class="d-tile"><span>FLOPs</span><b>0</b></div><div class="d-tile"><span>Bytes moved</span><b>0 B</b></div><div class="d-tile"><span>Tokens</span><b>0</b></div><div class="d-tile"><span>Log problems</span><b>0</b></div></div>
+<h2 tabindex="-1">make_tokenizer --check (synthetic)</h2>
+<p class="d-tags"><span class="d-st d-st-ok">ok</span> <span class="d-tag" title="goldens">goldens</span> <span class="d-tag">synthetic</span> <span class="d-muted">not recorded</span> <code>synthetic-goldens</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
+<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>5.24 s</b></div><div class="d-tile"><span>Nodes</span><b>1</b></div><div class="d-tile"><span>Records</span><b>25</b></div><div class="d-tile"><span>Wall (self)</span><b>5.24 s</b></div></div>
+<p class="d-muted d-small">Nothing metered for GPU time, FLOPs, bytes moved, tokens, metered time.</p>
 <p class="d-links">Markdown report: <a href="../../../docs/reports/samples/goldens.md">goldens.md</a>, rendered by <code>lrm report synthetic-goldens</code>.</p>
 <nav class="d-toc" aria-label="Sections"><a href="#run-synthetic-goldens-size">Size</a><a href="#run-synthetic-goldens-checks">Checks</a><a href="#run-synthetic-goldens-tokenizer-corpus">Tokenizer corpus</a><a href="#run-synthetic-goldens-phases">Phases</a><a href="#run-synthetic-goldens-run">Run</a></nav>
 <p class="d-hint">Tap a chart to see it at full size; tap again to fit it.</p>
@@ -5374,7 +5391,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <li>Checks: 3 of 3 pass</li>
 </ul>
 <h3 id="run-synthetic-goldens-size">Size</h3>
-<figure class="d-chart" id="r-synthetic-goldens-goldens-budget-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="170" viewBox="0 0 720 170" role="img" aria-labelledby="r-synthetic-goldens-goldens-budget-title r-synthetic-goldens-goldens-budget-desc">
+<figure class="d-chart" id="r-synthetic-goldens-goldens-budget-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Committed bytes against the budget" aria-describedby="r-synthetic-goldens-goldens-budget-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="170" viewBox="0 0 720 170" role="img" aria-labelledby="r-synthetic-goldens-goldens-budget-title r-synthetic-goldens-goldens-budget-desc">
 <title id="r-synthetic-goldens-goldens-budget-title">Committed bytes against the budget</title>
 <desc id="r-synthetic-goldens-goldens-budget-desc">Bar chart of bytes for 1 set values, 2 series.</desc>
 <rect class="bg" x="0" y="0" width="720" height="170" rx="8"/>
@@ -5408,7 +5425,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <tbody>
 <tr><td>tokenizer</td><td class="d-r">717.24 KiB</td><td class="d-r">2.00 MiB</td><td class="d-r">35.0%</td><td>✓ pass</td></tr>
 </tbody></table></div>
-<figure class="d-chart" id="r-synthetic-goldens-goldens-files-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="176" viewBox="0 0 720 176" role="img" aria-labelledby="r-synthetic-goldens-goldens-files-title r-synthetic-goldens-goldens-files-desc">
+<figure class="d-chart" id="r-synthetic-goldens-goldens-files-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Committed bytes per file" aria-describedby="r-synthetic-goldens-goldens-files-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="176" viewBox="0 0 720 176" role="img" aria-labelledby="r-synthetic-goldens-goldens-files-title r-synthetic-goldens-goldens-files-desc">
 <title id="r-synthetic-goldens-goldens-files-title">Committed bytes per file</title>
 <desc id="r-synthetic-goldens-goldens-files-desc">Bar chart of bytes for 2 file values, 1 series.</desc>
 <rect class="bg" x="0" y="0" width="720" height="176" rx="8"/>
@@ -5453,7 +5470,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </tbody></table></div>
 <h3 id="run-synthetic-goldens-tokenizer-corpus">Tokenizer corpus</h3>
 <p>4,198 cases in 13 categories. transformers' Qwen2Tokenizer agrees with tokenizers on all 3,678 encode cases it was given.</p>
-<figure class="d-chart" id="r-synthetic-goldens-goldens-corpus-0-categories-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="462" viewBox="0 0 720 462" role="img" aria-labelledby="r-synthetic-goldens-goldens-corpus-0-categories-title r-synthetic-goldens-goldens-corpus-0-categories-desc">
+<figure class="d-chart" id="r-synthetic-goldens-goldens-corpus-0-categories-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Tokenizer cases per category" aria-describedby="r-synthetic-goldens-goldens-corpus-0-categories-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="462" viewBox="0 0 720 462" role="img" aria-labelledby="r-synthetic-goldens-goldens-corpus-0-categories-title r-synthetic-goldens-goldens-corpus-0-categories-desc">
 <title id="r-synthetic-goldens-goldens-corpus-0-categories-title">Tokenizer cases per category</title>
 <desc id="r-synthetic-goldens-goldens-corpus-0-categories-desc">Bar chart of cases for 13 category values, 1 series.</desc>
 <rect class="bg" x="0" y="0" width="720" height="462" rx="8"/>
@@ -5564,9 +5581,10 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </section>
 <section class="d-view" id="run-synthetic-gate1" data-nav="kind-gate1">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <a href="#kind-gate1">gate1</a> › <span>synthetic-gate1</span></nav>
-<h2>Fresh clone of main (synthetic)</h2>
-<p class="d-tags"><span class="d-st d-st-ok">ok</span> <span class="d-tag">gate1</span> <span class="d-tag">synthetic</span> <span title="cpu-f32 cpu, .NET 10.0.13, win-x64+avx2+fma">cpu-f32 <span class="d-muted">.NET 10.0.13</span></span> <code>synthetic-gate1</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
-<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>126.65 s</b></div><div class="d-tile"><span>Nodes</span><b>1</b></div><div class="d-tile"><span>Records</span><b>1,046</b></div><div class="d-tile"><span>Wall (self)</span><b>0 ns</b></div><div class="d-tile"><span>GPU</span><b>0 ns</b></div><div class="d-tile"><span>FLOPs</span><b>0</b></div><div class="d-tile"><span>Bytes moved</span><b>0 B</b></div><div class="d-tile"><span>Tokens</span><b>0</b></div><div class="d-tile"><span>Log problems</span><b>0</b></div></div>
+<h2 tabindex="-1">Fresh clone of main (synthetic)</h2>
+<p class="d-tags"><span class="d-st d-st-ok">ok</span> <span class="d-tag" title="gate1">gate1</span> <span class="d-tag">synthetic</span> <span title="cpu-f32 cpu, .NET 10.0.13, win-x64+avx2+fma">cpu-f32 <span class="d-muted">.NET 10.0.13</span></span> <code>synthetic-gate1</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
+<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>126.65 s</b></div><div class="d-tile"><span>Nodes</span><b>1</b></div><div class="d-tile"><span>Records</span><b>1,046</b></div></div>
+<p class="d-muted d-small">Nothing metered for wall time, GPU time, FLOPs, bytes moved, tokens, metered time.</p>
 <p class="d-links">Markdown report: <a href="../../../docs/reports/samples/gate1.md">gate1.md</a>, rendered by <code>lrm report synthetic-gate1</code>.</p>
 <nav class="d-toc" aria-label="Sections"><a href="#run-synthetic-gate1-matrix">Matrix</a><a href="#run-synthetic-gate1-logits-per-gate-prompt">Logits per gate prompt</a><a href="#run-synthetic-gate1-every-check">Every check</a><a href="#run-synthetic-gate1-run">Run</a></nav>
 <p class="d-hint">Tap a chart to see it at full size; tap again to fit it.</p>
@@ -5587,7 +5605,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <tr><td>cluster</td><td>✓ 2/2</td><td>–</td><td>✓ 1/1</td><td>✓ 1/1</td></tr>
 <tr><td>determinism</td><td>✓ 1/1</td><td>–</td><td>–</td><td>–</td></tr>
 </tbody></table></div>
-<figure class="d-chart" id="r-synthetic-gate1-gate1-by_group-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="326" viewBox="0 0 720 326" role="img" aria-labelledby="r-synthetic-gate1-gate1-by_group-title r-synthetic-gate1-gate1-by_group-desc">
+<figure class="d-chart" id="r-synthetic-gate1-gate1-by_group-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Gate checks by group" aria-describedby="r-synthetic-gate1-gate1-by_group-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="326" viewBox="0 0 720 326" role="img" aria-labelledby="r-synthetic-gate1-gate1-by_group-title r-synthetic-gate1-gate1-by_group-desc">
 <title id="r-synthetic-gate1-gate1-by_group-title">Gate checks by group</title>
 <desc id="r-synthetic-gate1-gate1-by_group-desc">Bar chart of checks for 7 group values, 2 series.</desc>
 <rect class="bg" x="0" y="0" width="720" height="326" rx="8"/>
@@ -5633,7 +5651,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <line class="axis" x1="97.76" y1="98" x2="97.76" y2="280" stroke-width="1"/>
 </svg></figure>
 <h3 id="run-synthetic-gate1-logits-per-gate-prompt">Logits per gate prompt</h3>
-<figure class="d-chart" id="r-synthetic-gate1-gate1-logits-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-gate1-gate1-logits-title r-synthetic-gate1-gate1-logits-desc">
+<figure class="d-chart" id="r-synthetic-gate1-gate1-logits-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Logits rel_l2 per gate prompt" aria-describedby="r-synthetic-gate1-gate1-logits-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-gate1-gate1-logits-title r-synthetic-gate1-gate1-logits-desc">
 <title id="r-synthetic-gate1-gate1-logits-title">Logits rel_l2 per gate prompt</title>
 <desc id="r-synthetic-gate1-gate1-logits-desc">Error bars of rel_l2 vs torch32 (log) per prompt: 2 series over 8 categories, whiskers from low to high.</desc>
 <rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
@@ -5762,9 +5780,10 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </section>
 <section class="d-view" id="run-synthetic-cluster" data-nav="kind-cluster">
 <nav class="d-crumbs" aria-label="Breadcrumbs"><a href="#runs">Runs</a> › <a href="#kind-cluster">cluster</a> › <span>synthetic-cluster</span></nav>
-<h2>Two-stage pipeline, 2 replicas per stage and a spare, one node killed (synthetic)</h2>
-<p class="d-tags"><span class="d-st d-st-ok">ok</span> <span class="d-tag">cluster</span> <span class="d-tag">synthetic</span> <span class="d-muted">not recorded</span> <code>synthetic-cluster</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
-<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>870.00 ms</b></div><div class="d-tile"><span>Nodes</span><b>6</b></div><div class="d-tile"><span>Records</span><b>421</b></div><div class="d-tile"><span>Wall (self)</span><b>0 ns</b></div><div class="d-tile"><span>GPU</span><b>0 ns</b></div><div class="d-tile"><span>FLOPs</span><b>0</b></div><div class="d-tile"><span>Bytes moved</span><b>4.22 MiB</b></div><div class="d-tile"><span>Tokens</span><b>0</b></div><div class="d-tile"><span>Log problems</span><b>1</b></div></div>
+<h2 tabindex="-1">Two-stage pipeline, 2 replicas per stage and a spare, one node killed (synthetic)</h2>
+<p class="d-tags"><span class="d-st d-st-ok">ok</span> <span class="d-tag" title="cluster">cluster</span> <span class="d-tag">synthetic</span> <span class="d-muted">not recorded</span> <code>synthetic-cluster</code> <span class="d-muted">2026-10-18 09:00:00 UTC</span></p>
+<div class="d-tiles"><div class="d-tile"><span>Duration</span><b>870.00 ms</b></div><div class="d-tile"><span>Nodes</span><b>6</b></div><div class="d-tile"><span>Records</span><b>421</b></div><div class="d-tile"><span>Bytes moved</span><b>4.22 MiB</b></div><div class="d-tile"><span>Log problems</span><b>1</b></div></div>
+<p class="d-muted d-small">Nothing metered for wall time, GPU time, FLOPs, tokens, metered time.</p>
 <p class="d-links">Markdown report: <a href="../../../docs/reports/samples/cluster.md">cluster.md</a>, rendered by <code>lrm report synthetic-cluster</code>.</p>
 <nav class="d-toc" aria-label="Sections"><a href="#run-synthetic-cluster-pipeline">Pipeline</a><a href="#run-synthetic-cluster-nodes">Nodes</a><a href="#run-synthetic-cluster-metering">Metering</a><a href="#run-synthetic-cluster-run">Run</a></nav>
 <p class="d-hint">Tap a chart to see it at full size; tap again to fit it.</p>
@@ -5781,7 +5800,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <p>Run digest: <code>9563af1d0c1580c8aba6fb4750d67978181bb2d9f15b222adb6628b6169246dc</code></p>
 <h3 id="run-synthetic-cluster-pipeline">Pipeline</h3>
 <p>Each bar is a work unit the coordinator accepted, drawn on the node whose result it took, from the assignment to the acceptance. Green units were accepted from their first assignment; amber ones were reissued to another node after the first missed its deadline. Markers are node losses, kills, restarts and demotions.</p>
-<figure class="d-chart" id="r-synthetic-cluster-cluster-gantt-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="270" viewBox="0 0 720 270" role="img" aria-labelledby="r-synthetic-cluster-cluster-gantt-title r-synthetic-cluster-cluster-gantt-desc">
+<figure class="d-chart" id="r-synthetic-cluster-cluster-gantt-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Stage Gantt chart" aria-describedby="r-synthetic-cluster-cluster-gantt-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="270" viewBox="0 0 720 270" role="img" aria-labelledby="r-synthetic-cluster-cluster-gantt-title r-synthetic-cluster-cluster-gantt-desc">
 <title id="r-synthetic-cluster-cluster-gantt-title">Stage Gantt chart</title>
 <desc id="r-synthetic-cluster-cluster-gantt-desc">Timeline of 48 intervals on 5 lanes, 3 event marks.</desc>
 <rect class="bg" x="0" y="0" width="720" height="270" rx="8"/>
@@ -5865,7 +5884,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <line class="axis" x1="104.96" y1="224" x2="696" y2="224" stroke-width="1"/>
 <text class="t3" x="400.48" y="260" font-size="11" text-anchor="middle">time since the first cluster record</text>
 </svg></figure>
-<figure class="d-chart" id="r-synthetic-cluster-cluster-step_latency-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-cluster-cluster-step_latency-title r-synthetic-cluster-cluster-step_latency-desc">
+<figure class="d-chart" id="r-synthetic-cluster-cluster-step_latency-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: End-to-end step latency" aria-describedby="r-synthetic-cluster-cluster-step_latency-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-cluster-cluster-step_latency-title r-synthetic-cluster-cluster-step_latency-desc">
 <title id="r-synthetic-cluster-cluster-step_latency-title">End-to-end step latency</title>
 <desc id="r-synthetic-cluster-cluster-step_latency-desc">Line chart of latency against step: 1 series, 24 points.</desc>
 <rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
@@ -5918,7 +5937,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <circle class="f0 ring" cx="668.5" cy="320.13" r="4" stroke-width="2"><title>lane 0, step 22: 21.67 ms</title></circle>
 <circle class="f0 ring" cx="696" cy="320.66" r="4" stroke-width="2"><title>lane 0, step 23: 20.84 ms</title></circle>
 </svg></figure>
-<figure class="d-chart" id="r-synthetic-cluster-cluster-deadlines-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-cluster-cluster-deadlines-title r-synthetic-cluster-cluster-deadlines-desc">
+<figure class="d-chart" id="r-synthetic-cluster-cluster-deadlines-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Stage deadlines" aria-describedby="r-synthetic-cluster-cluster-deadlines-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="r-synthetic-cluster-cluster-deadlines-title r-synthetic-cluster-cluster-deadlines-desc">
 <title id="r-synthetic-cluster-cluster-deadlines-title">Stage deadlines</title>
 <desc id="r-synthetic-cluster-cluster-deadlines-desc">Line chart of deadline against time since the first cluster record: 2 series, 8 points.</desc>
 <rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
@@ -5954,7 +5973,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <circle class="f1 ring" cx="63.23" cy="294.67" r="4" stroke-width="2"><title>stage 1, time since the first cluster record 240.73 ms: 250.00 ms</title></circle>
 <circle class="f1 ring" cx="696" cy="294.67" r="4" stroke-width="2"><title>stage 1, time since the first cluster record 870.57 ms: 250.00 ms</title></circle>
 </svg></figure>
-<figure class="d-chart" id="r-synthetic-cluster-cluster-latency-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="r-synthetic-cluster-cluster-latency-title r-synthetic-cluster-cluster-latency-desc">
+<figure class="d-chart" id="r-synthetic-cluster-cluster-latency-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Unit latency, deadline start to accepted result" aria-describedby="r-synthetic-cluster-cluster-latency-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="r-synthetic-cluster-cluster-latency-title r-synthetic-cluster-cluster-latency-desc">
 <title id="r-synthetic-cluster-cluster-latency-title">Unit latency, deadline start to accepted result</title>
 <desc id="r-synthetic-cluster-cluster-latency-desc">Histogram of latency: 48 samples, 48 in 24 bins.</desc>
 <rect class="bg" x="0" y="0" width="720" height="320" rx="8"/>
@@ -5987,7 +6006,7 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <line class="axis" x1="38.32" y1="274" x2="696" y2="274" stroke-width="1"/>
 </svg></figure>
 <h3 id="run-synthetic-cluster-nodes">Nodes</h3>
-<figure class="d-chart" id="r-synthetic-cluster-cluster-busy-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="274" viewBox="0 0 720 274" role="img" aria-labelledby="r-synthetic-cluster-cluster-busy-title r-synthetic-cluster-cluster-busy-desc">
+<figure class="d-chart" id="r-synthetic-cluster-cluster-busy-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Accepted work per node and stage, by outcome" aria-describedby="r-synthetic-cluster-cluster-busy-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="274" viewBox="0 0 720 274" role="img" aria-labelledby="r-synthetic-cluster-cluster-busy-title r-synthetic-cluster-cluster-busy-desc">
 <title id="r-synthetic-cluster-cluster-busy-title">Accepted work per node and stage, by outcome</title>
 <desc id="r-synthetic-cluster-cluster-busy-desc">Bar chart of time for 5 node values, 2 series.</desc>
 <rect class="bg" x="0" y="0" width="720" height="274" rx="8"/>
@@ -6118,10 +6137,10 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 </article>
 </section>
 <section class="d-view" id="runs" data-nav="runs" aria-labelledby="runs-h">
-<h2 id="runs-h">Runs</h2>
+<h2 id="runs-h" tabindex="-1">Runs</h2>
 <p class="d-muted">Every run in the runs folders, newest first. A run with a view links to it: the sections of its report, its metering totals and a link to the Markdown report.</p>
 <div class="d-tiles"><div class="d-tile"><span>Runs</span><b>9</b></div><div class="d-tile"><span>ok</span><b>8</b></div><div class="d-tile"><span>failed</span><b>1</b></div><div class="d-tile"><span>running</span><b>0</b></div><div class="d-tile"><span>aborted</span><b>0</b></div><div class="d-tile"><span>With a view</span><b>9</b></div><div class="d-tile"><span>Not readable</span><b>0</b></div></div>
-<figure class="d-chart" id="d-runs-by_kind-fig" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="378" viewBox="0 0 720 378" role="img" aria-labelledby="d-runs-by_kind-title d-runs-by_kind-desc">
+<figure class="d-chart" id="d-runs-by_kind-fig" tabindex="0" role="button" aria-pressed="false" aria-label="Zoom chart: Runs by kind and status" aria-describedby="d-runs-by_kind-desc"><svg xmlns="http://www.w3.org/2000/svg" width="720" height="378" viewBox="0 0 720 378" role="img" aria-labelledby="d-runs-by_kind-title d-runs-by_kind-desc">
 <title id="d-runs-by_kind-title">Runs by kind and status</title>
 <desc id="d-runs-by_kind-desc">Bar chart of runs for 9 kind values, 2 series.</desc>
 <rect class="bg" x="0" y="0" width="720" height="378" rx="8"/>
@@ -6139,11 +6158,11 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 <line class="grid" x1="527.57" y1="98" x2="527.57" y2="332" stroke-width="1"/>
 <line class="grid" x1="640" y1="98" x2="640" y2="332" stroke-width="1"/>
 <text class="t3" x="77.84" y="349" font-size="11" text-anchor="middle">0</text>
-<text class="t3" x="190.27" y="349" font-size="11" text-anchor="middle">0</text>
-<text class="t3" x="302.7" y="349" font-size="11" text-anchor="middle">0</text>
-<text class="t3" x="415.14" y="349" font-size="11" text-anchor="middle">1</text>
-<text class="t3" x="527.57" y="349" font-size="11" text-anchor="middle">1</text>
-<text class="t3" x="640" y="349" font-size="11" text-anchor="middle">1</text>
+<text class="t3" x="190.27" y="349" font-size="11" text-anchor="middle">0.2</text>
+<text class="t3" x="302.7" y="349" font-size="11" text-anchor="middle">0.4</text>
+<text class="t3" x="415.14" y="349" font-size="11" text-anchor="middle">0.6</text>
+<text class="t3" x="527.57" y="349" font-size="11" text-anchor="middle">0.8</text>
+<text class="t3" x="640" y="349" font-size="11" text-anchor="middle">1.0</text>
 <text class="t3" x="77.84" y="88" font-size="11" text-anchor="start">kind</text>
 <text class="t3" x="358.92" y="368" font-size="11" text-anchor="middle">runs</text>
 <text class="t2" x="69.84" y="115" font-size="12" text-anchor="end">parity</text>
@@ -6198,6 +6217,9 @@ text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;s
 var d=document,root=d.documentElement,K='lrm.dashboard.theme',modes=['auto','light','dark'];
 function load(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function save(k,v){try{if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}}
+var W='lrm.dashboard.watch:',watching=root.hasAttribute('data-watch');
+function sget(k){try{return sessionStorage.getItem(W+k)}catch(e){return null}}
+function sset(k,v){try{sessionStorage.setItem(W+k,v)}catch(e){}}
 var mode=load(K);if(modes.indexOf(mode)<0)mode='auto';
 var tb=d.getElementById('d-theme');
 function apply(){if(mode==='auto')root.removeAttribute('data-theme');else root.setAttribute('data-theme',mode);
@@ -6205,36 +6227,50 @@ if(tb){tb.textContent='Theme: '+mode;tb.setAttribute('aria-label','Colour theme:
 apply();if(tb)tb.addEventListener('click',function(){mode=modes[(modes.indexOf(mode)+1)%3];save(K,mode==='auto'?null:mode);apply()});
 var main=d.querySelector('main');if(main)main.classList.add('d-js');
 function target(){var h='';try{h=decodeURIComponent(location.hash.slice(1))}catch(e){}return h&&d.getElementById(h)}
+function isView(el){return !!(el&&el.classList&&el.classList.contains('d-view'))}
 function current(){var el=target(),v=el&&el.closest?el.closest('.d-view'):null;return v||d.getElementById('runs')}
 function fill(slot){if(slot.getAttribute('data-done'))return;var from=d.getElementById(slot.getAttribute('data-src'));if(!from)return;
-var n=slot.getAttribute('data-n'),c=from.cloneNode(true);c.removeAttribute('id');
+var n=slot.getAttribute('data-n'),c=from.cloneNode(true);c.removeAttribute('id');c.classList.remove('d-zoom');c.setAttribute('aria-pressed','false');
 [].forEach.call(c.querySelectorAll('[id]'),function(e){e.id=e.id+'-'+n});
-var svg=c.querySelector('svg'),l=svg&&svg.getAttribute('aria-labelledby');
-if(l)svg.setAttribute('aria-labelledby',l.split(' ').map(function(x){return x+'-'+n}).join(' '));
+function ren(el,at){var l=el&&el.getAttribute(at);if(l)el.setAttribute(at,l.split(' ').map(function(x){return x+'-'+n}).join(' '))}
+ren(c.querySelector('svg'),'aria-labelledby');ren(c,'aria-describedby');
 slot.textContent='';slot.appendChild(c);slot.setAttribute('data-done','1')}
+var nav=d.querySelector('.d-nav');
 function show(){var v=current();[].forEach.call(d.querySelectorAll('.d-view.d-on'),function(x){if(x!==v)x.classList.remove('d-on')});
 if(v){v.classList.add('d-on');[].forEach.call(v.querySelectorAll('.d-slot[data-src]'),fill)}
 var k=v&&v.getAttribute('data-nav');
-[].forEach.call(d.querySelectorAll('.d-nav a'),function(a){if(a.getAttribute('href')==='#'+k)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')})}
-var hdr=d.querySelector('.d-top');function measure(){if(hdr)root.style.setProperty('--d-hdr',(hdr.offsetHeight+8)+'px')}
+[].forEach.call(d.querySelectorAll('.d-nav a'),function(a){if(a.getAttribute('href')==='#'+k){a.setAttribute('aria-current','page');
+if(nav&&(a.offsetLeft<nav.scrollLeft||a.offsetLeft+a.offsetWidth>nav.scrollLeft+nav.clientWidth))nav.scrollLeft=Math.max(0,a.offsetLeft-16)}
+else a.removeAttribute('aria-current')})}
+var hdr=d.querySelector('.d-top');
+function measure(){if(hdr)root.style.setProperty('--d-hdr',((getComputedStyle(hdr).position==='sticky'?hdr.offsetHeight:0)+8)+'px')}
 measure();window.addEventListener('resize',measure);
-function place(){var el=target();
-if(!el||(el.classList&&el.classList.contains('d-view')))window.scrollTo(0,0);else el.scrollIntoView()}
-window.addEventListener('hashchange',function(){show();place()});show();
-var body=d.getElementById('d-runs-body');
-if(body){var rows=[].slice.call(body.rows),fk=d.getElementById('d-f-kind'),fs=d.getElementById('d-f-status'),fq=d.getElementById('d-f-q'),fc=d.getElementById('d-f-count');
+function place(){var el=target();if(!el||isView(el))window.scrollTo(0,0);else el.scrollIntoView()}
+function heading(v){return v&&v.querySelector('h2[tabindex]')}
+function focusView(){var el=target();if(el&&!isView(el))return;var h=heading(current());if(h)h.focus({preventScroll:true})}
+window.addEventListener('hashchange',function(){show();place();focusView()});show();
+var skip=d.querySelector('.d-skip');
+if(skip){skip.hidden=false;skip.addEventListener('click',function(e){e.preventDefault();var h=heading(current());if(h)h.focus()})}
+var body=d.getElementById('d-runs-body'),fk,fs,fq;
+if(body){var rows=[].slice.call(body.rows),fc=d.getElementById('d-f-count');fk=d.getElementById('d-f-kind');fs=d.getElementById('d-f-status');fq=d.getElementById('d-f-q');
 d.getElementById('d-filters').hidden=false;
+if(watching){var saved=sget('filter');if(saved){try{var f=JSON.parse(saved);fk.value=f.k||'';fs.value=f.s||'';fq.value=f.q||''}catch(e){}}}
 var filter=function(){var k=fk.value,s=fs.value,q=fq.value.trim().toLowerCase(),n=0;
 rows.forEach(function(r){var ok=(!k||r.getAttribute('data-kind')===k)&&(!s||r.getAttribute('data-status')===s)&&(!q||r.textContent.toLowerCase().indexOf(q)>=0);r.hidden=!ok;if(ok)n++});
 fc.textContent=n+' of '+rows.length+' runs'};
 fk.addEventListener('change',filter);fs.addEventListener('change',filter);fq.addEventListener('input',filter);filter()}
-d.addEventListener('click',function(e){var f=e.target&&e.target.closest?e.target.closest('figure.d-chart'):null;if(f&&!(e.target.closest('a')))f.classList.toggle('d-zoom')});
-d.addEventListener('keydown',function(e){if(e.key!=='Enter'&&e.key!==' ')return;var f=e.target;if(f&&f.matches&&f.matches('figure.d-chart')){e.preventDefault();f.classList.toggle('d-zoom')}});
-var watching=root.hasAttribute('data-watch'),S='lrm.dashboard.scroll:';
-function restore(){var y=null;if(watching){try{y=sessionStorage.getItem(S+location.hash)}catch(e){}}
-if(y!==null)window.scrollTo(0,+y);else place()}
+function zoom(f){var on=f.classList.toggle('d-zoom');f.setAttribute('aria-pressed',on?'true':'false')}
+d.addEventListener('click',function(e){var f=e.target&&e.target.closest?e.target.closest('figure.d-chart'):null;if(f&&!(e.target.closest('a')))zoom(f)});
+d.addEventListener('keydown',function(e){if(e.key!=='Enter'&&e.key!==' ')return;var f=e.target;if(f&&f.matches&&f.matches('figure.d-chart')){e.preventDefault();zoom(f)}});
+function restore(){var y=watching?sget('scroll:'+location.hash):null;if(y!==null)window.scrollTo(0,+y);else place()}
 if(d.readyState==='complete')restore();else window.addEventListener('load',function(){setTimeout(restore,0)});
-if(watching)window.addEventListener('pagehide',function(){try{sessionStorage.setItem(S+location.hash,String(window.scrollY))}catch(e){}});
+if(watching){var every=Math.max(1,+root.getAttribute('data-watch')||3)*1000,due=Date.now()+every,live=d.querySelector('.d-live');
+window.addEventListener('pagehide',function(){sset('scroll:'+location.hash,String(window.scrollY));if(body)sset('filter',JSON.stringify({k:fk.value,s:fs.value,q:fq.value}))});
+function busy(){var a=d.activeElement,t=a&&a.tagName;
+return t==='INPUT'||t==='SELECT'||t==='TEXTAREA'||!!d.querySelector('figure.d-chart.d-zoom')||(window.getSelection?String(window.getSelection()):'')!==''}
+setInterval(function(){if(d.hidden||Date.now()<due)return;var b=busy();
+if(live){if(b)live.setAttribute('data-paused','');else live.removeAttribute('data-paused')}
+if(!b)location.reload()},500)}
 })();
 </script>
 </body>

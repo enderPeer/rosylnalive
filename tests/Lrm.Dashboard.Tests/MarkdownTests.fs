@@ -125,6 +125,33 @@ let tests =
                      + "<a href=\"file:///C:/r.md\">d</a> <a href=\"#k\">e</a>")
                     "only relative, file: and fragment links are links"
 
+            testCase "network paths, and what a browser turns into one, stay text"
+            <| fun () ->
+                // From a file: page, //host and \\host open file://host/..., an SMB request that leaves the machine.
+                for target in
+                    [
+                        "//evil.example/share/x"
+                        "\\\\evil.example\\share\\x"
+                        "\\/evil.example/x"
+                        "/\\evil.example/x"
+                        "/\t/evil.example/x"
+                        " //evil.example/x"
+                        "/x/report.md"
+                        "file://evil.example/share/x"
+                        "file:////evil.example/share/x"
+                        "file:///%2F%2Fevil.example/x"
+                        "javascript:alert(1)"
+                        "data:text/html,x"
+                        "a\\b.md"
+                    ] do
+                    let html = Markdown.inlineHtml (fun _ _ -> None) ("[click](" + target + ")")
+                    Expect.isFalse (html.Contains "<a ") ("no link for " + target)
+                    Expect.stringStarts html "click (<code>" ("shown as text: " + target)
+                    Expect.isFalse (Html.isLocalHref target) ("not local: " + target)
+
+                for target in [ "#run-x"; "#kind-a b"; "report/parity.md"; "../c/d.md"; "file:///C:/r.md" ] do
+                    Expect.isTrue (Html.isLocalHref target) ("local: " + target)
+
             testCase "Html.text drops control characters and replaces what HTML cannot hold"
             <| fun () ->
                 let s =
@@ -140,13 +167,14 @@ let tests =
                 Expect.equal (Html.slug "  fp32 denormals ") "fp32-denormals" "trimmed"
                 Expect.equal (Html.slug "∑") "section" "no letters"
 
-            testCase "hrefs are relative inside the page's folder and file URIs outside it"
+            testCase "hrefs are relative inside the page's folder, and there is none outside it"
             <| fun () ->
                 let root = Path.Combine(Path.GetTempPath(), "lrm-dashboard-href")
                 let inside = Path.Combine(root, "runs", "r 1", "report", "parity.md")
                 let outside = Path.Combine(Path.GetTempPath(), "elsewhere", "x.md")
-                Expect.equal (Html.href root inside) "runs/r%201/report/parity.md" "relative"
-                Expect.stringStarts (Html.href root outside) "file:///" "file URI"
+                Expect.equal (Html.href root inside) (Some "runs/r%201/report/parity.md") "relative"
+                Expect.isNone (Html.href root outside) "no absolute file: URI"
+                Expect.isNone (Html.href root (Path.Combine(root, "..", "x.md"))) "nor one climbing out"
 
                 Expect.equal
                     (Html.relativeHref (Path.Combine(root, "a", "b")) (Path.Combine(root, "c", "d.md")))

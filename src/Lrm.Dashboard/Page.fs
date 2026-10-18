@@ -83,13 +83,18 @@ module Page =
     let private styleElement = "<style>" + Theme.style + "</style>\n"
 
     /// A chart as an inline SVG figure. The SVG is ChartSvg.render's text for this id with its <style> element left
-    /// out: the page carries those rules once (Assets.chartCss).
+    /// out: the page carries those rules once (Assets.chartCss). The figure is a toggle button (Enter, Space or a click
+    /// shows the chart at full size), named after the chart and described by the chart's own description.
     let figure (id: string) (chart: Chart) =
         let svg = (ChartSvg.render id chart).Replace(styleElement, "").TrimEnd('\n')
 
         "<figure class=\"d-chart\" id=\""
         + a (id + "-fig")
-        + "\" tabindex=\"0\">"
+        + "\" tabindex=\"0\" role=\"button\" aria-pressed=\"false\" aria-label=\""
+        + a ("Zoom chart: " + ChartSvg.title chart)
+        + "\" aria-describedby=\""
+        + a (id + "-desc")
+        + "\">"
         + svg
         + "</figure>"
 
@@ -208,6 +213,20 @@ module Page =
     let private countStatus (s: RunStatus) (runs: RunEntry list) =
         runs |> List.filter (fun r -> r.Manifest.Status = s) |> List.length
 
+    /// The value format of a count axis whose largest bar is `peak` runs. T1's bar axis has about five ticks at 1, 2,
+    /// 2.5 or 5 times a power of ten of peak/5, and NumFormat.Int rounds each tick label to a whole number, so a
+    /// fractional step would print repeated or wrong labels ("0 0 0 1 1 1" for one run). Int is used only where the
+    /// step is whole (peak/5 at least 1 and not in (2, 2.5]); otherwise Si prints the fractional ticks as they are
+    /// ("0.2") and the bar values as whole counts ("1"). The cpu tier checks the labels for every peak from 1 to 60
+    /// (T2 asks T1 for integer steps on Int axes).
+    let countFormat (peak: int) =
+        let fifth = float peak / 5.0
+
+        if fifth >= 1.0 && not (fifth > 2.0 && fifth <= 2.5) then
+            NumFormat.Int
+        else
+            NumFormat.Si
+
     // ---- views -----------------------------------------------------------------------------------------------------
 
     let private indexView (m: DashboardModel) (kinds: string list) =
@@ -217,7 +236,7 @@ module Page =
         sb.Append("<section class=\"d-view\" id=\"runs\" data-nav=\"runs\" aria-labelledby=\"runs-h\">\n")
         |> ignore
 
-        sb.Append("<h2 id=\"runs-h\">Runs</h2>\n") |> ignore
+        sb.Append("<h2 id=\"runs-h\" tabindex=\"-1\">Runs</h2>\n") |> ignore
 
         sb.Append(
             "<p class=\"d-muted\">Every run in the runs folders, newest first. A run with a view links to it: "
@@ -254,6 +273,11 @@ module Page =
                                 |> float)
                     })
 
+            let peak =
+                present
+                |> List.map (fun k -> runs |> List.filter (fun r -> r.Kind = k) |> List.length)
+                |> List.fold max 0
+
             let chart =
                 Chart.Bar
                     {
@@ -261,7 +285,7 @@ module Page =
                         Subtitle = "Every readable run in the runs folders"
                         CategoryLabel = "kind"
                         ValueLabel = "runs"
-                        ValueFormat = NumFormat.Int
+                        ValueFormat = countFormat peak
                         Categories = present
                         Series = series
                         Stacked = true
@@ -379,6 +403,50 @@ module Page =
     [<Literal>]
     let KindRows = 15
 
+    /// The duration of each of `timed` (finished runs, oldest first) as a dot per run, coloured by status, on a log
+    /// axis: one kind's runs can last from a millisecond to hours (the parity probes and the golden generation), and a
+    /// linear axis would flatten all but the longest. A run of zero length sits in the axis's zero strip.
+    let durationChart (timed: RunEntry list) =
+        let timed = Array.ofList timed
+
+        Chart.ErrorBars
+            {
+                Title = "Duration of each run"
+                Subtitle =
+                    Invariant.format $"The {timed.Length} newest finished runs, oldest first, by status; log scale"
+                XLabel = "start (UTC)"
+                YLabel = "duration"
+                YFormat = NumFormat.Duration
+                YLog = true
+                Categories = timed |> Array.map shortStart |> List.ofArray
+                Series =
+                    statuses
+                    |> List.filter (fun (s, _) -> timed |> Array.exists (fun r -> r.Manifest.Status = s))
+                    |> List.map (fun (s, c) ->
+                        {
+                            Name = RunStatus.name s
+                            Color = c
+                            Spreads =
+                                [
+                                    for i in 0 .. timed.Length - 1 do
+                                        let r = timed[i]
+
+                                        if r.Manifest.Status = s then
+                                            let ns = float r.DurationNs.Value
+
+                                            yield
+                                                {
+                                                    Index = i
+                                                    Low = ns
+                                                    Mid = ns
+                                                    High = ns
+                                                    Invalid = 0
+                                                }
+                                ]
+                        })
+                RefLines = []
+            }
+
     let private kindView (m: DashboardModel) (kind: string) =
         let sb = StringBuilder()
         let runs = m.Runs |> List.filter (fun r -> r.Kind = kind)
@@ -391,7 +459,7 @@ module Page =
         |> ignore
 
         sb.Append(crumbs [ "Runs", Some "#runs"; kind, None ]) |> ignore
-        sb.Append("<h2>").Append(t kind) |> ignore
+        sb.Append("<h2 tabindex=\"-1\">").Append(t kind) |> ignore
 
         match template with
         | Some tpl ->
@@ -453,36 +521,8 @@ module Page =
                 |> List.rev
 
             if timed.Length >= 2 then
-                let chart =
-                    Chart.Bar
-                        {
-                            Title = "Duration of each run"
-                            Subtitle =
-                                Invariant.format $"The {timed.Length} newest finished runs, oldest first, by status"
-                            CategoryLabel = "start (UTC)"
-                            ValueLabel = "duration"
-                            ValueFormat = NumFormat.Duration
-                            Categories = timed |> List.map shortStart
-                            Series =
-                                statuses
-                                |> List.filter (fun (s, _) -> timed |> List.exists (fun r -> r.Manifest.Status = s))
-                                |> List.map (fun (s, c) ->
-                                    {
-                                        Name = RunStatus.name s
-                                        Color = c
-                                        Values =
-                                            timed
-                                            |> List.map (fun r ->
-                                                if r.Manifest.Status = s then
-                                                    float r.DurationNs.Value
-                                                else
-                                                    0.0)
-                                    })
-                            Stacked = true
-                            Horizontal = false
-                        }
-
-                sb.Append(figure ("d-kind-" + kind + "-durations") chart).Append('\n') |> ignore
+                sb.Append(figure ("d-kind-" + kind + "-durations") (durationChart timed)).Append('\n')
+                |> ignore
 
             if not pairs.IsEmpty then
                 sb.Append("<h3>Compare</h3>\n").Append(pairList pairs) |> ignore
@@ -506,7 +546,7 @@ module Page =
         |> ignore
 
         sb.Append(crumbs [ "Runs", Some "#runs"; "Compare", None ]) |> ignore
-        sb.Append("<h2>Compare</h2>\n") |> ignore
+        sb.Append("<h2 tabindex=\"-1\">Compare</h2>\n") |> ignore
 
         sb.Append(
             "<p>Two runs of the same kind side by side: what changed in the run, its headline values, its metering "
@@ -530,18 +570,26 @@ module Page =
 
         sb.Append("</section>\n").ToString()
 
+    /// A run's metering totals: (tile label, name in a sentence, value text, whether it is non-zero). Wall time first.
     let private totalsRows (x: MeterTotals) =
         [
-            "Wall (self)", Fmt.duration (float x.WallNs)
-            "GPU", Fmt.duration (float x.GpuNs)
-            "FLOPs", Fmt.si x.Flops
-            "Bytes moved", Fmt.bytes x.Bytes
-            "Tokens", Fmt.si x.Tokens
+            "Wall (self)", "wall time", Fmt.duration (float x.WallNs), x.WallNs <> 0L
+            "GPU", "GPU time", Fmt.duration (float x.GpuNs), x.GpuNs <> 0L
+            "FLOPs", "FLOPs", Fmt.si x.Flops, x.Flops <> 0.0
+            "Bytes moved", "bytes moved", Fmt.bytes x.Bytes, x.Bytes <> 0.0
+            "Tokens", "tokens", Fmt.si x.Tokens, x.Tokens <> 0.0
+            "Metered time", "metered time", Fmt.duration x.MeterNs, x.MeterNs <> 0.0
         ]
-        @ (if x.MeterNs > 0.0 then
-               [ "Metered time", Fmt.duration x.MeterNs ]
-           else
-               [])
+
+    /// The metering totals that are zero, in one line ("Nothing metered for GPU time, tokens."), or "". Zero totals
+    /// get no tile, so a phone shows the report sooner.
+    let private notMetered (rows: (string * string * string * bool) list) =
+        match rows |> List.filter (fun (_, _, _, nonZero) -> not nonZero) with
+        | [] -> ""
+        | zero ->
+            "<p class=\"d-muted d-small\">Nothing metered for "
+            + t (zero |> List.map (fun (_, name, _, _) -> name) |> String.concat ", ")
+            + ".</p>\n"
 
     let private runView (m: DashboardModel) (v: RunView) =
         let sb = StringBuilder()
@@ -555,10 +603,12 @@ module Page =
         sb.Append(crumbs [ "Runs", Some "#runs"; e.Kind, Some("#" + nav); e.Id, None ])
         |> ignore
 
-        sb.Append("<h2>").Append(t e.Manifest.Title).Append("</h2>\n") |> ignore
+        sb.Append("<h2 tabindex=\"-1\">").Append(t e.Manifest.Title).Append("</h2>\n")
+        |> ignore
+
         sb.Append("<p class=\"d-tags\">").Append(status e) |> ignore
 
-        sb.Append(" <span class=\"d-tag\">").Append(t e.Kind).Append("</span>")
+        sb.Append(" <span class=\"d-tag\" title=\"").Append(a e.Kind).Append("\">").Append(t e.Kind).Append("</span>")
         |> ignore
 
         if e.Manifest.Synthetic then
@@ -570,27 +620,41 @@ module Page =
         sb.Append(" <span class=\"d-muted\">").Append(t (startText e)).Append(" UTC</span></p>\n")
         |> ignore
 
+        // Only the totals that are not zero get a tile; the others are named in one line below the tiles.
+        let totals = totalsRows v.Totals
+
         sb.Append(
             tiles (
                 [ "Duration", durationText e; "Nodes", cnt e.Nodes; "Records", cnt v.Records ]
-                @ totalsRows v.Totals
-                @ [ "Log problems", cnt v.Problems.Length ]
+                @ [
+                    for label, _, value, nonZero in totals do
+                        if nonZero then
+                            yield label, value
+                ]
+                @ (if v.Problems.IsEmpty then
+                       []
+                   else
+                       [ "Log problems", cnt v.Problems.Length ])
             )
         )
         |> ignore
 
+        sb.Append(notMetered totals) |> ignore
         sb.Append("<p class=\"d-links\">") |> ignore
 
         match v.Template with
         | Some tpl ->
-            match v.ReportHref with
-            | Some href ->
+            match v.Report with
+            | Some(ReportLink.Href href) ->
                 sb
                     .Append("Markdown report: <a href=\"")
                     .Append(a href)
                     .Append("\">")
                     .Append(t (tpl + ".md"))
                     .Append("</a>, rendered by ")
+                |> ignore
+            | Some(ReportLink.Text path) ->
+                sb.Append("Markdown report: <code>").Append(t path).Append("</code> beside the run log, rendered by ")
                 |> ignore
             | None -> sb.Append("The Markdown report is rendered by ") |> ignore
 
@@ -728,7 +792,7 @@ module Page =
         sb.Append(crumbs [ "Runs", Some "#runs"; "Compare", Some "#compare"; kind, None ])
         |> ignore
 
-        sb.Append("<h2>Compare ").Append(t kind).Append(" runs</h2>\n<div class=\"d-pair-grid\">\n")
+        sb.Append("<h2 tabindex=\"-1\">Compare ").Append(t kind).Append(" runs</h2>\n<div class=\"d-pair-grid\">\n")
         |> ignore
 
         for label, v in [ "A, older", older; "B, newer", newer ] do
@@ -905,9 +969,12 @@ module Page =
 
         sb.Append("<!doctype html>\n") |> ignore
 
+        // Watch mode: data-watch holds the reload interval, and the script reloads the page with location.reload(),
+        // which keeps the view the reader navigated to (its #fragment). A meta refresh would reload the URL the page
+        // was opened with, which Chromium does without the fragment, so it is only the fallback without JavaScript.
         sb.Append(
             if m.Watch then
-                "<html lang=\"en\" data-watch=\"\">\n"
+                Invariant.format $"<html lang=\"en\" data-watch=\"{m.IntervalSeconds}\">\n"
             else
                 "<html lang=\"en\">\n"
         )
@@ -919,7 +986,9 @@ module Page =
         |> ignore
 
         if m.Watch then
-            sb.Append(Invariant.format $"<meta http-equiv=\"refresh\" content=\"{m.IntervalSeconds}\">\n")
+            sb.Append(
+                Invariant.format $"<noscript><meta http-equiv=\"refresh\" content=\"{m.IntervalSeconds}\"></noscript>\n"
+            )
             |> ignore
 
         sb.Append("<meta name=\"generator\" content=\"lrm dashboard (Lrm.Dashboard, ADR T2-0001)\">\n")
@@ -931,10 +1000,15 @@ module Page =
         sb.Append("<style>\n").Append(Assets.chartCss).Append("\n</style>\n") |> ignore
         sb.Append("</head>\n<body>\n") |> ignore
 
+        // The skip link moves focus to the current view's heading (the script shows it; without JavaScript it is hidden,
+        // because a fragment outside every view would switch to the runs index).
+        sb.Append("<a class=\"d-skip\" href=\"#d-main\" hidden>Skip to the view</a>\n")
+        |> ignore
+
         // Header and navigation.
         sb.Append("<header class=\"d-top\">\n<div class=\"d-bar\">") |> ignore
 
-        sb.Append("<a class=\"d-brand\" href=\"#runs\">").Append(t m.Title).Append("</a>")
+        sb.Append("<h1 class=\"d-brand\"><a href=\"#runs\">").Append(t m.Title).Append("</a></h1>")
         |> ignore
 
         sb.Append("<span class=\"d-sum\">") |> ignore
@@ -964,26 +1038,28 @@ module Page =
 
         sb.Append("<nav class=\"d-nav\" aria-label=\"Views\">") |> ignore
 
-        sb.Append("<a href=\"#runs\">Runs<b>").Append(cnt m.Runs.Length).Append("</b></a>")
-        |> ignore
-
-        for k in navKinds do
-            let n = m.Runs |> List.filter (fun r -> r.Kind = k) |> List.length
-
+        // A pill's name is cut with an ellipsis when it is wider than the page (kind names are free strings); its
+        // title holds the whole name.
+        let pill (href: string) (name: string) (n: int) =
             sb
-                .Append("<a href=\"#kind-")
-                .Append(a k)
-                .Append("\">")
-                .Append(t k)
-                .Append("<b>")
+                .Append("<a href=\"")
+                .Append(a href)
+                .Append("\" title=\"")
+                .Append(a name)
+                .Append("\"><span>")
+                .Append(t name)
+                .Append("</span><b>")
                 .Append(cnt n)
                 .Append("</b></a>")
             |> ignore
 
-        sb.Append("<a href=\"#compare\">Compare<b>").Append(cnt m.Pairs.Length).Append("</b></a>")
-        |> ignore
+        pill "#runs" "Runs" m.Runs.Length
 
-        sb.Append("</nav>\n</header>\n<main>\n") |> ignore
+        for k in navKinds do
+            pill ("#kind-" + k) k (m.Runs |> List.filter (fun r -> r.Kind = k) |> List.length)
+
+        pill "#compare" "Compare" m.Pairs.Length
+        sb.Append("</nav>\n</header>\n<main id=\"d-main\">\n") |> ignore
 
         // Views; the runs index is last, so the CSS fallback can hide it behind a targeted view.
         for k in navKinds do

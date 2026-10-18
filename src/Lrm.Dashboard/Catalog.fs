@@ -6,6 +6,16 @@ open System.IO
 open Lrm.Core
 open Lrm.Telemetry
 
+/// Where a run view points for its Markdown report.
+[<RequireQualifiedAccess>]
+type ReportLink =
+    /// A relative href from the dashboard file.
+    | Href of string
+    /// The report's path from its runs folder ("runs/<runId>/report/parity.md"), shown as text: the run lies outside
+    /// the dashboard file's folder, and its only link would be an absolute file: URI, which would put a local path into
+    /// the page and make its bytes depend on where the folders are (ADR T2-0001, decision 7).
+    | Text of string
+
 /// A folder the dashboard reads runs from (RunLog contract: one sub-folder per run).
 type RunsRoot =
     {
@@ -13,22 +23,31 @@ type RunsRoot =
         Path: string
         /// Every run under this root gets a view, whatever DashboardOptions.PerKind says (the synthetic samples).
         ViewAll: bool
-        /// The href of a run's Markdown report from the dashboard file (run folder, template name), or None.
-        ReportHref: string -> string -> string option
+        /// Where a run's Markdown report is (run folder, template name), or None.
+        Report: string -> string -> ReportLink option
     }
 
 [<RequireQualifiedAccess>]
 module RunsRoot =
-    /// A folder of recorded runs. A run's report link points at <run>/report/<template>.md, where `lrm report` writes
-    /// by default: a relative href when the run folder lies inside `outDir` (the dashboard file's folder), otherwise a
-    /// file: URI.
+    /// A folder of recorded runs. A run's report is <run>/report/<template>.md, where `lrm report` writes by default:
+    /// a relative link when the run folder lies inside `outDir` (the dashboard file's folder), otherwise its path from
+    /// the runs folder as text.
     let runs (outDir: string) (path: string) =
+        let root = Path.GetFullPath path
+
         {
-            Path = Path.GetFullPath path
+            Path = root
             ViewAll = false
-            ReportHref =
+            Report =
                 fun runDir template ->
-                    Some(Html.href outDir (Path.Combine(runDir, RunLogNames.ReportDir, template + ".md")))
+                    let file = Path.Combine(runDir, RunLogNames.ReportDir, template + ".md")
+
+                    match Html.href outDir file with
+                    | Some href -> Some(ReportLink.Href href)
+                    | None ->
+                        let name = Path.GetFileName(Path.TrimEndingDirectorySeparator root)
+                        let rel = Path.GetRelativePath(root, file).Replace(Path.DirectorySeparatorChar, '/')
+                        Some(ReportLink.Text(if String.IsNullOrEmpty name then rel else name + "/" + rel))
         }
 
     /// A folder of T1's synthetic runs (Synthetic.write): every run gets a view, and its report link points at the
@@ -37,7 +56,9 @@ module RunsRoot =
         {
             Path = Path.GetFullPath path
             ViewAll = true
-            ReportHref = fun _ template -> Some(Html.relativeHref outDir (Path.Combine(samplesDir, template + ".md")))
+            Report =
+                fun _ template ->
+                    Some(ReportLink.Href(Html.relativeHref outDir (Path.Combine(samplesDir, template + ".md"))))
         }
 
 /// One run folder with a readable manifest, as the runs index shows it. Reading it needs only the manifest and the
@@ -106,9 +127,16 @@ module Catalog =
         if not (File.Exists path) then
             unreadable "no manifest.json"
         else
+            // Shared for reading, writing and deleting: a live run replaces its manifest with a rename
+            // (RunManifest.write), which Windows refuses while any reader holds the file without delete sharing, so a
+            // plain File.ReadAllText from a watching dashboard could make the run's Finish fail.
             let text =
                 try
-                    Ok(File.ReadAllText path)
+                    use stream =
+                        new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite ||| FileShare.Delete)
+
+                    use reader = new StreamReader(stream, Text.UTF8Encoding(false), true)
+                    Ok(reader.ReadToEnd())
                 with
                 | :? IOException
                 | :? UnauthorizedAccessException -> Error "manifest.json cannot be read"
@@ -116,26 +144,37 @@ module Catalog =
             match text |> Result.bind RunManifest.parse with
             | Error e -> unreadable ("manifest.json: " + e)
             | Ok m ->
-                let files = RunLogReader.eventFiles dir
+                // The folder can change or go away between the manifest and the listing (a run being deleted or
+                // collected): then it is listed as not readable, and the page is still built.
+                let files =
+                    try
+                        Ok(RunLogReader.eventFiles dir)
+                    with
+                    | :? IOException
+                    | :? UnauthorizedAccessException -> Error()
 
-                let bytes =
-                    files
-                    |> List.sumBy (fun (_, f) ->
-                        try
-                            FileInfo(f).Length
-                        with _ ->
-                            0L)
+                match files with
+                | Error() -> unreadable "its files changed while they were read"
+                | Ok files ->
+                    let bytes =
+                        files
+                        |> List.sumBy (fun (_, f) ->
+                            try
+                                FileInfo(f).Length
+                            with
+                            | :? IOException
+                            | :? UnauthorizedAccessException -> 0L)
 
-                Ok
-                    {
-                        Dir = Path.GetFullPath dir
-                        Root = root
-                        Manifest = m
-                        Nodes = files.Length
-                        EventBytes = bytes
-                        Started = parseTime m.CreatedUtc
-                        Ended = m.EndedUtc |> Option.bind parseTime
-                    }
+                    Ok
+                        {
+                            Dir = Path.GetFullPath dir
+                            Root = root
+                            Manifest = m
+                            Nodes = files.Length
+                            EventBytes = bytes
+                            Started = parseTime m.CreatedUtc
+                            Ended = m.EndedUtc |> Option.bind parseTime
+                        }
 
     /// Newest first: by start time (as parsed, else the text), then by run id, both descending; ordinal throughout.
     let newestFirst (runs: RunEntry list) =

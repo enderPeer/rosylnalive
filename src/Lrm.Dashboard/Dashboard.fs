@@ -16,7 +16,7 @@ type DashboardOptions =
         Roots: RunsRoot list
         /// The page title.
         Title: string
-        /// Watch mode: the page carries a meta refresh of IntervalSeconds.
+        /// Watch mode: the page reloads itself every IntervalSeconds.
         Watch: bool
         IntervalSeconds: int
         /// The newest runs of each kind that get a view (the runs index lists every run).
@@ -29,6 +29,9 @@ type DashboardOptions =
         ComparePerKind: int
         /// The most run logs read at once.
         Threads: int
+        /// Only runs that started at or before this time are shown: a snapshot that stays the same while new runs are
+        /// written (the committed runs.html). None shows every run.
+        Until: DateTimeOffset option
     }
 
 [<RequireQualifiedAccess>]
@@ -45,6 +48,7 @@ module DashboardOptions =
             MaxLogBytes = 64L * 1024L * 1024L
             ComparePerKind = 4
             Threads = 4
+            Until = None
         }
 
 /// One built page and what it holds.
@@ -119,6 +123,18 @@ module Dashboard =
             Telemetry.span "dashboard.render" [ Attr.str TelemetryKeys.Component "dashboard" ]
 
         let runs, unreadable = Catalog.scan o.Roots
+
+        // A run whose start does not parse has no time to compare, so it stays.
+        let runs =
+            match o.Until with
+            | None -> runs
+            | Some until ->
+                runs
+                |> List.filter (fun r ->
+                    match r.Started with
+                    | Some s -> s <= until
+                    | None -> true)
+
         let chosen, none = select o runs
         let chosen = Array.ofList chosen
         let views: RunView[] = Array.zeroCreate chosen.Length
@@ -186,46 +202,54 @@ module Dashboard =
         ]
 
     /// What the folders hold now: every run folder with the names, sizes and write times of its manifest and events
-    /// files. Watch mode rebuilds when it changes.
+    /// files. Watch mode rebuilds when it changes. A root that is missing, cannot be listed or goes away while it is
+    /// listed holds no runs; a run folder that cannot be listed adds only its name.
     let fingerprint (roots: RunsRoot list) =
         let sb = StringBuilder()
 
         for root in roots do
             sb.Append(root.Path).Append('\n') |> ignore
 
-            if Directory.Exists root.Path then
-                for dir in
-                    Directory.GetDirectories root.Path
-                    |> Array.sortWith (fun x y -> String.CompareOrdinal(x, y)) do
-                    sb.Append(Path.GetFileName dir).Append('\n') |> ignore
+            let dirs =
+                try
+                    if Directory.Exists root.Path then
+                        Directory.GetDirectories root.Path
+                    else
+                        [||]
+                with
+                | :? IOException
+                | :? UnauthorizedAccessException -> [||]
 
-                    let files =
-                        try
-                            Directory.GetFiles dir
-                            |> Array.filter (fun f ->
-                                let n = Path.GetFileName f
-                                n = RunManifest.FileName || (RunLogReader.nodeOfFile f).IsSome)
-                            |> Array.sortWith (fun x y -> String.CompareOrdinal(x, y))
-                        with
-                        | :? IOException
-                        | :? UnauthorizedAccessException -> [||]
+            for dir in dirs |> Array.sortWith (fun x y -> String.CompareOrdinal(x, y)) do
+                sb.Append(Path.GetFileName dir).Append('\n') |> ignore
 
-                    for f in files do
-                        try
-                            let info = FileInfo f
+                let files =
+                    try
+                        Directory.GetFiles dir
+                        |> Array.filter (fun f ->
+                            let n = Path.GetFileName f
+                            n = RunManifest.FileName || (RunLogReader.nodeOfFile f).IsSome)
+                        |> Array.sortWith (fun x y -> String.CompareOrdinal(x, y))
+                    with
+                    | :? IOException
+                    | :? UnauthorizedAccessException -> [||]
 
-                            sb
-                                .Append(' ')
-                                .Append(info.Name)
-                                .Append(' ')
-                                .Append(Invariant.i64 info.Length)
-                                .Append(' ')
-                                .Append(Invariant.i64 info.LastWriteTimeUtc.Ticks)
-                                .Append('\n')
-                            |> ignore
-                        with
-                        | :? IOException
-                        | :? UnauthorizedAccessException -> ()
+                for f in files do
+                    try
+                        let info = FileInfo f
+
+                        sb
+                            .Append(' ')
+                            .Append(info.Name)
+                            .Append(' ')
+                            .Append(Invariant.i64 info.Length)
+                            .Append(' ')
+                            .Append(Invariant.i64 info.LastWriteTimeUtc.Ticks)
+                            .Append('\n')
+                        |> ignore
+                    with
+                    | :? IOException
+                    | :? UnauthorizedAccessException -> ()
 
         sb.ToString()
 
@@ -235,7 +259,8 @@ module Dashboard =
 
     /// Watch mode: builds and writes the page, then polls the folders every `poll` and rebuilds when they
     /// change, writing only when the bytes differ. `onWrite` is told about every write. Stops when `stop` is
-    /// cancelled. An I/O error while writing (the file held open) is retried at the next poll.
+    /// cancelled. An I/O error while the folders are listed or read (a run deleted, renamed or collected meanwhile) or
+    /// while the page is written (the file held open) is retried at the next poll; it never ends the watch.
     let watch
         (o: DashboardOptions)
         (path: string)
@@ -248,27 +273,21 @@ module Dashboard =
         let mutable written: byte[] = null
 
         while not stop.IsCancellationRequested do
-            let now = fingerprint o.Roots
+            try
+                let now = fingerprint o.Roots
 
-            if seen <> Some now then
-                // A folder that changes during the build (or a page held open while it is replaced) is retried at the
-                // next poll.
-                let ok =
-                    try
-                        let output = build o
-                        let bytes = output.Bytes
+                if seen <> Some now then
+                    let output = build o
+                    let bytes = output.Bytes
 
-                        if isNull written || not (sameBytes bytes written) then
-                            write path output
-                            written <- bytes
-                            onWrite output
+                    if isNull written || not (sameBytes bytes written) then
+                        write path output
+                        written <- bytes
+                        onWrite output
 
-                        true
-                    with
-                    | :? IOException
-                    | :? UnauthorizedAccessException -> false
-
-                if ok then
                     seen <- Some now
+            with
+            | :? IOException
+            | :? UnauthorizedAccessException -> ()
 
             stop.WaitHandle.WaitOne poll |> ignore

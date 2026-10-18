@@ -24,8 +24,8 @@ type RunView =
         Records: int
         /// Every RunLog problem, prefixed by its node.
         Problems: string list
-        /// The href of the Markdown report, when the run's root gives one.
-        ReportHref: string option
+        /// Where the Markdown report is, when the run's root says.
+        Report: ReportLink option
         /// Set when the run log could not be read or rendered: the reason, in fixed words.
         Error: string option
     }
@@ -62,7 +62,7 @@ module RunView =
             Totals = MeterTotals.Zero
             Records = 0
             Problems = []
-            ReportHref = None
+            Report = None
             Error = Some reason
         }
 
@@ -96,7 +96,7 @@ module RunView =
             Totals = totals
             Records = log.Events.Length
             Problems = log.Problems
-            ReportHref = template |> Option.bind (fun t -> root.ReportHref entry.Dir t.Name)
+            Report = template |> Option.bind (fun t -> root.Report entry.Dir t.Name)
             Error = None
         }
 

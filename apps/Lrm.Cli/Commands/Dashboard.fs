@@ -1,7 +1,7 @@
 /// Build the self-contained HTML dashboard over run logs (ADR T2-0001). Owner: T2.
 ///
 ///     lrm dashboard [--runs <dir>]... [--synthetic [--samples <dir>]] [--out <file.html>] [--watch [--interval <s>]]
-///                   [--per-kind <n>] [--run <runId>]... [--max-log-mb <n>] [--write-reports]
+///                   [--per-kind <n>] [--run <runId>]... [--max-log-mb <n>] [--until <utc time>] [--write-reports]
 module Lrm.Cli.Commands.Dashboard
 
 open System
@@ -15,7 +15,7 @@ open Lrm.Dashboard
 let private usage () =
     eprintfn "usage: lrm dashboard [--runs <dir>]... [--synthetic [--samples <dir>]] [--out <file.html>]"
     eprintfn "                     [--watch [--interval <s>]] [--per-kind <n>] [--run <runId>]... [--max-log-mb <n>]"
-    eprintfn "                     [--write-reports]"
+    eprintfn "                     [--until <utc time>] [--write-reports]"
     eprintfn ""
     eprintfn "  --runs           a folder of run folders; repeat for several (default: LRM_DATA/runs, unless"
     eprintfn "                   --synthetic is given alone)"
@@ -28,6 +28,8 @@ let private usage () =
     eprintfn "  --per-kind       how many of the newest runs of each kind get a view (default 3)"
     eprintfn "  --run            a run id that always gets a view; repeat for several"
     eprintfn "  --max-log-mb     runs with larger event logs get no view unless named with --run (default 64)"
+    eprintfn "  --until          only runs that started at or before this UTC time, such as 2026-10-18T13:30:00Z"
+    eprintfn "                   (a snapshot that stays the same while new runs are written)"
     eprintfn "  --write-reports  also render the Markdown report of every run with a view into <run>/report,"
     eprintfn "                   so the report links resolve"
     2
@@ -43,6 +45,7 @@ type private Options =
         PerKind: int
         Include: string list
         MaxLogMb: int
+        Until: DateTimeOffset option
         WriteReports: bool
     }
 
@@ -75,6 +78,17 @@ let rec private parse (o: Options) (args: string list) : Result<Options, string>
     | "--per-kind" :: v :: rest ->
         positive "--per-kind" v
         |> Result.bind (fun n -> parse { o with PerKind = n } rest)
+    | "--until" :: v :: rest ->
+        match
+            DateTimeOffset.TryParse(
+                v,
+                Invariant.culture,
+                Globalization.DateTimeStyles.AssumeUniversal
+                ||| Globalization.DateTimeStyles.AdjustToUniversal
+            )
+        with
+        | true, t -> parse { o with Until = Some t } rest
+        | _ -> Error(sprintf "--until needs a UTC time such as 2026-10-18T13:30:00Z, not '%s'" v)
     | "--max-log-mb" :: v :: rest ->
         positive "--max-log-mb" v
         |> Result.bind (fun n -> parse { o with MaxLogMb = n } rest)
@@ -118,6 +132,7 @@ let private build (o: Options) (out: string) (runDirs: string list) (synthetic: 
             PerKind = o.PerKind
             Include = o.Include
             MaxLogBytes = int64 o.MaxLogMb * 1024L * 1024L
+            Until = o.Until
         }
 
     let reports (output: DashboardOutput) =
@@ -163,6 +178,7 @@ let private run (argv: string[]) : int =
             PerKind = 3
             Include = []
             MaxLogMb = 64
+            Until = None
             WriteReports = false
         }
 

@@ -71,28 +71,45 @@ module Html =
 
         if sb.Length = 0 then "section" else sb.ToString()
 
-    /// The href of `target` (a file or folder path) from a page in `fromDir`: a relative path with forward slashes
-    /// when the target lies inside `fromDir`, otherwise a file: URI. Each path segment is percent-encoded, so the href
-    /// never depends on how the platform spells separators.
+    /// The href of `target` (a file or folder path) from a page in `fromDir`, when the target lies inside `fromDir`: a
+    /// relative path with forward slashes, each segment percent-encoded, so the href never depends on how the platform
+    /// spells separators. None for a target outside `fromDir`: its only href would be an absolute file: URI, which
+    /// would put a local path into the page and make its bytes depend on where the folders are (ADR T2-0001, 7).
     let href (fromDir: string) (target: string) =
         let fromDir = Path.GetFullPath fromDir
         let target = Path.GetFullPath target
         let rel = Path.GetRelativePath(fromDir, target)
 
-        let encode (path: string) =
-            path.Replace('\\', '/').Split('/')
-            |> Array.map Uri.EscapeDataString
-            |> String.concat "/"
-
         if
             rel = target
+            || Path.IsPathRooted rel
             || rel = ".."
             || rel.StartsWith("..\\", StringComparison.Ordinal)
             || rel.StartsWith("../", StringComparison.Ordinal)
         then
-            Uri(target).AbsoluteUri
+            None
         else
-            encode rel
+            Some(
+                rel.Replace('\\', '/').Split('/')
+                |> Array.map Uri.EscapeDataString
+                |> String.concat "/"
+            )
+
+    /// Whether an href stays on the machine, the only hrefs the page holds (ADR T2-0001, decisions 1 and 10): a fragment,
+    /// a local file: URI (file:/// and then not another slash, which would name a network host), or a relative path that
+    /// names no scheme and does not start with a slash. Other than a fragment, a target with a backslash, a space or a
+    /// control character is refused, because browsers turn a backslash into a slash, drop spaces and controls at the
+    /// ends and drop tabs and line ends inside: two backslashes before a host, or a slash, a tab and a slash, would
+    /// become "//host", a network path that a file: page opens as an SMB request.
+    let isLocalHref (h: string) =
+        not (String.IsNullOrEmpty h)
+        && (h.StartsWith '#'
+            || h |> Seq.forall (fun c -> c > ' ' && c <> '\\' && c <> '\u007f')
+               && ((h.StartsWith("file:///", StringComparison.Ordinal)
+                    && h.Length > 8
+                    && h[8] <> '/'
+                    && h[8] <> '%')
+                   || (not (h.Contains ':') && not (h.StartsWith '/'))))
 
     /// The href of `target` from a page in `fromDir` as a relative path, even when it climbs out of `fromDir`.
     let relativeHref (fromDir: string) (target: string) =

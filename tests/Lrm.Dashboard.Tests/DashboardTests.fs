@@ -158,9 +158,12 @@ let tests =
                 Expect.isFalse (withoutNamespace.Contains "https:") "no https:"
 
                 for href in attributeValues "href" html do
-                    Expect.isTrue
-                        (href.StartsWith "#" || href.StartsWith "file:///" || not (href.Contains ":"))
-                        ("a local href: " + href)
+                    Expect.isTrue (Html.isLocalHref href) ("a local href: " + href)
+
+                // No absolute path either: the page's bytes never depend on where the folders are.
+                Expect.isFalse (html.Contains "file:") "no file: URI"
+                Expect.isFalse (html.Contains tmp.Path) "no absolute path"
+                Expect.isFalse (html.Contains(tmp.Path.Replace('\\', '/'))) "no absolute path with slashes"
 
             testCase "ids are unique and every fragment link, compare slot and label resolves"
             <| fun () ->
@@ -179,9 +182,10 @@ let tests =
                 for src in slots do
                     Expect.isTrue (all.Contains src) ("slot source " + src)
 
-                for labels in attributeValues "aria-labelledby" html do
-                    for l in labels.Split ' ' do
-                        Expect.isTrue (all.Contains l) ("label " + l)
+                for attribute in [ "aria-labelledby"; "aria-describedby" ] do
+                    for labels in attributeValues attribute html do
+                        for l in labels.Split ' ' do
+                            Expect.isTrue (all.Contains l) (attribute + " " + l)
 
             testCase "every chart parses as XML, and so does every table"
             <| fun () ->
@@ -265,11 +269,25 @@ let tests =
                 let v = output.Model.Views |> List.find (fun v -> v.Entry.Id = "r-c")
                 let flops = 2.0 * 2.0 * 2.0 * 2048.0
                 Expect.equal v.Totals.Flops flops "FLOPs metered"
-                Expect.stringContains html ("<span>FLOPs</span><b>" + Fmt.si flops + "</b>") "FLOPs tile"
-                Expect.stringContains html "<span>Wall (self)</span>" "wall tile"
-                Expect.stringContains html "<span>GPU</span>" "GPU tile"
-                Expect.stringContains html "<span>Bytes moved</span>" "bytes tile"
-                Expect.stringContains html "<span>Tokens</span>" "tokens tile"
+
+                let view =
+                    let i =
+                        html.IndexOf("<section class=\"d-view\" id=\"run-r-c\"", StringComparison.Ordinal)
+
+                    html.Substring(i, html.IndexOf("</section>", i, StringComparison.Ordinal) - i)
+
+                Expect.stringContains view ("<span>FLOPs</span><b>" + Fmt.si flops + "</b>") "FLOPs tile"
+                Expect.stringContains view "<span>Wall (self)</span>" "wall tile"
+
+                // Totals that are zero get no tile; one line names them.
+                for zero in [ "GPU"; "Bytes moved"; "Tokens"; "Metered time"; "Log problems" ] do
+                    Expect.isFalse (view.Contains("<span>" + zero + "</span>")) ("no tile for " + zero)
+
+                Expect.stringContains
+                    view
+                    "<p class=\"d-muted d-small\">Nothing metered for GPU time, bytes moved, tokens, metered time.</p>"
+                    "zero totals in one line"
+
                 Expect.stringContains html "<a href=\"runs/r-c/report/parity.md\">parity.md</a>" "report link"
                 Expect.stringContains html "<code>lrm report r-c</code>" "the command"
                 Expect.stringContains html "<h3 id=\"run-r-c-error-by-layer\">Error by layer</h3>" "a report section"
@@ -323,7 +341,7 @@ let tests =
                 for file, _ in a.Charts do
                     Expect.stringContains view ("data-src=\"" + RunView.chartId "r-a" file + "-fig\"") file
 
-            testCase "watch mode adds the meta refresh, and only watch mode"
+            testCase "watch mode reloads through the script, which keeps the fragment; a meta refresh only without it"
             <| fun () ->
                 use tmp = new TempDir()
                 let o = mixed tmp
@@ -339,8 +357,15 @@ let tests =
 
                 Expect.isFalse (still.Contains "http-equiv") "no refresh"
                 Expect.isFalse (still.Contains "data-watch=") "no watch marker"
-                Expect.stringContains live "<meta http-equiv=\"refresh\" content=\"7\">" "refresh"
-                Expect.stringContains live "<html lang=\"en\" data-watch=\"\">" "watch marker"
+                Expect.isFalse (still.Contains "<noscript>") "no fallback"
+                Expect.stringContains live "<html lang=\"en\" data-watch=\"7\">" "watch marker with the interval"
+
+                // A meta refresh reloads the URL the page was opened with; Chromium drops the #fragment the reader
+                // navigated to since, so every reload went back to the runs index. Only <noscript> may hold one.
+                let fallback = "<noscript><meta http-equiv=\"refresh\" content=\"7\"></noscript>"
+                Expect.equal (occurrences fallback live) 1 "the fallback without JavaScript"
+                Expect.isFalse (live.Replace(fallback, "").Contains "http-equiv") "no bare meta refresh"
+                Expect.stringContains live "location.reload()" "the script reloads, keeping the fragment"
 
             testCase "nothing from a run log can inject markup"
             <| fun () ->
@@ -375,6 +400,36 @@ let tests =
                 Expect.isFalse (html.Contains "<b>p</b>") "pair escaped"
                 Expect.isFalse (html.Contains "<i>c") "case escaped"
                 Expect.stringContains html "&lt;script&gt;alert(1)&lt;/script&gt; &amp; \"q\"" "escaped title"
+
+            testCase "a link in a run log never points at the network"
+            <| fun () ->
+                use tmp = new TempDir()
+                let runs = tmp.Sub "runs"
+
+                // The template puts the title into the report's Markdown, where a link is a link.
+                for id, title in
+                    [
+                        "r-n1", "[click](//evil.example/share/x)"
+                        "r-n2", "[click](\\\\evil.example\\share\\x)"
+                        "r-n3", "[click](file://evil.example/share/x)"
+                        "r-n4", "[click](https://evil.example/x)"
+                    ] do
+                    writeRun runs id "parity" title (unixNs 2026 10 18 10 0) RunStatus.Ok (parityBody 0.5)
+                    |> ignore
+
+                let o =
+                    { DashboardOptions.over [ RunsRoot.runs tmp.Path runs ] with
+                        PerKind = 4
+                    }
+
+                let html = (Dashboard.build o).Html
+                Expect.stringContains html "click (<code>//evil.example/share/x</code>)" "shown as text"
+
+                for href in attributeValues "href" html do
+                    Expect.isTrue (Html.isLocalHref href) ("a local href: " + href)
+
+                Expect.isFalse (html.Contains "href=\"//") "no network path"
+                Expect.isFalse (html.Contains "href=\"\\") "no UNC path"
 
             testCase "a damaged log still gets its view, with its problems"
             <| fun () ->
@@ -436,6 +491,203 @@ let tests =
 
                 for file, svg in expected.Svgs do
                     Expect.equal (File.ReadAllText(Path.Combine(dir, "report", "charts", file))) svg file
+
+            testCase "a run outside the page's folder names its report as text, with no absolute path"
+            <| fun () ->
+                use tmp = new TempDir()
+                let runs = tmp.Sub "runs"
+
+                writeRun runs "r-a" "parity" "A" (unixNs 2026 10 18 10 0) RunStatus.Ok (parityBody 0.5)
+                |> ignore
+
+                let build (pageDir: string) =
+                    (Dashboard.build (DashboardOptions.over [ RunsRoot.runs pageDir runs ])).Html
+
+                let html = build (tmp.Sub "pages")
+
+                Expect.stringContains
+                    html
+                    "Markdown report: <code>runs/r-a/report/parity.md</code> beside the run log"
+                    "the report's path from the runs folder"
+
+                Expect.isFalse (html.Contains "file:") "no file: URI"
+                Expect.isFalse (html.Contains(tmp.Path.Replace('\\', '/'))) "no absolute path"
+                Expect.equal (build (tmp.Sub "elsewhere")) html "the same bytes from another folder"
+
+            testCase "Until keeps the runs that started by then, so a snapshot stays the same while runs are added"
+            <| fun () ->
+                use tmp = new TempDir()
+                let runs = tmp.Sub "runs"
+
+                for id, hour in [ "r-a", 10; "r-b", 11 ] do
+                    writeRun runs id "parity" id (unixNs 2026 10 18 hour 0) RunStatus.Ok (parityBody 0.5)
+                    |> ignore
+
+                let o =
+                    { DashboardOptions.over [ RunsRoot.runs tmp.Path runs ] with
+                        Until = Some(DateTimeOffset(2026, 10, 18, 11, 0, 0, TimeSpan.Zero))
+                    }
+
+                let before = (Dashboard.build o).Bytes
+
+                writeRun runs "r-c" "parity" "r-c" (unixNs 2026 10 18 12 0) RunStatus.Ok (parityBody 0.5)
+                |> ignore
+
+                let output = Dashboard.build o
+                Expect.equal (output.Model.Runs |> List.map _.Id) [ "r-b"; "r-a" ] "the runs that started by 11:00"
+                Expect.isTrue (output.Bytes = before) "the same bytes after a later run is written"
+
+            testCase "the count axis of the runs chart prints whole, evenly spaced ticks"
+            <| fun () ->
+                // NumFormat.Int rounds every tick label, so a fractional step printed "0 0 0 1 1 1" for one run.
+                for peak in 1..60 do
+                    let chart =
+                        Chart.Bar
+                            {
+                                Title = "t"
+                                Subtitle = ""
+                                CategoryLabel = "kind"
+                                ValueLabel = "runs"
+                                ValueFormat = Page.countFormat peak
+                                Categories = [ "a"; "b" ]
+                                Series =
+                                    [
+                                        {
+                                            Name = "ok"
+                                            Color = Color.Good
+                                            Values = [ float peak; 1.0 ]
+                                        }
+                                    ]
+                                Stacked = true
+                                Horizontal = true
+                            }
+
+                    let svg = ChartSvg.render "c" chart
+                    Expect.isFalse (svg.Contains ">1.000<") (Invariant.format $"a count prints whole for {peak}")
+                    let doc = XmlDocument()
+                    doc.LoadXml svg
+                    let ns = XmlNamespaceManager(doc.NameTable)
+                    ns.AddNamespace("s", "http://www.w3.org/2000/svg")
+
+                    let ticks =
+                        [
+                            for node in doc.SelectNodes("//s:text[@class='t3' and @text-anchor='middle']", ns) do
+                                match
+                                    Double.TryParse(
+                                        node.InnerText.Replace(",", ""),
+                                        Globalization.NumberStyles.Float,
+                                        Invariant.culture
+                                    )
+                                with
+                                | true, v -> yield v
+                                | _ -> ()
+                        ]
+
+                    Expect.isGreaterThanOrEqual ticks.Length 2 (Invariant.format $"ticks for {peak}")
+                    Expect.equal ticks.Head 0.0 (Invariant.format $"starts at 0 for {peak}")
+                    Expect.isGreaterThanOrEqual (List.last ticks) (float peak) (Invariant.format $"reaches {peak}")
+                    let step = ticks[1] - ticks[0]
+
+                    for i in 1 .. ticks.Length - 1 do
+                        Expect.floatClose
+                            Accuracy.high
+                            (ticks[i] - ticks[i - 1])
+                            step
+                            (sprintf "evenly spaced for %d: %A" peak ticks)
+
+                    if peak >= 5 && not (peak > 10 && peak <= 12) then
+                        Expect.equal (Page.countFormat peak) NumFormat.Int (Invariant.format $"Int for {peak}")
+                        Expect.isTrue (ticks |> List.forall (fun v -> v = Math.Round v)) "whole ticks"
+
+            testCase "a kind's durations are dots on a log axis, so a long run does not flatten the others"
+            <| fun () ->
+                use tmp = new TempDir()
+                let runs = tmp.Sub "runs"
+
+                // Two quick runs and one that lasts hours (as the golden generation does beside the parity probes).
+                for id, hour, body in
+                    [
+                        "r-a", 10, parityBody 0.5
+                        "r-b", 11, parityBody 0.6
+                        "r-c", 12, (fun () -> Telemetry.check "golden.compare" true [])
+                    ] do
+                    writeRun runs id "parity" id (unixNs 2026 10 18 hour 0) RunStatus.Ok body
+                    |> ignore
+
+                let entries, _ = Catalog.scan [ RunsRoot.runs tmp.Path runs ]
+                let timed = entries |> List.rev
+
+                match Page.durationChart timed with
+                | Chart.ErrorBars c ->
+                    Expect.isTrue c.YLog "log axis"
+                    Expect.equal c.YFormat NumFormat.Duration "durations"
+                    Expect.equal c.Categories.Length 3 "a category per run"
+
+                    Expect.equal
+                        (c.Series |> List.collect (fun s -> s.Spreads |> List.map _.Index) |> List.sort)
+                        [ 0; 1; 2 ]
+                        "a dot per run"
+                | other -> failtestf "expected error bars, got %s" (ChartSvg.title other)
+
+                let html =
+                    (Dashboard.build (DashboardOptions.over [ RunsRoot.runs tmp.Path runs ])).Html
+
+                Expect.stringContains html "id=\"d-kind-parity-durations-fig\"" "the kind view has the chart"
+                Expect.stringContains html "oldest first, by status; log scale" "its subtitle says log scale"
+
+            testCase "a long kind name never makes a pill wider than the page"
+            <| fun () ->
+                use tmp = new TempDir()
+                let runs = tmp.Sub "runs"
+                let kind = "a-very-long-kind-name-for-an-experimental-benchmark-suite-x"
+
+                writeRun runs "r-l" kind "L" (unixNs 2026 10 18 10 0) RunStatus.Ok recordsBody
+                |> ignore
+
+                let html =
+                    (Dashboard.build (DashboardOptions.over [ RunsRoot.runs tmp.Path runs ])).Html
+
+                Expect.stringContains
+                    html
+                    ("<a href=\"#kind-"
+                     + kind
+                     + "\" title=\""
+                     + kind
+                     + "\"><span>"
+                     + kind
+                     + "</span><b>1</b></a>")
+                    "the pill's name can be cut, its title holds it all"
+
+                Expect.stringContains html ".d-nav a span{min-width:0;overflow:hidden;text-overflow:ellipsis}" "cut"
+                Expect.stringContains html ".d-nav a{display:inline-flex;max-width:100%" "at most the page's width"
+                Expect.stringContains html ("<span class=\"d-tag\" title=\"" + kind + "\">") "the run's kind tag"
+
+            testCase "the page has one h1, a skip link, focusable view headings and chart toggle buttons"
+            <| fun () ->
+                use tmp = new TempDir()
+                let output = Dashboard.build (mixed tmp)
+                let html = output.Html
+                Expect.equal (occurrences "<h1" html) 1 "one h1"
+                Expect.stringContains html "<h1 class=\"d-brand\"><a href=\"#runs\">LRM dashboard</a></h1>" "the brand"
+                Expect.stringContains html "<a class=\"d-skip\" href=\"#d-main\" hidden>Skip to the view</a>" "skip"
+                Expect.stringContains html "<main id=\"d-main\">" "its target"
+
+                let views = occurrences "<section class=\"d-view\"" html
+                Expect.equal (occurrences "<h2 id=\"runs-h\" tabindex=\"-1\">" html) 1 "the index heading"
+                Expect.equal (occurrences "<h2 tabindex=\"-1\">" html + 1) views "every view heading takes focus"
+
+                let figures = occurrences "<figure class=\"d-chart\"" html
+                Expect.isGreaterThan figures 40 "charts"
+
+                Expect.equal
+                    (occurrences "tabindex=\"0\" role=\"button\" aria-pressed=\"false\" aria-label=\"Zoom chart: " html)
+                    figures
+                    "every chart is a named toggle button"
+
+                Expect.stringContains
+                    html
+                    "aria-label=\"Zoom chart: Runs by kind and status\" aria-describedby=\"d-runs-by_kind-desc\""
+                    "named after the chart, described by its description"
 
             testCase "write replaces the file atomically and leaves no temporary file"
             <| fun () ->
