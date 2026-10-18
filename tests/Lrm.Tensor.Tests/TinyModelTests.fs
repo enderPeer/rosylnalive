@@ -1,6 +1,7 @@
 /// O2's acceptance on the tiny model (dev plan, O2 row): per op, CpuRef F64 vs torch64p within 1e-12 and CpuRef F32 vs
 /// torch32 within 1e-6; the chained forward and greedy decoding against both oracles; bit-identity at 1, 7 and 32
-/// threads; prefill equal to decode.
+/// threads; prefill equal to decode. Every golden.compare check also goes to the parity run log (ParityRun): the F64
+/// checks on its cpu-f64 node, the F32 checks on its cpu-f32 node.
 module Lrm.Tensor.Tests.TinyModelTests
 
 open System
@@ -169,6 +170,20 @@ let private chainChecks<'T
             yield "chain", Compare.relL2 bound (attrs pair prompt "chain" name "chain") taps[name] (f.Tensor name)
     ]
 
+/// A greedy_match golden.compare check (ReportTemplates, parity): the steps that match the golden before the first
+/// difference, against the golden's length; it passes only when every step matches.
+let private greedyCheck (pair: TolerancePair) (prompt: string) (got: int[]) (golden: int[]) =
+    let matched =
+        Seq.zip got golden |> Seq.takeWhile (fun (a, b) -> a = b) |> Seq.length
+
+    Compare.check
+        "greedy_match"
+        BoundOp.AtLeast
+        (float matched)
+        (float golden.Length)
+        (int64 golden.Length)
+        (attrs pair prompt "greedy" "greedy.ids" "chain")
+
 /// A prefill of `ids` and the same ids decoded one at a time give the same logits rows and caches, bit for bit.
 let private prefillEqualsDecode<'T
     when 'T :> IFloatingPointIeee754<'T> and 'T: unmanaged and 'T: struct and 'T: (new: unit -> 'T) and 'T :> ValueType>
@@ -198,14 +213,14 @@ let tests =
                     for prompt in [ "p0"; "p1" ] do
                         testCase (Invariant.format $"CpuRef F64 vs torch64p <= 1e-12 ({prompt})")
                         <| fun () ->
-                            let checks, records =
-                                withSink (fun () ->
-                                    perOp<float>
-                                        CpuExec.Machine
-                                        "fwd_f64p"
-                                        TolerancePair.Cpu64VsTorch64p
-                                        F64OpBound
-                                        prompt)
+                            let sink = InMemorySink()
+
+                            let checks =
+                                use _ = ParityRun.installWith ExecutionBackend.CpuF64 (Telemetry.ofSink sink)
+
+                                perOp<float> CpuExec.Machine "fwd_f64p" TolerancePair.Cpu64VsTorch64p F64OpBound prompt
+
+                            let records = sink.Records
 
                             report (Invariant.format $"CpuRef F64 vs torch64p, {prompt}") checks
 
@@ -219,6 +234,8 @@ let tests =
 
                         testCase (Invariant.format $"CpuRef F32 vs torch32 <= 1e-6 ({prompt})")
                         <| fun () ->
+                            use _ = ParityRun.install ExecutionBackend.CpuF32
+
                             perOp<float32> CpuExec.Machine "fwd_f32" TolerancePair.Cpu32VsTorch32 F32OpBound prompt
                             |> report (Invariant.format $"CpuRef F32 vs torch32, {prompt}")
                 ]
@@ -229,6 +246,7 @@ let tests =
                     for prompt in [ "p0"; "p1" ] do
                         testCase (Invariant.format $"CpuRef F64 forward vs torch64p, every tap <= 1e-12 ({prompt})")
                         <| fun () ->
+                            use _ = ParityRun.install ExecutionBackend.CpuF64
                             let taps, _ = TinyModel.prefillTaps<float> CpuExec.Machine (promptIds prompt)
 
                             chainChecks
@@ -244,6 +262,7 @@ let tests =
                             Invariant.format $"CpuRef F32 forward vs both oracles within the CPU32 floors ({prompt})"
                         )
                         <| fun () ->
+                            use _ = ParityRun.install ExecutionBackend.CpuF32
                             let taps, _ = TinyModel.prefillTaps<float32> CpuExec.Machine (promptIds prompt)
                             let names = ActivationNames.all 2
 
@@ -266,14 +285,20 @@ let tests =
                     testCase "p2 (70 tokens, across a 64-key block): logits of both modes"
                     <| fun () ->
                         let ids = promptIds "p2"
-                        let t64, _ = TinyModel.prefillTaps<float> CpuExec.Machine ids
-                        let t32, _ = TinyModel.prefillTaps<float32> CpuExec.Machine ids
 
-                        chainChecks t64 "fwd_f64p" "p2" TolerancePair.Cpu64VsTorch64p F64OpBound [| "logits" |]
-                        |> report "CpuRef F64 chain vs torch64p, p2"
+                        do
+                            use _ = ParityRun.install ExecutionBackend.CpuF64
+                            let t64, _ = TinyModel.prefillTaps<float> CpuExec.Machine ids
 
-                        chainChecks t32 "fwd_f32" "p2" TolerancePair.Cpu32VsTorch32 Cpu32ChainRelL2 [| "logits" |]
-                        |> report "CpuRef F32 chain vs torch32, p2"
+                            chainChecks t64 "fwd_f64p" "p2" TolerancePair.Cpu64VsTorch64p F64OpBound [| "logits" |]
+                            |> report "CpuRef F64 chain vs torch64p, p2"
+
+                        do
+                            use _ = ParityRun.install ExecutionBackend.CpuF32
+                            let t32, _ = TinyModel.prefillTaps<float32> CpuExec.Machine ids
+
+                            chainChecks t32 "fwd_f32" "p2" TolerancePair.Cpu32VsTorch32 Cpu32ChainRelL2 [| "logits" |]
+                            |> report "CpuRef F32 chain vs torch32, p2"
                 ]
 
             testList
@@ -292,15 +317,20 @@ let tests =
 
                             let ids = promptIds prompt
 
-                            Expect.sequenceEqual
-                                (TinyModel.greedy<float32> CpuExec.Machine ids 64)
-                                golden32
-                                "F32 = torch32"
+                            let got32 =
+                                use _ = ParityRun.install ExecutionBackend.CpuF32
+                                let got = TinyModel.greedy<float32> CpuExec.Machine ids 64
+                                greedyCheck TolerancePair.Cpu32VsTorch32 prompt got golden32 |> ignore
+                                got
 
-                            Expect.sequenceEqual
-                                (TinyModel.greedy<float> CpuExec.Machine ids 64)
-                                golden64
-                                "F64 = torch64p"
+                            let got64 =
+                                use _ = ParityRun.install ExecutionBackend.CpuF64
+                                let got = TinyModel.greedy<float> CpuExec.Machine ids 64
+                                greedyCheck TolerancePair.Cpu64VsTorch64p prompt got golden64 |> ignore
+                                got
+
+                            Expect.sequenceEqual got32 golden32 "F32 = torch32"
+                            Expect.sequenceEqual got64 golden64 "F64 = torch64p"
                 ]
 
             testList
