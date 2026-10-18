@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-10-18. Wave 0 is built and reviewed, but not merged: merging is waiting on the user. Wave 1 is running on branches stacked on wave 0.
+Last updated: 2026-10-18. Waves 0 and 1 are built, reviewed and combined on the integration branch `int/wave1` (draft PR #13, green locally on CPU and GPU). Nothing is merged to `main`; merging is waiting on the user. Wave 2 is running on the integration branch.
 
 ## Done
 
@@ -21,18 +21,29 @@ Last updated: 2026-10-18. Wave 0 is built and reviewed, but not merged: merging 
 | --- | --- | --- |
 | S0a: scaffold, build, test runner, minimal CI | [#2](https://github.com/enderPeer/rosylnalive/pull/2) | Fresh-clone Release build with 0 warnings; 43 projects come from `docs/project-graph.json`, with layering enforced; VkDeviceCheck ACCEPTED from `apps/`; the cpu tier passes; GitHub CI green after a bootstrap fix (a closure-scope bug that only showed on the download path) |
 | S1: Lrm.Core (hashing, canonical encoding, bf16/f16, Philox, telemetry facade, ExecutionClass) | [#3](https://github.com/enderPeer/rosylnalive/pull/3), stacked on #2 | Known-answer tests pass; bf16 and f16 checked exhaustively over every bit pattern; identical under de-DE; the NFC canary passes; two reviews approved |
+| O1: oracles (torch32 spec, torch64p truth), tiny model and tokenizer goldens | [#4](https://github.com/enderPeer/rosylnalive/pull/4) | Byte-identical regeneration; oracle self-tests; two reviews approved |
+| R1: Vulkan descriptor-heap spike on the RTX 4080 | [#5](https://github.com/enderPeer/rosylnalive/pull/5) | Heap mapping proven bit-exact against CPU and D3D12; ADR and VulkanHeapRecipe contract |
+| R3: D3D12 COM interop and device check | [#6](https://github.com/enderPeer/rosylnalive/pull/6) | cl.exe ABI oracle; vtable generator from the SDK headers; RTX 4080 ACCEPTED; found a tail-call use-after-return hazard (ADR R3-0001) |
+| C1: cluster core (frames, transports, coordinator, chaos) | [#7](https://github.com/enderPeer/rosylnalive/pull/7) | 200 chaos seeds bit-identical; replica-loss replay; 3-process kill test |
+| T1: telemetry runtime, run logs, Markdown and SVG reports | [#8](https://github.com/enderPeer/rosylnalive/pull/8) | Byte-deterministic charts; sample reports (training, routing, thinking, inference, kernels, cluster, parity, gate1) in `docs/reports/samples/` |
+| S0b: governance and hygiene checks, contracts index, probes | [#9](https://github.com/enderPeer/rosylnalive/pull/9) | 124 fixtures behave as designed; hygiene job green on GitHub |
+| R4a: GPU contracts (heap, tensor table, ArgBlock, backend seam), kernel catalog, shader build | [#10](https://github.com/enderPeer/rosylnalive/pull/10) | Reproducible ShaderSetHash; DXIL and SPIR-V from the pinned DXC only; known-answer vectors |
+| O2: tensors, safetensors, CPU reference F32 and F64, comparators, kernel bounds | [#11](https://github.com/enderPeer/rosylnalive/pull/11), stacked on #4 | Tiny model: F64 vs torch64p about 1.5e-15, F32 vs torch32 below 1e-6; bit-equal at 1 and 32 threads |
+| R4b: final SPIR-V binding and inspector | [#12](https://github.com/enderPeer/rosylnalive/pull/12), stacked on #10 | Inspector passes all kernels; 18 bad-shader fixtures each fail exactly as expected; contracts-v1.1 waits on a wording fix in R1's contract (wave 2 integration fixes) |
+| Integration preview of waves 0 and 1 | [#13](https://github.com/enderPeer/rosylnalive/pull/13) (draft, not a merge unit) | No merge conflicts; local CI sequence green; cpu tier 543 tests; gpu tier green on D3D12 |
 
 ## In progress
 
-- **Wave 1** (workflow `wf_6818f11b-506`), stacked on `ws/S1-core`:
-  - R4a (GPU contracts, catalog, shader build), O1 (oracles and goldens), T1 (telemetry, run logs, reports with charts), C1 (cluster core), R1 (Vulkan heap spike), R3 (D3D12 interop) and S0b (governance);
-  - then O2 (the CPU reference, after O1) and R4b (the SPIR-V binding, after R4a and R1).
-- R2a and R2b (vkgen v2 and the Vulkan ABI oracle) are waiting on approval to download vk.xml and Vulkan-Headers.
+- **Wave 2** (workflow `wf_d63d9762-c8a`), on `int/wave1`:
+  - First, integration fixes: Tailcalls off for GPU and interop code, the R1 contract wording that unblocks contracts-v1.1, the contract registry, the CI steps, a real parity report, and the denormal question. The 127 wave 1 requests are also routed to later workstreams.
+  - Then G2 (full-model goldens and tolerances), M1 (tokenizer), M2a (Qwen forward on the CPU), E1 (CpuDevice and conformance harness) and D1 (the D3D12 backend).
+  - Then M2b (full-model CPU parity, which earns gate1-cpu) and R5 (the WARP spike).
+- R2a, R2b and V1 (the Vulkan side) are waiting on approval to download vk.xml and Vulkan-Headers.
 
 ## Next
 
-1. Merge waves 0 and 1 in order, once merging is decided.
-2. **Waves 2–5:** goldens and tokenizer, backends, kernels, executor, two-node pipeline, dashboard, then Gate 1.
+1. Merge waves 0 to 2 in order, once merging is decided.
+2. **Waves 3–5:** kernels, executor, two-node pipeline, dashboard, then Gate 1.
 3. Phase 2 (backward pass, fault-tolerant training), then the Phase 3 LRM core.
 
 ## Waiting on the user
