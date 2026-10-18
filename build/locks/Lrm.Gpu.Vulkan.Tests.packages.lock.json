@@ -26,6 +26,21 @@
           "Lrm.Core": "[1.0.0, )"
         }
       },
+      "lrm.gpu.d3d12": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Gpu.Core": "[1.0.0, )",
+          "Lrm.Gpu.D3D12.Interop": "[1.0.0, )"
+        }
+      },
+      "lrm.gpu.d3d12.interop": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )"
+        }
+      },
       "lrm.gpu.vulkan": {
         "type": "Project",
         "dependencies": {
@@ -46,6 +61,28 @@
         "dependencies": {
           "FSharp.Core": "[10.1.402, )",
           "Lrm.Gpu.Core": "[1.0.0, )"
+        }
+      },
+      "lrm.telemetry": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )"
+        }
+      },
+      "lrm.tensor": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )"
+        }
+      },
+      "lrm.tensor.cpureference": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )",
+          "Lrm.Tensor": "[1.0.0, )"
         }
       },
       "lrm.testing": {
