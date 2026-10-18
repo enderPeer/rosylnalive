@@ -277,5 +277,17 @@ let private control =
                     "the DXIL ShaderSetHash differs, so the class differs"
         ]
 
+/// The spike passes stack addresses to the interop, so it builds with Tailcalls=false like every GPU project (ADR
+/// R3-0001); the scan proves the setting took effect.
+let private tailCalls =
+    testCase "the spike's assembly has no tail. call sites"
+    <| fun () ->
+        let asm = typeof<Relabel.RelabelTelemetry>.Assembly
+
+        if Lrm.Testing.TailCalls.builtWithoutOptimization asm then
+            skiptest Lrm.Testing.TailCalls.UnoptimizedBuild
+
+        Expect.isEmpty (Lrm.Testing.TailCalls.scan asm.Location) "no tail. prefixes"
+
 let tests =
-    testList "warp.cpu" [ affinity; relabel; verdict; klass; control ]
+    testList "warp.cpu" [ affinity; relabel; verdict; klass; control; tailCalls ]
