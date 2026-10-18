@@ -25,6 +25,14 @@ let tinyWeights = lazy (Qwen3Weights.Open(tinyModelDir ()))
 [<Literal>]
 let Threads = 8
 
+/// The real Qwen3-0.6B weights under LRM_DATA (model tier only), opened and verified once per process: the open
+/// hashes 1.5 GB, and every CpuOps over them shares one copy of the bf16 tensors.
+let qwenWeights = lazy (Qwen3Weights.Open(LrmPaths.model "Qwen3-0.6B"))
+
+/// G2's full-model golden set goldens/qwen3-0.6b/g1 (model tier only), opened once per process; its large files
+/// live under LRM_DATA/golden and are verified when read.
+let qwenGoldens = lazy (QwenGoldens.Open(QwenGoldens.DefaultDir(repoRoot ())))
+
 /// The plan for the tiny model's tests: 8 threads, its 512 positions and rows, the whole model, every tap and two
 /// caches alive at once.
 let tinyOptions () =
