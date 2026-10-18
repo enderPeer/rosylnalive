@@ -115,8 +115,46 @@ let tests =
                                 "\"cpu64-vs-torch64p\": {",
                                 "\"cpu64-vs-torch64p\": {}, \"cpu64-vs-torch64p\": {"
                             )))
+                    testCase "a duplicate top-level key (the last one would win)" (fun () ->
+                        refused
+                            "dup schema"
+                            (sample.Replace(
+                                "\"schema\": \"lrm.tolerances/1\",",
+                                "\"schema\": \"bogus\", \"schema\": \"lrm.tolerances/1\","
+                            )))
+                    testCase "a second pairs object (it would drop every bound of the first)" (fun () ->
+                        refused "dup pairs" (sample.Replace("\"greedy\": {", "\"pairs\": {}, \"greedy\": {")))
+                    testCase "a duplicate key inside greedy" (fun () ->
+                        refused
+                            "dup greedy"
+                            (sample.Replace(
+                                "\"greedy\": { \"min_margin\": \"max(0.05, 4 * tau_logit)\" }",
+                                "\"greedy\": { \"min_margin\": \"a\", \"rules\": [ { \"k\": 1, \"k\": 2 } ] }"
+                            )))
+                    testCase "a duplicate key inside an unknown top-level field" (fun () ->
+                        refused
+                            "dup extra"
+                            (sample.Replace("\"greedy\": {", "\"x\": { \"a\": 1, \"a\": 2 }, \"greedy\": {")))
+                    testCase "an unknown field in a rule" (fun () ->
+                        refused
+                            "rule field"
+                            (sample.Replace("\"rule\": { \"k\": 3,", "\"rule\": { \"k\": 3, \"kk\": 30,")))
+                    testCase "a lone surrogate escape" (fun () ->
+                        refused "surrogate" (sample.Replace("qwen3-0.6b/g1", "qwen3" + string (char 92) + "ud800")))
+                    testCase "a lone surrogate in the text" (fun () ->
+                        refused "raw surrogate" (sample.Replace("qwen3-0.6b/g1", "qwen3" + string (char 0xD800))))
+                    testCase "not an object" (fun () -> refused "array" "[]")
                     testCase "not JSON" (fun () -> refused "json" "{")
                 ]
+
+            testCase "unknown top-level fields are ignored"
+            <| fun () ->
+                let s =
+                    ToleranceSpec.parse (
+                        sample.Replace("\"greedy\": {", "\"note\": { \"x\": [ 1, 2 ] }, \"greedy\": {")
+                    )
+
+                Expect.equal s.Pairs.Count 3 "pairs"
 
             testCase "KernelBounds covers the 14 catalog kernels once each, with the contract's exact set"
             <| fun () ->

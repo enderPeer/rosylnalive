@@ -40,6 +40,14 @@ module CpuRef =
         if not (a.Equals b) then
             invalidArg what (sprintf "shapes differ: %O and %O" a b)
 
+    /// The row ops (softmax, logSumExp, argmax, argmaxRows, topK, kl) read a tensor as [Rows, Cols]. A rank-1 [n] has
+    /// Rows = n and Cols = 1, so a logits vector would silently become n rows of one element: refuse rank 0 and 1.
+    let private rowsOnly (what: string) (s: Shape) =
+        if s.Rank < 2 then
+            invalidArg
+                what
+                (sprintf "%s is %O: a row op needs [rows, cols] (rank 2 or more); reshape a vector [n] to [1, n]" what s)
+
     /// The pinned RoPE table T_spec for positions 0 .. maxPos - 1 (RopeTable.create on every processor).
     let ropeTable (invFreqBits: uint32[]) (maxPos: int) =
         RopeTable.create CpuExec.Machine invFreqBits maxPos
@@ -403,6 +411,7 @@ module CpuRef =
         (exec: CpuExec)
         (x: HostTensor<'T>)
         : HostTensor<'T> =
+        rowsOnly "x" x.Shape
         let cols = x.Cols
         let y = Array.zeroCreate<'T> x.Length
 
@@ -421,6 +430,7 @@ module CpuRef =
         (exec: CpuExec)
         (x: HostTensor<'T>)
         : HostTensor<'T> =
+        rowsOnly "x" x.Shape
         let cols = x.Cols
         let y = Array.zeroCreate<'T> x.Rows
         Par.forEach exec x.Rows (fun r -> y[r] <- Rows.logSumExp (ReadOnlySpan<'T>(x.Data, r * cols, cols)))
@@ -435,6 +445,7 @@ module CpuRef =
         and 'T :> ValueType>
         (x: HostTensor<'T>)
         : int[] =
+        rowsOnly "x" x.Shape
         let cols = x.Cols
         Array.init x.Rows (fun r -> Rows.argmax (ReadOnlySpan<'T>(x.Data, r * cols, cols)))
 
@@ -447,6 +458,7 @@ module CpuRef =
         and 'T :> ValueType>
         (x: HostTensor<'T>)
         : uint32[] =
+        rowsOnly "x" x.Shape
         let cols = x.Cols
 
         Array.init x.Rows (fun r ->
@@ -464,6 +476,7 @@ module CpuRef =
         (x: HostTensor<'T>)
         (k: int)
         : int[][] =
+        rowsOnly "x" x.Shape
         let cols = x.Cols
         Array.init x.Rows (fun r -> Rows.topK (ReadOnlySpan<'T>(x.Data, r * cols, cols)) k)
 
@@ -479,6 +492,7 @@ module CpuRef =
         (q: HostTensor<'T>)
         : HostTensor<'T> =
         sameShape "q" p.Shape q.Shape
+        rowsOnly "p" p.Shape
         let cols = p.Cols
         let y = Array.zeroCreate<'T> p.Rows
 

@@ -37,10 +37,16 @@ module S1 =
 
     let sha256 = "49fc00c6aa63a8f23a5488fe2bd49a8768779e8f5b943a166013f4b2140666ce"
 
-/// A hand-built file: the 8-byte length, the header text and the data.
+/// A hand-built file: the 8-byte length, the header bytes and the data.
+let rawFileBytes (header: byte[]) (data: byte[]) =
+    Array.concat [ BitConverter.GetBytes(uint64 header.Length); header; data ]
+
+/// A hand-built file: the 8-byte length, the header text (as UTF-8) and the data.
 let rawFile (header: string) (data: byte[]) =
-    let h = Encoding.UTF8.GetBytes header
-    Array.concat [ BitConverter.GetBytes(uint64 h.Length); h; data ]
+    rawFileBytes (Encoding.UTF8.GetBytes header) data
+
+/// The six characters of a JSON escape \uXXXX, built from char 92 so that no F# string escape is involved.
+let private jsonEscape (hex: string) = string (char 92) + "u" + hex
 
 let withFile (bytes: byte[]) (f: string -> 'a) =
     let dir = tempDir "st"
@@ -52,9 +58,23 @@ let withFile (bytes: byte[]) (f: string -> 'a) =
     finally
         Directory.Delete(dir, true)
 
+/// The bytes are refused with SafetensorsFormatException (that exact type) by Validate and by Open, and Open's
+/// message names the file.
 let expectFormatError (label: string) (bytes: byte[]) =
+    let raised (f: unit -> unit) =
+        try
+            f ()
+            failtestf "%s: no exception" label
+        with
+        | :? SafetensorsFormatException as e when e.GetType() = typeof<SafetensorsFormatException> -> e
+        | :? AssertException -> reraise ()
+        | e -> failtestf "%s: %s instead of SafetensorsFormatException: %s" label (e.GetType().Name) e.Message
+
+    raised (fun () -> SafetensorsFile.Validate bytes |> ignore) |> ignore
+
     withFile bytes (fun path ->
-        Expect.throwsT<SafetensorsFormatException> (fun () -> SafetensorsFile.Open(path).Dispose()) label)
+        let e = raised (fun () -> SafetensorsFile.Open(path).Dispose())
+        Expect.stringContains e.Message (Path.GetFullPath path) (label + ": the message names the file"))
 
 let private entry (dtype: string) (shape: string) (b: int) (e: int) =
     Invariant.format $"{{\"dtype\":\"{dtype}\",\"shape\":{shape},\"data_offsets\":[{b},{e}]}}"
@@ -247,9 +267,72 @@ let tests =
                             "empty name", "{\"\":" + ok + "}", data4
                             "metadata not strings", "{\"__metadata__\":{\"k\":1},\"a\":" + ok + "}", data4
                             "metadata not an object", "{\"__metadata__\":[],\"a\":" + ok + "}", data4
+                            // System.Text.Json decodes escapes only when a string is read: these must still be format
+                            // errors, not InvalidOperationException.
+                            "lone high surrogate in a name", "{\"" + jsonEscape "d800" + "\":" + ok + "}", data4
+                            "lone low surrogate in a name", "{\"a" + jsonEscape "dc00" + "b\":" + ok + "}", data4
+                            "high surrogate without its low half",
+                            "{\"" + jsonEscape "d83d" + jsonEscape "0041" + "\":" + ok + "}",
+                            data4
+                            "lone surrogate in a metadata key",
+                            "{\"__metadata__\":{\"" + jsonEscape "dc00" + "\":\"v\"},\"a\":" + ok + "}",
+                            data4
+                            "lone surrogate in a metadata value",
+                            "{\"__metadata__\":{\"k\":\"" + jsonEscape "dc00" + "\"},\"a\":" + ok + "}",
+                            data4
+                            "lone surrogate in a dtype",
+                            "{\"a\":" + entry ("U" + jsonEscape "d800") "[4]" 0 4 + "}",
+                            data4
+                            "lone surrogate in a field name",
+                            "{\"a\":{\"dtype\":\"U8\",\"shape\":[4],\"data_offsets\":[0,4],\""
+                            + jsonEscape "d800"
+                            + "\":1}}",
+                            data4
                         ] do
                         yield testCase label (fun () -> expectFormatError label (rawFile header data))
+
+                    let ascii (s: string) = Encoding.ASCII.GetBytes s
+
+                    for label, header in
+                        [
+                            "invalid UTF-8 in a name",
+                            Array.concat [ ascii "{\"a"; [| 0xFFuy |]; ascii ("\":" + ok + "}") ]
+                            "invalid UTF-8 in a metadata value",
+                            Array.concat
+                                [
+                                    ascii "{\"__metadata__\":{\"k\":\"v"
+                                    [| 0xC3uy |]
+                                    ascii ("\"},\"a\":" + ok + "}")
+                                ]
+                            "a UTF-8 encoded surrogate (CESU-8)",
+                            Array.concat [ ascii "{\"a"; [| 0xEDuy; 0xA0uy; 0x80uy |]; ascii ("\":" + ok + "}") ]
+                            "an overlong UTF-8 encoding",
+                            Array.concat [ ascii "{\""; [| 0xC1uy; 0x81uy |]; ascii ("\":" + ok + "}") ]
+                        ] do
+                        yield testCase label (fun () -> expectFormatError label (rawFileBytes header data4))
                 ]
+
+            testCase "the reader decodes escaped names that are valid Unicode"
+            <| fun () ->
+                // A surrogate pair is one astral character, and A is "A".
+                let header =
+                    "{\""
+                    + jsonEscape "d83d"
+                    + jsonEscape "de00"
+                    + "\":"
+                    + entry "U8" "[2]" 0 2
+                    + ",\""
+                    + jsonEscape "0041"
+                    + "\":"
+                    + entry "U8" "[2]" 2 4
+                    + "}"
+
+                let _, _, entries = SafetensorsFile.Validate(rawFile header (Array.zeroCreate 4))
+
+                Expect.sequenceEqual
+                    (entries |> Array.map _.Name)
+                    [| "A"; "\U0001F600" |]
+                    "decoded, in code point order"
 
             testCase "the reader accepts any header length and records alignment"
             <| fun () ->

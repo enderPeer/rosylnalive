@@ -109,18 +109,30 @@ module Rows =
         x.CopyTo y
         softmaxInPlace y
 
-    /// m + log(sum_i exp(x[i] - m)), m the row maximum, sums sequential.
+    /// m + log(sum_i exp(x[i] - m)), m the row maximum, sums sequential. As torch.logsumexp, a row whose maximum is
+    /// infinite gives that infinity: +inf when the row holds +inf, -inf when every element is -inf (the formula would
+    /// give inf - inf = NaN). A NaN anywhere gives NaN.
     let logSumExp<'T when 'T :> IFloatingPointIeee754<'T>> (x: ReadOnlySpan<'T>) : 'T =
         if x.Length = 0 then
             invalidArg "x" "empty row"
 
         let m = rowMax x
-        let mutable l = 'T.Zero
 
-        for i in 0 .. x.Length - 1 do
-            l <- l + 'T.Exp(x[i] - m)
+        if 'T.IsInfinity m then
+            let mutable r = m
 
-        m + 'T.Log l
+            for i in 0 .. x.Length - 1 do
+                if 'T.IsNaN x[i] then
+                    r <- 'T.NaN
+
+            r
+        else
+            let mutable l = 'T.Zero
+
+            for i in 0 .. x.Length - 1 do
+                l <- l + 'T.Exp(x[i] - m)
+
+            m + 'T.Log l
 
     /// The lowest index of the row maximum (+0 and -0 tie), or ValueNone when the row holds a NaN.
     let tryArgmax<'T when 'T :> IFloatingPointIeee754<'T>> (x: ReadOnlySpan<'T>) : int voption =
@@ -258,7 +270,10 @@ module Rows =
                 y[d] <- 'T.FusedMultiplyAdd(p, vj[d], y[d])
 
     /// KL(P || Q) of two logit rows: with lp = p - logSumExp p and lq = q - logSumExp q,
-    /// sum_i fma(exp(lp[i]), lp[i] - lq[i], .) in increasing i from +0.
+    /// sum_i fma(exp(lp[i]), lp[i] - lq[i], .) in increasing i from +0, skipping every term whose computed exp(lp[i])
+    /// is 0 (0 * log 0 = 0), as Metrics.klRow does. So a masked logit (-inf) in both rows adds nothing, where the
+    /// formula would add 0 * (-inf - -inf) = NaN; a skipped term with a finite lp[i] - lq[i] would have added a zero.
+    /// Mass of P where Q has none gives +inf; a NaN, a +inf logit or an all -inf row gives NaN.
     let kl<'T when 'T :> IFloatingPointIeee754<'T>> (p: ReadOnlySpan<'T>) (q: ReadOnlySpan<'T>) : 'T =
         sameLength p.Length q.Length "q"
         let lseP = logSumExp p
@@ -268,6 +283,10 @@ module Rows =
         for i in 0 .. p.Length - 1 do
             let lp = p[i] - lseP
             let lq = q[i] - lseQ
-            acc <- 'T.FusedMultiplyAdd('T.Exp lp, lp - lq, acc)
+            let e = 'T.Exp lp
+
+            // exp(-inf) = 0 is skipped; a NaN lp gives a NaN e, which is not zero, so a NaN still spreads.
+            if not ('T.IsZero e) then
+                acc <- 'T.FusedMultiplyAdd(e, lp - lq, acc)
 
         acc

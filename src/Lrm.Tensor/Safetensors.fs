@@ -297,6 +297,21 @@ type internal FileMapping(stream: FileStream) =
 module internal SafetensorsParse =
     let private fail (msg: string) = raise (SafetensorsFormatException msg)
 
+    /// A key of the header. System.Text.Json decodes escapes lazily, so a key whose escapes are not valid UTF-16 (a
+    /// lone surrogate such as \ud800) raises InvalidOperationException here; that is a format error.
+    let private nameOf (p: JsonProperty) =
+        try
+            p.Name
+        with :? InvalidOperationException as e ->
+            fail ("a key is not valid Unicode (a lone surrogate escape): " + e.Message)
+
+    /// A string value of the header, as nameOf.
+    let private stringOf (where: string) (e: JsonElement) =
+        try
+            e.GetString()
+        with :? InvalidOperationException as ex ->
+            fail (sprintf "%s is not valid Unicode (a lone surrogate escape): %s" where ex.Message)
+
     let private nonNegative (what: string) (e: JsonElement) =
         match e.ValueKind with
         | JsonValueKind.Number ->
@@ -318,17 +333,21 @@ module internal SafetensorsParse =
         let mutable offsets = None
 
         for f in value.EnumerateObject() do
-            if not (fields.Add f.Name) then
-                fail (sprintf "%s: duplicate field '%s'" name f.Name)
+            let field = nameOf f
 
-            match f.Name with
+            if not (fields.Add field) then
+                fail (sprintf "%s: duplicate field '%s'" name field)
+
+            match field with
             | "dtype" ->
                 if f.Value.ValueKind <> JsonValueKind.String then
                     fail (sprintf "%s: dtype is not a string" name)
 
-                match DType.tryOfSafetensorsName (f.Value.GetString()) with
+                let text = stringOf (name + ": dtype") f.Value
+
+                match DType.tryOfSafetensorsName text with
                 | Some t -> dtype <- Some t
-                | None -> fail (sprintf "%s: unsupported dtype '%s'" name (f.Value.GetString()))
+                | None -> fail (sprintf "%s: unsupported dtype '%s'" name text)
             | "shape" ->
                 if f.Value.ValueKind <> JsonValueKind.Array then
                     fail (sprintf "%s: shape is not an array" name)
@@ -399,6 +418,11 @@ module internal SafetensorsParse =
         if headerLength = 0L || headerBytes[0] <> byte '{' then
             fail "the header is not a JSON object"
 
+        // JSON text is UTF-8 (rule 3). System.Text.Json checks the bytes of a string only when it is decoded, so check
+        // them all here, before anything is decoded.
+        if not (Text.Unicode.Utf8.IsValid(ReadOnlySpan headerBytes)) then
+            fail "the header is not valid UTF-8"
+
         let doc =
             try
                 JsonDocument.Parse(ReadOnlyMemory headerBytes, JsonDocumentOptions(MaxDepth = 8))
@@ -415,25 +439,29 @@ module internal SafetensorsParse =
         let list = List<SafetensorsEntry>()
 
         for p in doc.RootElement.EnumerateObject() do
-            if not (seen.Add p.Name) then
-                fail (sprintf "duplicate key '%s'" p.Name)
+            let key = nameOf p
 
-            if p.Name = Safetensors.MetadataKey then
+            if not (seen.Add key) then
+                fail (sprintf "duplicate key '%s'" key)
+
+            if key = Safetensors.MetadataKey then
                 if p.Value.ValueKind <> JsonValueKind.Object then
                     fail "__metadata__ is not an object"
 
                 let keys = HashSet<string>(StringComparer.Ordinal)
 
                 for m in p.Value.EnumerateObject() do
-                    if not (keys.Add m.Name) then
-                        fail (sprintf "duplicate metadata key '%s'" m.Name)
+                    let k = nameOf m
+
+                    if not (keys.Add k) then
+                        fail (sprintf "duplicate metadata key '%s'" k)
 
                     if m.Value.ValueKind <> JsonValueKind.String then
-                        fail (sprintf "metadata '%s' is not a string" m.Name)
+                        fail (sprintf "metadata '%s' is not a string" k)
 
-                    meta.Add((m.Name, m.Value.GetString()))
+                    meta.Add((k, stringOf (sprintf "metadata '%s'" k) m.Value))
             else
-                list.Add(entry dataLength p.Name p.Value)
+                list.Add(entry dataLength key p.Value)
 
         // The tensors must tile the data section exactly: no holes, no overlaps, nothing after the last one.
         let mutable position = 0L

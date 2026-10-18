@@ -224,6 +224,24 @@ let tests =
                     (fun () -> RopeTable.create CpuExec.Serial [| 0x7F800000u |] 4 |> ignore)
                     "inf"
 
+                Expect.throwsT<ArgumentException>
+                    (fun () -> RopeTable.create CpuExec.Serial tinyInvFreq ((1 <<< 24) + 1) |> ignore)
+                    "max_pos above 2^24"
+
+                // head_dim 256 at 2^24 positions is 2^31 entries per table: refused before anything is allocated.
+                let tooBig =
+                    try
+                        RopeTable.create CpuExec.Serial (Array.create 128 0x3F800000u) (1 <<< 24)
+                        |> ignore
+
+                        None
+                    with :? ArgumentException as e ->
+                        Some e
+
+                Expect.isSome tooBig "beyond the array limit"
+                Expect.equal tooBig.Value.ParamName "maxPos" "names maxPos"
+                Expect.stringContains tooBig.Value.Message "array limit" "says why"
+
                 let t = RopeTable.create CpuExec.Serial tinyInvFreq 4
                 Expect.throwsT<ArgumentOutOfRangeException> (fun () -> t.CosRow(4).Length |> ignore) "position"
 

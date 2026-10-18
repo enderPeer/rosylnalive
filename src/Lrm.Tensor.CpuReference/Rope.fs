@@ -213,7 +213,8 @@ module RopeTable =
         float32 pos * BitConverter.UInt32BitsToSingle invFreqBits
 
     /// Builds T_spec from the pinned inverse-frequency bits for positions 0 .. maxPos - 1. Rows are computed in
-    /// parallel; every entry is exact, so the table is the same at every thread count and on every machine.
+    /// parallel; every entry is exact, so the table is the same at every thread count and on every machine. Raises
+    /// ArgumentException for maxPos outside 1 .. 2^24, or when maxPos * invFreqBits.Length exceeds Array.MaxLength.
     let create (exec: CpuExec) (invFreqBits: uint32[]) (maxPos: int) =
         if isNull invFreqBits || invFreqBits.Length = 0 then
             invalidArg "invFreqBits" "no inverse frequencies"
@@ -221,11 +222,23 @@ module RopeTable =
         if maxPos < 1 || maxPos > (1 <<< 24) then
             invalidArg "maxPos" (sprintf "max_pos %d outside 1 .. 2^24 (positions must be exact in float32)" maxPos)
 
+        let half = invFreqBits.Length
+
+        // Each of cos and sin is one array of maxPos * half float32 values (head_dim 256 at 2^24 positions is 2^31).
+        if int64 maxPos * int64 half > int64 Array.MaxLength then
+            invalidArg
+                "maxPos"
+                (sprintf
+                    "max_pos %d with %d frequencies is %d entries per table, beyond the .NET array limit of %d"
+                    maxPos
+                    half
+                    (int64 maxPos * int64 half)
+                    Array.MaxLength)
+
         for b in invFreqBits do
             if not (Single.IsFinite(BitConverter.UInt32BitsToSingle b)) then
                 invalidArg "invFreqBits" (sprintf "inv_freq %08x is not finite" b)
 
-        let half = invFreqBits.Length
         let cos = Array.zeroCreate<float32>(maxPos * half)
         let sin = Array.zeroCreate<float32>(maxPos * half)
 

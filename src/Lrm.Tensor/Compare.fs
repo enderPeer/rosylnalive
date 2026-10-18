@@ -262,7 +262,7 @@ module Metrics =
 
 /// Comparisons that return a CheckResult and emit it as a golden.compare Check (ComparatorsAndGoldenReader and
 /// TelemetryFacade contracts). Candidate first, reference second; shapes must be equal. Row metrics treat a tensor as
-/// [Rows, Cols] (the first dimension and the product of the rest).
+/// [Rows, Cols] (the first dimension and the product of the rest) and raise ArgumentException for rank 0 and 1.
 [<RequireQualifiedAccess>]
 module Compare =
     /// Builds the result for a measured value and emits golden.compare with metric, measured, bound, direction and elements,
@@ -304,8 +304,17 @@ module Compare =
         sameShape candidate reference
         candidate.ToFloat64(), reference.ToFloat64()
 
+    /// [Rows, Cols] for the row metrics (kl, topKAgreement, top2Margin). A rank-1 [n] has Rows = n and Cols = 1, so a
+    /// logits vector would become n one-element rows, and KL would pass trivially: rank 0 and 1 raise instead.
     let private rows (t: IHostTensor) =
-        int t.Desc.Shape.Rows, int t.Desc.Shape.Cols
+        let s = t.Desc.Shape
+
+        if s.Rank < 2 then
+            invalidArg
+                "candidate"
+                (sprintf "a row metric needs [rows, cols] (rank 2 or more), not %O; reshape a vector [n] to [1, n]" s)
+
+        int s.Rows, int s.Cols
 
     /// relL2(candidate, reference) <= bound.
     let relL2 (bound: float) (attrs: Attr list) (candidate: #IHostTensor) (reference: #IHostTensor) =
@@ -359,8 +368,8 @@ module Compare =
 
     /// The largest per-row KL(P_reference || P_candidate) of two logit tensors <= bound.
     let kl (bound: float) (attrs: Attr list) (candidate: #IHostTensor) (reference: #IHostTensor) =
-        let a, b = pair candidate reference
         let r, c = rows candidate
+        let a, b = pair candidate reference
         let mutable m = 0.0
         let mutable sawNaN = false
 
@@ -376,8 +385,8 @@ module Compare =
 
     /// The smallest per-row top-k agreement >= minimum.
     let topKAgreement (k: int) (minimum: float) (attrs: Attr list) (candidate: #IHostTensor) (reference: #IHostTensor) =
-        let a, b = pair candidate reference
         let r, c = rows candidate
+        let a, b = pair candidate reference
         let mutable m = 1.0
 
         for i in 0 .. r - 1 do
@@ -387,8 +396,8 @@ module Compare =
 
     /// The smallest per-row top-2 margin of one logit tensor >= minimum.
     let top2Margin (minimum: float) (attrs: Attr list) (logits: #IHostTensor) =
-        let a = logits.ToFloat64()
         let r, c = rows logits
+        let a = logits.ToFloat64()
         let mutable m = infinity
 
         for i in 0 .. r - 1 do

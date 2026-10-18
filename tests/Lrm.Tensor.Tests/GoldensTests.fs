@@ -171,5 +171,19 @@ let tests =
                             f["sha256"] <- JsonValue.Create(f["sha256"].GetValue<string>().ToUpperInvariant())))
                     testCase "a negative size" (fun () ->
                         expectFormat "bytes" (fun m -> (firstFile m)["bytes"] <- JsonValue.Create -1))
+                    testCase "a lone surrogate escape in a string" (fun () ->
+                        withSet "s" "g1" [ "a.bin", [| 1uy |] ] ignore (fun dir _ ->
+                            let path = Path.Combine(dir, "manifest.json")
+                            let text = File.ReadAllText path
+
+                            let edited =
+                                text.Replace("\"kind\":\"test\"", "\"kind\":\"t" + string (char 92) + "ud800\"")
+
+                            Expect.notEqual edited text "the manifest was edited"
+                            File.WriteAllText(path, edited)
+
+                            Expect.throwsT<GoldenFormatException>
+                                (fun () -> Goldens.Open dir |> ignore)
+                                "GoldenFormatException, not InvalidOperationException"))
                 ]
         ]
