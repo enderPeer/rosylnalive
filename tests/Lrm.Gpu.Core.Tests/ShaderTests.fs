@@ -16,6 +16,12 @@ let rootSigKat =
     + " 52545330 30000000 02000000 01000000 18000000 00000000 30000000 00040000"
     + " 01000000 00000000 24000000 00000000 00000000 20000000"
 
+/// KAT S1 (docs/contracts/shader-build.md): ShaderSetHash of a synthetic set, computed independently in Python.
+/// DxcVersion "d", CatalogHash SHA-256("c"), DXIL flags ["-O3"], rootsig bytes "rs", DXIL blobs a = SHA-256("A") and
+/// b = SHA-256("B"); no SPIR-V flags or blobs.
+let s1Dxil = "cdd90f127b63cf16e1c99616e7327d93de08e6aa9816fd5aeea2d5dbfca75241"
+let s1Spirv = "ef3e37506c8bcee5603764779da39299a62edf3216681cc775d67637cc930e97"
+
 let selftests =
     [ "scale_f32"; "table_echo"; "args_echo"; "groups_echo"; "bf16_unpack" ]
 
@@ -114,6 +120,31 @@ let tests =
                     (ShaderSet.setHash ShaderTarget.Dxil set)
                     (ShaderSet.setHash ShaderTarget.Spirv set)
                     "one hash per target"
+
+            testCase "KAT S1: ShaderSetHash of a synthetic set"
+            <| fun () ->
+                let blob (name: string) (content: string) : ShaderBlob =
+                    {
+                        Kernel = name
+                        Target = ShaderTarget.Dxil
+                        Bytes = [||]
+                        Sha256 = Hash.sha256Utf8 content
+                        Threads = (1, 1, 1)
+                    }
+
+                let set =
+                    {
+                        DxcVersion = "d"
+                        CatalogHash = Hash.sha256Utf8 "c"
+                        Flags = [ ShaderTarget.Dxil, [ "-O3" ] ]
+                        RootSignature = Text.Encoding.UTF8.GetBytes "rs"
+                        // Out of order on purpose: the hash sorts by kernel name.
+                        Blobs = [ blob "b" "B"; blob "a" "A" ]
+                        Missing = []
+                    }
+
+                Expect.equal (ShaderSet.setHash ShaderTarget.Dxil set).Hex s1Dxil "dxil"
+                Expect.equal (ShaderSet.setHash ShaderTarget.Spirv set).Hex s1Spirv "spirv"
 
             testCase "ShaderSetHash covers every input"
             <| fun () ->

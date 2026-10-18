@@ -196,6 +196,9 @@ type RecordingBackend(info: DeviceInfo, options: DeviceOptions) =
         member _.Wait(s: Submission) =
             checkLive ()
 
+            use _ =
+                Telemetry.span GpuTelemetry.Wait [ Attr.str TelemetryKeys.Backend (ExecutionBackend.name info.Backend) ]
+
             match completions.TryGetValue s.Value with
             | true, c ->
                 GpuTelemetry.timers info.Backend c.Timers

@@ -370,6 +370,7 @@ let tests =
                         GpuTelemetry.BytesMoved
                         GpuTelemetry.Dispatches
                         GpuTelemetry.Dispatch
+                        GpuTelemetry.Wait
                     ] do
                     Expect.contains names n (sprintf "emits %s" n)
 
