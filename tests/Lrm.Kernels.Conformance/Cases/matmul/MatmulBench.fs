@@ -1,0 +1,571 @@
+/// K2's matmul_bf16w measurements on a GPU backend, outside the per-case harness:
+///
+/// - **Throughput** (bench tier): every Qwen3-0.6B weight shape at m from 1 (decode) to 4,000 (the longest prefill
+///   chunk), lm_head up to 1,024 rows. Each point is one warm-up dispatch and `Reps` timed ones in one command list;
+///   the faster time decides. Records: the backend's `gpu.dispatch` intervals, and one `gpu.matmul.throughput` gauge
+///   (flop/s, the FLOP registry's 2mnk) and one `gpu.matmul.bandwidth` gauge (B/s, the registry's minimum traffic) per
+///   point, with `kernel`, `shape`, `m`, `n`, `k`, `time_ns` and `budget_ns`.
+/// - **Batch invariance across calls** (gpu tier): per shape, one activation matrix and one weight; rows computed by
+///   an m = 512 call, an m = 37 call and m = 1 calls (views of the same rows) must be bit-identical, and equal to
+///   CpuRef F32 (Rows.dotBf16) bit for bit as measured on the class. Records: `gpu.matmul.batch_invariance` and
+///   `gpu.matmul.cpuref_exact` checks.
+///
+/// Both run under the backend's mutex through Lrm.Testing (`tests`), and `run` writes a run log of kind `kernels`
+/// that `lrm report` renders. This module has no `cases` value, so Discovery does not read it.
+module Lrm.Kernels.Conformance.Cases.MatmulBench
+
+open System
+open System.Runtime.InteropServices
+open System.Threading.Tasks
+open Expecto
+open Lrm.Core
+open Lrm.Gpu.Core
+open Lrm.Telemetry
+open Lrm.Testing
+open Lrm.Tensor.CpuReference
+open Lrm.Kernels.Conformance
+
+/// A Qwen3-0.6B weight shape: n output features of k inputs.
+type Shape = { Name: string; N: int; K: int }
+
+let shapes =
+    [
+        { Name = "q_proj"; N = 2048; K = 1024 }
+        { Name = "kv_proj"; N = 1024; K = 1024 }
+        { Name = "o_proj"; N = 1024; K = 2048 }
+        {
+            Name = "gate_up_proj"
+            N = 3072
+            K = 1024
+        }
+        {
+            Name = "down_proj"
+            N = 1024
+            K = 3072
+        }
+        {
+            Name = "lm_head"
+            N = 151936
+            K = 1024
+        }
+    ]
+
+/// The m values measured per shape: decode, small batches, prefill chunks up to 4,000; lm_head up to 1,024 rows
+/// (its 1,024 x 151,936 output is 622 MB).
+let rowsOf (s: Shape) =
+    if s.Name = "lm_head" then
+        [ 1; 4; 16; 64; 256; 512; 1024 ]
+    else
+        [ 1; 4; 16; 37; 64; 128; 256; 512; 1024; 2048; 4000 ]
+
+/// Timed dispatches per point (after one warm-up).
+[<Literal>]
+let Reps = 5
+
+/// The rows of the cross-call check, alone (m = 1); those below 37 are also compared with the m = 37 call.
+let invarianceRows = [ 0; 1; 15; 16; 36; 63; 64; 100; 511 ]
+
+[<Literal>]
+let private MaxM = 4000
+
+[<Literal>]
+let private Budget = 100_000_000L
+
+/// Deterministic data by element index (SplitMix64 of seed and index), as the case data of Cases/matmul.
+module private Data =
+    let private word (seed: uint64) (i: int64) =
+        SplitMix64.Mix(seed + uint64 i * SplitMix64.Gamma)
+
+    let f32 (seed: uint64) (n: int64) : float32[] =
+        let a = Array.zeroCreate<float32>(int n)
+
+        Parallel.For(
+            0,
+            8,
+            fun part ->
+                let lo = int (int64 part * n / 8L)
+                let hi = int (int64 (part + 1) * n / 8L)
+
+                for i in lo .. hi - 1 do
+                    let u = uint32 (word seed (int64 i) >>> 40)
+                    a[i] <- float32 (int u - (1 <<< 23)) / 8388608.0f
+        )
+        |> ignore
+
+        a
+
+    let bf16 (seed: uint64) (n: int64) : uint16[] =
+        let h = Array.zeroCreate<uint16>(int n)
+
+        Parallel.For(
+            0,
+            8,
+            fun part ->
+                let lo = int (int64 part * n / 8L)
+                let hi = int (int64 (part + 1) * n / 8L)
+
+                for i in lo .. hi - 1 do
+                    let z = word seed (int64 i)
+                    let sign = uint16 ((z >>> 63) <<< 15)
+                    let exponent = uint16 (126UL - (z >>> 32) % 8UL)
+                    h[i] <- sign ||| (exponent <<< 7) ||| uint16 (z &&& 0x7FUL)
+        )
+        |> ignore
+
+        h
+
+/// One throughput point: the faster of the timed dispatches, and the FLOP registry's work and traffic.
+type Point =
+    {
+        Shape: Shape
+        M: int
+        BestNs: int64
+        MedianNs: int64
+        Flops: int64
+        Bytes: int64
+    }
+
+    member p.FlopsPerSecond = float p.Flops / (float p.BestNs / 1e9)
+    member p.BytesPerSecond = float p.Bytes / (float p.BestNs / 1e9)
+
+/// One cross-call check of a shape.
+type Invariance =
+    {
+        Shape: Shape
+        /// Rows compared (each alone, and inside the m = 512 call; those below 37 also inside the m = 37 call).
+        Rows: int
+        /// Elements that differ between the calls (0 when batch-invariant).
+        Differences: int64
+        /// Elements of the m = 1 rows that differ from CpuRef F32's bits.
+        CpuRefDifferences: int64
+        Detail: string
+    }
+
+type private Planned =
+    {
+        Heap: IGpuHeap
+        X: TensorToken
+        Weights: Map<string, TensorToken>
+        Y: TensorToken
+        YFull: TensorToken
+        Y37: TensorToken
+        /// Per shape and invariance row: the x row view and the y row view.
+        RowViews: Map<string * int, TensorToken * TensorToken>
+        Table: SealedTable
+        Inputs: Map<string, uint16[]>
+        XData: float32[]
+    }
+
+let private maxN = shapes |> List.map _.N |> List.max
+let private maxK = shapes |> List.map _.K |> List.max
+
+/// Plans and fills the heap: one x [4000, 3072] (Activations), the six weights (Weights), the measurement output
+/// (Scratch, the largest m * n) and the cross-call outputs (Scratch), with one x and one y view per invariance row.
+let private plan (backend: IGpuBackend) =
+    let planner = HeapPlanner()
+    let xs = int64 MaxM * int64 maxK
+    let px = planner.Allocate(ArenaKind.Activations, 4L * xs)
+
+    let pw =
+        shapes
+        |> List.map (fun s -> s.Name, planner.Allocate(ArenaKind.Weights, 2L * int64 s.N * int64 s.K))
+
+    let yElements =
+        shapes
+        |> List.map (fun s -> int64 (List.max (rowsOf s)) * int64 s.N)
+        |> List.max
+
+    let py = planner.Allocate(ArenaKind.Scratch, 4L * yElements)
+    let pFull = planner.Allocate(ArenaKind.Scratch, 4L * 512L * int64 maxN)
+    let p37 = planner.Allocate(ArenaKind.Scratch, 4L * 37L * int64 maxN)
+
+    let pRows =
+        planner.Allocate(ArenaKind.Scratch, 4L * int64 invarianceRows.Length * int64 maxN)
+
+    let layout = planner.Build()
+    let tt = TensorTable layout
+    let x = tt.Add("k2.bench/x", px, DType.F32, [ xs ], TensorFlags.ReadOnly)
+
+    let weights =
+        pw
+        |> List.map (fun (name, p) ->
+            let s = shapes |> List.find (fun s -> s.Name = name)
+            name, tt.Add("k2.bench/w." + name, p, DType.BF16, [ int64 s.N; int64 s.K ], TensorFlags.ReadOnly))
+        |> Map.ofList
+
+    let y = tt.Add("k2.bench/y", py, DType.F32, [ yElements ], TensorFlags.None)
+
+    let yFull =
+        tt.Add("k2.bench/y512", pFull, DType.F32, [ 512L * int64 maxN ], TensorFlags.None)
+
+    let y37 =
+        tt.Add("k2.bench/y37", p37, DType.F32, [ 37L * int64 maxN ], TensorFlags.None)
+
+    let yRows =
+        tt.Add("k2.bench/yrows", pRows, DType.F32, [ int64 invarianceRows.Length * int64 maxN ], TensorFlags.None)
+
+    let views =
+        [
+            for s in shapes do
+                for idx, r in List.indexed invarianceRows do
+                    let xv =
+                        tt.AddView(Invariant.format $"k2.bench/x.{s.Name}.r{r}", x, [ int64 s.K ], int64 r * int64 s.K)
+
+                    let yv =
+                        tt.AddView(
+                            Invariant.format $"k2.bench/y.{s.Name}.r{r}",
+                            yRows,
+                            [ int64 s.N ],
+                            int64 idx * int64 s.N
+                        )
+
+                    (s.Name, r), (xv, yv)
+        ]
+        |> Map.ofList
+
+    let table = tt.Seal()
+    let heap = backend.CreateHeap layout
+    heap.WriteTable table
+
+    let xData = Data.f32 0x4B32424E43480000UL xs
+    heap.Upload(layout.SlotOf(px.Arena, px.Page), px.Offset, MemoryMarshal.AsBytes(ReadOnlySpan xData))
+
+    let inputs =
+        pw
+        |> List.mapi (fun i (name, p) ->
+            let s = shapes |> List.find (fun s -> s.Name = name)
+            let w = Data.bf16 (0x4B32424E43480100UL + uint64 i) (int64 s.N * int64 s.K)
+            heap.Upload(layout.SlotOf(p.Arena, p.Page), p.Offset, MemoryMarshal.AsBytes(ReadOnlySpan w))
+            name, w)
+        |> Map.ofList
+
+    {
+        Heap = heap
+        X = x
+        Weights = weights
+        Y = y
+        YFull = yFull
+        Y37 = y37
+        RowViews = views
+        Table = table
+        Inputs = inputs
+        XData = xData
+    }
+
+let private args (x: TensorToken) (w: TensorToken) (y: TensorToken) (m: int) (s: Shape) : Kernels.MatmulBf16wArgs =
+    {
+        X = x
+        W = w
+        Y = y
+        M = uint32 m
+        N = uint32 s.N
+        K = uint32 s.K
+    }
+
+/// The dispatch times of one completion, in submission order.
+let private dispatchNs (c: Completion) =
+    c.Timers
+    |> List.filter (fun t -> t.Name = GpuTelemetry.Dispatch)
+    |> List.map _.DurationNs
+
+let private measure (backend: IGpuBackend) (p: Planned) (s: Shape) (m: int) : Point =
+    let commands = backend.Begin()
+    let a = args p.X p.Weights[s.Name] p.Y m s
+
+    for i in 0..Reps do
+        if i > 0 then
+            commands.Barrier()
+
+        Kernels.MatmulBf16w.dispatch commands a
+
+    let times = dispatchNs (backend.Wait(backend.Submit commands))
+
+    if times.Length <> Reps + 1 then
+        failwithf
+            "%s m = %d: %d dispatch timers for %d dispatches (TimeDispatches is off?)"
+            s.Name
+            m
+            times.Length
+            (Reps + 1)
+
+    let timed = times |> List.tail |> List.sort
+    let cost = 2L * int64 m * int64 s.N * int64 s.K
+
+    let bytes =
+        4L * int64 m * int64 s.K + 2L * int64 s.N * int64 s.K + 4L * int64 m * int64 s.N
+
+    let point =
+        {
+            Shape = s
+            M = m
+            BestNs = timed.Head
+            MedianNs = timed[timed.Length / 2]
+            Flops = cost
+            Bytes = bytes
+        }
+
+    let attrs =
+        [
+            Attr.str TelemetryKeys.Kernel Kernels.MatmulBf16w.Name
+            Attr.str TelemetryKeys.Backend (ExecutionBackend.name backend.ExecutionClass.Backend)
+            Attr.str "shape" s.Name
+            Attr.int "m" m
+            Attr.int "n" s.N
+            Attr.int "k" s.K
+            Attr.int64 "time_ns" point.BestNs
+            Attr.int64 "median_ns" point.MedianNs
+            Attr.int "reps" Reps
+            Attr.int64 "budget_ns" Budget
+        ]
+
+    Telemetry.gauge "gpu.matmul.throughput" point.FlopsPerSecond "flop/s" attrs
+    Telemetry.gauge "gpu.matmul.bandwidth" point.BytesPerSecond "B/s" attrs
+    point
+
+let private download (p: Planned) (token: TensorToken) (elements: int64) : uint32[] =
+    let row = p.Table.Row token
+    let bytes = Array.zeroCreate<byte>(int (4L * elements))
+    p.Heap.Download(row.Slot, int64 row.ByteOffset, Span bytes)
+    MemoryMarshal.Cast<byte, uint32>(ReadOnlySpan bytes).ToArray()
+
+/// CpuRef F32's bits of row r of x times w (Rows.dotBf16, the reference of matmul_bf16w).
+let private cpuRefRow (p: Planned) (s: Shape) (r: int) : uint32[] =
+    let w = p.Inputs[s.Name]
+    let out = Array.zeroCreate<uint32> s.N
+
+    Parallel.For(
+        0,
+        8,
+        fun part ->
+            let xr = ReadOnlySpan(p.XData, r * s.K, s.K)
+
+            for j in part * s.N / 8 .. (part + 1) * s.N / 8 - 1 do
+                out[j] <- BitConverter.SingleToUInt32Bits(Rows.dotBf16<float32> xr (ReadOnlySpan(w, j * s.K, s.K)))
+    )
+    |> ignore
+
+    out
+
+let private invariance (backend: IGpuBackend) (p: Planned) (s: Shape) : Invariance =
+    let w = p.Weights[s.Name]
+    let commands = backend.Begin()
+    Kernels.MatmulBf16w.dispatch commands (args p.X w p.YFull 512 s)
+    Kernels.MatmulBf16w.dispatch commands (args p.X w p.Y37 37 s)
+
+    for r in invarianceRows do
+        let xv, yv = p.RowViews[s.Name, r]
+        Kernels.MatmulBf16w.dispatch commands (args xv w yv 1 s)
+
+    backend.Wait(backend.Submit commands) |> ignore
+    let full = download p p.YFull (512L * int64 s.N)
+    let y37 = download p p.Y37 (37L * int64 s.N)
+    let mutable diffs = 0L
+    let mutable refDiffs = 0L
+    let notes = ResizeArray<string>()
+
+    for r in invarianceRows do
+        let _, yv = p.RowViews[s.Name, r]
+        let alone = download p yv (int64 s.N)
+        let inFull = Array.sub full (r * s.N) s.N
+
+        let d512 =
+            Array.fold2 (fun acc a b -> if a = b then acc else acc + 1L) 0L alone inFull
+
+        let d37 =
+            if r < 37 then
+                Array.fold2 (fun acc a b -> if a = b then acc else acc + 1L) 0L alone (Array.sub y37 (r * s.N) s.N)
+            else
+                0L
+
+        let reference = cpuRefRow p s r
+
+        let dRef =
+            Array.fold2 (fun acc a b -> if a = b then acc else acc + 1L) 0L alone reference
+
+        diffs <- diffs + d512 + d37
+        refDiffs <- refDiffs + dRef
+
+        if d512 + d37 > 0L then
+            notes.Add(Invariant.format $"row {r}: {d512} differ from m = 512, {d37} from m = 37")
+
+        if dRef > 0L then
+            notes.Add(Invariant.format $"row {r}: {dRef} differ from CpuRef F32")
+
+    let detail =
+        if notes.Count = 0 then
+            Invariant.format
+                $"rows {String.Join(',', invarianceRows)} alone equal the m = 512 call (and the m = 37 call below 37) and CpuRef F32, bit for bit"
+        else
+            String.Join("; ", notes)
+
+    let attrs =
+        [
+            Attr.str TelemetryKeys.Kernel Kernels.MatmulBf16w.Name
+            Attr.str TelemetryKeys.Backend (ExecutionBackend.name backend.ExecutionClass.Backend)
+            Attr.str "shape" s.Name
+            Attr.int "n" s.N
+            Attr.int "k" s.K
+            Attr.str "ms" "1,37,512"
+            Attr.int "rows" invarianceRows.Length
+            Attr.str "detail" detail
+        ]
+
+    Telemetry.check "gpu.matmul.batch_invariance" (diffs = 0L) (Attr.int64 "differences" diffs :: attrs)
+    Telemetry.check "gpu.matmul.cpuref_exact" (refDiffs = 0L) (Attr.int64 "differences" refDiffs :: attrs)
+
+    {
+        Shape = s
+        Rows = invarianceRows.Length
+        Differences = diffs
+        CpuRefDifferences = refDiffs
+        Detail = detail
+    }
+
+/// What one bench run measured.
+type Result =
+    {
+        RunId: string
+        RunDirectory: string
+        Device: string
+        Points: Point list
+        Invariance: Invariance list
+    }
+
+/// A device of a GPU backend, through its provider (Discovery, as the conformance suites find it).
+let private create (provider: IGpuBackendProvider) : IGpuBackend =
+    let registry = BackendRegistry()
+    registry.Register provider
+
+    match
+        registry.TryCreate
+            { DeviceOptions.For provider.Backend with
+                TimeDispatches = true
+            }
+    with
+    | Ok b -> b
+    | Error e -> failwithf "no %s device: %s" (ExecutionBackend.name provider.Backend) e
+
+/// Runs the bench on one backend (throughput unless `invarianceOnly`, then the cross-call checks), in a run log of
+/// kind kernels that `lrm report` renders. `loaded` sees the backend once its kernels are loaded (its class is known
+/// then). The caller holds the backend's mutex.
+let runOn (backend: IGpuBackend) (invarianceOnly: bool) (loaded: IGpuBackend -> unit) : Result =
+    let _ = backend.LoadKernels(Lrm.Shaders.Shaders.embedded ())
+    loaded backend
+    let cls = backend.ExecutionClass
+    let name = ExecutionBackend.name cls.Backend
+
+    let run =
+        RunContext.Create(
+            { RunOptions.create
+                  "kernels"
+                  (if invarianceOnly then
+                       "matmul_bf16w batch invariance on " + name
+                   else
+                       "matmul_bf16w throughput on " + name) with
+                ExecutionClass = Some cls
+                GitSha = Env.commit ()
+                Params =
+                    [
+                        "source", "tests/Lrm.Kernels.Conformance/Cases/matmul/MatmulBench.fs (K2)"
+                        "backend", name
+                        "device", backend.Info.Name
+                        "reps", Invariant.i32 Reps
+                    ]
+            }
+        )
+
+    printfn "matmul bench run log (%s): %s" name run.Directory
+    use _ = run.Install()
+    let p = plan backend
+
+    let points =
+        if invarianceOnly then
+            []
+        else
+            [
+                for s in shapes do
+                    for m in rowsOf s do
+                        let pt = measure backend p s m
+
+                        printfn
+                            "  %-13s m=%5d n=%6d k=%5d  %9.3f ms  %8.1f GFLOP/s  %7.1f GB/s"
+                            s.Name
+                            m
+                            s.N
+                            s.K
+                            (float pt.BestNs / 1e6)
+                            (pt.FlopsPerSecond / 1e9)
+                            (pt.BytesPerSecond / 1e9)
+
+                        pt
+            ]
+
+    let inv = shapes |> List.map (invariance backend p)
+
+    for i in inv do
+        printfn
+            "  invariance %-13s differences %d, against CpuRef F32 %d"
+            i.Shape.Name
+            i.Differences
+            i.CpuRefDifferences
+
+    let ok = inv |> List.forall (fun i -> i.Differences = 0L)
+    run.Finish(if ok then RunStatus.Ok else RunStatus.Failed)
+
+    {
+        RunId = run.RunId.Value
+        RunDirectory = run.Directory
+        Device = backend.Info.Name
+        Points = points
+        Invariance = inv
+    }
+
+/// One backend's tests: the cross-call invariance check (gpu tier) or the throughput sweep with the same checks
+/// (bench tier, which never gates), each with its run log.
+let private backendTests (backend: ExecutionBackend) (testing: Backend) (invarianceOnly: bool) =
+    match Discovery.provider backend with
+    | None -> []
+    | Some provider ->
+        [
+            testing,
+            [
+                testCase (
+                    if invarianceOnly then
+                        "matmul_bf16w rows alone equal the rows of m = 37 and m = 512 calls and CpuRef F32"
+                    else
+                        "matmul_bf16w throughput at the Qwen3-0.6B shapes, m = 1 to 4,000"
+                )
+                <| fun () ->
+                    use b = create provider
+
+                    let r =
+                        runOn b invarianceOnly (fun b ->
+                            let c = b.ExecutionClass
+                            Devices.record testing b.Info.Name c.Driver (c.ShaderSetHash |> Option.map _.Hex))
+
+                    for i in r.Invariance do
+                        Expect.equal i.Differences 0L (i.Shape.Name + ": " + i.Detail)
+
+                    for pt in r.Points do
+                        Expect.isLessThan
+                            pt.BestNs
+                            Budget
+                            (Invariant.format $"{pt.Shape.Name} m = {pt.M} is over the 100 ms dispatch budget")
+            ]
+        ]
+
+let private backends =
+    [
+        ExecutionBackend.D3D12, Backend.D3D12
+        ExecutionBackend.Vulkan, Backend.Vulkan
+    ]
+
+/// The gpu-tier tests (TestTiers): the cross-call batch-invariance check on every GPU backend with a provider.
+let gpu () : (Backend * Test list) list =
+    backends |> List.collect (fun (b, t) -> backendTests b t true)
+
+/// The bench-tier tests: the throughput sweep, then the same checks, on every GPU backend with a provider.
+let bench () : Test list =
+    backends
+    |> List.collect (fun (b, t) -> backendTests b t false)
+    |> List.collect snd
