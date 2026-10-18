@@ -1,5 +1,5 @@
 /// The kernels report: the conformance matrix and GPU time by kernel, layer and dispatch (ReportTemplates contract,
-/// "kernels"). Reads conformance.case checks and gpu.dispatch GPU intervals.
+/// "kernels"). Reads conformance.case checks, gpu.dispatch GPU intervals and gpu.fp32_denormals events.
 module Lrm.Reports.Builders.Kernels
 
 open System
@@ -299,6 +299,29 @@ let build (log: RunLog) : Scope =
 
     let overBudget = dispatches |> List.filter (fun e -> float e.DurationNs >= budgetNs)
 
+    // The fp32 denormal mode each shader backend measured (GpuBackendInterface, gpu.fp32_denormals): the last
+    // measurement per node and backend, in backend order. It fixes what "bit-exact" means for fp32 arithmetic
+    // (KernelAbiAndCatalog, kernel rules).
+    let denormalRows =
+        log.Named "gpu.fp32_denormals"
+        |> List.filter (fun e -> e.Kind = TelemetryKind.Event)
+        |> List.groupBy (fun e -> backendOfEvent e, e.Node)
+        |> List.map (fun ((backend, node), es) -> backend, node, List.last es)
+        |> List.sortBy (fun (backend, node, _) -> orderIn backendOrder backend, node)
+        |> List.map (fun (backend, node, e) ->
+            let mode = defaultArg (e.TryStr "mode") ""
+
+            [
+                backend
+                node
+                mode
+                (match mode with
+                 | "preserve" -> "equal to CpuRef as it is"
+                 | "flush" -> "equal to CpuRef with every fp32 denormal input and result set to zero of the same sign"
+                 | "mixed" -> "elements whose input or result is a denormal compare within the class only"
+                 | _ -> "unknown mode")
+            ])
+
     runScope log
     |> Scope.value
         "verdict"
@@ -336,6 +359,16 @@ let build (log: RunLog) : Scope =
                 "Of budget", R
             ]
             slowest)
+    |> Scope.table
+        "denormals"
+        (table
+            [
+                "Backend", L
+                "Node", L
+                "fp32 denormals", L
+                "Bit-exact fp32 arithmetic means", L
+            ]
+            denormalRows)
     |> Scope.chart "gpu_by_kernel" byKernel
     |> Scope.chart "timeline" timeline
     |> Scope.chart "timeline_zoom" timelineZoom

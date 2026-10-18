@@ -322,6 +322,16 @@ let private kernels (root: string) =
         RunContext.Join(vk.Directory, NodeId.parse "n1", Some d3d12Class, Some clock.Now)
 
     for node, (ctx: RunContext), speed in [ "vulkan", vk, 1.0; "d3d12", dx, 1.08 ] do
+        // The denormal probe each backend runs after LoadKernels (GpuBackendInterface): the two modes differ here so
+        // the review sees both rows.
+        ctx.Telemetry.Event(
+            "gpu.fp32_denormals",
+            [
+                Attr.str TelemetryKeys.Backend node
+                Attr.str "mode" (if node = "vulkan" then "flush" else "preserve")
+            ]
+        )
+
         let t = ctx.Telemetry.Child [ Attr.str TelemetryKeys.Component "conformance" ]
 
         for kernel, shapes, exact in kernelList do

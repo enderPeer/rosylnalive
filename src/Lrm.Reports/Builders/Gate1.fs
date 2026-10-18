@@ -87,13 +87,9 @@ let build (log: RunLog) : Scope =
         |> List.filter (fun e ->
             e.Kind = TelemetryKind.Check
             && e.TryStr "tap" = Some "logits"
-            && e.TryStr "metric" = Some "rel_l2")
+            && (e.TryStr "metric" |> Option.map metricName) = Some "rel_l2")
 
-    let prompts =
-        logits
-        |> List.choose (fun e -> e.TryStr TelemetryKeys.Case)
-        |> List.distinct
-        |> List.sort
+    let prompts = logits |> List.choose compareCase |> List.distinct |> List.sort
 
     let logitBackends =
         logits
@@ -124,7 +120,7 @@ let build (log: RunLog) : Scope =
                                     |> List.mapi (fun i p ->
                                         logits
                                         |> List.filter (fun e ->
-                                            e.TryStr TelemetryKeys.Case = Some p
+                                            compareCase e = Some p
                                             && defaultArg (e.TryStr TelemetryKeys.Backend) "" = b)
                                         |> List.choose (fun e -> e.TryFloat "measured")
                                         |> spread i List.max)

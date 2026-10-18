@@ -82,6 +82,33 @@ let table (columns: (string * Align) list) (rows: string list list) = { Columns 
 let L = Align.Left
 let R = Align.Right
 
+/// A golden.compare metric name in the templates' snake_case: "relL2" -> "rel_l2", "maxAbs" -> "max_abs",
+/// "top2Margin" -> "top2_margin"; snake_case names stay as they are. ComparatorsAndGoldenReader (O2's Compare) and
+/// O1's tools write camelCase names, and the templates read either form.
+let metricName (metric: string) =
+    if isNull metric then
+        ""
+    else
+        let sb = Text.StringBuilder(metric.Length + 4)
+
+        for i in 0 .. metric.Length - 1 do
+            let c = metric[i]
+
+            if Char.IsAsciiLetterUpper c then
+                if i > 0 && metric[i - 1] <> '_' then
+                    sb.Append '_' |> ignore
+
+                sb.Append(Char.ToLowerInvariant c) |> ignore
+            else
+                sb.Append c |> ignore
+
+        sb.ToString()
+
+/// The case of a golden.compare check: `case`, else `prompt` (the ComparatorsAndGoldenReader caller key, which O2's
+/// tiny-model checks write).
+let compareCase (e: RunEvent) =
+    e.TryStr TelemetryKeys.Case |> Option.orElse (e.TryStr "prompt")
+
 /// The tap kind of an activation name: "L3.q_proj" -> "q_proj"; names without a layer prefix stay as they are.
 let tapKind (tap: string) =
     if tap.Length > 1 && tap[0] = 'L' && Char.IsDigit tap[1] then
