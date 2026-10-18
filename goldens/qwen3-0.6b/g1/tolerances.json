@@ -1,0 +1,984 @@
+{
+  "about": "ToleranceSpec numbers for Qwen3-0.6B (G2). e_ref is the largest relL2 (and, for logits, max |delta logit| and the largest per-row KL) between torch32 and torch64p over the calibration prompts and layers; bound = clamp(k * e_ref, floor, 10 * floor). calibration.json holds every measured value.",
+  "calibration": {
+    "adr": "docs/decisions/G2-0001-tolerance-calibration.md",
+    "e_ref_rule": "the largest value over the calibration prompts and layers, per tap kind and metric",
+    "file": "goldens/qwen3-0.6b/g1/calibration.json",
+    "fixed_pairs": "cpu64-vs-torch64p: relL2 1e-10 on every tap kind. vulkan-vs-d3d12: relL2 1e-4 on every tap kind and max |delta logit| 1e-2 on logits only; activations have no maxAbs bound, because the residual stream reaches 1e3 and more (ADR G2-0001, item 5)",
+    "k_and_floors": "the dev plan's values (section 5), except the CPU32 relL2 floor: 3e-5 instead of 1e-5, because on this set CpuRef F32 measured up to 1.21e-5 from torch64p and 1.02e-5 from torch32 on the residual stream (L27.out of multilingual-002, cpuref_probe run 20261018-091611-7cb55719; the earlier --quick smoke probe 20261018-051907-5db5512c measured 1.40e-5 from torch32 on csharp-000, not a g1 taps prompt), above the plan's 1e-5 (ADR G2-0001)",
+    "prompts": [
+      "csharp-000",
+      "csharp-012",
+      "license-000",
+      "license-002",
+      "design-000",
+      "design-001",
+      "multilingual-001",
+      "multilingual-000",
+      "chatml-002",
+      "chatml-000",
+      "design-013",
+      "chatml-027"
+    ],
+    "where": {
+      "attn.k_norm.out|relL2": {
+        "e_ref": 2.196018950152032e-06,
+        "layer": 14,
+        "prompt": "csharp-012"
+      },
+      "attn.k_proj.out|relL2": {
+        "e_ref": 1.964590723216387e-05,
+        "layer": 14,
+        "prompt": "csharp-012"
+      },
+      "attn.k_rope|relL2": {
+        "e_ref": 2.196312499758647e-06,
+        "layer": 14,
+        "prompt": "csharp-012"
+      },
+      "attn.o_proj.in|relL2": {
+        "e_ref": 9.265585864489909e-06,
+        "layer": 14,
+        "prompt": "csharp-012"
+      },
+      "attn.o_proj.out|relL2": {
+        "e_ref": 1.4819978597081009e-05,
+        "layer": 14,
+        "prompt": "csharp-012"
+      },
+      "attn.q_norm.out|relL2": {
+        "e_ref": 2.2039530144177694e-06,
+        "layer": 12,
+        "prompt": "multilingual-001"
+      },
+      "attn.q_proj.out|relL2": {
+        "e_ref": 2.1771520091005614e-06,
+        "layer": 14,
+        "prompt": "csharp-012"
+      },
+      "attn.q_rope|relL2": {
+        "e_ref": 2.20429543408232e-06,
+        "layer": 12,
+        "prompt": "multilingual-001"
+      },
+      "attn.v_cache|relL2": {
+        "e_ref": 1.9692562708909586e-05,
+        "layer": 14,
+        "prompt": "csharp-012"
+      },
+      "attn.v_proj.out|relL2": {
+        "e_ref": 1.9692562708909586e-05,
+        "layer": 14,
+        "prompt": "csharp-012"
+      },
+      "embed.out|relL2": {
+        "e_ref": 0.0,
+        "layer": -1,
+        "prompt": "csharp-000"
+      },
+      "final_norm.out|relL2": {
+        "e_ref": 2.7297549692861766e-06,
+        "layer": -1,
+        "prompt": "license-000"
+      },
+      "input_layernorm.out|relL2": {
+        "e_ref": 5.795163798235013e-06,
+        "layer": 14,
+        "prompt": "csharp-012"
+      },
+      "logits|kl": {
+        "e_ref": 5.518859375087685e-10,
+        "layer": -1,
+        "prompt": "license-000"
+      },
+      "logits|maxAbs": {
+        "e_ref": 0.00017029331587004037,
+        "layer": -1,
+        "prompt": "chatml-000"
+      },
+      "logits|relL2": {
+        "e_ref": 2.1164610343632068e-06,
+        "layer": -1,
+        "prompt": "license-000"
+      },
+      "mlp.down.in|relL2": {
+        "e_ref": 6.279380933480389e-06,
+        "layer": 11,
+        "prompt": "csharp-012"
+      },
+      "mlp.down.out|relL2": {
+        "e_ref": 5.454013442031971e-06,
+        "layer": 11,
+        "prompt": "csharp-012"
+      },
+      "mlp.gate.out|relL2": {
+        "e_ref": 1.960674049877965e-06,
+        "layer": 11,
+        "prompt": "multilingual-001"
+      },
+      "mlp.up.out|relL2": {
+        "e_ref": 3.076974918648783e-06,
+        "layer": 12,
+        "prompt": "multilingual-001"
+      },
+      "out|relL2": {
+        "e_ref": 2.972324777726076e-06,
+        "layer": 27,
+        "prompt": "multilingual-001"
+      },
+      "post_attention_layernorm.out|relL2": {
+        "e_ref": 4.571525227154948e-06,
+        "layer": 13,
+        "prompt": "csharp-012"
+      },
+      "resid_mid|relL2": {
+        "e_ref": 1.5108040278280394e-06,
+        "layer": 27,
+        "prompt": "license-002"
+      }
+    }
+  },
+  "greedy": {
+    "gate_prompts": [
+      "csharp-002",
+      "csharp-044",
+      "license-001",
+      "license-008",
+      "design-001",
+      "design-009",
+      "multilingual-002",
+      "multilingual-023",
+      "chatml-000",
+      "chatml-027"
+    ],
+    "ids_identical": "a candidate's greedy ids equal the reference's over each gate prompt's gated steps (EOS ignored)",
+    "margin": "top-1 minus top-2 logit of the reference's decision row, in float64 (common.greedy_manual_detail)",
+    "max_prompt_tokens": 900,
+    "min_margin": 0.05,
+    "min_margin_rule": "max(0.05, 4 * tau_logit)",
+    "prefix_fallback_min_steps": 16,
+    "prompts": {
+      "chatml-000": {
+        "category": "chatml",
+        "fallback": false,
+        "gated_steps": 64,
+        "tokens": 248
+      },
+      "chatml-027": {
+        "category": "chatml",
+        "fallback": false,
+        "gated_steps": 64,
+        "tokens": 708
+      },
+      "csharp-002": {
+        "category": "csharp",
+        "fallback": false,
+        "gated_steps": 64,
+        "tokens": 34
+      },
+      "csharp-044": {
+        "category": "csharp",
+        "fallback": false,
+        "gated_steps": 64,
+        "tokens": 406
+      },
+      "design-001": {
+        "category": "design",
+        "fallback": false,
+        "gated_steps": 64,
+        "tokens": 242
+      },
+      "design-009": {
+        "category": "design",
+        "fallback": false,
+        "gated_steps": 64,
+        "tokens": 467
+      },
+      "license-001": {
+        "category": "license",
+        "fallback": false,
+        "gated_steps": 64,
+        "tokens": 154
+      },
+      "license-008": {
+        "category": "license",
+        "fallback": false,
+        "gated_steps": 64,
+        "tokens": 510
+      },
+      "multilingual-002": {
+        "category": "multilingual",
+        "fallback": false,
+        "gated_steps": 64,
+        "tokens": 61
+      },
+      "multilingual-023": {
+        "category": "multilingual",
+        "fallback": false,
+        "gated_steps": 64,
+        "tokens": 152
+      }
+    },
+    "steps": 64,
+    "tau_logit": 0.01,
+    "tau_logit_pair": "gpu-vs-cpu32",
+    "tau_logit_rule": "the largest logits maxAbs bound over every pair: a candidate within it moves the top-2 margin by at most 2 * tau_logit",
+    "teacher_forced_min_margin": 0.02,
+    "teacher_forced_rule": "on each tf_* sequence (prompt + torch32 greedy ids[0:63]) a candidate's argmax equals the reference's at every row whose reference margin is at least 2 * tau_logit"
+  },
+  "pairs": {
+    "cpu32-vs-torch32": {
+      "rule": {
+        "floors": {
+          "kl": 1e-07,
+          "maxAbs": 0.002,
+          "relL2": 3e-05
+        },
+        "k": 3
+      },
+      "taps": {
+        "attn.k_norm.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 2.196018950152032e-06
+          }
+        },
+        "attn.k_proj.out": {
+          "relL2": {
+            "bound": 5.893772169649161e-05,
+            "e_ref": 1.964590723216387e-05
+          }
+        },
+        "attn.k_rope": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 2.196312499758647e-06
+          }
+        },
+        "attn.o_proj.in": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 9.265585864489909e-06
+          }
+        },
+        "attn.o_proj.out": {
+          "relL2": {
+            "bound": 4.445993579124303e-05,
+            "e_ref": 1.4819978597081009e-05
+          }
+        },
+        "attn.q_norm.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 2.2039530144177694e-06
+          }
+        },
+        "attn.q_proj.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 2.1771520091005614e-06
+          }
+        },
+        "attn.q_rope": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 2.20429543408232e-06
+          }
+        },
+        "attn.v_cache": {
+          "relL2": {
+            "bound": 5.907768812672876e-05,
+            "e_ref": 1.9692562708909586e-05
+          }
+        },
+        "attn.v_proj.out": {
+          "relL2": {
+            "bound": 5.907768812672876e-05,
+            "e_ref": 1.9692562708909586e-05
+          }
+        },
+        "embed.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 0.0
+          }
+        },
+        "final_norm.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 2.7297549692861766e-06
+          }
+        },
+        "input_layernorm.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 5.795163798235013e-06
+          }
+        },
+        "logits": {
+          "kl": {
+            "bound": 1e-07,
+            "e_ref": 5.518859375087685e-10
+          },
+          "maxAbs": {
+            "bound": 0.002,
+            "e_ref": 0.00017029331587004037
+          },
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 2.1164610343632068e-06
+          }
+        },
+        "mlp.down.in": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 6.279380933480389e-06
+          }
+        },
+        "mlp.down.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 5.454013442031971e-06
+          }
+        },
+        "mlp.gate.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 1.960674049877965e-06
+          }
+        },
+        "mlp.up.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 3.076974918648783e-06
+          }
+        },
+        "out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 2.972324777726076e-06
+          }
+        },
+        "post_attention_layernorm.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 4.571525227154948e-06
+          }
+        },
+        "resid_mid": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 1.5108040278280394e-06
+          }
+        }
+      }
+    },
+    "cpu32-vs-torch64p": {
+      "rule": {
+        "floors": {
+          "kl": 1e-07,
+          "maxAbs": 0.002,
+          "relL2": 3e-05
+        },
+        "k": 2
+      },
+      "taps": {
+        "attn.k_norm.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 2.196018950152032e-06
+          }
+        },
+        "attn.k_proj.out": {
+          "relL2": {
+            "bound": 3.929181446432774e-05,
+            "e_ref": 1.964590723216387e-05
+          }
+        },
+        "attn.k_rope": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 2.196312499758647e-06
+          }
+        },
+        "attn.o_proj.in": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 9.265585864489909e-06
+          }
+        },
+        "attn.o_proj.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 1.4819978597081009e-05
+          }
+        },
+        "attn.q_norm.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 2.2039530144177694e-06
+          }
+        },
+        "attn.q_proj.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 2.1771520091005614e-06
+          }
+        },
+        "attn.q_rope": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 2.20429543408232e-06
+          }
+        },
+        "attn.v_cache": {
+          "relL2": {
+            "bound": 3.938512541781917e-05,
+            "e_ref": 1.9692562708909586e-05
+          }
+        },
+        "attn.v_proj.out": {
+          "relL2": {
+            "bound": 3.938512541781917e-05,
+            "e_ref": 1.9692562708909586e-05
+          }
+        },
+        "embed.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 0.0
+          }
+        },
+        "final_norm.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 2.7297549692861766e-06
+          }
+        },
+        "input_layernorm.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 5.795163798235013e-06
+          }
+        },
+        "logits": {
+          "kl": {
+            "bound": 1e-07,
+            "e_ref": 5.518859375087685e-10
+          },
+          "maxAbs": {
+            "bound": 0.002,
+            "e_ref": 0.00017029331587004037
+          },
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 2.1164610343632068e-06
+          }
+        },
+        "mlp.down.in": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 6.279380933480389e-06
+          }
+        },
+        "mlp.down.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 5.454013442031971e-06
+          }
+        },
+        "mlp.gate.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 1.960674049877965e-06
+          }
+        },
+        "mlp.up.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 3.076974918648783e-06
+          }
+        },
+        "out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 2.972324777726076e-06
+          }
+        },
+        "post_attention_layernorm.out": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 4.571525227154948e-06
+          }
+        },
+        "resid_mid": {
+          "relL2": {
+            "bound": 3e-05,
+            "e_ref": 1.5108040278280394e-06
+          }
+        }
+      }
+    },
+    "cpu64-vs-torch64p": {
+      "default": {
+        "relL2": {
+          "bound": 1e-10
+        }
+      }
+    },
+    "gpu-vs-cpu32": {
+      "rule": {
+        "floors": {
+          "kl": 1e-06,
+          "maxAbs": 0.01,
+          "relL2": 0.0001
+        },
+        "k": 10
+      },
+      "taps": {
+        "attn.k_norm.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.196018950152032e-06
+          }
+        },
+        "attn.k_proj.out": {
+          "relL2": {
+            "bound": 0.0001964590723216387,
+            "e_ref": 1.964590723216387e-05
+          }
+        },
+        "attn.k_rope": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.196312499758647e-06
+          }
+        },
+        "attn.o_proj.in": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 9.265585864489909e-06
+          }
+        },
+        "attn.o_proj.out": {
+          "relL2": {
+            "bound": 0.0001481997859708101,
+            "e_ref": 1.4819978597081009e-05
+          }
+        },
+        "attn.q_norm.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.2039530144177694e-06
+          }
+        },
+        "attn.q_proj.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.1771520091005614e-06
+          }
+        },
+        "attn.q_rope": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.20429543408232e-06
+          }
+        },
+        "attn.v_cache": {
+          "relL2": {
+            "bound": 0.00019692562708909585,
+            "e_ref": 1.9692562708909586e-05
+          }
+        },
+        "attn.v_proj.out": {
+          "relL2": {
+            "bound": 0.00019692562708909585,
+            "e_ref": 1.9692562708909586e-05
+          }
+        },
+        "embed.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 0.0
+          }
+        },
+        "final_norm.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.7297549692861766e-06
+          }
+        },
+        "input_layernorm.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 5.795163798235013e-06
+          }
+        },
+        "logits": {
+          "kl": {
+            "bound": 1e-06,
+            "e_ref": 5.518859375087685e-10
+          },
+          "maxAbs": {
+            "bound": 0.01,
+            "e_ref": 0.00017029331587004037
+          },
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.1164610343632068e-06
+          }
+        },
+        "mlp.down.in": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 6.279380933480389e-06
+          }
+        },
+        "mlp.down.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 5.454013442031971e-06
+          }
+        },
+        "mlp.gate.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 1.960674049877965e-06
+          }
+        },
+        "mlp.up.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 3.076974918648783e-06
+          }
+        },
+        "out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.972324777726076e-06
+          }
+        },
+        "post_attention_layernorm.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 4.571525227154948e-06
+          }
+        },
+        "resid_mid": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 1.5108040278280394e-06
+          }
+        }
+      }
+    },
+    "gpu-vs-torch32": {
+      "rule": {
+        "floors": {
+          "kl": 1e-06,
+          "maxAbs": 0.01,
+          "relL2": 0.0001
+        },
+        "k": 10
+      },
+      "taps": {
+        "attn.k_norm.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.196018950152032e-06
+          }
+        },
+        "attn.k_proj.out": {
+          "relL2": {
+            "bound": 0.0001964590723216387,
+            "e_ref": 1.964590723216387e-05
+          }
+        },
+        "attn.k_rope": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.196312499758647e-06
+          }
+        },
+        "attn.o_proj.in": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 9.265585864489909e-06
+          }
+        },
+        "attn.o_proj.out": {
+          "relL2": {
+            "bound": 0.0001481997859708101,
+            "e_ref": 1.4819978597081009e-05
+          }
+        },
+        "attn.q_norm.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.2039530144177694e-06
+          }
+        },
+        "attn.q_proj.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.1771520091005614e-06
+          }
+        },
+        "attn.q_rope": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.20429543408232e-06
+          }
+        },
+        "attn.v_cache": {
+          "relL2": {
+            "bound": 0.00019692562708909585,
+            "e_ref": 1.9692562708909586e-05
+          }
+        },
+        "attn.v_proj.out": {
+          "relL2": {
+            "bound": 0.00019692562708909585,
+            "e_ref": 1.9692562708909586e-05
+          }
+        },
+        "embed.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 0.0
+          }
+        },
+        "final_norm.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.7297549692861766e-06
+          }
+        },
+        "input_layernorm.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 5.795163798235013e-06
+          }
+        },
+        "logits": {
+          "kl": {
+            "bound": 1e-06,
+            "e_ref": 5.518859375087685e-10
+          },
+          "maxAbs": {
+            "bound": 0.01,
+            "e_ref": 0.00017029331587004037
+          },
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.1164610343632068e-06
+          }
+        },
+        "mlp.down.in": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 6.279380933480389e-06
+          }
+        },
+        "mlp.down.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 5.454013442031971e-06
+          }
+        },
+        "mlp.gate.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 1.960674049877965e-06
+          }
+        },
+        "mlp.up.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 3.076974918648783e-06
+          }
+        },
+        "out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.972324777726076e-06
+          }
+        },
+        "post_attention_layernorm.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 4.571525227154948e-06
+          }
+        },
+        "resid_mid": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 1.5108040278280394e-06
+          }
+        }
+      }
+    },
+    "gpu-vs-torch64p": {
+      "rule": {
+        "floors": {
+          "kl": 1e-06,
+          "maxAbs": 0.01,
+          "relL2": 0.0001
+        },
+        "k": 9
+      },
+      "taps": {
+        "attn.k_norm.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.196018950152032e-06
+          }
+        },
+        "attn.k_proj.out": {
+          "relL2": {
+            "bound": 0.00017681316508947484,
+            "e_ref": 1.964590723216387e-05
+          }
+        },
+        "attn.k_rope": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.196312499758647e-06
+          }
+        },
+        "attn.o_proj.in": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 9.265585864489909e-06
+          }
+        },
+        "attn.o_proj.out": {
+          "relL2": {
+            "bound": 0.00013337980737372908,
+            "e_ref": 1.4819978597081009e-05
+          }
+        },
+        "attn.q_norm.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.2039530144177694e-06
+          }
+        },
+        "attn.q_proj.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.1771520091005614e-06
+          }
+        },
+        "attn.q_rope": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.20429543408232e-06
+          }
+        },
+        "attn.v_cache": {
+          "relL2": {
+            "bound": 0.00017723306438018627,
+            "e_ref": 1.9692562708909586e-05
+          }
+        },
+        "attn.v_proj.out": {
+          "relL2": {
+            "bound": 0.00017723306438018627,
+            "e_ref": 1.9692562708909586e-05
+          }
+        },
+        "embed.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 0.0
+          }
+        },
+        "final_norm.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.7297549692861766e-06
+          }
+        },
+        "input_layernorm.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 5.795163798235013e-06
+          }
+        },
+        "logits": {
+          "kl": {
+            "bound": 1e-06,
+            "e_ref": 5.518859375087685e-10
+          },
+          "maxAbs": {
+            "bound": 0.01,
+            "e_ref": 0.00017029331587004037
+          },
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.1164610343632068e-06
+          }
+        },
+        "mlp.down.in": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 6.279380933480389e-06
+          }
+        },
+        "mlp.down.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 5.454013442031971e-06
+          }
+        },
+        "mlp.gate.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 1.960674049877965e-06
+          }
+        },
+        "mlp.up.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 3.076974918648783e-06
+          }
+        },
+        "out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 2.972324777726076e-06
+          }
+        },
+        "post_attention_layernorm.out": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 4.571525227154948e-06
+          }
+        },
+        "resid_mid": {
+          "relL2": {
+            "bound": 0.0001,
+            "e_ref": 1.5108040278280394e-06
+          }
+        }
+      }
+    },
+    "vulkan-vs-d3d12": {
+      "default": {
+        "relL2": {
+          "bound": 0.0001
+        }
+      },
+      "taps": {
+        "logits": {
+          "maxAbs": {
+            "bound": 0.01
+          }
+        }
+      }
+    }
+  },
+  "schema": "lrm.tolerances/1",
+  "set": "qwen3-0.6b/g1"
+}
