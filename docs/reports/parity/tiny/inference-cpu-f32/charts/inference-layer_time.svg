@@ -27,12 +27,12 @@
 <line class="axis" x1="66.26" y1="334" x2="657.04" y2="334" stroke-width="1"/>
 <text class="t3" x="66.26" y="88" font-size="11" text-anchor="start">time per token</text>
 <text class="t3" x="361.65" y="370" font-size="11" text-anchor="middle">layer</text>
-<path class="line s0" d="M66.26 278.7 L657.04 292.33"><title>prefill</title></path>
-<path class="line s1" d="M66.26 116.5 L657.04 122.22"><title>decode</title></path>
-<circle class="f0 ring" cx="66.26" cy="278.7" r="4" stroke-width="2"><title>prefill, layer 0: 234.32 µs</title></circle>
-<circle class="f0 ring" cx="657.04" cy="292.33" r="4" stroke-width="2"><title>prefill, layer 1: 176.57 µs</title></circle>
-<circle class="f1 ring" cx="66.26" cy="116.5" r="4" stroke-width="2"><title>decode, layer 0: 921.62 µs</title></circle>
-<circle class="f1 ring" cx="657.04" cy="122.22" r="4" stroke-width="2"><title>decode, layer 1: 897.38 µs</title></circle>
-<text class="t2" x="665.04" y="296.33" font-size="11">prefill</text>
-<text class="t2" x="665.04" y="126.22" font-size="11">decode</text>
+<path class="line s0" d="M66.26 274.39 L657.04 296.35"><title>prefill</title></path>
+<path class="line s1" d="M66.26 130.06 L657.04 141.6"><title>decode</title></path>
+<circle class="f0 ring" cx="66.26" cy="274.39" r="4" stroke-width="2"><title>prefill, layer 0: 252.59 µs</title></circle>
+<circle class="f0 ring" cx="657.04" cy="296.35" r="4" stroke-width="2"><title>prefill, layer 1: 159.53 µs</title></circle>
+<circle class="f1 ring" cx="66.26" cy="130.06" r="4" stroke-width="2"><title>decode, layer 0: 864.16 µs</title></circle>
+<circle class="f1 ring" cx="657.04" cy="141.6" r="4" stroke-width="2"><title>decode, layer 1: 815.26 µs</title></circle>
+<text class="t2" x="665.04" y="300.35" font-size="11">prefill</text>
+<text class="t2" x="665.04" y="145.6" font-size="11">decode</text>
 </svg>
