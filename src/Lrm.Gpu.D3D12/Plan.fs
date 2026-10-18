@@ -155,7 +155,8 @@ module Plan =
     /// - Copy is a full barrier on both sides: a UAV barrier and the source and destination moved to COPY_SOURCE and
     ///   COPY_DEST, the copy, then both back to UNORDERED_ACCESS. A copy within one page goes through the scratch
     ///   buffer in chunks of at most ScratchBytes, because one buffer cannot be COPY_SOURCE and COPY_DEST at once;
-    /// - timers and (with timeDispatches) every dispatch are bracketed by timestamp queries;
+    /// - timers and (with timeDispatches) every dispatch are bracketed by timestamp queries; a timed dispatch also gets
+    ///   a UAV barrier before each of its two timestamps, so its interval covers that dispatch alone;
     /// - at the end every touched page returns to COMMON and the queries are resolved.
     let encode (timeDispatches: bool) (commands: Command list) : Encoded =
         let tracker = StateTracker()
@@ -189,8 +190,12 @@ module Plan =
                 ops.Add(NativeOp.Constants(d.Args.ToWords()))
 
                 if timeDispatches then
+                    // UAV barriers around the timed dispatch, so earlier work has finished when its first timestamp is
+                    // taken and it has finished when its second one is: timed dispatches run one at a time.
+                    ops.Add(NativeOp.Barriers [ BarrierOp.AllUav ])
                     let q0 = query ()
                     ops.Add(NativeOp.Dispatch d.Physical)
+                    ops.Add(NativeOp.Barriers [ BarrierOp.AllUav ])
                     let q1 = query ()
 
                     dispatchTimers.Add

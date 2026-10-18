@@ -238,6 +238,24 @@ let private planTests =
 
                 Expect.equal (List.last enc.Ops) (NativeOp.ResolveTimestamps 8) "resolved last"
 
+                // A timed dispatch runs alone: a UAV barrier before each of its timestamps.
+                let i =
+                    enc.Ops
+                    |> List.findIndex (function
+                        | NativeOp.Timestamp 1 -> true
+                        | _ -> false)
+
+                Expect.equal
+                    enc.Ops[i - 1 .. i + 3]
+                    [
+                        NativeOp.Barriers [ BarrierOp.AllUav ]
+                        NativeOp.Timestamp 1
+                        NativeOp.Dispatch { X = 1; Y = 1; Z = 1 }
+                        NativeOp.Barriers [ BarrierOp.AllUav ]
+                        NativeOp.Timestamp 2
+                    ]
+                    "barrier, timestamp, dispatch, barrier, timestamp"
+
             testCase "an empty list encodes to nothing"
             <| fun () ->
                 let enc = Plan.encode true []
