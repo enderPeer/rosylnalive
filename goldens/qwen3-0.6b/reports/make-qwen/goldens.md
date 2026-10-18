@@ -1,12 +1,12 @@
 # Golden set: make_qwen (tools/goldens/qwen): Qwen3-0.6B goldens and tolerances
 
 
-**PASS.** 92 checks pass, and every set is within its budget.
+**PASS.** 93 checks pass, and every set is within its budget.
 
 - Sets: qwen3-0.6b 1.19 MiB of 10.00 MiB
 - Regeneration: not checked (the tool wrote the set; `--check` compares a regeneration with the committed bytes)
 - Double run: identical at 8 threads, identical at 8 threads, identical at 8 threads, identical at 8 threads
-- Checks: 92 of 92 pass
+- Checks: 93 of 93 pass
 
 ## Size
 
@@ -25,7 +25,7 @@
 | goldens/qwen3-0.6b/g1/manifest.json | 188.55 KiB | 193,077 |
 | goldens/qwen3-0.6b/g1/pool.json | 91.32 KiB | 93,514 |
 | goldens/qwen3-0.6b/g1/pool.safetensors | 201.91 KiB | 206,752 |
-| goldens/qwen3-0.6b/g1/tolerances.json | 23.70 KiB | 24,269 |
+| goldens/qwen3-0.6b/g1/tolerances.json | 24.23 KiB | 24,807 |
 
 ## Checks
 
@@ -125,41 +125,44 @@ Every `goldens.*` check of the run, and the oracle self-tests that carry a measu
 | goldens.double_run_identical | set=qwen3-0.6b threads=8 stage=gate |  | ✓ pass |
 | goldens.double_run_identical | set=qwen3-0.6b threads=8 stage=long |  | ✓ pass |
 | goldens.double_run_identical | set=qwen3-0.6b threads=8 stage=pool |  | ✓ pass |
+| goldens.data_unchanged | set=qwen3-0.6b files=45 |  | ✓ pass |
 
 ## Phases
 
 | Phase | Set | Duration |
 | --- | --- | ---: |
-| goldens.check_model | qwen3-0.6b | 2.11 s |
+| goldens.check_model | qwen3-0.6b | 2.17 s |
 | goldens.rope | qwen3-0.6b | 12.23 s |
-| goldens.selftests | qwen3-0.6b | 4.13 s |
-| goldens.pool | qwen3-0.6b | 2388.60 s |
-| goldens.calibrate | qwen3-0.6b | 595.24 s |
-| goldens.select | qwen3-0.6b | 118.22 s |
-| goldens.gate | qwen3-0.6b | 3140.72 s |
-| goldens.long | qwen3-0.6b | 224.38 s |
+| goldens.selftests | qwen3-0.6b | 4.43 s |
+| goldens.pool | qwen3-0.6b | 2852.27 s |
+| goldens.calibrate | qwen3-0.6b | 656.49 s |
+| goldens.select | qwen3-0.6b | 135.60 s |
+| goldens.gate | qwen3-0.6b | 3335.01 s |
+| goldens.long | qwen3-0.6b | 227.52 s |
 
 ## Run
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-072732-1cc39110` |
+| Run | `20261018-120457-85a6c443` |
 | Title | make_qwen (tools/goldens/qwen): Qwen3-0.6B goldens and tolerances |
 | Kind | parity |
 | Status | ok |
-| Started | 2026-10-18T07:27:32.465Z |
-| Ended | 2026-10-18T09:15:46.030Z |
+| Started | 2026-10-18T12:04:57.569Z |
+| Ended | 2026-10-18T14:05:36.250Z |
 | Execution class | not recorded |
 | Class id | n/a |
 | Driver | n/a |
-| Commit | `92e5ba4c5c29be4e436a9586679c8b3b95d0f938` |
+| Commit | `979122fd1b3b9503f5e91767541c90fdd582f2d4` |
 | Nodes | 1 |
-| Records | 13,722 |
+| Records | 13,723 |
 | Synthetic | no |
 
 | Parameter | Value |
 | --- | --- |
 | check | False |
+| force | False |
+| keep_data | True |
 | quick | False |
 | set | qwen3-0.6b/g1 |
 | tool | make_qwen |
@@ -168,7 +171,7 @@ Every `goldens.*` check of the run, and the oracle self-tests that carry a measu
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| n0 | creator | not recorded | 13,722 | ok | 0 |
+| n0 | creator | not recorded | 13,723 | ok | 0 |
 
 ### Log problems
 

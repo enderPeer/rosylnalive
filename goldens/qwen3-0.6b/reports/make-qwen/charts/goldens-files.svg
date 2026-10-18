@@ -34,8 +34,8 @@
 <path class="f0" d="M266 187H356.39Q360.39 187 360.39 191V199Q360.39 203 356.39 203H266Z"><title>goldens/qwen3-0.6b/g1/pool.safetensors, bytes: 201.91 KiB</title></path>
 <text class="t2" x="366.39" y="199" font-size="11">201.91 KiB</text>
 <text class="t2" x="258" y="225" font-size="12" text-anchor="end">goldens/qwen3-0.6b/g1/tolerances.json</text>
-<path class="f0" d="M266 213H273.08Q277.08 213 277.08 217V225Q277.08 229 273.08 229H266Z"><title>goldens/qwen3-0.6b/g1/tolerances.json, bytes: 23.70 KiB</title></path>
-<text class="t2" x="283.08" y="225" font-size="11">23.70 KiB</text>
+<path class="f0" d="M266 213H273.33Q277.33 213 277.33 217V225Q277.33 229 273.33 229H266Z"><title>goldens/qwen3-0.6b/g1/tolerances.json, bytes: 24.23 KiB</title></path>
+<text class="t2" x="283.33" y="225" font-size="11">24.23 KiB</text>
 <line class="axis" x1="266" y1="78" x2="266" y2="78" stroke-width="1"/>
 <line class="axis" x1="266" y1="78" x2="266" y2="234" stroke-width="1"/>
 </svg>

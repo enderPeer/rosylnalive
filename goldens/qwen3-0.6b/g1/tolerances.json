@@ -4,7 +4,8 @@
     "adr": "docs/decisions/G2-0001-tolerance-calibration.md",
     "e_ref_rule": "the largest value over the calibration prompts and layers, per tap kind and metric",
     "file": "goldens/qwen3-0.6b/g1/calibration.json",
-    "k_and_floors": "the dev plan's values (section 5), except the CPU32 relL2 floor: 3e-5 instead of 1e-5, because CpuRef F32 measured up to 1.4e-5 on the residual stream (ADR G2-0001)",
+    "fixed_pairs": "cpu64-vs-torch64p: relL2 1e-10 on every tap kind. vulkan-vs-d3d12: relL2 1e-4 on every tap kind and max |delta logit| 1e-2 on logits only; activations have no maxAbs bound, because the residual stream reaches 1e3 and more (ADR G2-0001, item 5)",
+    "k_and_floors": "the dev plan's values (section 5), except the CPU32 relL2 floor: 3e-5 instead of 1e-5, because on this set CpuRef F32 measured up to 1.21e-5 from torch64p and 1.02e-5 from torch32 on the residual stream (L27.out of multilingual-002, cpuref_probe run 20261018-091611-7cb55719; the earlier --quick smoke probe 20261018-051907-5db5512c measured 1.40e-5 from torch32 on csharp-000, not a g1 taps prompt), above the plan's 1e-5 (ADR G2-0001)",
     "prompts": [
       "csharp-000",
       "csharp-012",

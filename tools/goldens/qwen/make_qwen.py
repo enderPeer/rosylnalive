@@ -3,6 +3,7 @@
     pwsh tools/goldens/run.ps1 qwen/make_qwen.py             # regenerate; writes goldens/qwen3-0.6b/g1 and LRM_DATA/golden
     pwsh tools/goldens/run.ps1 qwen/make_qwen.py --check     # regenerate in memory, compare with the committed bytes
                                                              # and the data files' SHA-256 in the committed manifest
+    pwsh tools/goldens/run.ps1 qwen/make_qwen.py --force     # replace a data folder whose files differ (never for g1)
     pwsh tools/goldens/run.ps1 qwen/make_qwen.py --quick --out <dir> --data-out <dir>   # a small smoke run
 
 The stages, in order (README.md in this folder says what each file holds):
@@ -21,6 +22,11 @@ The stages, in order (README.md in this folder says what each file holds):
 8. long: two long prompts (about 1,000 and at most 4,000 tokens), final_norm.out, logits at fixed rows and per-row
    summaries.
 Every stage that produces files runs twice at 8 threads and compares SHA-256 digests (1 thread if they differ).
+
+The data folder is shared by every worktree on the machine, and golden content never changes in place (GoldenSet). So a
+run whose data folder already holds files writes no data: it hashes what it produces, compares that with the files in
+the folder, and writes the committed files only if every data file is byte-identical; otherwise it stops with the
+differences. --force replaces the folder instead (for a new version or a smoke folder, never for a published one).
 """
 
 from __future__ import annotations
@@ -128,7 +134,7 @@ def digest_of_shas(shas: dict) -> str:
 
 class Sink:
     """Where a stage's files go. Run A only hashes them; run B hashes them, keeps repo files in memory, and writes data
-    files to the staging folder (or, with --check, only hashes them)."""
+    files to the staging folder (or, with --check or an existing data folder, only hashes them)."""
 
     def __init__(self, keep: bool, data_dir: str | None):
         self.keep, self.data_dir = keep, data_dir
@@ -623,6 +629,9 @@ def main() -> int:
     ap.add_argument("--data-out", default=os.path.join(c.data_root(), "golden", *DATA_REL.split("/")), help="the data folder")
     ap.add_argument("--quick", action="store_true", help="a small smoke run (needs --out and --data-out elsewhere)")
     ap.add_argument("--no-telemetry", action="store_true", help="do not write a run log under LRM_DATA/runs")
+    ap.add_argument("--force", action="store_true",
+                    help="replace a data folder that already holds files, even if they differ (golden content then "
+                         "changes in place; a published set gets a new version g<N+1> instead)")
     args = ap.parse_args()
     params = Params(args.quick)
     canonical_out = os.path.normcase(os.path.abspath(os.path.join(c.REPO_ROOT, *OUT_REL.split("/"))))
@@ -630,6 +639,11 @@ def main() -> int:
     if args.quick and (os.path.normcase(os.path.abspath(args.out)) == canonical_out
                        or os.path.normcase(os.path.abspath(args.data_out)) == canonical_data):
         raise SystemExit("--quick never writes the canonical folders: pass --out and --data-out")
+    # An existing data folder is only compared with, never rewritten, unless --force (module docstring).
+    keep_data = not args.check and not args.force and data_present(args.data_out)
+    if keep_data:
+        say(f"{args.data_out} already holds files: this run writes no data; it compares every data file it produces with "
+            "the files there and writes the committed files only if all are byte-identical (--force replaces them)")
     committed_manifest = None
     if args.check:
         with open(os.path.join(args.out, "manifest.json"), encoding="utf-8") as f:
@@ -638,7 +652,8 @@ def main() -> int:
     t_start = time.time()
     log = c.RunLog("make_qwen", enabled=not args.no_telemetry,
                    title="make_qwen (tools/goldens/qwen): Qwen3-0.6B goldens and tolerances",
-                   params={"set": SET_NAME, "quick": params.quick, "check": args.check})
+                   params={"set": SET_NAME, "quick": params.quick, "check": args.check, "force": args.force,
+                           "keep_data": keep_data})
     c.setup_torch(8)
     guards = c.check_effective_guards()
     model_dir = os.path.join(c.data_root(), "models", "Qwen3-0.6B")
@@ -730,7 +745,7 @@ def main() -> int:
     taps_names = taps_prompts(gate)
     say(f"gate prompts: {[(p['name'], p['length'], p['gated_steps']) for p in gate]}; taps {taps_names}")
 
-    staging = None if args.check else args.data_out.rstrip("/\\") + ".staging"
+    staging = None if args.check or keep_data else args.data_out.rstrip("/\\") + ".staging"
     if staging and os.path.isdir(staging):
         shutil.rmtree(staging)
     with phase("gate"):
@@ -766,7 +781,14 @@ def main() -> int:
                  "e_ref_rule": "the largest value over the calibration prompts and layers, per tap kind and metric",
                  "where": {f"{k}|{m}": v for (k, m), v in sorted(e_ref.items())},
                  "k_and_floors": "the dev plan's values (section 5), except the CPU32 relL2 floor: 3e-5 instead of 1e-5, "
-                                 "because CpuRef F32 measured up to 1.4e-5 on the residual stream (ADR G2-0001)",
+                                 "because on this set CpuRef F32 measured up to 1.21e-5 from torch64p and 1.02e-5 from "
+                                 "torch32 on the residual stream (L27.out of multilingual-002, cpuref_probe run "
+                                 "20261018-091611-7cb55719; the earlier --quick smoke probe 20261018-051907-5db5512c "
+                                 "measured 1.40e-5 from torch32 on csharp-000, not a g1 taps prompt), above the plan's "
+                                 "1e-5 (ADR G2-0001)",
+                 "fixed_pairs": "cpu64-vs-torch64p: relL2 1e-10 on every tap kind. vulkan-vs-d3d12: relL2 1e-4 on every "
+                                "tap kind and max |delta logit| 1e-2 on logits only; activations have no maxAbs bound, "
+                                "because the residual stream reaches 1e3 and more (ADR G2-0001, item 5)",
                  "adr": "docs/decisions/G2-0001-tolerance-calibration.md"}
     tol_doc = qt.document(SET_NAME, pairs_obj, greedy_section, calib_ref)
 
@@ -935,14 +957,70 @@ def main() -> int:
             return 1
         print("check: regenerated bytes are identical to", args.out, "and the data hashes in its manifest")
         return 0
+    if keep_data:
+        problems = existing_data_problems(args.data_out, entries_sorted)
+        log.check("goldens.data_unchanged", not problems, set=qc.SET, files=data_files)
+        if problems:
+            log.close("failed")
+            print("REFUSED: the data folder already holds different files; nothing was written:", args.data_out)
+            for p in problems:
+                print("  ", p)
+            print("A changed set is a new version g<N+1>; --force replaces the folder (a smoke folder, never a published set).")
+            return 1
+        c.write_tree(args.out, repo_files)
+        log.close()
+        print("wrote", args.out, "; the", data_files, "data files in", args.data_out, "are byte-identical and untouched",
+              "| run log:", log.path)
+        return 0
     c.write_tree(args.out, repo_files)
-    if os.path.isdir(args.data_out):
-        shutil.rmtree(args.data_out)
-    os.makedirs(os.path.dirname(args.data_out), exist_ok=True)
-    os.replace(staging, args.data_out)
+    replace_folder(staging, args.data_out)
     log.close()
     print("wrote", args.out, "and", args.data_out, "| run log:", log.path)
     return 0
+
+
+def data_present(folder: str) -> bool:
+    """True when the folder exists and holds anything."""
+    if not os.path.isdir(folder):
+        return False
+    with os.scandir(folder) as it:
+        return any(True for _ in it)
+
+
+def existing_data_problems(folder: str, entries: list[dict]) -> list[str]:
+    """How a data folder differs from the data files a run produced (manifest entries with location "data"): files
+    missing from the folder, files the run did not produce, and files whose SHA-256 differs. Empty when identical."""
+    want = {}
+    for e in entries:
+        if e["location"] != "data":
+            continue
+        if not e["path"].startswith(DATA_REL + "/"):
+            raise c.GoldenError(f"data file {e['path']} is not under {DATA_REL}")
+        want[e["path"][len(DATA_REL) + 1:]] = e["sha256"]
+    have = {}
+    for root, _dirs, files in os.walk(folder):
+        for name in files:
+            path = os.path.join(root, name)
+            have[os.path.relpath(path, folder).replace(os.sep, "/")] = path
+    problems = [f"missing from the folder: {n}" for n in sorted(set(want) - set(have))]
+    problems += [f"not produced by this run: {n}" for n in sorted(set(have) - set(want))]
+    problems += [f"differs: {n}" for n in sorted(set(want) & set(have)) if c.sha256_file(have[n]) != want[n]]
+    return problems
+
+
+def replace_folder(staging: str, folder: str) -> None:
+    """Moves the staging folder into place. The old folder is renamed aside first, so a file another process holds
+    open makes the rename fail with the old folder intact instead of half deleted."""
+    os.makedirs(os.path.dirname(os.path.abspath(folder)), exist_ok=True)
+    if not os.path.isdir(folder):
+        os.replace(staging, folder)
+        return
+    aside = folder.rstrip("/\\") + ".replaced"
+    if os.path.isdir(aside):
+        shutil.rmtree(aside)
+    os.replace(folder, aside)
+    os.replace(staging, folder)
+    shutil.rmtree(aside)
 
 
 def check_model_and_tokenizer(model_dir: str) -> dict:

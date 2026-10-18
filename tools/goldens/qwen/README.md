@@ -9,7 +9,7 @@ The tools that build `goldens/qwen3-0.6b/g1`: the full-model goldens for Gate 1 
 | `qwen_oracles.py` | Model checks, a bf16 calibration model, prefill and tap helpers, row summaries, logits metrics |
 | `qwen_tolerances.py` | e_ref per tap kind, the calibration rule and `tolerances.json` |
 | `test_qwen.py` | Self-tests of the logic above that need no forward pass (contract vectors, pool, selection) |
-| `check_set.fsx` | Reads the set through LRM's F# readers: `Goldens.Open`, `VerifyAll`, `ToleranceSpec.load`, CpuRef's RoPE table against the dumped T_spec |
+| `check_set.fsx` | Reads the set through LRM's F# readers: `Goldens.Open`, `VerifyAll`, `ToleranceSpec.load` (and that `vulkan-vs-d3d12` bounds maxAbs on logits only), CpuRef's RoPE table against the dumped T_spec, and each prompt's files by `role` and `dumps` |
 | `cpuref_probe.fsx` | CpuRef F32 and F64 on the gate prompts under the calibrated tolerances: the evidence for the floors (ADR G2-0001) |
 | `corpus/` | The committed corpora (below) |
 
@@ -19,15 +19,16 @@ All Python runs in `LRM_DATA/venv-golden` as `python -I`, offline, through O1's 
 
 ```bash
 pwsh tools/goldens/run.ps1 qwen/test_qwen.py           # tool self-tests, about a minute
-pwsh tools/goldens/run.ps1 qwen/make_qwen.py           # regenerate goldens/qwen3-0.6b/g1 and LRM_DATA/golden/qwen3-0.6b/g1
+pwsh tools/goldens/run.ps1 qwen/make_qwen.py           # regenerate goldens/qwen3-0.6b/g1 (and LRM_DATA/golden/qwen3-0.6b/g1 if empty)
 pwsh tools/goldens/run.ps1 qwen/make_qwen.py --check   # regenerate in memory; compare every committed byte and data hash
-pwsh tools/goldens/run.ps1 qwen/make_qwen.py --quick --out <dir>/goldens/qwen3-0.6b/g1 --data-out <dir>/golden/qwen3-0.6b/g1
+pwsh tools/goldens/run.ps1 qwen/make_qwen.py --quick --out <dir>/goldens/qwen3-0.6b/g1 --data-out <dir>/golden/qwen3-0.6b/g1 [--force]
 dotnet fsi tools/goldens/qwen/check_set.fsx            # the set through Goldens.Open, VerifyAll and ToleranceSpec.load
 dotnet fsi tools/goldens/qwen/cpuref_probe.fsx --long  # CpuRef against the goldens; writes a parity run log
 python -I tools/goldens/verify_goldens.py --data C:/Users/end/dev/lrm-data   # hashes and budgets, data files included
 ```
 
-- **Cost.** The canonical run takes about 1 h 50 min at 8 threads on the development machine (i9-13900K, AVX2, MKL, shared with other work): pool 40 min, calibration 10 min, selection 2 min, gate 52 min, long prompts 4 min. It writes 6.3 GiB under `LRM_DATA/golden`. The pool's double run and the gate stage's no-cache recomputes dominate. `--quick` (2 candidates per category, 3 calibration prompts, short long prompts) takes about 20 minutes and never writes the canonical folders.
+- **Cost.** The canonical run takes 1 h 50 min to 2 h at 8 threads on the development machine (i9-13900K, AVX2, MKL, shared with other work): pool 40 to 48 min, calibration 10 to 11 min, selection 2 min, gate 52 to 56 min, long prompts 4 min. Into an empty data folder it writes 6.3 GiB under `LRM_DATA/golden`. The pool's double run and the gate stage's no-cache recomputes dominate. `--quick` (2 candidates per category, 3 calibration prompts, short long prompts) takes about 20 minutes and never writes the canonical folders.
+- **The shared data folder.** Every worktree on the machine reads `LRM_DATA/golden/qwen3-0.6b/g1`, and golden content never changes in place (GoldenSet). So a run whose `--data-out` already holds files writes no data. It hashes every data file it produces and compares it with the folder's file. If all are byte-identical, it writes the committed files (`goldens.data_unchanged` in the run log). Otherwise it stops with the list of missing, extra and changed files and writes nothing. `--force` replaces the folder through a rename aside, so a file another process holds open leaves the old folder intact. Use it for a smoke folder or a new version, never for a published set; a changed set is `g<N+1>`.
 - **Threads.** Every stage runs at 8 threads and falls back to 1 thread if its double run differs.
 - **`--check`** is a same-machine, same-`LRM_DATA` check, like O1's: the manifest records the machine (`env`), and torch's fp32 and fp64 kernels depend on the CPU's code path. It passed for g1 on the generation machine (`goldens/qwen3-0.6b/reports/make-qwen-check/`).
 
@@ -65,6 +66,6 @@ Each run writes a `parity` run log under `LRM_DATA/runs` (`common.RunLog`), whic
 - `golden.compare` for every self-test, every calibration e_ref (pair `torch32-vs-torch64p`, `kind: measurement`, with `tap`, `prompt` and `layer`), the bf16 distances (pair `bf16-vs-torch64p`), and the gate and long prompts' holdout e_ref of the logits;
 - `goldens.greedy.min_margin`, `goldens.greedy.min_margin_f32_ulps` and the `goldens.greedy.*` and `goldens.teacher_forced.*` checks per gate prompt and oracle;
 - `goldens.pool.min_margin` per candidate and `goldens.pool.eligible` per category; `goldens.tolerance.bound` per pair, tap kind and metric; `goldens.gate.margin_rule`; `goldens.wall_seconds` per stage (no template slot yet);
-- `goldens.file_bytes`, `goldens.set_bytes` (with the 10 MiB budget), `goldens.data_bytes`, `goldens.double_run_identical` per stage, `goldens.regen_identical` with `--check`; `goldens.*` spans per stage.
+- `goldens.file_bytes`, `goldens.set_bytes` (with the 10 MiB budget), `goldens.data_bytes`, `goldens.double_run_identical` per stage, `goldens.regen_identical` with `--check`, `goldens.data_unchanged` when the data folder already held files; `goldens.*` spans per stage.
 
 The rendered reports of the canonical run, its `--check` and the CpuRef probe are committed under `goldens/qwen3-0.6b/reports/`.

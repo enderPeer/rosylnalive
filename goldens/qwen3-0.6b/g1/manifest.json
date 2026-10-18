@@ -211,11 +211,11 @@
       "sha256": "9716b33d71dc21a591e89aba42221fac21ae03422a6a1d170d743ca606c1177d"
     },
     {
-      "bytes": 24269,
+      "bytes": 24807,
       "location": "repo",
       "path": "goldens/qwen3-0.6b/g1/tolerances.json",
       "role": "tolerances",
-      "sha256": "e7c8c2cb8c35b54c21e3d128183b4183d7a210d65b1dcbcaa4edadd2f3412f99"
+      "sha256": "6d0d8a687696fb2ff350b646c14566f55b39c8e69bdc2bdf3b8d1dfbc37713a0"
     },
     {
       "bytes": 150722736,
@@ -583,10 +583,10 @@
       "tools/goldens/qwen/corpus/csharp.txt": "6bfce593119e5e3a31e6667a901c82fb153633b8511c89c3004b8e2bd6fc1795",
       "tools/goldens/qwen/corpus/design-doc.md": "c61a46129f6750e4fb248932845844fb1b1e9688e7770ff973384c853e8325b2",
       "tools/goldens/qwen/corpus/multilingual.txt": "4870d961a4ce926f3f3fc93354a652407bdb087a63e7237968b2f6b3543ad6dd",
-      "tools/goldens/qwen/make_qwen.py": "4a7d95500feccbffe18d997b3a9cff6a6f92c1e9db6df7225bd24702b72f4b79",
+      "tools/goldens/qwen/make_qwen.py": "a828a00e0fab5563a5471c0defe63fbd0b5ca575941727435d28a23a1629fa76",
       "tools/goldens/qwen/qwen_corpus.py": "57335c36ad0d5f00ffb1898f6896535b1af2f79dc76f0e484442b2e08c471730",
       "tools/goldens/qwen/qwen_oracles.py": "320fdb00007763a884732fd8b47c18ae43aa1c8040606d8898fcc200b71d78be",
-      "tools/goldens/qwen/qwen_tolerances.py": "0760dc92214246a473bdff7868bdcfa1a50bcf91f77d9d3065046897dd0c43e2",
+      "tools/goldens/qwen/qwen_tolerances.py": "b12d1542cd5962cfe649f0e37a2336e6f039c337d73364870b07c5b032644f15",
       "tools/goldens/selftest.py": "b1cdc002c6146855502436cc11c8a20a075518ad0f0596af9cb374ca43360af3",
       "tools/goldens/tiny_model.py": "2665abe710c4f31ace7132be33f08bc0ab09729d26df5dd7fed0886ae9b9b0b3",
       "tools/goldens/verify_goldens.py": "b103f6fe482a4f9cb382f615fd77c6544c260858f2edf697fee81d0a67940421"

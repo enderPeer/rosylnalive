@@ -5,8 +5,10 @@
 // - Goldens.Open validates the manifest (ComparatorsAndGoldenReader) and VerifyAll checks the size and SHA-256 of every
 //   listed file, the LRM_DATA ones included;
 // - ToleranceSpec.load parses tolerances.json with its exact calibration check, and every pair answers a lookup;
+//   vulkan-vs-d3d12 bounds maxAbs on logits only (ADR G2-0001, item 5);
 // - CpuRef's RoPE table for the pinned inv_freq bits equals the dumped T_spec bit for bit (CpuReferenceSemantics);
-// - every data safetensors file opens through the validating reader, and each fwd_* file holds the prompt's ids.
+// - every data safetensors file opens through the validating reader, and each fwd_* file holds the prompt's ids;
+// - each prompt's files follow its role and `dumps`: gate prompts fwd_* and tf_*, long prompts long_* only.
 // Exit code 0 when everything holds, 1 otherwise.
 
 #r "../../../artifacts/bin/Lrm.Core/release/Lrm.Core.dll"
@@ -62,6 +64,22 @@ for kind in ActivationNames.all 28 |> Array.map ActivationNames.kind |> Array.di
         (spec.TryBound(TolerancePair.Cpu32VsTorch32, kind, ToleranceMetric.RelL2)).IsSome
         ("cpu32-vs-torch32 bounds " + kind)
 
+// ADR G2-0001, item 5: vulkan-vs-d3d12 bounds max |delta| on logits only, so activations have no maxAbs bound there.
+check
+    ((spec.TryBound(TolerancePair.VulkanVsD3D12, "logits", ToleranceMetric.MaxAbs)
+      |> Option.map _.Bound)
+        =
+        Some 0.01)
+    "vulkan-vs-d3d12 bounds max |delta logit| at 0.01"
+
+check
+    (ActivationNames.all 28
+     |> Array.map ActivationNames.kind
+     |> Array.distinct
+     |> Array.filter ((<>) "logits")
+     |> Array.forall (fun kind -> (spec.TryBound(TolerancePair.VulkanVsD3D12, kind, ToleranceMetric.MaxAbs)).IsNone))
+    "vulkan-vs-d3d12 has no maxAbs bound for any activation kind"
+
 let rope = set.OpenSafetensors "rope.safetensors"
 let bits = (rope.ReadU32 "inv_freq.bits").Data
 let table = CpuRef.ropeTable bits 8192
@@ -90,6 +108,30 @@ for f in set.Files do
             check (ids = prompts[parts[1]]) (f.Name + ": input_ids are the manifest's prompt")
         else
             check (st.Entries.Length > 0) (f.Name + " opens")
+
+// ADR G2-0002, Consequences: consumers branch on `role` first. A gate prompt's `dumps` is "taps" or "logits" and it
+// has fwd_* and tf_* files; a long prompt's is "long" and it has only long_* files.
+let fileNames = set.Files |> Array.map _.Name |> Set.ofArray
+
+let filesOf (prefix: string) (name: string) =
+    [ "f32"; "f64p" ]
+    |> List.map (fun o -> fileNames.Contains(prefix + "_" + o + "." + name + ".safetensors"))
+
+for p in set.Manifest.GetProperty("prompts").EnumerateArray() do
+    let name = p.GetProperty("name").GetString()
+    let role = p.GetProperty("role").GetString()
+    let dumps = p.GetProperty("dumps").GetString()
+    let all prefix = filesOf prefix name |> List.forall id
+    let none prefix = filesOf prefix name |> List.forall not
+
+    match role with
+    | "gate" ->
+        check
+            ((dumps = "taps" || dumps = "logits") && all "fwd" && all "tf" && none "long")
+            (Invariant.format $"{name}: a gate prompt dumps {dumps} in fwd_* and has tf_*")
+    | "long" ->
+        check (dumps = "long" && all "long" && none "fwd" && none "tf") (name + ": a long prompt has long_* files only")
+    | other -> check false (Invariant.format $"{name}: unknown role {other}")
 
 printfn
     "check_set: %s"

@@ -5,7 +5,8 @@
 - the ToleranceSpec calibration vectors (docs/contracts/tolerance-spec.md) and the tolerances' structure;
 - the corpus, the seeded pool and the fixed prompt rules: deterministic, in quota, in length, distinct;
 - the exact top-k order (value, then index, ties included), the prefix rule and the gate selection with its fallback,
-  on synthetic margins.
+  on synthetic margins;
+- the guard for the shared data folder (make_qwen.py never rewrites an existing one unless --force), in a temp folder.
 It needs the pinned tokenizer under LRM_DATA, but not the weights' forward pass.
 """
 
@@ -123,6 +124,41 @@ def test_selection() -> None:
     check(mk.taps_prompts(gate) == ["csharp-000", "chatml-002"], "taps: the two shortest gate prompts of different categories")
 
 
+def test_data_folder() -> None:
+    """The guard for the shared data folder: an existing folder is compared with, and replaced only through a rename."""
+    import shutil
+    import tempfile
+
+    tmp = tempfile.mkdtemp(prefix="test_qwen_")
+    try:
+        folder = os.path.join(tmp, "g1")
+        check(not mk.data_present(folder), "a missing data folder holds nothing")
+        files = {"a.safetensors": b"alpha", "b.safetensors": b"beta"}
+        for n, b in files.items():
+            c.write_bytes(os.path.join(folder, n), b)
+        check(mk.data_present(folder), "a data folder with files is present")
+        entries = [c.file_entry(f"{mk.DATA_REL}/{n}", b, "x", "data") for n, b in files.items()]
+        entries.append(c.file_entry(f"{mk.OUT_REL}/manifest.json", b"{}", "manifest"))
+        check(mk.existing_data_problems(folder, entries) == [], "identical data files: no problem (repo entries ignored)")
+        c.write_bytes(os.path.join(folder, "b.safetensors"), b"BETA")
+        c.write_bytes(os.path.join(folder, "c.safetensors"), b"extra")
+        os.remove(os.path.join(folder, "a.safetensors"))
+        got = mk.existing_data_problems(folder, entries)
+        check(got == ["missing from the folder: a.safetensors", "not produced by this run: c.safetensors",
+                      "differs: b.safetensors"], f"missing, extra and changed files are reported ({got})")
+        staging = os.path.join(tmp, "g1.staging")
+        c.write_bytes(os.path.join(staging, "new.safetensors"), b"new")
+        mk.replace_folder(staging, folder)
+        check(sorted(os.listdir(folder)) == ["new.safetensors"] and not os.path.exists(staging)
+              and not os.path.exists(folder + ".replaced"), "--force replaces the folder through a rename aside")
+        fresh = os.path.join(tmp, "fresh", "g1")
+        c.write_bytes(os.path.join(staging, "n.safetensors"), b"n")
+        mk.replace_folder(staging, fresh)
+        check(os.listdir(fresh) == ["n.safetensors"], "a first run moves the staging folder into place")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def main() -> int:
     from tokenizers import Tokenizer
 
@@ -130,6 +166,7 @@ def main() -> int:
     test_tolerances()
     test_top_k()
     test_selection()
+    test_data_folder()
     test_pool(tok)
     print("test_qwen:", "all passed" if not FAILURES else f"{len(FAILURES)} FAILED")
     return 1 if FAILURES else 0

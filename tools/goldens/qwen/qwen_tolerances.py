@@ -19,9 +19,13 @@ import common as c
 
 SCHEMA = "lrm.tolerances/1"
 
-# The dev plan's starting floors (section 5), except the CPU32 relL2 floor: 3e-5 instead of 1e-5. CpuRef F32, whose
-# sequential FMA order is the spec of every fp32 kernel, measured up to 1.4e-5 from torch32 on the residual stream
-# (L27.out), where torch32's own e_ref is about 2e-6 (ADR G2-0001, tools/goldens/qwen/cpuref_probe.fsx).
+# The dev plan's starting floors (section 5), except the CPU32 relL2 floor: 3e-5 instead of 1e-5. On g1, CpuRef F32,
+# whose sequential FMA order is the spec of every fp32 kernel, measured up to 1.21e-5 from torch64p and 1.02e-5 from
+# torch32 on the residual stream (L27.out of multilingual-002, cpuref_probe run 20261018-091611-7cb55719; the --quick
+# smoke probe 20261018-051907-5db5512c measured 1.40e-5 from torch32 on csharp-000, not a g1 taps prompt), where
+# torch32's own e_ref is about 2e-6 (ADR G2-0001, tools/goldens/qwen/cpuref_probe.fsx). The rule holds one floor per
+# pair and metric, so every CPU32 relL2 bound, the logits' included, gets this floor; per-kind floors would be an O2
+# schema change (ADR G2-0001, Alternatives).
 CPU_FLOORS = {"relL2": 3e-05, "maxAbs": 0.002, "kl": 1e-07}
 GPU_FLOORS = {"relL2": 0.0001, "maxAbs": 0.01, "kl": 1e-06}
 
@@ -35,6 +39,9 @@ RULED_PAIRS = {
 }
 
 # Fixed bounds (no rule): CpuRef F64 against the truth on the full model, and the two GPU backends against each other.
+# vulkan-vs-d3d12 bounds max |delta| on logits only, where the contract's sample has it in `default`: the plan's 1e-2 is
+# a max |delta logit| bound, and residual-stream activations reach 1e3 and more, so TryBound(vulkan-vs-d3d12, <an
+# activation kind>, maxAbs) is None on purpose (ADR G2-0001, item 5).
 FIXED_PAIRS = {
     "cpu64-vs-torch64p": {"default": {"relL2": {"bound": 1e-10}}},
     "vulkan-vs-d3d12": {"default": {"relL2": {"bound": 0.0001}}, "taps": {"logits": {"maxAbs": {"bound": 0.01}}}},
