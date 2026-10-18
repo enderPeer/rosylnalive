@@ -19,8 +19,7 @@ let oraclePath (name: string) =
     repoPath (Path.Combine("tests", "Lrm.Tokenizer.Tests", "oracle", name))
 
 /// O1's tokenizer corpus (GoldenSet contract, "The tokenizer corpus").
-let corpusPath () =
-    repoPath (Path.Combine("goldens", "tokenizer", "g1", "cases.jsonl"))
+let corpusPath () = repoPath Corpus.RepoPath
 
 /// Every line of a JSON-lines file, parsed.
 let jsonLines (path: string) : JsonElement list =

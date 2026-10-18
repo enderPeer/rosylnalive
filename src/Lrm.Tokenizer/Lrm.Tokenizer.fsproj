@@ -10,5 +10,6 @@
     <Compile Include="Bpe.fs" />
     <Compile Include="TokenizerJson.fs" />
     <Compile Include="QwenTokenizer.fs" />
+    <Compile Include="Corpus.fs" />
   </ItemGroup>
 </Project>
