@@ -1,6 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: O2. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
-    <Compile Include="Placeholder.fs" />
+    <Compile Include="Shape.fs" />
+    <Compile Include="HostTensor.fs" />
+    <Compile Include="Safetensors.fs" />
+    <Compile Include="Compare.fs" />
+    <Compile Include="Goldens.fs" />
+    <Compile Include="ToleranceSpec.fs" />
+    <Compile Include="KernelBounds.fs" />
   </ItemGroup>
 </Project>

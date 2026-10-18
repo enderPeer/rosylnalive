@@ -1,6 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: O2. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
-    <Compile Include="Placeholder.fs" />
+    <Compile Include="CpuExec.fs" />
+    <Compile Include="Rope.fs" />
+    <Compile Include="Rows.fs" />
+    <Compile Include="CpuRef.fs" />
   </ItemGroup>
 </Project>
