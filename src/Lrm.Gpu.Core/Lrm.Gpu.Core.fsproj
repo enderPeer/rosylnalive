@@ -1,6 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: R4. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
-    <Compile Include="Placeholder.fs" />
+    <Compile Include="Errors.fs" />
+    <Compile Include="HeapLayout.fs" />
+    <Compile Include="TensorTable.fs" />
+    <Compile Include="ArgBlock.fs" />
+    <Compile Include="Catalog.fs" />
+    <Compile Include="SourceConvention.fs" />
+    <Compile Include="ShaderSet.fs" />
+    <Compile Include="Backend.fs" />
+    <Compile Include="Kernels.g.fs" />
+    <Compile Include="Dispatch.fs" />
+    <Compile Include="RecordingBackend.fs" />
+    <Compile Include="CatalogGen.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Catalog/catalog.json" />
   </ItemGroup>
 </Project>
