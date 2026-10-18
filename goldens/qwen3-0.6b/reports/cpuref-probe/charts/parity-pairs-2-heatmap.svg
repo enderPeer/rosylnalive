@@ -1,0 +1,576 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="446" viewBox="0 0 720 446" role="img" aria-labelledby="parity-pairs-2-heatmap-title parity-pairs-2-heatmap-desc">
+<title id="parity-pairs-2-heatmap-title">Worst measured/bound by tap and layer, cpu32-vs-torch64p</title>
+<desc id="parity-pairs-2-heatmap-desc">Heatmap of 18 tap rows by 28 layer columns, 504 cells with values.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="446" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="445" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Worst measured/bound by tap and layer, cpu32-vs-torch64p</text>
+<text class="t2" x="16" y="45" font-size="12">rel_l2 over all cases; the scale ends at the bound (1.0), so darker is closer to it</text>
+<text class="t3" x="16" y="67" font-size="11">2.4e-02</text>
+<rect class="q0" x="62.48" y="58" width="13" height="10"/>
+<rect class="q1" x="76.48" y="58" width="13" height="10"/>
+<rect class="q2" x="90.48" y="58" width="13" height="10"/>
+<rect class="q3" x="104.48" y="58" width="13" height="10"/>
+<rect class="q4" x="118.48" y="58" width="13" height="10"/>
+<rect class="q5" x="132.48" y="58" width="13" height="10"/>
+<rect class="q6" x="146.48" y="58" width="13" height="10"/>
+<rect class="q7" x="160.48" y="58" width="13" height="10"/>
+<rect class="q8" x="174.48" y="58" width="13" height="10"/>
+<rect class="q9" x="188.48" y="58" width="13" height="10"/>
+<rect class="q10" x="202.48" y="58" width="13" height="10"/>
+<rect class="q11" x="216.48" y="58" width="13" height="10"/>
+<rect class="q12" x="230.48" y="58" width="13" height="10"/>
+<text class="t3" x="249.48" y="67" font-size="11">1.0e+00 (log scale)</text>
+<text class="t3" x="175.38" y="92" font-size="11" text-anchor="start">tap</text>
+<text class="t3" x="169.38" y="112.33" font-size="11" text-anchor="end">input_layernorm.out</text>
+<rect class="q0" x="175.38" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 0: 3.1e-02</title></rect>
+<rect class="q2" x="194.26" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 1: 5.0e-02</title></rect>
+<rect class="q3" x="213.14" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 2: 5.9e-02</title></rect>
+<rect class="q3" x="232.02" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 3: 7.0e-02</title></rect>
+<rect class="q3" x="250.9" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 4: 7.5e-02</title></rect>
+<rect class="q3" x="269.78" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 5: 7.5e-02</title></rect>
+<rect class="q4" x="288.66" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 6: 8.5e-02</title></rect>
+<rect class="q4" x="307.54" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 7: 9.0e-02</title></rect>
+<rect class="q5" x="326.41" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 8: 1.1e-01</title></rect>
+<rect class="q4" x="345.29" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 9: 1.0e-01</title></rect>
+<rect class="q5" x="364.17" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 10: 1.0e-01</title></rect>
+<rect class="q5" x="383.05" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 11: 1.0e-01</title></rect>
+<rect class="q6" x="401.93" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 12: 1.4e-01</title></rect>
+<rect class="q5" x="420.81" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 13: 1.3e-01</title></rect>
+<rect class="q6" x="439.69" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 14: 1.4e-01</title></rect>
+<rect class="q5" x="458.57" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 15: 1.2e-01</title></rect>
+<rect class="q5" x="477.45" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 16: 1.1e-01</title></rect>
+<rect class="q5" x="496.33" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 17: 1.1e-01</title></rect>
+<rect class="q5" x="515.21" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 18: 1.1e-01</title></rect>
+<rect class="q5" x="534.09" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 19: 1.1e-01</title></rect>
+<rect class="q5" x="552.97" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 20: 1.0e-01</title></rect>
+<rect class="q5" x="571.85" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 21: 1.1e-01</title></rect>
+<rect class="q5" x="590.72" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 22: 1.0e-01</title></rect>
+<rect class="q4" x="609.6" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 23: 1.0e-01</title></rect>
+<rect class="q5" x="628.48" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 24: 1.1e-01</title></rect>
+<rect class="q5" x="647.36" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 25: 1.1e-01</title></rect>
+<rect class="q5" x="666.24" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 26: 1.2e-01</title></rect>
+<rect class="q5" x="685.12" y="100" width="17.88" height="15.67"><title>input_layernorm.out, layer 27: 1.2e-01</title></rect>
+<text class="t3" x="169.38" y="129" font-size="11" text-anchor="end">attn.q_proj.out</text>
+<rect class="q1" x="175.38" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 0: 4.0e-02</title></rect>
+<rect class="q2" x="194.26" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 1: 4.7e-02</title></rect>
+<rect class="q2" x="213.14" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 2: 5.5e-02</title></rect>
+<rect class="q2" x="232.02" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 3: 5.4e-02</title></rect>
+<rect class="q3" x="250.9" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 4: 6.1e-02</title></rect>
+<rect class="q3" x="269.78" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 5: 6.9e-02</title></rect>
+<rect class="q3" x="288.66" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 6: 6.8e-02</title></rect>
+<rect class="q4" x="307.54" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 7: 7.8e-02</title></rect>
+<rect class="q4" x="326.41" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 8: 9.3e-02</title></rect>
+<rect class="q4" x="345.29" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 9: 8.4e-02</title></rect>
+<rect class="q4" x="364.17" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 10: 8.9e-02</title></rect>
+<rect class="q4" x="383.05" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 11: 7.9e-02</title></rect>
+<rect class="q5" x="401.93" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 12: 1.0e-01</title></rect>
+<rect class="q4" x="420.81" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 13: 1.0e-01</title></rect>
+<rect class="q5" x="439.69" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 14: 1.1e-01</title></rect>
+<rect class="q5" x="458.57" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 15: 1.0e-01</title></rect>
+<rect class="q4" x="477.45" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 16: 1.0e-01</title></rect>
+<rect class="q4" x="496.33" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 17: 1.0e-01</title></rect>
+<rect class="q4" x="515.21" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 18: 9.2e-02</title></rect>
+<rect class="q4" x="534.09" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 19: 9.2e-02</title></rect>
+<rect class="q4" x="552.97" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 20: 9.4e-02</title></rect>
+<rect class="q4" x="571.85" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 21: 9.7e-02</title></rect>
+<rect class="q4" x="590.72" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 22: 8.9e-02</title></rect>
+<rect class="q4" x="609.6" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 23: 8.5e-02</title></rect>
+<rect class="q4" x="628.48" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 24: 8.5e-02</title></rect>
+<rect class="q4" x="647.36" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 25: 9.1e-02</title></rect>
+<rect class="q5" x="666.24" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 26: 1.1e-01</title></rect>
+<rect class="q4" x="685.12" y="116.67" width="17.88" height="15.67"><title>attn.q_proj.out, layer 27: 8.9e-02</title></rect>
+<text class="t3" x="169.38" y="145.67" font-size="11" text-anchor="end">attn.k_proj.out</text>
+<rect class="q0" x="175.38" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 0: 3.1e-02</title></rect>
+<rect class="q0" x="194.26" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 1: 3.1e-02</title></rect>
+<rect class="q1" x="213.14" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 2: 3.5e-02</title></rect>
+<rect class="q2" x="232.02" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 3: 4.7e-02</title></rect>
+<rect class="q2" x="250.9" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 4: 4.5e-02</title></rect>
+<rect class="q2" x="269.78" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 5: 4.9e-02</title></rect>
+<rect class="q3" x="288.66" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 6: 5.8e-02</title></rect>
+<rect class="q3" x="307.54" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 7: 5.9e-02</title></rect>
+<rect class="q4" x="326.41" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 8: 9.6e-02</title></rect>
+<rect class="q3" x="345.29" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 9: 7.5e-02</title></rect>
+<rect class="q4" x="364.17" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 10: 8.4e-02</title></rect>
+<rect class="q4" x="383.05" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 11: 9.4e-02</title></rect>
+<rect class="q7" x="401.93" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 12: 2.0e-01</title></rect>
+<rect class="q7" x="420.81" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 13: 2.2e-01</title></rect>
+<rect class="q8" x="439.69" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 14: 2.6e-01</title></rect>
+<rect class="q4" x="458.57" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 15: 8.6e-02</title></rect>
+<rect class="q4" x="477.45" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 16: 8.2e-02</title></rect>
+<rect class="q4" x="496.33" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 17: 7.6e-02</title></rect>
+<rect class="q3" x="515.21" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 18: 7.5e-02</title></rect>
+<rect class="q3" x="534.09" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 19: 7.0e-02</title></rect>
+<rect class="q4" x="552.97" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 20: 7.6e-02</title></rect>
+<rect class="q4" x="571.85" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 21: 7.7e-02</title></rect>
+<rect class="q3" x="590.72" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 22: 7.4e-02</title></rect>
+<rect class="q3" x="609.6" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 23: 6.7e-02</title></rect>
+<rect class="q3" x="628.48" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 24: 6.7e-02</title></rect>
+<rect class="q3" x="647.36" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 25: 7.2e-02</title></rect>
+<rect class="q3" x="666.24" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 26: 7.4e-02</title></rect>
+<rect class="q3" x="685.12" y="133.33" width="17.88" height="15.67"><title>attn.k_proj.out, layer 27: 6.3e-02</title></rect>
+<text class="t3" x="169.38" y="162.33" font-size="11" text-anchor="end">attn.v_proj.out</text>
+<rect class="q0" x="175.38" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 0: 2.8e-02</title></rect>
+<rect class="q2" x="194.26" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 1: 4.6e-02</title></rect>
+<rect class="q3" x="213.14" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 2: 5.9e-02</title></rect>
+<rect class="q3" x="232.02" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 3: 6.9e-02</title></rect>
+<rect class="q4" x="250.9" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 4: 7.7e-02</title></rect>
+<rect class="q3" x="269.78" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 5: 7.4e-02</title></rect>
+<rect class="q4" x="288.66" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 6: 8.5e-02</title></rect>
+<rect class="q4" x="307.54" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 7: 1.0e-01</title></rect>
+<rect class="q5" x="326.41" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 8: 1.1e-01</title></rect>
+<rect class="q5" x="345.29" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 9: 1.2e-01</title></rect>
+<rect class="q5" x="364.17" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 10: 1.2e-01</title></rect>
+<rect class="q5" x="383.05" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 11: 1.2e-01</title></rect>
+<rect class="q7" x="401.93" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 12: 2.1e-01</title></rect>
+<rect class="q8" x="420.81" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 13: 2.7e-01</title></rect>
+<rect class="q8" x="439.69" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 14: 2.9e-01</title></rect>
+<rect class="q6" x="458.57" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 15: 1.4e-01</title></rect>
+<rect class="q5" x="477.45" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 16: 1.3e-01</title></rect>
+<rect class="q5" x="496.33" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 17: 1.3e-01</title></rect>
+<rect class="q5" x="515.21" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 18: 1.1e-01</title></rect>
+<rect class="q5" x="534.09" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 19: 1.1e-01</title></rect>
+<rect class="q4" x="552.97" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 20: 9.8e-02</title></rect>
+<rect class="q4" x="571.85" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 21: 9.7e-02</title></rect>
+<rect class="q4" x="590.72" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 22: 8.9e-02</title></rect>
+<rect class="q4" x="609.6" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 23: 8.9e-02</title></rect>
+<rect class="q4" x="628.48" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 24: 8.6e-02</title></rect>
+<rect class="q4" x="647.36" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 25: 9.0e-02</title></rect>
+<rect class="q4" x="666.24" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 26: 9.6e-02</title></rect>
+<rect class="q5" x="685.12" y="150" width="17.88" height="15.67"><title>attn.v_proj.out, layer 27: 1.1e-01</title></rect>
+<text class="t3" x="169.38" y="179" font-size="11" text-anchor="end">attn.q_norm.out</text>
+<rect class="q0" x="175.38" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 0: 2.4e-02</title></rect>
+<rect class="q2" x="194.26" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 1: 4.8e-02</title></rect>
+<rect class="q3" x="213.14" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 2: 5.9e-02</title></rect>
+<rect class="q2" x="232.02" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 3: 5.5e-02</title></rect>
+<rect class="q2" x="250.9" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 4: 5.0e-02</title></rect>
+<rect class="q2" x="269.78" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 5: 5.5e-02</title></rect>
+<rect class="q3" x="288.66" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 6: 7.2e-02</title></rect>
+<rect class="q4" x="307.54" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 7: 7.6e-02</title></rect>
+<rect class="q4" x="326.41" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 8: 8.8e-02</title></rect>
+<rect class="q4" x="345.29" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 9: 8.9e-02</title></rect>
+<rect class="q4" x="364.17" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 10: 9.3e-02</title></rect>
+<rect class="q5" x="383.05" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 11: 1.0e-01</title></rect>
+<rect class="q5" x="401.93" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 12: 1.3e-01</title></rect>
+<rect class="q5" x="420.81" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 13: 1.0e-01</title></rect>
+<rect class="q5" x="439.69" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 14: 1.2e-01</title></rect>
+<rect class="q5" x="458.57" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 15: 1.2e-01</title></rect>
+<rect class="q5" x="477.45" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 16: 1.2e-01</title></rect>
+<rect class="q5" x="496.33" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 17: 1.3e-01</title></rect>
+<rect class="q5" x="515.21" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 18: 1.1e-01</title></rect>
+<rect class="q5" x="534.09" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 19: 1.1e-01</title></rect>
+<rect class="q4" x="552.97" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 20: 1.0e-01</title></rect>
+<rect class="q5" x="571.85" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 21: 1.1e-01</title></rect>
+<rect class="q4" x="590.72" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 22: 8.1e-02</title></rect>
+<rect class="q4" x="609.6" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 23: 9.4e-02</title></rect>
+<rect class="q4" x="628.48" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 24: 9.8e-02</title></rect>
+<rect class="q5" x="647.36" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 25: 1.1e-01</title></rect>
+<rect class="q5" x="666.24" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 26: 1.1e-01</title></rect>
+<rect class="q3" x="685.12" y="166.67" width="17.88" height="15.67"><title>attn.q_norm.out, layer 27: 6.8e-02</title></rect>
+<text class="t3" x="169.38" y="195.67" font-size="11" text-anchor="end">attn.k_norm.out</text>
+<rect class="q0" x="175.38" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 0: 2.4e-02</title></rect>
+<rect class="q0" x="194.26" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 1: 2.5e-02</title></rect>
+<rect class="q0" x="213.14" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 2: 3.0e-02</title></rect>
+<rect class="q1" x="232.02" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 3: 3.2e-02</title></rect>
+<rect class="q1" x="250.9" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 4: 3.6e-02</title></rect>
+<rect class="q0" x="269.78" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 5: 3.1e-02</title></rect>
+<rect class="q2" x="288.66" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 6: 4.8e-02</title></rect>
+<rect class="q1" x="307.54" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 7: 4.2e-02</title></rect>
+<rect class="q3" x="326.41" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 8: 7.5e-02</title></rect>
+<rect class="q3" x="345.29" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 9: 6.3e-02</title></rect>
+<rect class="q2" x="364.17" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 10: 5.3e-02</title></rect>
+<rect class="q4" x="383.05" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 11: 8.2e-02</title></rect>
+<rect class="q3" x="401.93" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 12: 7.5e-02</title></rect>
+<rect class="q5" x="420.81" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 13: 1.2e-01</title></rect>
+<rect class="q5" x="439.69" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 14: 1.3e-01</title></rect>
+<rect class="q3" x="458.57" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 15: 6.4e-02</title></rect>
+<rect class="q4" x="477.45" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 16: 9.7e-02</title></rect>
+<rect class="q4" x="496.33" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 17: 7.9e-02</title></rect>
+<rect class="q4" x="515.21" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 18: 9.3e-02</title></rect>
+<rect class="q4" x="534.09" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 19: 8.4e-02</title></rect>
+<rect class="q4" x="552.97" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 20: 8.7e-02</title></rect>
+<rect class="q4" x="571.85" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 21: 8.4e-02</title></rect>
+<rect class="q4" x="590.72" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 22: 8.4e-02</title></rect>
+<rect class="q4" x="609.6" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 23: 8.5e-02</title></rect>
+<rect class="q4" x="628.48" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 24: 8.3e-02</title></rect>
+<rect class="q4" x="647.36" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 25: 9.1e-02</title></rect>
+<rect class="q4" x="666.24" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 26: 9.8e-02</title></rect>
+<rect class="q3" x="685.12" y="183.33" width="17.88" height="15.67"><title>attn.k_norm.out, layer 27: 6.2e-02</title></rect>
+<text class="t3" x="169.38" y="212.33" font-size="11" text-anchor="end">attn.q_rope</text>
+<rect class="q0" x="175.38" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 0: 2.4e-02</title></rect>
+<rect class="q2" x="194.26" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 1: 4.8e-02</title></rect>
+<rect class="q3" x="213.14" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 2: 5.9e-02</title></rect>
+<rect class="q2" x="232.02" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 3: 5.5e-02</title></rect>
+<rect class="q2" x="250.9" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 4: 5.0e-02</title></rect>
+<rect class="q2" x="269.78" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 5: 5.5e-02</title></rect>
+<rect class="q3" x="288.66" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 6: 7.2e-02</title></rect>
+<rect class="q4" x="307.54" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 7: 7.6e-02</title></rect>
+<rect class="q4" x="326.41" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 8: 8.8e-02</title></rect>
+<rect class="q4" x="345.29" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 9: 8.9e-02</title></rect>
+<rect class="q4" x="364.17" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 10: 9.3e-02</title></rect>
+<rect class="q5" x="383.05" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 11: 1.0e-01</title></rect>
+<rect class="q5" x="401.93" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 12: 1.3e-01</title></rect>
+<rect class="q5" x="420.81" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 13: 1.0e-01</title></rect>
+<rect class="q5" x="439.69" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 14: 1.2e-01</title></rect>
+<rect class="q5" x="458.57" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 15: 1.2e-01</title></rect>
+<rect class="q5" x="477.45" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 16: 1.2e-01</title></rect>
+<rect class="q5" x="496.33" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 17: 1.3e-01</title></rect>
+<rect class="q5" x="515.21" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 18: 1.1e-01</title></rect>
+<rect class="q5" x="534.09" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 19: 1.1e-01</title></rect>
+<rect class="q4" x="552.97" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 20: 1.0e-01</title></rect>
+<rect class="q5" x="571.85" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 21: 1.1e-01</title></rect>
+<rect class="q4" x="590.72" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 22: 8.1e-02</title></rect>
+<rect class="q4" x="609.6" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 23: 9.4e-02</title></rect>
+<rect class="q4" x="628.48" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 24: 9.8e-02</title></rect>
+<rect class="q5" x="647.36" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 25: 1.1e-01</title></rect>
+<rect class="q5" x="666.24" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 26: 1.1e-01</title></rect>
+<rect class="q3" x="685.12" y="200" width="17.88" height="15.67"><title>attn.q_rope, layer 27: 6.8e-02</title></rect>
+<text class="t3" x="169.38" y="229" font-size="11" text-anchor="end">attn.k_rope</text>
+<rect class="q0" x="175.38" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 0: 2.4e-02</title></rect>
+<rect class="q0" x="194.26" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 1: 2.5e-02</title></rect>
+<rect class="q0" x="213.14" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 2: 3.0e-02</title></rect>
+<rect class="q1" x="232.02" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 3: 3.3e-02</title></rect>
+<rect class="q1" x="250.9" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 4: 3.6e-02</title></rect>
+<rect class="q0" x="269.78" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 5: 3.1e-02</title></rect>
+<rect class="q2" x="288.66" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 6: 4.8e-02</title></rect>
+<rect class="q1" x="307.54" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 7: 4.2e-02</title></rect>
+<rect class="q3" x="326.41" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 8: 7.5e-02</title></rect>
+<rect class="q3" x="345.29" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 9: 6.3e-02</title></rect>
+<rect class="q2" x="364.17" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 10: 5.3e-02</title></rect>
+<rect class="q4" x="383.05" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 11: 8.2e-02</title></rect>
+<rect class="q3" x="401.93" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 12: 7.5e-02</title></rect>
+<rect class="q5" x="420.81" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 13: 1.2e-01</title></rect>
+<rect class="q5" x="439.69" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 14: 1.3e-01</title></rect>
+<rect class="q3" x="458.57" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 15: 6.4e-02</title></rect>
+<rect class="q4" x="477.45" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 16: 9.7e-02</title></rect>
+<rect class="q4" x="496.33" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 17: 7.9e-02</title></rect>
+<rect class="q4" x="515.21" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 18: 9.3e-02</title></rect>
+<rect class="q4" x="534.09" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 19: 8.4e-02</title></rect>
+<rect class="q4" x="552.97" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 20: 8.7e-02</title></rect>
+<rect class="q4" x="571.85" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 21: 8.4e-02</title></rect>
+<rect class="q4" x="590.72" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 22: 8.4e-02</title></rect>
+<rect class="q4" x="609.6" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 23: 8.5e-02</title></rect>
+<rect class="q4" x="628.48" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 24: 8.3e-02</title></rect>
+<rect class="q4" x="647.36" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 25: 9.1e-02</title></rect>
+<rect class="q4" x="666.24" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 26: 9.8e-02</title></rect>
+<rect class="q3" x="685.12" y="216.67" width="17.88" height="15.67"><title>attn.k_rope, layer 27: 6.2e-02</title></rect>
+<text class="t3" x="169.38" y="245.67" font-size="11" text-anchor="end">attn.v_cache</text>
+<rect class="q0" x="175.38" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 0: 2.8e-02</title></rect>
+<rect class="q2" x="194.26" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 1: 4.6e-02</title></rect>
+<rect class="q3" x="213.14" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 2: 5.9e-02</title></rect>
+<rect class="q3" x="232.02" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 3: 6.9e-02</title></rect>
+<rect class="q4" x="250.9" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 4: 7.7e-02</title></rect>
+<rect class="q3" x="269.78" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 5: 7.4e-02</title></rect>
+<rect class="q4" x="288.66" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 6: 8.5e-02</title></rect>
+<rect class="q4" x="307.54" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 7: 1.0e-01</title></rect>
+<rect class="q5" x="326.41" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 8: 1.1e-01</title></rect>
+<rect class="q5" x="345.29" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 9: 1.2e-01</title></rect>
+<rect class="q5" x="364.17" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 10: 1.2e-01</title></rect>
+<rect class="q5" x="383.05" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 11: 1.2e-01</title></rect>
+<rect class="q7" x="401.93" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 12: 2.1e-01</title></rect>
+<rect class="q8" x="420.81" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 13: 2.7e-01</title></rect>
+<rect class="q8" x="439.69" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 14: 2.9e-01</title></rect>
+<rect class="q6" x="458.57" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 15: 1.4e-01</title></rect>
+<rect class="q5" x="477.45" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 16: 1.3e-01</title></rect>
+<rect class="q5" x="496.33" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 17: 1.3e-01</title></rect>
+<rect class="q5" x="515.21" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 18: 1.1e-01</title></rect>
+<rect class="q5" x="534.09" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 19: 1.1e-01</title></rect>
+<rect class="q4" x="552.97" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 20: 9.8e-02</title></rect>
+<rect class="q4" x="571.85" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 21: 9.7e-02</title></rect>
+<rect class="q4" x="590.72" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 22: 8.9e-02</title></rect>
+<rect class="q4" x="609.6" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 23: 8.9e-02</title></rect>
+<rect class="q4" x="628.48" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 24: 8.6e-02</title></rect>
+<rect class="q4" x="647.36" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 25: 9.0e-02</title></rect>
+<rect class="q4" x="666.24" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 26: 9.6e-02</title></rect>
+<rect class="q5" x="685.12" y="233.33" width="17.88" height="15.67"><title>attn.v_cache, layer 27: 1.1e-01</title></rect>
+<text class="t3" x="169.38" y="262.33" font-size="11" text-anchor="end">attn.o_proj.in</text>
+<rect class="q2" x="175.38" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 0: 4.9e-02</title></rect>
+<rect class="q4" x="194.26" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 1: 8.4e-02</title></rect>
+<rect class="q4" x="213.14" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 2: 9.1e-02</title></rect>
+<rect class="q6" x="232.02" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 3: 1.5e-01</title></rect>
+<rect class="q6" x="250.9" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 4: 1.3e-01</title></rect>
+<rect class="q5" x="269.78" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 5: 1.3e-01</title></rect>
+<rect class="q6" x="288.66" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 6: 1.4e-01</title></rect>
+<rect class="q6" x="307.54" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 7: 1.5e-01</title></rect>
+<rect class="q6" x="326.41" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 8: 1.7e-01</title></rect>
+<rect class="q6" x="345.29" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 9: 1.6e-01</title></rect>
+<rect class="q6" x="364.17" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 10: 1.7e-01</title></rect>
+<rect class="q6" x="383.05" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 11: 1.6e-01</title></rect>
+<rect class="q7" x="401.93" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 12: 1.8e-01</title></rect>
+<rect class="q6" x="420.81" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 13: 1.7e-01</title></rect>
+<rect class="q7" x="439.69" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 14: 2.3e-01</title></rect>
+<rect class="q7" x="458.57" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 15: 1.9e-01</title></rect>
+<rect class="q7" x="477.45" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 16: 2.0e-01</title></rect>
+<rect class="q7" x="496.33" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 17: 1.9e-01</title></rect>
+<rect class="q7" x="515.21" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 18: 1.8e-01</title></rect>
+<rect class="q7" x="534.09" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 19: 1.9e-01</title></rect>
+<rect class="q7" x="552.97" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 20: 2.0e-01</title></rect>
+<rect class="q7" x="571.85" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 21: 1.8e-01</title></rect>
+<rect class="q7" x="590.72" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 22: 1.9e-01</title></rect>
+<rect class="q7" x="609.6" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 23: 2.0e-01</title></rect>
+<rect class="q6" x="628.48" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 24: 1.8e-01</title></rect>
+<rect class="q7" x="647.36" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 25: 2.0e-01</title></rect>
+<rect class="q6" x="666.24" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 26: 1.7e-01</title></rect>
+<rect class="q7" x="685.12" y="250" width="17.88" height="15.67"><title>attn.o_proj.in, layer 27: 2.2e-01</title></rect>
+<text class="t3" x="169.38" y="279" font-size="11" text-anchor="end">attn.o_proj.out</text>
+<rect class="q2" x="175.38" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 0: 4.9e-02</title></rect>
+<rect class="q4" x="194.26" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 1: 8.4e-02</title></rect>
+<rect class="q4" x="213.14" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 2: 8.7e-02</title></rect>
+<rect class="q6" x="232.02" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 3: 1.5e-01</title></rect>
+<rect class="q6" x="250.9" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 4: 1.5e-01</title></rect>
+<rect class="q5" x="269.78" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 5: 1.3e-01</title></rect>
+<rect class="q6" x="288.66" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 6: 1.5e-01</title></rect>
+<rect class="q6" x="307.54" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 7: 1.7e-01</title></rect>
+<rect class="q7" x="326.41" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 8: 1.9e-01</title></rect>
+<rect class="q6" x="345.29" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 9: 1.8e-01</title></rect>
+<rect class="q6" x="364.17" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 10: 1.8e-01</title></rect>
+<rect class="q6" x="383.05" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 11: 1.6e-01</title></rect>
+<rect class="q7" x="401.93" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 12: 2.2e-01</title></rect>
+<rect class="q7" x="420.81" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 13: 2.1e-01</title></rect>
+<rect class="q9" x="439.69" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 14: 3.2e-01</title></rect>
+<rect class="q7" x="458.57" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 15: 1.9e-01</title></rect>
+<rect class="q7" x="477.45" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 16: 2.0e-01</title></rect>
+<rect class="q7" x="496.33" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 17: 2.1e-01</title></rect>
+<rect class="q6" x="515.21" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 18: 1.6e-01</title></rect>
+<rect class="q7" x="534.09" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 19: 1.9e-01</title></rect>
+<rect class="q7" x="552.97" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 20: 1.9e-01</title></rect>
+<rect class="q6" x="571.85" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 21: 1.7e-01</title></rect>
+<rect class="q7" x="590.72" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 22: 2.0e-01</title></rect>
+<rect class="q7" x="609.6" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 23: 2.0e-01</title></rect>
+<rect class="q6" x="628.48" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 24: 1.6e-01</title></rect>
+<rect class="q6" x="647.36" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 25: 1.7e-01</title></rect>
+<rect class="q6" x="666.24" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 26: 1.7e-01</title></rect>
+<rect class="q7" x="685.12" y="266.67" width="17.88" height="15.67"><title>attn.o_proj.out, layer 27: 2.2e-01</title></rect>
+<text class="t3" x="169.38" y="295.67" font-size="11" text-anchor="end">resid_mid</text>
+<rect class="q2" x="175.38" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 0: 4.9e-02</title></rect>
+<rect class="q2" x="194.26" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 1: 5.4e-02</title></rect>
+<rect class="q3" x="213.14" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 2: 6.2e-02</title></rect>
+<rect class="q3" x="232.02" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 3: 7.5e-02</title></rect>
+<rect class="q3" x="250.9" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 4: 7.5e-02</title></rect>
+<rect class="q3" x="269.78" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 5: 7.5e-02</title></rect>
+<rect class="q4" x="288.66" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 6: 7.6e-02</title></rect>
+<rect class="q3" x="307.54" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 7: 7.5e-02</title></rect>
+<rect class="q4" x="326.41" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 8: 7.6e-02</title></rect>
+<rect class="q4" x="345.29" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 9: 7.7e-02</title></rect>
+<rect class="q4" x="364.17" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 10: 7.8e-02</title></rect>
+<rect class="q4" x="383.05" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 11: 7.7e-02</title></rect>
+<rect class="q4" x="401.93" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 12: 7.9e-02</title></rect>
+<rect class="q4" x="420.81" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 13: 7.8e-02</title></rect>
+<rect class="q4" x="439.69" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 14: 7.8e-02</title></rect>
+<rect class="q4" x="458.57" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 15: 7.8e-02</title></rect>
+<rect class="q4" x="477.45" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 16: 7.7e-02</title></rect>
+<rect class="q3" x="496.33" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 17: 7.5e-02</title></rect>
+<rect class="q3" x="515.21" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 18: 7.5e-02</title></rect>
+<rect class="q3" x="534.09" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 19: 7.4e-02</title></rect>
+<rect class="q3" x="552.97" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 20: 7.3e-02</title></rect>
+<rect class="q3" x="571.85" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 21: 7.4e-02</title></rect>
+<rect class="q4" x="590.72" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 22: 7.7e-02</title></rect>
+<rect class="q4" x="609.6" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 23: 7.8e-02</title></rect>
+<rect class="q4" x="628.48" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 24: 8.0e-02</title></rect>
+<rect class="q4" x="647.36" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 25: 8.3e-02</title></rect>
+<rect class="q4" x="666.24" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 26: 8.5e-02</title></rect>
+<rect class="q4" x="685.12" y="283.33" width="17.88" height="15.67"><title>resid_mid, layer 27: 9.4e-02</title></rect>
+<text class="t3" x="169.38" y="312.33" font-size="11" text-anchor="end">post_attention_layernorm.out</text>
+<rect class="q2" x="175.38" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 0: 4.3e-02</title></rect>
+<rect class="q2" x="194.26" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 1: 4.5e-02</title></rect>
+<rect class="q3" x="213.14" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 2: 5.7e-02</title></rect>
+<rect class="q3" x="232.02" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 3: 7.0e-02</title></rect>
+<rect class="q4" x="250.9" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 4: 8.2e-02</title></rect>
+<rect class="q4" x="269.78" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 5: 9.0e-02</title></rect>
+<rect class="q4" x="288.66" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 6: 9.7e-02</title></rect>
+<rect class="q5" x="307.54" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 7: 1.0e-01</title></rect>
+<rect class="q5" x="326.41" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 8: 1.1e-01</title></rect>
+<rect class="q5" x="345.29" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 9: 1.1e-01</title></rect>
+<rect class="q5" x="364.17" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 10: 1.1e-01</title></rect>
+<rect class="q5" x="383.05" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 11: 1.3e-01</title></rect>
+<rect class="q6" x="401.93" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 12: 1.5e-01</title></rect>
+<rect class="q6" x="420.81" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 13: 1.6e-01</title></rect>
+<rect class="q6" x="439.69" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 14: 1.4e-01</title></rect>
+<rect class="q5" x="458.57" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 15: 1.3e-01</title></rect>
+<rect class="q5" x="477.45" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 16: 1.3e-01</title></rect>
+<rect class="q5" x="496.33" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 17: 1.3e-01</title></rect>
+<rect class="q5" x="515.21" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 18: 1.2e-01</title></rect>
+<rect class="q5" x="534.09" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 19: 1.2e-01</title></rect>
+<rect class="q5" x="552.97" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 20: 1.2e-01</title></rect>
+<rect class="q5" x="571.85" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 21: 1.2e-01</title></rect>
+<rect class="q5" x="590.72" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 22: 1.2e-01</title></rect>
+<rect class="q5" x="609.6" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 23: 1.2e-01</title></rect>
+<rect class="q5" x="628.48" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 24: 1.1e-01</title></rect>
+<rect class="q5" x="647.36" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 25: 1.2e-01</title></rect>
+<rect class="q5" x="666.24" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 26: 1.2e-01</title></rect>
+<rect class="q6" x="685.12" y="300" width="17.88" height="15.67"><title>post_attention_layernorm.out, layer 27: 1.5e-01</title></rect>
+<text class="t3" x="169.38" y="329" font-size="11" text-anchor="end">mlp.gate.out</text>
+<rect class="q1" x="175.38" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 0: 4.0e-02</title></rect>
+<rect class="q1" x="194.26" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 1: 3.6e-02</title></rect>
+<rect class="q2" x="213.14" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 2: 4.4e-02</title></rect>
+<rect class="q2" x="232.02" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 3: 4.9e-02</title></rect>
+<rect class="q2" x="250.9" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 4: 5.3e-02</title></rect>
+<rect class="q3" x="269.78" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 5: 6.4e-02</title></rect>
+<rect class="q3" x="288.66" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 6: 6.8e-02</title></rect>
+<rect class="q3" x="307.54" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 7: 7.2e-02</title></rect>
+<rect class="q4" x="326.41" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 8: 7.9e-02</title></rect>
+<rect class="q4" x="345.29" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 9: 8.1e-02</title></rect>
+<rect class="q4" x="364.17" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 10: 8.7e-02</title></rect>
+<rect class="q4" x="383.05" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 11: 9.8e-02</title></rect>
+<rect class="q5" x="401.93" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 12: 1.0e-01</title></rect>
+<rect class="q5" x="420.81" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 13: 1.1e-01</title></rect>
+<rect class="q5" x="439.69" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 14: 1.1e-01</title></rect>
+<rect class="q5" x="458.57" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 15: 1.0e-01</title></rect>
+<rect class="q4" x="477.45" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 16: 8.9e-02</title></rect>
+<rect class="q4" x="496.33" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 17: 9.1e-02</title></rect>
+<rect class="q4" x="515.21" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 18: 8.4e-02</title></rect>
+<rect class="q4" x="534.09" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 19: 7.9e-02</title></rect>
+<rect class="q4" x="552.97" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 20: 8.1e-02</title></rect>
+<rect class="q4" x="571.85" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 21: 7.8e-02</title></rect>
+<rect class="q4" x="590.72" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 22: 7.7e-02</title></rect>
+<rect class="q3" x="609.6" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 23: 7.6e-02</title></rect>
+<rect class="q4" x="628.48" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 24: 7.9e-02</title></rect>
+<rect class="q4" x="647.36" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 25: 8.6e-02</title></rect>
+<rect class="q4" x="666.24" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 26: 8.6e-02</title></rect>
+<rect class="q4" x="685.12" y="316.67" width="17.88" height="15.67"><title>mlp.gate.out, layer 27: 8.4e-02</title></rect>
+<text class="t3" x="169.38" y="345.67" font-size="11" text-anchor="end">mlp.up.out</text>
+<rect class="q2" x="175.38" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 0: 4.8e-02</title></rect>
+<rect class="q3" x="194.26" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 1: 6.0e-02</title></rect>
+<rect class="q3" x="213.14" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 2: 6.8e-02</title></rect>
+<rect class="q4" x="232.02" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 3: 8.8e-02</title></rect>
+<rect class="q4" x="250.9" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 4: 9.1e-02</title></rect>
+<rect class="q5" x="269.78" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 5: 1.0e-01</title></rect>
+<rect class="q5" x="288.66" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 6: 1.1e-01</title></rect>
+<rect class="q5" x="307.54" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 7: 1.2e-01</title></rect>
+<rect class="q5" x="326.41" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 8: 1.3e-01</title></rect>
+<rect class="q5" x="345.29" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 9: 1.3e-01</title></rect>
+<rect class="q5" x="364.17" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 10: 1.2e-01</title></rect>
+<rect class="q6" x="383.05" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 11: 1.5e-01</title></rect>
+<rect class="q6" x="401.93" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 12: 1.6e-01</title></rect>
+<rect class="q6" x="420.81" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 13: 1.7e-01</title></rect>
+<rect class="q6" x="439.69" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 14: 1.6e-01</title></rect>
+<rect class="q6" x="458.57" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 15: 1.5e-01</title></rect>
+<rect class="q5" x="477.45" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 16: 1.3e-01</title></rect>
+<rect class="q5" x="496.33" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 17: 1.2e-01</title></rect>
+<rect class="q5" x="515.21" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 18: 1.0e-01</title></rect>
+<rect class="q4" x="534.09" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 19: 9.7e-02</title></rect>
+<rect class="q4" x="552.97" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 20: 9.6e-02</title></rect>
+<rect class="q4" x="571.85" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 21: 9.7e-02</title></rect>
+<rect class="q5" x="590.72" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 22: 1.0e-01</title></rect>
+<rect class="q5" x="609.6" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 23: 1.1e-01</title></rect>
+<rect class="q5" x="628.48" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 24: 1.1e-01</title></rect>
+<rect class="q5" x="647.36" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 25: 1.2e-01</title></rect>
+<rect class="q5" x="666.24" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 26: 1.1e-01</title></rect>
+<rect class="q5" x="685.12" y="333.33" width="17.88" height="15.67"><title>mlp.up.out, layer 27: 1.1e-01</title></rect>
+<text class="t3" x="169.38" y="362.33" font-size="11" text-anchor="end">mlp.down.in</text>
+<rect class="q3" x="175.38" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 0: 6.6e-02</title></rect>
+<rect class="q4" x="194.26" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 1: 9.0e-02</title></rect>
+<rect class="q2" x="213.14" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 2: 5.0e-02</title></rect>
+<rect class="q5" x="232.02" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 3: 1.2e-01</title></rect>
+<rect class="q5" x="250.9" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 4: 1.2e-01</title></rect>
+<rect class="q6" x="269.78" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 5: 1.4e-01</title></rect>
+<rect class="q6" x="288.66" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 6: 1.5e-01</title></rect>
+<rect class="q6" x="307.54" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 7: 1.6e-01</title></rect>
+<rect class="q7" x="326.41" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 8: 1.8e-01</title></rect>
+<rect class="q7" x="345.29" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 9: 1.8e-01</title></rect>
+<rect class="q7" x="364.17" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 10: 1.8e-01</title></rect>
+<rect class="q7" x="383.05" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 11: 2.3e-01</title></rect>
+<rect class="q7" x="401.93" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 12: 2.2e-01</title></rect>
+<rect class="q7" x="420.81" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 13: 2.2e-01</title></rect>
+<rect class="q7" x="439.69" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 14: 2.2e-01</title></rect>
+<rect class="q7" x="458.57" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 15: 2.1e-01</title></rect>
+<rect class="q6" x="477.45" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 16: 1.7e-01</title></rect>
+<rect class="q6" x="496.33" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 17: 1.7e-01</title></rect>
+<rect class="q6" x="515.21" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 18: 1.8e-01</title></rect>
+<rect class="q6" x="534.09" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 19: 1.6e-01</title></rect>
+<rect class="q6" x="552.97" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 20: 1.6e-01</title></rect>
+<rect class="q6" x="571.85" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 21: 1.4e-01</title></rect>
+<rect class="q6" x="590.72" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 22: 1.4e-01</title></rect>
+<rect class="q6" x="609.6" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 23: 1.5e-01</title></rect>
+<rect class="q6" x="628.48" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 24: 1.5e-01</title></rect>
+<rect class="q6" x="647.36" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 25: 1.5e-01</title></rect>
+<rect class="q7" x="666.24" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 26: 2.1e-01</title></rect>
+<rect class="q7" x="685.12" y="350" width="17.88" height="15.67"><title>mlp.down.in, layer 27: 2.4e-01</title></rect>
+<text class="t3" x="169.38" y="379" font-size="11" text-anchor="end">mlp.down.out</text>
+<rect class="q3" x="175.38" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 0: 6.9e-02</title></rect>
+<rect class="q4" x="194.26" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 1: 8.7e-02</title></rect>
+<rect class="q4" x="213.14" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 2: 7.6e-02</title></rect>
+<rect class="q5" x="232.02" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 3: 1.2e-01</title></rect>
+<rect class="q5" x="250.9" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 4: 1.3e-01</title></rect>
+<rect class="q6" x="269.78" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 5: 1.5e-01</title></rect>
+<rect class="q6" x="288.66" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 6: 1.6e-01</title></rect>
+<rect class="q6" x="307.54" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 7: 1.7e-01</title></rect>
+<rect class="q7" x="326.41" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 8: 1.9e-01</title></rect>
+<rect class="q7" x="345.29" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 9: 1.9e-01</title></rect>
+<rect class="q7" x="364.17" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 10: 1.8e-01</title></rect>
+<rect class="q7" x="383.05" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 11: 2.3e-01</title></rect>
+<rect class="q7" x="401.93" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 12: 2.2e-01</title></rect>
+<rect class="q7" x="420.81" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 13: 2.3e-01</title></rect>
+<rect class="q7" x="439.69" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 14: 2.2e-01</title></rect>
+<rect class="q7" x="458.57" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 15: 2.1e-01</title></rect>
+<rect class="q6" x="477.45" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 16: 1.6e-01</title></rect>
+<rect class="q6" x="496.33" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 17: 1.6e-01</title></rect>
+<rect class="q7" x="515.21" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 18: 1.8e-01</title></rect>
+<rect class="q6" x="534.09" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 19: 1.6e-01</title></rect>
+<rect class="q6" x="552.97" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 20: 1.6e-01</title></rect>
+<rect class="q6" x="571.85" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 21: 1.4e-01</title></rect>
+<rect class="q6" x="590.72" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 22: 1.5e-01</title></rect>
+<rect class="q6" x="609.6" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 23: 1.5e-01</title></rect>
+<rect class="q6" x="628.48" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 24: 1.6e-01</title></rect>
+<rect class="q6" x="647.36" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 25: 1.6e-01</title></rect>
+<rect class="q6" x="666.24" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 26: 1.7e-01</title></rect>
+<rect class="q7" x="685.12" y="366.67" width="17.88" height="15.67"><title>mlp.down.out, layer 27: 2.2e-01</title></rect>
+<text class="t3" x="169.38" y="395.67" font-size="11" text-anchor="end">out</text>
+<rect class="q2" x="175.38" y="383.33" width="17.88" height="15.67"><title>out, layer 0: 5.1e-02</title></rect>
+<rect class="q2" x="194.26" y="383.33" width="17.88" height="15.67"><title>out, layer 1: 5.6e-02</title></rect>
+<rect class="q4" x="213.14" y="383.33" width="17.88" height="15.67"><title>out, layer 2: 7.6e-02</title></rect>
+<rect class="q3" x="232.02" y="383.33" width="17.88" height="15.67"><title>out, layer 3: 7.4e-02</title></rect>
+<rect class="q3" x="250.9" y="383.33" width="17.88" height="15.67"><title>out, layer 4: 7.4e-02</title></rect>
+<rect class="q3" x="269.78" y="383.33" width="17.88" height="15.67"><title>out, layer 5: 7.6e-02</title></rect>
+<rect class="q4" x="288.66" y="383.33" width="17.88" height="15.67"><title>out, layer 6: 7.6e-02</title></rect>
+<rect class="q3" x="307.54" y="383.33" width="17.88" height="15.67"><title>out, layer 7: 7.6e-02</title></rect>
+<rect class="q4" x="326.41" y="383.33" width="17.88" height="15.67"><title>out, layer 8: 7.7e-02</title></rect>
+<rect class="q4" x="345.29" y="383.33" width="17.88" height="15.67"><title>out, layer 9: 7.7e-02</title></rect>
+<rect class="q4" x="364.17" y="383.33" width="17.88" height="15.67"><title>out, layer 10: 7.8e-02</title></rect>
+<rect class="q4" x="383.05" y="383.33" width="17.88" height="15.67"><title>out, layer 11: 7.8e-02</title></rect>
+<rect class="q4" x="401.93" y="383.33" width="17.88" height="15.67"><title>out, layer 12: 7.8e-02</title></rect>
+<rect class="q4" x="420.81" y="383.33" width="17.88" height="15.67"><title>out, layer 13: 7.8e-02</title></rect>
+<rect class="q4" x="439.69" y="383.33" width="17.88" height="15.67"><title>out, layer 14: 7.7e-02</title></rect>
+<rect class="q4" x="458.57" y="383.33" width="17.88" height="15.67"><title>out, layer 15: 7.7e-02</title></rect>
+<rect class="q3" x="477.45" y="383.33" width="17.88" height="15.67"><title>out, layer 16: 7.6e-02</title></rect>
+<rect class="q3" x="496.33" y="383.33" width="17.88" height="15.67"><title>out, layer 17: 7.5e-02</title></rect>
+<rect class="q3" x="515.21" y="383.33" width="17.88" height="15.67"><title>out, layer 18: 7.5e-02</title></rect>
+<rect class="q3" x="534.09" y="383.33" width="17.88" height="15.67"><title>out, layer 19: 7.3e-02</title></rect>
+<rect class="q3" x="552.97" y="383.33" width="17.88" height="15.67"><title>out, layer 20: 7.3e-02</title></rect>
+<rect class="q4" x="571.85" y="383.33" width="17.88" height="15.67"><title>out, layer 21: 7.6e-02</title></rect>
+<rect class="q4" x="590.72" y="383.33" width="17.88" height="15.67"><title>out, layer 22: 7.7e-02</title></rect>
+<rect class="q4" x="609.6" y="383.33" width="17.88" height="15.67"><title>out, layer 23: 8.0e-02</title></rect>
+<rect class="q4" x="628.48" y="383.33" width="17.88" height="15.67"><title>out, layer 24: 8.3e-02</title></rect>
+<rect class="q4" x="647.36" y="383.33" width="17.88" height="15.67"><title>out, layer 25: 8.4e-02</title></rect>
+<rect class="q4" x="666.24" y="383.33" width="17.88" height="15.67"><title>out, layer 26: 9.3e-02</title></rect>
+<rect class="q9" x="685.12" y="383.33" width="17.88" height="15.67"><title>out, layer 27: 4.0e-01</title></rect>
+<text class="t3" x="184.82" y="416" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="203.7" y="416" font-size="11" text-anchor="middle">1</text>
+<text class="t3" x="222.58" y="416" font-size="11" text-anchor="middle">2</text>
+<text class="t3" x="241.46" y="416" font-size="11" text-anchor="middle">3</text>
+<text class="t3" x="260.34" y="416" font-size="11" text-anchor="middle">4</text>
+<text class="t3" x="279.22" y="416" font-size="11" text-anchor="middle">5</text>
+<text class="t3" x="298.1" y="416" font-size="11" text-anchor="middle">6</text>
+<text class="t3" x="316.97" y="416" font-size="11" text-anchor="middle">7</text>
+<text class="t3" x="335.85" y="416" font-size="11" text-anchor="middle">8</text>
+<text class="t3" x="354.73" y="416" font-size="11" text-anchor="middle">9</text>
+<text class="t3" x="373.61" y="416" font-size="11" text-anchor="middle">10</text>
+<text class="t3" x="392.49" y="416" font-size="11" text-anchor="middle">11</text>
+<text class="t3" x="411.37" y="416" font-size="11" text-anchor="middle">12</text>
+<text class="t3" x="430.25" y="416" font-size="11" text-anchor="middle">13</text>
+<text class="t3" x="449.13" y="416" font-size="11" text-anchor="middle">14</text>
+<text class="t3" x="468.01" y="416" font-size="11" text-anchor="middle">15</text>
+<text class="t3" x="486.89" y="416" font-size="11" text-anchor="middle">16</text>
+<text class="t3" x="505.77" y="416" font-size="11" text-anchor="middle">17</text>
+<text class="t3" x="524.65" y="416" font-size="11" text-anchor="middle">18</text>
+<text class="t3" x="543.53" y="416" font-size="11" text-anchor="middle">19</text>
+<text class="t3" x="562.41" y="416" font-size="11" text-anchor="middle">20</text>
+<text class="t3" x="581.28" y="416" font-size="11" text-anchor="middle">21</text>
+<text class="t3" x="600.16" y="416" font-size="11" text-anchor="middle">22</text>
+<text class="t3" x="619.04" y="416" font-size="11" text-anchor="middle">23</text>
+<text class="t3" x="637.92" y="416" font-size="11" text-anchor="middle">24</text>
+<text class="t3" x="656.8" y="416" font-size="11" text-anchor="middle">25</text>
+<text class="t3" x="675.68" y="416" font-size="11" text-anchor="middle">26</text>
+<text class="t3" x="694.56" y="416" font-size="11" text-anchor="middle">27</text>
+<text class="t3" x="439.69" y="436" font-size="11" text-anchor="middle">layer</text>
+</svg>
