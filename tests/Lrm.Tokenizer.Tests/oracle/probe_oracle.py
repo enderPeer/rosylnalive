@@ -156,13 +156,13 @@ def contraction_letters(o, classes):
 # NFC changes. The cpu tier computes the same lines with Lrm.Tokenizer's NFC and compares the digests.
 FAMILIES = [
     ("F1", lambda ch: ch),
-    ("F2", lambda ch: "a" + ch + "̴"),
-    ("F3", lambda ch: "aͅ" + ch),
-    ("F5", lambda ch: ch + "́"),
+    ("F2", lambda ch: "a" + ch + "\u0334"),
+    ("F3", lambda ch: "a\u0345" + ch),
+    ("F5", lambda ch: ch + "\u0301"),
     ("F6", lambda ch: "a" + ch),
-    ("F7", lambda ch: ch + "̈"),
-    ("F8", lambda ch: "ᄀ" + ch),
-    ("F9", lambda ch: "가" + ch),
+    ("F7", lambda ch: ch + "\u0308"),
+    ("F8", lambda ch: "\u1100" + ch),
+    ("F9", lambda ch: "\uac00" + ch),
 ]
 
 
@@ -261,7 +261,7 @@ def nfc_probes(o):
         sys.exit("a split point is non-inert in the oracle")
 
     # Every split point must be inert in the oracle: NFC(b + d + a) == NFC(b) + d + NFC(a).
-    contexts = ["", "a", "e", "́", "̴", "ͅ", "ᄀ", "ᅡ", "가", "େ", "ෙ", "א"]
+    contexts = ["", "a", "e", "\u0301", "\u0334", "\u0345", "\u1100", "\u1161", "\uac00", "\u0b47", "\u0dd9", "\u05d0"]
     for d in split_points:
         ch = chr(d)
         for b in contexts:
@@ -291,16 +291,16 @@ def nfc_probes(o):
 
 
 SPECIAL = (
-    [" ", "\t", "\n", "\r", "\x0b", "\x0c", "\x85", "\xa0", " ", " ", " ", " ", " "]
-    + [" ", " ", "　", "᠎", "​", "﻿", "\x00", "\x1f", "\x7f", "￾", "￿"]
-    + ["'", "’", "s", "S", "ſ", "t", "T", "re", "RE", "ve", "Ve", "m", "M", "ll", "LL", "lL", "d", "D"]
-    + ["a", "Z", "\xe9", "\xdf", "ǅ", "ʰ", "中", "あ", "가", "ب", "न", "्"]
-    + ["\U0001d400", "\U0001d49c", "\U00020000", "\U0001e900", "Ᲊ", "\U000105c0", "\U00011f04"]
-    + ["0", "9", "٣", "０", "\U0001d7ce", "Ⅻ", "〇", "\U00010140", "\xbd", "\xb2", "①"]
-    + ["₀", "༳", "↉", "́", "̈", "̴", "⃝", "߽", "\U0001e4ec"]
-    + ["\U0001f600", "\U0001f44d", "\U0001f3fd", "‍", "\U0001f1e9", "\U0001f1ea", "️", "⃣"]
-    + ["!", ".", ",", ";", "(", ")", "{", "}", "<", ">", "=", "_", "-", "#", "@", "$", "€", "\xa9", "™"]
-    + ["\U0010ffff", "\U000e0001", ""]
+    [" ", "\t", "\n", "\r", "\x0b", "\x0c", "\x85", "\xa0", "\u1680", "\u2000", "\u200a", "\u2028", "\u2029"]
+    + ["\u202f", "\u205f", "\u3000", "\u180e", "\u200b", "\ufeff", "\x00", "\x1f", "\x7f", "\ufffe", "\uffff"]
+    + ["'", "\u2019", "s", "S", "\u017f", "t", "T", "re", "RE", "ve", "Ve", "m", "M", "ll", "LL", "lL", "d", "D"]
+    + ["a", "Z", "\xe9", "\xdf", "\u01c5", "\u02b0", "\u4e2d", "\u3042", "\uac00", "\u0628", "\u0928", "\u094d"]
+    + ["\U0001d400", "\U0001d49c", "\U00020000", "\U0001e900", "\u1c89", "\U000105c0", "\U00011f04"]
+    + ["0", "9", "\u0663", "\uff10", "\U0001d7ce", "\u216b", "\u3007", "\U00010140", "\xbd", "\xb2", "\u2460"]
+    + ["\u2080", "\u0f33", "\u2189", "\u0301", "\u0308", "\u0334", "\u20dd", "\u07fd", "\U0001e4ec"]
+    + ["\U0001f600", "\U0001f44d", "\U0001f3fd", "\u200d", "\U0001f1e9", "\U0001f1ea", "\ufe0f", "\u20e3"]
+    + ["!", ".", ",", ";", "(", ")", "{", "}", "<", ">", "=", "_", "-", "#", "@", "$", "\u20ac", "\xa9", "\u2122"]
+    + ["\U0010ffff", "\U000e0001", "\ue000"]
 )
 
 
@@ -328,7 +328,7 @@ def split_cases(o):
     seen = set()
     tricky = [s for s in SPECIAL if len(s) == 1]
     for a in tricky:
-        for b in ["a", " ", "'", "1", "\n", "!", "　"]:
+        for b in ["a", " ", "'", "1", "\n", "!", "\u3000"]:
             for s in (a + b, b + a, a + a + b):
                 if s not in seen:
                     seen.add(s)
@@ -352,7 +352,7 @@ def encode_cases(o):
             i = rng.randint(0, len(s))
             s = s[:i] + rng.choice(added) + s[i:]
         if rng.random() < 0.1:
-            s = s + rng.choice(["é", "각", "a̴߽", "\U00011935\U00011930", "￾́"])
+            s = s + rng.choice(["e\u0301", "\u1100\u1161\u11a8", "a\u07fd\u0334", "\U00011935\U00011930", "\ufffe\u0301"])
         if s in seen:
             continue
         seen.add(s)

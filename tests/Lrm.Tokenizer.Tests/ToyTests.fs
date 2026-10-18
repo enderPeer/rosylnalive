@@ -115,6 +115,19 @@ let private encodeTests =
                 Expect.equal (t.Encode "aaaaa") [| idOf "aaaa"; idOf "a" |] "five a"
                 Expect.equal (t.Encode "") [||] "the empty text"
 
+            testCase "texts and pieces longer than the per-thread arrays (64 Ki units) encode like short ones"
+            <| fun () ->
+                let t = toy.Force()
+                // One 100,001-letter piece: every 'aa' first, then every 'aaaa', leftmost first.
+                let ids = t.Encode(String('a', 100_001))
+                Expect.equal ids.Length 25_001 "pieces of four, and one a"
+                Expect.isTrue (ids |> Array.take 25_000 |> Array.forall ((=) (idOf "aaaa"))) "aaaa"
+                Expect.equal ids[25_000] (idOf "a") "the last a"
+                // Many short pieces in a 120,000-unit text, then a short text on the same thread.
+                let long = String.replicate 30_000 " the"
+                Expect.equal (t.Encode long) (Array.create 30_000 (idOf " the")) "30,000 pieces"
+                Expect.equal (t.Encode " the aa") [| idOf " the"; idOf " "; idOf "aa" |] "a short text afterwards"
+
             testCase "added tokens match first, leftmost-longest, on the raw text"
             <| fun () ->
                 let t = toy.Force()
@@ -127,11 +140,11 @@ let private encodeTests =
             testCase "NFC runs on each stretch between added tokens"
             <| fun () ->
                 let t = toy.Force()
-                Expect.equal (t.Encode "é") (byteIds "é") "e + U+0301 composes to U+00E9"
+                Expect.equal (t.Encode "e\u0301") (byteIds "\u00e9") "e + U+0301 composes to U+00E9"
 
                 Expect.equal
-                    (t.Encode "e<x>́")
-                    (Array.concat [ byteIds "e"; [| 265 |]; byteIds "́" ])
+                    (t.Encode "e<x>\u0301")
+                    (Array.concat [ byteIds "e"; [| 265 |]; byteIds "\u0301" ])
                     "not across a token"
 
             testCase "a lone surrogate is rejected, a pair is encoded"
@@ -146,12 +159,12 @@ let private encodeTests =
             testCase "EncodeBytes replaces each maximal invalid subpart with one U+FFFD"
             <| fun () ->
                 let t = toy.Force()
-                Expect.equal (t.EncodeBytes [| 0x80uy |]) (byteIds "�") "a lone continuation byte"
-                Expect.equal (t.EncodeBytes [| 0xE4uy; 0xB8uy |]) (byteIds "�") "a truncated sequence"
+                Expect.equal (t.EncodeBytes [| 0x80uy |]) (byteIds "\ufffd") "a lone continuation byte"
+                Expect.equal (t.EncodeBytes [| 0xE4uy; 0xB8uy |]) (byteIds "\ufffd") "a truncated sequence"
 
                 Expect.equal
                     (t.EncodeBytes [| 0x61uy; 0xF0uy; 0x80uy; 0x62uy |])
-                    (byteIds "a��b")
+                    (byteIds "a\ufffd\ufffdb")
                     "F0 80 is two subparts"
         ]
 
@@ -167,19 +180,19 @@ let private decodeTests =
                 Expect.equal (t.DecodeBytes [||]) [||] "the empty list"
                 Expect.equal (t.DecodeBytes [| t.VocabSize; 151_935 |]) [||] "rows with no token add nothing"
 
-                let zhong = byteIds "中"
+                let zhong = byteIds "\u4e2d"
 
                 Expect.equal
                     (t.Decode [| zhong[0]; 151_700; zhong[1]; zhong[2] |])
-                    "中"
+                    "\u4e2d"
                     "even between the bytes of one character"
 
             testCase "Decode is errors=replace"
             <| fun () ->
                 let t = toy.Force()
-                let zhong = byteIds "中"
-                Expect.equal (t.Decode [| zhong[0] |]) "�" "a truncated character"
-                Expect.equal (t.Decode [| zhong[0]; zhong[1]; idOf "a" |]) "�a" "one U+FFFD per maximal subpart"
+                let zhong = byteIds "\u4e2d"
+                Expect.equal (t.Decode [| zhong[0] |]) "\ufffd" "a truncated character"
+                Expect.equal (t.Decode [| zhong[0]; zhong[1]; idOf "a" |]) "\ufffda" "one U+FFFD per maximal subpart"
 
             testCase "ids outside the model raise"
             <| fun () ->
@@ -294,7 +307,7 @@ let private behaviourTests =
             testCase "telemetry records tokenizer.encode and tokenizer.tokens and never changes ids"
             <| fun () ->
                 let t = toy.Force()
-                let texts = [ " the aaa"; "<|ab|>x"; "é bc"; "" ]
+                let texts = [ " the aaa"; "<|ab|>x"; "e\u0301 bc"; "" ]
                 let plain = [ for s in texts -> t.Encode s ]
                 let sink = InMemorySink()
 

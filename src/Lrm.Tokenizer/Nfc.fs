@@ -69,7 +69,7 @@ let normalize (text: string) : string =
 
             i <- i + 2
         else
-            if c >= '̀' && bmpSplit[int c] then
+            if c >= '\u0300' && bmpSplit[int c] then
                 first <- i
 
             i <- i + 1

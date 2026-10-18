@@ -30,28 +30,35 @@ let SplitPattern =
 
 /// Per-thread scratch arrays: scalar values, UTF-16 offsets and classes of the current text.
 [<Sealed; AllowNullLiteral>]
-type private Scratch() =
-    member val Cp: int[] = Array.zeroCreate 256 with get, set
-    member val Off: int[] = Array.zeroCreate 257 with get, set
-    member val Cls: CharClass[] = Array.zeroCreate 256 with get, set
+type private Scratch(size: int) =
+    member val Cp: int[] = Array.zeroCreate size with get, set
+    member val Off: int[] = Array.zeroCreate (size + 1) with get, set
+    member val Cls: CharClass[] = Array.zeroCreate size with get, set
 
     [<ThreadStatic; DefaultValue>]
     static val mutable private current: Scratch
 
+    /// Texts up to this many UTF-16 units reuse the thread's arrays; longer ones get arrays of their own, so a thread
+    /// never keeps the memory of one huge text.
+    static member Kept = 1 <<< 16
+
     static member Get(length: int) =
-        let mutable s = Scratch.current
+        if length > Scratch.Kept then
+            Scratch length
+        else
+            let mutable s = Scratch.current
 
-        if isNull s then
-            s <- Scratch()
-            Scratch.current <- s
+            if isNull s then
+                s <- Scratch 256
+                Scratch.current <- s
 
-        if s.Cp.Length < length then
-            let n = max length (2 * s.Cp.Length)
-            s.Cp <- Array.zeroCreate n
-            s.Off <- Array.zeroCreate (n + 1)
-            s.Cls <- Array.zeroCreate n
+            if s.Cp.Length < length then
+                let n = min Scratch.Kept (max length (2 * s.Cp.Length))
+                s.Cp <- Array.zeroCreate n
+                s.Off <- Array.zeroCreate (n + 1)
+                s.Cls <- Array.zeroCreate n
 
-        s
+            s
 
 let private isCrLf (v: int) = v = 0x0D || v = 0x0A
 

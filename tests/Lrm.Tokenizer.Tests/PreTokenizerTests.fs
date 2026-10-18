@@ -16,18 +16,18 @@ let splitVectors: (string * string list) list =
         "Hello world", [ "Hello"; " world" ]
         "it's", [ "it"; "'s" ]
         "WE'RE 'Sa", [ "WE"; "'RE"; " '"; "Sa" ]
-        "x'ſa", [ "x"; "'ſ"; "a" ]
+        "x'\u017fa", [ "x"; "'\u017f"; "a" ]
         "  hi", [ " "; " hi" ]
         "a  \n\n  b", [ "a"; "  \n\n"; " "; " b" ]
         "end   ", [ "end"; "   " ]
         "12345", [ "1"; "2"; "3"; "4"; "5" ]
-        "x½Ⅻ", [ "x"; "½"; "Ⅻ" ]
+        "x\u00bd\u216b", [ "x"; "\u00bd"; "\u216b" ]
         " !!\r\n\r\nx", [ " !!\r\n\r\n"; "x" ]
         "\tfoo", [ "\tfoo" ]
-        "　中文", [ "　中文" ]
+        "\u3000\u4e2d\u6587", [ "\u3000\u4e2d\u6587" ]
         astral 0x1D400 + astral 0x1D401, [ astral 0x1D400 + astral 0x1D401 ]
         "a\r\nb", [ "a"; "\r\n"; "b" ]
-        "x ́y", [ "x"; " ́"; "y" ]
+        "x \u0301y", [ "x"; " \u0301"; "y" ]
         "'ll've", [ "'ll"; "'ve" ]
         "don't'", [ "don"; "'t"; "'" ]
         astral 0x1D7CE + astral 0x1D7CF, [ astral 0x1D7CE; astral 0x1D7CF ]
@@ -86,18 +86,18 @@ let private byteTests =
             <| fun () ->
                 for b, c in
                     [
-                        0x00, 'Ā'
-                        0x09, 'ĉ'
-                        0x0A, 'Ċ'
-                        0x20, 'Ġ'
+                        0x00, '\u0100'
+                        0x09, '\u0109'
+                        0x0A, '\u010a'
+                        0x20, '\u0120'
                         0x21, '!'
                         0x7E, '~'
-                        0x7F, 'ġ'
-                        0xA0, 'ł'
-                        0xA1, '¡'
-                        0xAC, '¬'
-                        0xAD, 'Ń'
-                        0xFF, 'ÿ'
+                        0x7F, '\u0121'
+                        0xA0, '\u0142'
+                        0xA1, '\u00a1'
+                        0xAC, '\u00ac'
+                        0xAD, '\u0143'
+                        0xFF, '\u00ff'
                     ] do
                     Expect.equal (ByteLevel.charOf (byte b)) c (sprintf "byte 0x%02X" b)
 
@@ -107,7 +107,7 @@ let private byteTests =
                 Expect.equal (List.distinct chars).Length 256 "distinct"
 
                 Expect.equal
-                    (chars |> List.filter (fun c -> c >= 'Ā') |> List.sort)
+                    (chars |> List.filter (fun c -> c >= '\u0100') |> List.sort)
                     [ for c in 0x100..0x143 -> char c ]
                     "moved bytes"
 
@@ -116,7 +116,7 @@ let private byteTests =
 
                 let all = Array.init 256 byte
                 Expect.equal (ByteLevel.tryDecode (ByteLevel.encode all)) (Some all) "string round trip"
-                Expect.isNone (ByteLevel.tryByteOf 'ń') "U+0144 is not in the map"
+                Expect.isNone (ByteLevel.tryByteOf '\u0144') "U+0144 is not in the map"
         ]
 
 let tests = testList "pretokenizer" [ splitTests; byteTests ]

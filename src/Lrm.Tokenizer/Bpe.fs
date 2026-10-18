@@ -8,32 +8,39 @@ open System.Threading
 
 /// Per-thread work arrays of the BPE merge loop.
 [<Sealed; AllowNullLiteral>]
-type internal BpeWork() =
-    member val Bytes: byte[] = Array.zeroCreate 256 with get, set
-    member val Sym: int[] = Array.zeroCreate 256 with get, set
-    member val Next: int[] = Array.zeroCreate 256 with get, set
-    member val Prev: int[] = Array.zeroCreate 256 with get, set
+type internal BpeWork(size: int) =
+    member val Bytes: byte[] = Array.zeroCreate size with get, set
+    member val Sym: int[] = Array.zeroCreate size with get, set
+    member val Next: int[] = Array.zeroCreate size with get, set
+    member val Prev: int[] = Array.zeroCreate size with get, set
     member val Queue = PriorityQueue<int, int64>()
 
     [<ThreadStatic; DefaultValue>]
     static val mutable private current: BpeWork
 
-    /// This thread's work arrays, with room for `bytes` bytes.
+    /// Pieces up to this many bytes reuse the thread's arrays; longer ones get arrays of their own, so a thread never
+    /// keeps the memory of one huge piece.
+    static member Kept = 1 <<< 16
+
+    /// Work arrays with room for `bytes` bytes: this thread's, or fresh ones for a piece longer than Kept.
     static member Get(bytes: int) =
-        let mutable w = BpeWork.current
+        if bytes > BpeWork.Kept then
+            BpeWork bytes
+        else
+            let mutable w = BpeWork.current
 
-        if isNull w then
-            w <- BpeWork()
-            BpeWork.current <- w
+            if isNull w then
+                w <- BpeWork 256
+                BpeWork.current <- w
 
-        if w.Bytes.Length < bytes then
-            let n = max bytes (2 * w.Bytes.Length)
-            w.Bytes <- Array.zeroCreate n
-            w.Sym <- Array.zeroCreate n
-            w.Next <- Array.zeroCreate n
-            w.Prev <- Array.zeroCreate n
+            if w.Bytes.Length < bytes then
+                let n = min BpeWork.Kept (max bytes (2 * w.Bytes.Length))
+                w.Bytes <- Array.zeroCreate n
+                w.Sym <- Array.zeroCreate n
+                w.Next <- Array.zeroCreate n
+                w.Prev <- Array.zeroCreate n
 
-        w
+            w
 
 /// Byte-level BPE over merge ranks (TokenizerApi contract, "BPE").
 ///

@@ -104,7 +104,7 @@ The stages are public too, for diagnostics and tests: `ByteLevel` (the byte map)
 
 ## Ids and tokens
 
-- **IdOf.** `IdOf token` looks up an added token's content first, then a vocabulary token in byte-level form: `"Ġthe"` is " the", and plain `" the"` is not a token.
+- **IdOf.** `IdOf token` looks up an added token's content first, then a vocabulary token in byte-level form: `"\u0120the"` is " the", and plain `" the"` is not a token.
 - **TokenOf.** `TokenOf id` is the inverse, and None for ids with no token.
 - **AddedTokens.** The 26 added tokens with their ids and special flags, as in the corpus manifest (vector A1).
 
@@ -160,18 +160,18 @@ All values are from the oracle (tokenizers 0.23.3, `probe_oracle.py`, or a direc
 | P1 | `Hello world` | `Hello` \| ` world` |
 | P2 | `it's` | `it` \| `'s` |
 | P3 | `WE'RE 'Sa` | `WE` \| `'RE` \| ` '` \| `Sa` |
-| P4 | `x'ſa` | `x` \| `'ſ` \| `a` |
+| P4 | `x'\u017fa` | `x` \| `'\u017f` \| `a` |
 | P5 | two spaces, `hi` | ` ` \| ` hi` |
 | P6 | `a  \n\n  b` | `a` \| `  \n\n` \| ` ` \| ` b` |
 | P7 | `end` and three spaces | `end` \| three spaces |
 | P8 | `12345` | `1` \| `2` \| `3` \| `4` \| `5` |
-| P9 | `x½Ⅻ` | `x` \| `½` \| `Ⅻ` |
+| P9 | `x\u00bd\u216b` | `x` \| `\u00bd` \| `\u216b` |
 | P10 | ` !!\r\n\r\nx` | ` !!\r\n\r\n` \| `x` |
 | P11 | `\tfoo` | `\tfoo` |
-| P12 | `　中文` | `　中文` |
+| P12 | `\u3000\u4e2d\u6587` | `\u3000\u4e2d\u6587` |
 | P13 | U+1D400 U+1D401 | one piece (.NET Regex: other) |
 | P14 | `a\r\nb` | `a` \| `\r\n` \| `b` |
-| P15 | `x ́y` | `x` \| ` ́` \| `y` |
+| P15 | `x \u0301y` | `x` \| ` \u0301` \| `y` |
 | P16 | `'ll've` | `'ll` \| `'ve` |
 | P17 | `don't'` | `don` \| `'t` \| `'` |
 | P18 | U+1D7CE U+1D7CF | U+1D7CE \| U+1D7CF |
@@ -183,16 +183,16 @@ All values are from the oracle (tokenizers 0.23.3, `probe_oracle.py`, or a direc
 | E1 | `Hello world` | 9707 1879 |
 | E2 | `using System;` | 970 739 26 |
 | E3 | `<\|im_start\|>user\nHi<\|im_end\|>` | 151644 872 198 13048 151645 |
-| E4 | `é` | 963 |
+| E4 | `e\u0301` | 963 |
 | E5 | U+1F600 | 141334 |
-| E6 | `a̴߽` (no reordering) | 64 155 121 136 112 |
-| E7 | `x￾́` | 87 5564 122 53839 |
+| E6 | `a\u07fd\u0334` (no reordering) | 64 155 121 136 112 |
+| E7 | `x\ufffe\u0301` | 87 5564 122 53839 |
 | E8 | `public static int Add(int a, int b) => a + b;` | 888 1099 526 2691 1548 264 11 526 293 8 589 264 488 293 26 |
 | E9 | the empty text | (none) |
 | E10 | one space | 220 |
-| E11 | `中文` | 104811 |
+| E11 | `\u4e2d\u6587` | 104811 |
 
-**D1 to D6, Decode:** [151643] → `<|endoftext|>`; [9707, 1879] → `Hello world`; [160, 151700, 116, 255] → `中`; [5691] → U+FFFD; [151669] → the empty text; [] → the empty text.
+**D1 to D6, Decode:** [151643] → `<|endoftext|>`; [9707, 1879] → `Hello world`; [160, 151700, 116, 255] → `\u4e2d`; [5691] → U+FFFD; [151669] → the empty text; [] → the empty text.
 
 **A1, the added tokens:** 151643 `<|endoftext|>` to 151656 `<|video_pad|>` are special (`<|endoftext|>`, `<|im_start|>`, `<|im_end|>`, `<|object_ref_start|>`, `<|object_ref_end|>`, `<|box_start|>`, `<|box_end|>`, `<|quad_start|>`, `<|quad_end|>`, `<|vision_start|>`, `<|vision_end|>`, `<|vision_pad|>`, `<|image_pad|>`, `<|video_pad|>`); 151657 to 151668 are not (`<tool_call>`, `</tool_call>`, `<|fim_prefix|>`, `<|fim_middle|>`, `<|fim_suffix|>`, `<|fim_pad|>`, `<|repo_name|>`, `<|file_sep|>`, `<tool_response>`, `</tool_response>`, `<think>`, `</think>`).
 
@@ -215,7 +215,7 @@ All values are from the oracle (tokenizers 0.23.3, `probe_oracle.py`, or a direc
     - U+FFFE, and the U+07FD reordering case.
   - `unicode.regex regression`: .NET Regex splits astral letters and numbers, and differs from the oracle on 890 split cases; the state machine on none.
   - `toy`, on a 266-id tokenizer.json with Qwen's configuration:
-    - BPE rank order and leftmost ties;
+    - BPE rank order and leftmost ties, also for texts and pieces longer than the per-thread work arrays (64 Ki);
     - added tokens, leftmost-longest;
     - NFC per stretch;
     - lone surrogates rejected;
@@ -228,7 +228,7 @@ All values are from the oracle (tokenizers 0.23.3, `probe_oracle.py`, or a direc
     - telemetry changes no id;
     - 8 threads equal sequential;
     - Decode(Encode) = NFC.
-  - The oracle data files and the generated split points have the SHA-256 values above.
+  - The oracle data files and the generated split points have the SHA-256 values above, and every source and data file of M1 is ASCII (escapes only), so no editor can normalize a test string.
 - **Needs `tokenizer.json`** (cpu tier, skipped visibly without it):
   - every one of the 5,597 corpus cases is exact, one `tokenizer.case` check each;
   - the 1,800 probe cases are exact;

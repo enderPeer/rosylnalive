@@ -187,7 +187,7 @@ type QwenTokenizer internal (parsed: TokenizerJson.Parsed, sha256: string) =
         Encoding.UTF8.GetString(this.DecodeBytes ids)
 
     /// The id of a token: an added token's content, or a vocabulary token in its byte-level form (for example
-    /// "Ġthe" for " the").
+    /// "\u0120the" for " the").
     member _.IdOf(token: string) : int option =
         match addedByContent.TryGetValue token with
         | true, id -> Some id

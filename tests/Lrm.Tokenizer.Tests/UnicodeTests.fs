@@ -175,13 +175,13 @@ let private classTests =
 let private families: (string * (string -> string)) list =
     [
         "F1", id
-        "F2", (fun ch -> "a" + ch + "̴")
-        "F3", (fun ch -> "aͅ" + ch)
-        "F5", (fun ch -> ch + "́")
+        "F2", (fun ch -> "a" + ch + "\u0334")
+        "F3", (fun ch -> "a\u0345" + ch)
+        "F5", (fun ch -> ch + "\u0301")
         "F6", (fun ch -> "a" + ch)
-        "F7", (fun ch -> ch + "̈")
-        "F8", (fun ch -> "ᄀ" + ch)
-        "F9", (fun ch -> "가" + ch)
+        "F7", (fun ch -> ch + "\u0308")
+        "F8", (fun ch -> "\u1100" + ch)
+        "F9", (fun ch -> "\uac00" + ch)
     ]
 
 let private hexs (s: string) =
@@ -294,20 +294,20 @@ let private nfcTests =
 
             testCase "U+FFFE, which string.Normalize rejects, passes through NFC unchanged"
             <| fun () ->
-                let s = "é￾ä"
+                let s = "e\u0301\ufffea\u0308"
 
                 Expect.throwsT<ArgumentException>
                     (fun () -> s.Normalize NormalizationForm.FormC |> ignore)
                     "string.Normalize rejects U+FFFE (the reason it is a split point)"
 
-                Expect.equal (Nfc.normalize s) "é￾ä" "NFC on both sides of U+FFFE"
+                Expect.equal (Nfc.normalize s) "\u00e9\ufffe\u00e4" "NFC on both sides of U+FFFE"
 
             testCase "a mark newer than the oracle's Unicode 9 tables is not reordered"
             <| fun () ->
                 // U+07FD NKO DANTAYALAN (Unicode 11, ccc 220) is inert in the oracle; string.Normalize would put
                 // U+0334 (ccc 1) before it.
-                let s = "a̴߽"
-                Expect.equal (s.Normalize NormalizationForm.FormC) "a̴߽" "the runtime reorders"
+                let s = "a\u07fd\u0334"
+                Expect.equal (s.Normalize NormalizationForm.FormC) "a\u0334\u07fd" "the runtime reorders"
                 Expect.equal (Nfc.normalize s) s "the oracle does not"
         ]
 
@@ -404,6 +404,28 @@ let private dataTests =
                 Expect.equal (meta.GetProperty("tokenizers").GetString()) "0.23.3" "tokenizers"
                 Expect.equal (meta.GetProperty("tokenizer_sha256").GetString()) QwenTokenizer.PinnedSha256 "pin"
                 Expect.equal (meta.GetProperty("pattern").GetString()) PreTokenizer.SplitPattern "pattern"
+
+            testCase "every source and data file of M1 is ASCII, so no editor or tool can normalize a test string"
+            <| fun () ->
+                let roots = [ "src/Lrm.Tokenizer"; "tests/Lrm.Tokenizer.Tests" ]
+                let kinds = set [ ".fs"; ".fsproj"; ".targets"; ".py"; ".json"; ".jsonl" ]
+
+                let files =
+                    [
+                        for root in roots do
+                            for f in Directory.EnumerateFiles(repoPath root, "*", SearchOption.AllDirectories) do
+                                if kinds.Contains(Path.GetExtension f) then
+                                    yield f
+                    ]
+
+                Expect.isGreaterThan files.Length 15 "files found"
+
+                for f in files do
+                    let bytes = File.ReadAllBytes f
+
+                    match Array.tryFindIndex (fun (b: byte) -> b >= 0x80uy) bytes with
+                    | Some at -> failtestf "%s has a non-ASCII byte at offset %d; write escapes instead" f at
+                    | None -> ()
         ]
 
 let tests = testList "unicode" [ dataTests; classTests; nfcTests; regexTests ]
