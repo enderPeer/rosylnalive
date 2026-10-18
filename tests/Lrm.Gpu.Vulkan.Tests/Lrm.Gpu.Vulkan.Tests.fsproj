@@ -1,6 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: V1. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
+    <Compile Include="Common.fs" />
+    <Compile Include="CpuTests.fs" />
+    <Compile Include="GpuTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 </Project>
