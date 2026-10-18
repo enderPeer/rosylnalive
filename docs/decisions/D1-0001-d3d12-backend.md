@@ -50,7 +50,7 @@ Measured on the development machine with the gpu tier of `tests/Lrm.Gpu.D3D12.Te
 - **Selftests:** nine cases of the five selftests are bit-exact against the CPU and against `KernelBounds.checkExact`, and bit-identical across two runs on one backend and across two backends.
   - The cases: scale_f32 x→y (4,099 elements) and in place; table_echo on a strided view, on the null token and on a bf16 row; args_echo over all 32 words; groups_echo at 300 groups and at 131,077 groups (folded to 43,693 × 3, with the 2 extra groups writing nothing); bf16_unpack over all 65,536 patterns.
   - Every NaN result of scale_f32 is `0x7FFFFFFF`, whatever the input payload (R1's pitfall 10).
-- **Contract errors:** a 47-step script of valid and invalid calls gives exactly RecordingBackend's outcomes, exception type and text, step by step.
+- **Contract errors:** a 48-step script of valid and invalid calls (39 of them errors) gives exactly RecordingBackend's outcomes, exception type and text, step by step.
 - **Heap:** 64 descriptor writes when the heap is created and none afterwards; one committed DEFAULT buffer per page, of the page's size.
 - **1 GiB pages:** a raw UAV with `NumElements` = 2^28 over a 1 GiB page reads and writes correctly at bytes 0, 512 MiB + 64 KiB and 1 GiB − 64 KiB. No debug layer is installed, so whether the runtime's validation accepts a raw view of more than 2^27 elements is unverified.
 - **Copies:** dispatch → copy across pages → dispatch → copy within a page → dispatch → copy within a page, in one list, gives the CPU's values for every intermediate.
