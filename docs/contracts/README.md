@@ -3,8 +3,8 @@
 A contract is the agreed interface between workstreams: types, encodings, file formats, rules and the known-answer vectors that pin them. Each contract has one text here, written in full by its owner (dev plan, section 5). The machine-readable parts live next to the code they govern, and the text says where.
 
 - **How a contract changes:** `ownership-and-contract-change.md`. In short, contracts are drafts until the tag `contracts-v1`. After the tag, a contract file changes only through a PR labelled `contract-change`, which adds an entry to `CHANGELOG.md` and updates the vectors. The hygiene job enforces the label and the entry.
-- **The record of every version** is `CHANGELOG.md`. Any family may append its entry there; only S0 rewrites lines.
-- **Freeze tags.** `contracts-v1` covers the S1, R4a, O2 and C1 contracts at the end of wave 1. `contracts-v1.1` adds R4b's SPIR-V binding (ShaderBuildAndSourceConvention) after R1's ADR.
+- **The record of every version** is `CHANGELOG.md`. Any family may append its entry at the end; only S0 rewrites lines or inserts them elsewhere.
+- **Freeze tags.** The plan names `contracts-v1` for the S1, R4a, O2 and C1 contracts at the end of wave 1, and `contracts-v1.1` for R4b's SPIR-V binding (ShaderBuildAndSourceConvention) after R1's ADR. Mechanically, a tag freezes **every** contract file on `main` when it is set, drafts included. Any contract text that lands or changes after `contracts-v1`, such as O1's, T1's, R1's or R3's drafts if their PRs merge later, needs a `contract-change` PR with a CHANGELOG entry.
 
 ## Index
 

@@ -6,18 +6,30 @@
     with the CI context; test-hygiene.ps1 proves that every fixture fails as designed.
 
       Test-Ownership       docs/ownership.json against the tracked tree and the branch's changes
-      Test-Layering        tools/ci/gen-project-graph.ps1 -Check (the ProjectGraph rules and generated files)
+      Test-Layering        tools/ci/gen-project-graph.ps1 -Check plus the MSBuild extension scan (ProjectGraph)
       Test-Sizes           per-file limits, budgets and forbidden files (tools/ci/hygiene.json)
       Test-Eol             `git ls-files --eol` against .gitattributes (LF only in the index)
       Test-ContractLabel   the contract-change label and its CHANGELOG entry
 
-    Paths are repo-relative with forward slashes and compared ordinally (case-sensitive), as git stores them.
+    Paths are repo-relative with forward slashes and compared ordinally (case-sensitive), as git stores them. The
+    forbidden-file rules are the exception: they ignore case, because foo.DLL is a binary on Windows too.
+
+    Trust: a branch's changes are judged by the policy it started from, never by files the branch itself edits. The
+    out-of-path rule, the branch grammar, the contract files and the freeze tag come from docs/ownership.json at the
+    merge base, and the size rules from tools/ci/hygiene.json there. The governance paths (the map, tools/ci and CI)
+    change only on S0 and int/ branches, whatever any map says and whatever the labels.
 #>
 Set-StrictMode -Version Latest
 
 $script:Ordinal = [StringComparer]::Ordinal
 $script:GlobCache = [Collections.Generic.Dictionary[string, regex]]::new([StringComparer]::Ordinal)
 $script:Changelog = 'docs/contracts/CHANGELOG.md'
+$script:MapPath = 'docs/ownership.json'
+$script:ConfigPath = 'tools/ci/hygiene.json'
+# Only family S0 (or an int/ branch) changes these paths. The rule does not read any map, and the exception label
+# does not lift it, so no branch can hand itself the checks or switch them off.
+$script:GovernanceFamily = 'S0'
+$script:GovernancePaths = @('docs/ownership.json', 'tools/ci/**', '.github/**')
 
 # ---- results ------------------------------------------------------------------------------------
 
@@ -122,17 +134,20 @@ function ConvertTo-GlobRegex([string]$Glob) {
     $sb.ToString()
 }
 
-function Test-Glob([string]$Path, [string]$Glob) {
+function Test-Glob([string]$Path, [string]$Glob, [switch]$IgnoreCase) {
+    $key = if ($IgnoreCase) { "i:$Glob" } else { "c:$Glob" }
     $re = $null
-    if (-not $script:GlobCache.TryGetValue($Glob, [ref]$re)) {
-        $re = [regex]::new((ConvertTo-GlobRegex $Glob), [Text.RegularExpressions.RegexOptions]::CultureInvariant)
-        $script:GlobCache[$Glob] = $re
+    if (-not $script:GlobCache.TryGetValue($key, [ref]$re)) {
+        $options = [Text.RegularExpressions.RegexOptions]::CultureInvariant
+        if ($IgnoreCase) { $options = $options -bor [Text.RegularExpressions.RegexOptions]::IgnoreCase }
+        $re = [regex]::new((ConvertTo-GlobRegex $Glob), $options)
+        $script:GlobCache[$key] = $re
     }
     $re.IsMatch($Path)
 }
 
-# Include globs, minus '!' excludes, as one predicate.
-function Split-Globs([object[]]$Globs) {
+# Include globs, minus '!' excludes, as one predicate. -IgnoreCase makes the set match case variants too.
+function Split-Globs([object[]]$Globs, [switch]$IgnoreCase) {
     $inc = [Collections.Generic.List[string]]::new()
     $exc = [Collections.Generic.List[string]]::new()
     foreach ($g in $Globs) {
@@ -140,22 +155,30 @@ function Split-Globs([object[]]$Globs) {
         if ($s.StartsWith('!')) { $exc.Add($s.Substring(1)) } else { $inc.Add($s) }
     }
     foreach ($g in @($inc) + @($exc)) { [void](ConvertTo-GlobRegex $g) }
-    [pscustomobject]@{ Include = @($inc); Exclude = @($exc) }
+    [pscustomobject]@{ Include = @($inc); Exclude = @($exc); IgnoreCase = [bool]$IgnoreCase }
 }
 
 function Test-GlobSet([string]$Path, $Set) {
+    $ic = [bool]$Set.IgnoreCase
     $hit = $false
-    foreach ($g in $Set.Include) { if (Test-Glob $Path $g) { $hit = $true; break } }
+    foreach ($g in $Set.Include) { if (Test-Glob $Path $g -IgnoreCase:$ic) { $hit = $true; break } }
     if (-not $hit) { return $false }
-    foreach ($g in $Set.Exclude) { if (Test-Glob $Path $g) { return $false } }
+    foreach ($g in $Set.Exclude) { if (Test-Glob $Path $g -IgnoreCase:$ic) { return $false } }
     $true
 }
 
 # ---- docs/ownership.json ------------------------------------------------------------------------
 
-function Read-OwnershipMap([string]$Path) {
-    $j = Get-Content -Raw -LiteralPath $Path | ConvertFrom-Json
+<#
+    A map from its JSON text. -Partial accepts a map without the 'contract' section (S0a's first map, which a merge
+    base may still hold); its Contract is then $null and callers fall back to the checked-out contract section.
+    Integrators: the GitHub logins whose int/ PRs and exception labels count (empty when the map lists none).
+#>
+function ConvertFrom-OwnershipJson([string]$Json, [string]$Source = $script:MapPath, [switch]$Partial) {
+    $Path = $Source
+    $j = $Json | ConvertFrom-Json
     if ((Get-Prop $j 'schema') -cne 'lrm.ownership/1') { throw "${Path}: unknown schema '$(Get-Prop $j 'schema')'" }
+    if (-not (Get-Prop $j 'families')) { throw "${Path}: no 'families' section" }
     $families = [Collections.Generic.Dictionary[string, object]]::new($script:Ordinal)
     $slices = [Collections.Generic.Dictionary[string, string]]::new($script:Ordinal)
     foreach ($p in $j.families.PSObject.Properties) {
@@ -173,14 +196,48 @@ function Read-OwnershipMap([string]$Path) {
             [pscustomobject]@{ Path = [string]$s.path; Mode = $mode; Why = [string](Get-Prop $s 'why') }
         })
     $c = Get-Prop $j 'contract'
-    if (-not $c) { throw "${Path}: no 'contract' section (label, exceptionLabel, freezeTag, files)" }
-    $contract = [pscustomobject]@{
-        Label          = [string]$c.label
-        ExceptionLabel = [string]$c.exceptionLabel
-        FreezeTag      = [string]$c.freezeTag
-        Files          = Split-Globs @($c.files)
+    $contract = $null
+    if ($c) {
+        $contract = [pscustomobject]@{
+            Label          = [string]$c.label
+            ExceptionLabel = [string]$c.exceptionLabel
+            FreezeTag      = [string]$c.freezeTag
+            Files          = Split-Globs @($c.files)
+        }
     }
-    [pscustomobject]@{ Families = $families; Slices = $slices; Shared = $shared; Contract = $contract }
+    elseif (-not $Partial) { throw "${Path}: no 'contract' section (label, exceptionLabel, freezeTag, files)" }
+    $integrators = @(foreach ($i in @(Get-Prop $j 'integrators' @())) {
+            $login = [string]$i
+            if ($login -cnotmatch '^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$') { throw "${Path}: integrator '$login' is not a GitHub login" }
+            $login
+        })
+    [pscustomobject]@{ Families = $families; Slices = $slices; Shared = $shared; Contract = $contract; Integrators = $integrators; Source = $Source }
+}
+
+function Read-OwnershipMap([string]$Path, [switch]$Partial) {
+    ConvertFrom-OwnershipJson (Get-Content -Raw -LiteralPath $Path) $Path -Partial:$Partial
+}
+
+<#
+    The map whose contract section governs a branch: the trusted (merge-base) map, or the checked-out one when the
+    merge base has no contract section yet (it predates S0b). Fallback says which. The fallback cannot be abused:
+    changing docs/ownership.json is a governance-path edit, which fails every branch outside S0.
+#>
+function Select-ContractMap($PolicyMap, $HeadMap) {
+    if ($null -ne $PolicyMap -and $null -ne $PolicyMap.Contract) { return [pscustomobject]@{ Map = $PolicyMap; Fallback = $false } }
+    [pscustomobject]@{ Map = $HeadMap; Fallback = $true }
+}
+
+function Test-GovernancePath([string]$Path) {
+    foreach ($g in $script:GovernancePaths) { if (Test-Glob $Path $g) { return $true } }
+    $false
+}
+
+# GitHub logins compare without case.
+function Test-Integrator($Map, [string]$Login) {
+    if (-not $Login -or $null -eq $Map) { return $false }
+    foreach ($i in @($Map.Integrators)) { if ([string]::Equals($i, $Login, [StringComparison]::OrdinalIgnoreCase)) { return $true } }
+    $false
 }
 
 # The families that own a path. A healthy map gives exactly one.
@@ -215,29 +272,69 @@ function Resolve-Branch($Map, [string]$Branch) {
     [pscustomobject]@{ Kind = 'invalid'; Id = $null; Family = $null; Fix = $false }
 }
 
-# A change: Status (A, M, D, T), Path, Added and Deleted line counts ($null for a binary diff).
-function New-Change([string]$Status, [string]$Path, $Added = 0, $Deleted = 0) {
-    [pscustomobject]@{ Status = $Status; Path = $Path; Added = $Added; Deleted = $Deleted }
+<#
+    A change: Status (A, M, D, T), Path, Added and Deleted line counts ($null for a binary diff). For a shared path,
+    Hunks (OldStart, OldCount, NewStart, NewCount of each -U0 hunk) and BaseLines (the file's line count at the merge
+    base) place the added lines; $null when unknown.
+#>
+function New-Change([string]$Status, [string]$Path, $Added = 0, $Deleted = 0, $Hunks = $null, $BaseLines = $null) {
+    [pscustomobject]@{ Status = $Status; Path = $Path; Added = $Added; Deleted = $Deleted; Hunks = $Hunks; BaseLines = $BaseLines }
+}
+
+function New-Hunk([int]$OldStart, [int]$OldCount, [int]$NewStart, [int]$NewCount) {
+    [pscustomobject]@{ OldStart = $OldStart; OldCount = $OldCount; NewStart = $NewStart; NewCount = $NewCount }
 }
 
 function ConvertTo-Change($Object) {
-    New-Change ([string](Get-Prop $Object 'status' 'M')) ([string]$Object.path) (Get-Prop $Object 'added' 1) (Get-Prop $Object 'deleted' 0)
+    $hunks = Get-Prop $Object 'hunks'
+    if ($null -ne $hunks) { $hunks = @(foreach ($h in @($hunks)) { New-Hunk ([int]$h.oldStart) ([int]$h.oldCount) ([int]$h.newStart) ([int]$h.newCount) }) }
+    New-Change ([string](Get-Prop $Object 'status' 'M')) ([string]$Object.path) (Get-Prop $Object 'added' 1) (Get-Prop $Object 'deleted' 0) $hunks (Get-Prop $Object 'baseLines')
+}
+
+# Why a change to a shared append-only path is not a pure append at the end, or $null when it is one.
+function Get-AppendViolation($Change) {
+    if ($Change.Status -ceq 'D') { return 'deletes the file' }
+    if ($Change.Status -cnotin @('A', 'M')) { return "has status $($Change.Status)" }
+    if ($null -eq $Change.Deleted) { return 'is a binary change' }
+    if ([int]$Change.Deleted -ne 0) { return "deletes or rewrites $($Change.Deleted) line(s)" }
+    if ($null -ne $Change.Hunks -and $null -ne $Change.BaseLines) {
+        $n = [int]$Change.BaseLines
+        foreach ($h in @($Change.Hunks)) {
+            if ($h.OldCount -ne 0 -or $h.OldStart -ne $n) {
+                return "inserts lines after line $($h.OldStart) of $n; entries are appended at the end of the file"
+            }
+        }
+    }
+    $null
 }
 
 <#
-    Ownership: (1) every tracked file is owned by exactly one family; (2) on a ws/ branch, every changed path is owned
-    by the branch's family, or is a shared append-only path that the change only appends to. The exception label lets
-    the integrator accept a reviewed out-of-path edit: the paths are then listed as warnings instead of errors.
+    Ownership: (1) every tracked file is owned by exactly one family of -Map (the checked-out map, which must describe
+    the checked-out tree); (2) on a ws/ branch, every changed path is owned by the branch's family in -PolicyMap (the
+    map at the merge base, which the branch cannot edit), or is a shared append-only path that the change only appends
+    to, at the end; (3) outside family S0, no governance path changes at all. -PolicyMap defaults to -Map; $null means
+    the merge base has no map, which fails every ws/ and int/ branch.
+
+    The exception label lets the integrator accept a reviewed out-of-path edit: the paths are then listed as warnings
+    instead of errors. It never covers a governance path. With -Verify (CI on a pull request), the label counts only
+    when -ExceptionActor, who last applied it, is an integrator of the policy map, and an int/ branch passes only when
+    -Author, the PR author, is one. Without -Verify both are reported as unverified warnings.
 #>
 function Test-Ownership {
     param(
         [Parameter(Mandatory)] $Map,
+        $PolicyMap,
+        [string]$PolicySource = 'the merge base',
         [string[]]$Tracked = @(),
         [string]$Branch,
         [object[]]$Changes = @(),
         [string[]]$Labels = @(),
-        [bool]$LabelsKnown = $false
+        [bool]$LabelsKnown = $false,
+        [bool]$Verify = $false,
+        [string]$Author,
+        [string]$ExceptionActor
     )
+    $policy = if ($PSBoundParameters.ContainsKey('PolicyMap')) { $PolicyMap } else { $Map }
     $r = New-HygieneResult 'ownership'
 
     $unowned = 0
@@ -257,9 +354,20 @@ function Test-Ownership {
         Add-Finding $r note 'no branch given: only map coverage was checked'
         return $r
     }
-    $b = Resolve-Branch $Map $Branch
     $r.Metrics['branch'] = $Branch
     $r.Metrics['changed'] = $Changes.Count
+    if ($Branch -ceq 'main') {
+        $r.Summary = "$coverage; branch main"
+        Add-Finding $r note 'main: no branch diff is checked; changes reach main only through reviewed PRs'
+        return $r
+    }
+    if ($null -eq $policy) {
+        Add-Finding $r error "$PolicySource has no docs/ownership.json, so the branch's changes cannot be judged by a map the branch did not write; rebase onto origin/main"
+        $r.Summary = "$coverage; branch ${Branch}: no trusted map"
+        return $r
+    }
+    $r.Metrics['policy'] = if ([object]::ReferenceEquals($policy, $Map)) { 'checked_out' } else { 'merge_base' }
+    $b = Resolve-Branch $policy $Branch
     $r.Summary = "$coverage; branch $Branch ($($b.Kind))"
     switch ($b.Kind) {
         'invalid' {
@@ -267,60 +375,230 @@ function Test-Ownership {
             return $r
         }
         'unknown-id' {
-            Add-Finding $r error "branch '$Branch' names workstream '$($b.Id)', which is no slice in docs/ownership.json"
-            return $r
-        }
-        'main' {
-            Add-Finding $r note 'main: no branch diff is checked; changes reach main only through reviewed PRs'
+            Add-Finding $r error "branch '$Branch' names workstream '$($b.Id)', which is no slice in docs/ownership.json at $PolicySource"
             return $r
         }
         'integrator' {
-            Add-Finding $r note "int/ branch: the integrator may touch any path ($($Changes.Count) changed)"
+            # int/ branches skip the diff check, so every use is listed, and in CI the PR author must be an integrator.
+            $n = $Changes.Count
+            $r.Metrics['integrator'] = $true
+            if (-not $Verify) {
+                Add-Finding $r warning "int/ branch: integrator rights claimed, so its $n changed path(s) are not checked against the map; CI verifies that the PR author is an integrator"
+            }
+            elseif (-not @($policy.Integrators).Count) {
+                Add-Finding $r warning "int/ branch by $(if ($Author) { $Author } else { 'an unknown author' }): $PolicySource lists no integrators, so the author was not verified; $n changed path(s) are not checked against the map"
+            }
+            elseif (Test-Integrator $policy $Author) {
+                Add-Finding $r warning "int/ branch: integrator rights used by $Author (an integrator), so its $n changed path(s) are not checked against the map"
+            }
+            else {
+                Add-Finding $r error "int/ branches belong to the integrator ($(@($policy.Integrators) -join ', ')), but the PR author is $(if ($Author) { $Author } else { 'unknown' }); use ws/<id>-<slug>"
+            }
+            $r.Summary = "$coverage; branch $Branch (integrator rights): $n changed, not checked against the map"
             return $r
         }
     }
 
     $family = $b.Family
     $r.Metrics['family'] = $family
-    $hasException = $LabelsKnown -and ($Labels -ccontains $Map.Contract.ExceptionLabel)
+    $contract = (Select-ContractMap $policy $Map).Map.Contract
+    $label = if ($contract) { $contract.ExceptionLabel } else { 'ownership-exception' }
+    $hasException = $false
+    if ($LabelsKnown -and ($Labels -ccontains $label)) {
+        if (-not $Verify) {
+            $hasException = $true
+            Add-Finding $r warning "the '$label' label is set; who set it is verified in CI only"
+        }
+        elseif (-not @($policy.Integrators).Count) {
+            $hasException = $true
+            Add-Finding $r warning "the '$label' label is set; $PolicySource lists no integrators, so who set it was not verified"
+        }
+        elseif (Test-Integrator $policy $ExceptionActor) {
+            $hasException = $true
+        }
+        else {
+            $who = if ($ExceptionActor) { "by $ExceptionActor, who is not an integrator ($(@($policy.Integrators) -join ', '))" } else { 'by someone CI could not determine' }
+            Add-Finding $r error "the '$label' label was set $who, so it does not apply; only the integrator sets it"
+        }
+    }
     $outside = 0
+    $excepted = 0
+    $governance = 0
     foreach ($c in $Changes) {
-        $owners = @(Get-PathOwners $Map $c.Path)
+        if ($family -cne $script:GovernanceFamily -and (Test-GovernancePath $c.Path)) {
+            $outside++
+            $governance++
+            Add-Finding $r error "$($c.Path) is a governance path (the ownership map, the hygiene checks or CI): only family $($script:GovernanceFamily) and int/ branches change it, whatever docs/ownership.json says and whatever the labels; not family $family (branch $Branch, status $($c.Status))"
+            continue
+        }
+        $owners = @(Get-PathOwners $policy $c.Path)
         if ($owners -ccontains $family) { continue }
-        $shared = Get-SharedRule $Map $c.Path
+        $shared = Get-SharedRule $policy $c.Path
         if ($shared) {
-            if ($c.Status -cin @('A', 'M') -and $null -ne $c.Deleted -and [int]$c.Deleted -eq 0) {
-                Add-Finding $r note "$($c.Path): shared append-only path; this change only adds lines"
+            $what = Get-AppendViolation $c
+            if (-not $what) {
+                $where = if ($null -ne $c.Hunks -and $null -ne $c.BaseLines) { 'only appends lines at the end' } else { 'only adds lines' }
+                Add-Finding $r note "$($c.Path): shared append-only path; this change $where"
                 continue
             }
-            $what = if ($c.Status -ceq 'D') { 'deletes the file' } elseif ($null -eq $c.Deleted) { 'is a binary change' } else { "deletes or rewrites $($c.Deleted) line(s)" }
-            Add-Finding $r error "$($c.Path) is shared append-only ($($shared.Why)); a family $family branch may only add lines, but this change $what"
+            Add-Finding $r error "$($c.Path) is shared append-only ($($shared.Why)); a family $family branch may only append lines at the end, but this change $what"
             $outside++
             continue
         }
         $owner = if ($owners.Count) { "family $($owners -join ', ')" } else { 'no family' }
         $outside++
         if ($hasException) {
-            Add-Finding $r warning "$($c.Path) is owned by $owner, not $family; accepted by the '$($Map.Contract.ExceptionLabel)' label"
+            $excepted++
+            Add-Finding $r warning "$($c.Path) is owned by $owner, not $family; accepted by the '$label' label"
         }
         else {
             Add-Finding $r error "$($c.Path) is owned by $owner, not by family $family (branch $Branch, status $($c.Status))"
         }
     }
     $r.Metrics['outside'] = $outside
+    $r.Metrics['governance'] = $governance
+    $r.Metrics['excepted'] = $excepted
     $r.Summary = "$coverage; branch $Branch (family $family): $($Changes.Count) changed, $outside outside the family"
+    if ($excepted) { $r.Summary += "; '$label' accepted $excepted path(s)" }
     $r
 }
 
 # ---- layering -----------------------------------------------------------------------------------
 
 <#
+    MSBuild reads more files than the fsproj: a nested Directory.Build.props/targets or Directory.Packages.props
+    replaces the root one for the projects below it, Directory.Build.rsp adds command-line switches, <proj>.user is
+    imported by the common targets, and <Name>.lrm.targets is imported by Directory.Build.targets. Any of them could add
+    a reference, or switch off the graph guard (LrmIsSpike) or the locked restore (RestoreLockedMode), without touching
+    docs/project-graph.json. So, outside spikes/, artifacts/ and bin/ or obj/:
+      - Directory.Build.props, Directory.Build.targets, Directory.Packages.props, global.json and NuGet.Config exist
+        only at the root, spelled exactly so; Directory.Build.rsp, Directory.Solution.* and *.<x>proj.user never;
+      - a <Name>.lrm.targets imports nothing, adds no reference item (any item named *Reference* or *Package*,
+        Analyzer, or the guard's own _LrmHand*/_LrmStray* items, as an element or a task Output), and sets no property
+        that the root build files set or that steers restore, the guard or the build's identity (Restore*, NuGet*,
+        central package management, Directory* imports, CI, Lrm graph and identity properties);
+      - a Compile item, in an fsproj or a .lrm.targets, names files inside its own project directory only.
+    MSBuild names ignore case, and so does this scan. Returns the scanned file count and the error messages.
+#>
+$script:RootOnlyBuildFiles = @('Directory.Build.props', 'Directory.Build.targets', 'Directory.Packages.props', 'global.json', 'NuGet.Config')
+$script:BannedBuildFiles = @('Directory.Build.rsp', 'Directory.Solution.props', 'Directory.Solution.targets')
+$script:RootPropertyFiles = @('Directory.Build.props', 'Directory.Build.targets', 'Directory.Packages.props')
+$script:ReservedItem = [regex]::new('Reference|Package|^Analyzer$|^_Lrm(Hand|Stray)', 'IgnoreCase, CultureInvariant')
+$script:ReservedProperty = [regex]::new(
+    '^(Restore.*|NuGet.*|ManagePackageVersionsCentrally|CentralPackage.*|EnableCentralPackage.*|DisableImplicit.*|ImportDirectory.*|DirectoryBuild.*|DirectoryPackages.*|CustomBeforeMicrosoft.*|CustomAfterMicrosoft.*|MSBuildProjectExtensionsPath|BaseIntermediateOutputPath|ImportProjectExtension.*|CI|ContinuousIntegrationBuild|_?Lrm(IsSpike|ProjectPath|RepoRoot|Graph.*|ProjectKind|Owner|IsTestExe|Data|DefaultData|Reproducible|Hand.*|Stray.*))$',
+    'IgnoreCase, CultureInvariant')
+
+function Test-ScannedPath([string]$Path) {
+    -not ($Path.StartsWith('spikes/') -or $Path.StartsWith('artifacts/') -or $Path.StartsWith('.git/') -or $Path -match '(^|/)(bin|obj)/')
+}
+
+# Files under a root: tracked and untracked-but-not-ignored ones in a git work tree, else everything on disk.
+function Get-RootFiles([string]$RepoRoot) {
+    if (Test-Path -LiteralPath (Join-Path $RepoRoot '.git')) {
+        $g = Invoke-Git $RepoRoot @('ls-files', '-z', '--cached', '--others', '--exclude-standard') -AllowFailure
+        if ($g.ExitCode -eq 0) { return @(Split-Nul $g.Out | Sort-Object -Unique) }
+    }
+    @(Get-ChildItem -LiteralPath $RepoRoot -Recurse -File -Force | ForEach-Object { [IO.Path]::GetRelativePath($RepoRoot, $_.FullName).Replace('\', '/') })
+}
+
+# Property names the root build files set: no per-project file may override them.
+function Get-RootPropertyNames([string]$RepoRoot) {
+    $names = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $files = @($script:RootPropertyFiles | ForEach-Object { Join-Path $RepoRoot $_ })
+    $build = Join-Path $RepoRoot 'build'
+    if (Test-Path -LiteralPath $build) { $files += @(Get-ChildItem -LiteralPath $build -File | Where-Object { $_.Extension -in @('.props', '.targets') } | ForEach-Object FullName) }
+    foreach ($f in $files) {
+        if (-not (Test-Path -LiteralPath $f)) { continue }
+        try { [xml]$x = Get-Content -Raw -LiteralPath $f } catch { continue }
+        foreach ($e in $x.SelectNodes("//*[local-name()='PropertyGroup']/*")) { [void]$names.Add($e.get_LocalName()) }
+    }
+    , $names
+}
+
+# A Compile Include stays inside the project directory: no '..', no rooted path, no property or item expansion other
+# than the project's own directory or its obj folder.
+function Test-LocalCompileInclude([string]$Value) {
+    foreach ($part in $Value.Split(';')) {
+        $v = $part.Trim()
+        if (-not $v) { continue }
+        foreach ($prefix in @('$(MSBuildThisFileDirectory)', '$(MSBuildProjectDirectory)/', '$(MSBuildProjectDirectory)\', '$(IntermediateOutputPath)')) {
+            if ($v.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)) { $v = $v.Substring($prefix.Length); break }
+        }
+        if ($v -match '[$@%]\(' -or $v -match '(^|[\\/])\.\.([\\/]|$)' -or $v -match '^([\\/]|[A-Za-z]:)') { return $false }
+    }
+    $true
+}
+
+function Get-BuildExtensionErrors([string]$RepoRoot) {
+    $errors = [Collections.Generic.List[string]]::new()
+    $scanned = 0
+    $reserved = Get-RootPropertyNames $RepoRoot
+    $isReservedProperty = { param([string]$n) $script:ReservedProperty.IsMatch($n) -or $reserved.Contains($n) }
+    foreach ($p in @(Get-RootFiles $RepoRoot | Where-Object { Test-ScannedPath $_ })) {
+        $full = Join-Path $RepoRoot $p
+        $name = [IO.Path]::GetFileName($p)
+        $nested = $p.Contains('/')
+        if ($script:BannedBuildFiles -contains $name) {
+            $errors.Add("${p}: MSBuild reads $name by itself, so it could add switches, properties or references that docs/project-graph.json does not know; it is not allowed outside spikes/"); continue
+        }
+        if ($script:RootOnlyBuildFiles -contains $name) {
+            if ($nested) { $errors.Add("${p}: a nested $name replaces the root one for everything below $([IO.Path]::GetDirectoryName($p).Replace('\', '/'))/, so it could add references or switch off the graph guard and the locked restore; only the root one is allowed outside spikes/") }
+            elseif ($script:RootOnlyBuildFiles -cnotcontains $name) { $errors.Add("${p}: spell it exactly as the tools look for it, one of $($script:RootOnlyBuildFiles -join ', ')") }
+            continue
+        }
+        if ($name -like '*.*proj.user') {
+            $errors.Add("${p}: MSBuild imports <project>.user into the project, so it could add references; it is never committed"); continue
+        }
+        $isTargets = $name -like '*.lrm.targets'
+        $isFsproj = $name -like '*.fsproj'
+        if (-not ($isTargets -or $isFsproj) -or -not (Test-Path -LiteralPath $full)) { continue }
+        try { [xml]$x = Get-Content -Raw -LiteralPath $full }
+        catch { $errors.Add("${p}: not well-formed XML: $($_.Exception.Message)"); continue }
+        if ($isTargets) { $scanned++ }
+        foreach ($e in $x.SelectNodes('//*')) {
+            $n = $e.get_LocalName()
+            $parent = $e.get_ParentNode().get_LocalName()
+            if ($parent -eq 'ItemGroup' -and $n -eq 'Compile') {
+                foreach ($attr in @('Include', 'Update')) {
+                    $v = $e.GetAttribute($attr)
+                    if ($v -and -not (Test-LocalCompileInclude $v)) { $errors.Add("${p}: <Compile $attr=`"$v`"> reaches outside the project directory; code from another project comes only through a reference in docs/project-graph.json") }
+                }
+            }
+            if (-not $isTargets) { continue }
+            if ($null -eq $e.get_ParentNode().get_ParentNode() -and $n -eq 'Project') {
+                foreach ($attr in @('Sdk', 'TreatAsLocalProperty')) { if ($e.HasAttribute($attr)) { $errors.Add("${p}: <Project $attr=...> is not allowed in a .lrm.targets file") } }
+            }
+            if ($n -in @('Import', 'ImportGroup', 'Sdk')) { $errors.Add("${p}: <$n> is not allowed; a .lrm.targets file imports nothing, so every line of MSBuild a project runs is scanned here"); continue }
+            if ($parent -eq 'ItemGroup' -and $script:ReservedItem.IsMatch($n)) {
+                $errors.Add("${p}: <$n> is a reference item; references come only from docs/project-graph.json (ProjectGraph contract)")
+            }
+            if ($parent -eq 'PropertyGroup' -and (& $isReservedProperty $n)) {
+                $errors.Add("${p}: sets the property $n, which the root build files own; a .lrm.targets file never overrides it (ProjectGraph contract)")
+            }
+            if ($n -eq 'Output') {
+                $item = $e.GetAttribute('ItemName')
+                $prop = $e.GetAttribute('PropertyName')
+                if ($item -and $script:ReservedItem.IsMatch($item)) { $errors.Add("${p}: a task Output adds the reference item $item; references come only from docs/project-graph.json (ProjectGraph contract)") }
+                if ($prop -and (& $isReservedProperty $prop)) { $errors.Add("${p}: a task Output sets the property $prop, which the root build files own (ProjectGraph contract)") }
+            }
+        }
+    }
+    [pscustomobject]@{ Scanned = $scanned; Errors = @($errors) }
+}
+
+<#
     Layering is the ProjectGraph contract's own validator, tools/ci/gen-project-graph.ps1 -Check, run against a repo
-    root. It checks the rules in docs/project-graph.json, the fsproj shape (file items only, so no hand-written
-    ProjectReference), registration of every fsproj and that the generated files are up to date.
+    root, plus the MSBuild extension scan above. The validator checks the rules in docs/project-graph.json, the fsproj
+    shape (file items only, so no hand-written ProjectReference), registration of every fsproj and that the generated
+    files are up to date. It is the root's own copy when there is one (so a PR that changes the generator is checked
+    by its new version; any other family's change to it fails the ownership check), else this module's.
 #>
 function Test-Layering {
-    param([Parameter(Mandatory)][string]$RepoRoot, [string]$Generator = (Join-Path $PSScriptRoot 'gen-project-graph.ps1'))
+    param([Parameter(Mandatory)][string]$RepoRoot, [string]$Generator)
+    if (-not $Generator) {
+        $own = Join-Path $RepoRoot 'tools/ci/gen-project-graph.ps1'
+        $Generator = if (Test-Path -LiteralPath $own) { $own } else { Join-Path $PSScriptRoot 'gen-project-graph.ps1' }
+    }
     $r = New-HygieneResult 'layering'
     $global:LASTEXITCODE = 0
     $lines = @()
@@ -340,14 +618,25 @@ function Test-Layering {
         Add-Finding $r error "gen-project-graph.ps1 -Check exited $code`: $($lines -join ' | ')"
     }
     $r.Metrics['rule_errors'] = Get-FindingCount $r 'error'
-    $r.Summary = if ($r.Metrics.Contains('projects')) { "$($r.Metrics['projects']) projects, every rule holds, generated files up to date" } else { "$(Get-FindingCount $r 'error') error(s) in the project graph" }
+    $ext = Get-BuildExtensionErrors $RepoRoot
+    foreach ($e in $ext.Errors) { Add-Finding $r error $e }
+    $r.Metrics['extension_files'] = $ext.Scanned
+    $r.Metrics['extension_errors'] = $ext.Errors.Count
+    $errors = Get-FindingCount $r 'error'
+    $r.Summary = if ($errors -eq 0 -and $r.Metrics.Contains('projects')) {
+        "$($r.Metrics['projects']) projects, every rule holds, generated files up to date; $($ext.Scanned) .lrm.targets file(s) and the MSBuild extension files clean"
+    }
+    else { "$($r.Metrics['rule_errors']) graph error(s), $($ext.Errors.Count) MSBuild extension error(s)" }
     $r
 }
 
 # ---- sizes and forbidden files ------------------------------------------------------------------
 
-function Read-HygieneConfig([string]$Path) {
-    $j = Get-Content -Raw -LiteralPath $Path | ConvertFrom-Json
+# Forbidden rules ignore case (foo.DLL, model.SafeTensors and .claude/Settings.json are what they look like on
+# Windows); file limits and budgets match like the ownership globs.
+function ConvertFrom-HygieneJson([string]$Json, [string]$Source = $script:ConfigPath) {
+    $Path = $Source
+    $j = $Json | ConvertFrom-Json
     if ((Get-Prop $j 'schema') -cne 'lrm.hygiene/1') { throw "${Path}: unknown schema '$(Get-Prop $j 'schema')'" }
     $s = $j.sizes
     [pscustomobject]@{
@@ -360,10 +649,13 @@ function Read-HygieneConfig([string]$Path) {
                 [pscustomobject]@{ Name = $name; Glob = [string]$b.glob; Max = [long]$b.maxTotalBytes; Why = [string]$b.why }
             })
         Forbidden           = @(foreach ($f in @($s.forbidden)) {
-                [pscustomobject]@{ Glob = [string]$f.glob; Set = (Split-Globs (@([string]$f.glob) + @(Get-Prop $f 'except' @() | ForEach-Object { "!$_" }))); Why = [string]$f.why }
+                [pscustomobject]@{ Glob = [string]$f.glob; Set = (Split-Globs (@([string]$f.glob) + @(Get-Prop $f 'except' @() | ForEach-Object { "!$_" })) -IgnoreCase); Why = [string]$f.why }
             })
+        Source              = $Source
     }
 }
+
+function Read-HygieneConfig([string]$Path) { ConvertFrom-HygieneJson (Get-Content -Raw -LiteralPath $Path) $Path }
 
 # Byte counts for messages, formatted with the invariant culture (hygiene output must not depend on the host).
 function Format-Bytes([long]$n) {
@@ -567,10 +859,10 @@ function Get-GitMergeBase([string]$RepoRoot, [string]$Base, [string]$Head) {
 function Get-GitChanges([string]$RepoRoot, [string]$Base, [string]$Head) {
     $range = "$Base...$Head"
     $status = [Collections.Generic.Dictionary[string, string]]::new($script:Ordinal)
-    $tokens = @(Split-Nul (Invoke-Git $RepoRoot @('diff', '--no-renames', '-z', '--name-status', $range)).Out)
+    $tokens = @(Split-Nul (Invoke-Git $RepoRoot @('diff', '--no-renames', '--no-ext-diff', '-z', '--name-status', $range)).Out)
     for ($k = 0; $k + 1 -lt $tokens.Count; $k += 2) { $status[$tokens[$k + 1]] = $tokens[$k].Substring(0, 1) }
     $counts = [Collections.Generic.Dictionary[string, object]]::new($script:Ordinal)
-    foreach ($rec in Split-Nul (Invoke-Git $RepoRoot @('diff', '--no-renames', '-z', '--numstat', $range)).Out) {
+    foreach ($rec in Split-Nul (Invoke-Git $RepoRoot @('diff', '--no-renames', '--no-ext-diff', '-z', '--numstat', $range)).Out) {
         $parts = $rec.Split("`t", 3)
         $counts[$parts[2]] = if ($parts[0] -eq '-') { , @($null, $null) } else { , @([int]$parts[0], [int]$parts[1]) }
     }
@@ -583,8 +875,57 @@ function Get-GitChanges([string]$RepoRoot, [string]$Base, [string]$Head) {
 }
 
 function Get-GitAddedLines([string]$RepoRoot, [string]$Base, [string]$Head, [string]$Path) {
-    $diff = (Invoke-Git $RepoRoot @('diff', '--no-renames', '-U0', "$Base...$Head", '--', $Path)).Out
+    $diff = (Invoke-Git $RepoRoot @('diff', '--no-renames', '--no-color', '--no-ext-diff', '-U0', "$Base...$Head", '--', $Path)).Out
     @($diff -split "`n" | Where-Object { $_.StartsWith('+') -and -not $_.StartsWith('+++') } | ForEach-Object { $_.Substring(1).TrimEnd("`r") })
+}
+
+# The -U0 hunks of one path between the merge base of Base and Head, and Head.
+function Get-GitHunks([string]$RepoRoot, [string]$Base, [string]$Head, [string]$Path) {
+    $diff = (Invoke-Git $RepoRoot @('diff', '--no-renames', '--no-color', '--no-ext-diff', '-U0', "$Base...$Head", '--', $Path)).Out
+    @(foreach ($l in $diff -split "`n") {
+            if ($l -match '^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@') {
+                $oc = if ($null -ne $Matches[2]) { [int]$Matches[2] } else { 1 }
+                $nc = if ($null -ne $Matches[4]) { [int]$Matches[4] } else { 1 }
+                New-Hunk ([int]$Matches[1]) $oc ([int]$Matches[3]) $nc
+            }
+        })
+}
+
+# A blob's text at a commit, or $null when the commit has no such path.
+function Get-GitBlobText([string]$RepoRoot, [string]$Rev, [string]$Path) {
+    $g = Invoke-Git $RepoRoot @('show', "${Rev}:$Path") -AllowFailure
+    if ($g.ExitCode -ne 0) { $null } else { $g.Out }
+}
+
+function Get-LineCount([string]$Text) {
+    if (-not $Text) { return 0 }
+    $n = $Text.Split("`n").Count - 1
+    if (-not $Text.EndsWith("`n")) { $n++ }
+    $n
+}
+
+# docs/ownership.json at a commit (partial maps allowed), or $null when the commit has none.
+function Get-GitOwnershipMap([string]$RepoRoot, [string]$Rev) {
+    $text = Get-GitBlobText $RepoRoot $Rev $script:MapPath
+    if ($null -eq $text) { return $null }
+    ConvertFrom-OwnershipJson $text "$($script:MapPath) at $($Rev.Substring(0, [Math]::Min(12, $Rev.Length)))" -Partial
+}
+
+# tools/ci/hygiene.json at a commit, or $null when the commit has none.
+function Get-GitHygieneConfig([string]$RepoRoot, [string]$Rev) {
+    $text = Get-GitBlobText $RepoRoot $Rev $script:ConfigPath
+    if ($null -eq $text) { return $null }
+    ConvertFrom-HygieneJson $text "$($script:ConfigPath) at $($Rev.Substring(0, [Math]::Min(12, $Rev.Length)))"
+}
+
+# Places the added lines of every change to a shared path of the map: its hunks and the file's merge-base length.
+function Add-GitAppendInfo([string]$RepoRoot, [string]$Base, [string]$Head, [string]$MergeBase, [object[]]$Changes, $Map) {
+    if ($null -eq $Map) { return }
+    foreach ($c in $Changes) {
+        if ($c.Status -cnotin @('A', 'M') -or -not (Get-SharedRule $Map $c.Path)) { continue }
+        $c.Hunks = @(Get-GitHunks $RepoRoot $Base $Head $c.Path)
+        $c.BaseLines = Get-LineCount (Get-GitBlobText $RepoRoot $MergeBase $c.Path)
+    }
 }
 
 function Test-GitTag([string]$RepoRoot, [string]$Tag) {
@@ -594,6 +935,33 @@ function Test-GitTag([string]$RepoRoot, [string]$Tag) {
 function Get-GitBranch([string]$RepoRoot) {
     $b = (Invoke-Git $RepoRoot @('rev-parse', '--abbrev-ref', 'HEAD')).Out.Trim()
     if ($b -eq 'HEAD') { $null } else { $b }
+}
+
+<#
+    Who last applied a label to a pull request: the issue events through `gh api`, else the event itself when it is
+    that label's 'labeled' event. '' when neither tells.
+#>
+function Get-GitHubLabelActor([string]$Repository, $PullRequest, [string]$Label, $GitHubEvent) {
+    $actor = ''
+    if ($Repository -and (Get-Command gh -ErrorAction SilentlyContinue)) {
+        try {
+            $out = & gh api --paginate "repos/$Repository/issues/$($PullRequest.number)/events" --jq '.[] | select(.event == "labeled") | [.label.name, .actor.login] | @tsv' 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                foreach ($line in @($out | ForEach-Object { "$_" })) {
+                    $parts = $line.Split("`t")
+                    if ($parts.Count -eq 2 -and $parts[0] -ceq $Label) { $actor = $parts[1].Trim() }
+                }
+            }
+            else { Write-Host "warning: gh api could not read the PR's label events ($out)" -ForegroundColor Yellow }
+        }
+        catch { Write-Host "warning: gh api could not read the PR's label events ($($_.Exception.Message))" -ForegroundColor Yellow }
+    }
+    if (-not $actor -and $GitHubEvent -and [string](Get-Prop $GitHubEvent 'action') -ceq 'labeled') {
+        $l = Get-Prop $GitHubEvent 'label'
+        $s = Get-Prop $GitHubEvent 'sender'
+        if ($l -and $s -and [string]$l.name -ceq $Label) { $actor = [string]$s.login }
+    }
+    $actor
 }
 
 # Labels as a list of names from a comma-separated or repeated -Labels argument.

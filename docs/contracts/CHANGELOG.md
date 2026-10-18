@@ -6,7 +6,7 @@ Every contract version, oldest first (OwnershipAndContractChange). Append new en
 - **<Contract> v<N>** (`<file>.md`, <owner>, <PR>): <what changed, or "first version">. Vectors: <what changed, or none>. Consumers: <who must act, or none>.
 ```
 
-Any family may append; only S0 rewrites or removes lines. After `contracts-v1`, a `contract-change` PR must add an entry naming every contract text it touches.
+Any family may append at the end (the ownership check rejects lines inserted earlier); only S0 rewrites, removes or inserts lines elsewhere. After `contracts-v1`, a `contract-change` PR must add an entry naming every contract text it touches. The integrator corrects a heading's date at merge when it is not the merge date.
 
 ## 2026-10-17
 
@@ -20,7 +20,7 @@ Any family may append; only S0 rewrites or removes lines. After `contracts-v1`, 
 
 ## 2026-10-18
 
-- **OwnershipAndContractChange v1** (`ownership-and-contract-change.md`, S0b, PR #9): first version. It covers families, slices and globs; exactly one owner per file; the shared append-only CHANGELOG; the branch grammar; the ownership check and the integrator's `ownership-exception` label; contract files; the `contracts-v1` freeze; `contract-change` PRs and the label check; and the CHANGELOG format. Vectors: owners, branches, contract files and globs (`tools/ci/fixtures/ownership/vectors.json`). Consumers: every workstream and the integrator.
+- **OwnershipAndContractChange v1** (`ownership-and-contract-change.md`, S0b, PR #9): first version. It covers families, slices and globs; exactly one owner per file; the shared CHANGELOG, appended at the end only; the branch grammar; trust (a branch is judged by the merge base's map and size rules, the governance paths change only on S0 and `int/` branches, and the base commit's checker also runs); the ownership check, the `integrators` list and the integrator's `ownership-exception` label; contract files; the `contracts-v1` freeze of every contract file present; `contract-change` PRs and the label check; and the CHANGELOG format. Vectors: owners, branches, contract files and globs (`tools/ci/fixtures/ownership/vectors.json`). Consumers: every workstream and the integrator.
 - **DataRootAndToolchain v1, additive** (`data-root-and-toolchain.md`, S0b, PR #9):
   - the `tokenizer` entry (11,422,654 bytes, SHA-256 `aeb13307…`), pending for CI runners;
   - verification of a pending file entry's pinned local copy;
@@ -29,5 +29,5 @@ Any family may append; only S0 rewrites or removes lines. After `contracts-v1`, 
   - the bootstrap self-test.
 
   Vectors: a pins table. Consumers: M1 and O1 (tokenizer path and hash), and V1 (SDK, if AP-3 is approved).
-- **ProjectGraph v1, additive** (`project-graph.md`, S0b, PR #9): the hygiene job runs the same validator. No rule changes. Vectors: one failing edit per rule. Consumers: none.
-- **AgentPermissions v1, additive** (`agent-permissions.md`, S0b, PR #9): the size check forbids `.claude/settings.json`. Agents may set `contract-change` on their own PRs; only the integrator sets `ownership-exception`. Vectors: none. Consumers: every agent session.
+- **ProjectGraph v1, additive** (`project-graph.md`, S0b, PR #9): the hygiene job runs the same validator, and its layering check scans the MSBuild extension files. A `.lrm.targets` file imports nothing, adds no reference item and sets no property of the root build files or of restore and the guard; Compile items stay inside their project; nested `Directory.Build.*`, `Directory.Packages.props`, `global.json` and `NuGet.Config`, and any `Directory.Build.rsp`, `Directory.Solution.*` or `<project>.user`, are refused outside `spikes/`. Vectors: one failing edit per rule, and one failing file set per evasion. Consumers: owners of a `.lrm.targets` file (R3 and R4a pass unchanged).
+- **AgentPermissions v1, additive** (`agent-permissions.md`, S0b, PR #9): the size check forbids `.claude/settings.json`, in any case. Agents may set `contract-change` on their own PRs; only the integrator sets `ownership-exception` and opens `int/` branches, which CI checks against `integrators`. Vectors: none. Consumers: every agent session.

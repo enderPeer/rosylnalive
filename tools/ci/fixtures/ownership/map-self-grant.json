@@ -1,0 +1,27 @@
+{
+  "schema": "lrm.ownership/1",
+  "about": "Fixture map for tools/ci/test-hygiene.ps1: a branch's own copy of docs/ownership.json in which O1 has granted itself the map and Lrm.Core. It must not change how the branch is judged.",
+  "integrators": [
+    "some-agent"
+  ],
+  "contract": {
+    "label": "contract-change",
+    "exceptionLabel": "ownership-exception",
+    "freezeTag": "contracts-v999",
+    "files": [
+      "src/Nothing/**"
+    ]
+  },
+  "families": {
+    "O1": {
+      "slices": [
+        "O1"
+      ],
+      "paths": [
+        "docs/ownership.json",
+        "src/Lrm.Core/**",
+        "tools/ci/**"
+      ]
+    }
+  }
+}
