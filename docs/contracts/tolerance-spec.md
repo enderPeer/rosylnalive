@@ -75,7 +75,7 @@ bound     = clamp(k * e_ref, floor, 10 * floor) = min(max(k * e_ref, floor), 10 
 }
 ```
 
-**Fields.** Readers ignore unknown top-level fields; inside `pairs` every field is known.
+**Fields.** Readers ignore unknown top-level fields; inside `pairs` every field is known, and a `rule` holds only `k` and `floors`.
 
 | Field | Meaning |
 | --- | --- |
@@ -89,9 +89,11 @@ bound     = clamp(k * e_ref, floor, 10 * floor) = min(max(k * e_ref, floor), 10 
 ## Loading and lookup
 
 `ToleranceSpec.load path` (or `parse json`) returns a `ToleranceSpec`. It raises `ToleranceFormatException` for any of the following:
-- invalid JSON, or a duplicate key anywhere;
+- invalid JSON, or a root that is not an object;
+- a duplicate key anywhere: at the top level, inside `pairs`, inside `greedy`, inside an ignored unknown field, and inside arrays. JSON parsers disagree on duplicates (System.Text.Json's `TryGetProperty` returns the last one), so a second `pairs` object would otherwise silently drop every bound of the first;
+- text that is not valid Unicode: a lone surrogate, written as an escape such as `\ud800` or present in the string passed to `parse`;
 - a schema other than `lrm.tolerances/1`;
-- an unknown pair, metric or field;
+- an unknown pair, metric or field, including a field of `rule` other than `k` and `floors`;
 - a bound that is not positive and finite, or an `e_ref` that is negative or not finite;
 - in a pair with a rule: a missing floor for a metric, a bound without `e_ref`, or a bound that is not exactly `clamp(k · e_ref, floor, 10 · floor)`.
 
@@ -115,4 +117,10 @@ The cpu tier checks:
 - the calibration vectors;
 - the sample file's lookups, defaults and `e_ref` values;
 - the frozen pair and metric names;
-- one refusal for each rule above: the schema, a bound off its rule, a calibrated bound without `e_ref`, an unknown pair, an unknown metric, a zero bound, a duplicate key and invalid JSON.
+- one refusal for each rule above:
+  - the schema, a bound off its rule, a calibrated bound without `e_ref`;
+  - an unknown pair, an unknown metric, an unknown field in a rule, a zero bound;
+  - duplicate keys: a pair, `schema`, a second `pairs`, inside `greedy` (in an array) and inside an unknown top-level field;
+  - a lone surrogate, as an escape and in the text;
+  - a root that is not an object, and invalid JSON;
+- that unknown top-level fields are ignored.

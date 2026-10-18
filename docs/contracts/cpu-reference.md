@@ -19,6 +19,7 @@ After contracts-v1, this text and its vectors change only through a `contract-ch
 Every op is one generic F# definition over `'T`, instantiated as `float32` (F32) or `float` (F64), so both modes run exactly the same sequence of operations. Any other `'T`, such as `Half`, raises `ArgumentException`.
 
 - **Activations** are row-major `HostTensor<'T>` (HostTensorAndSafetensors), read as `[Rows, Cols]`.
+- **The row ops** `softmax`, `logSumExp`, `argmax`, `argmaxRows`, `topK` and `kl` need rank 2 or more. Rank 0 and rank 1 raise `ArgumentException`. A vector `[n]` has `Rows = n` and `Cols = 1`, so a logits vector would otherwise silently become n rows of one element. Reshape one row of logits to `[1, n]`.
 - **Weights** are BF16 `HostTensor<uint16>`, widened exactly to `'T` (`Bf16.widen`; in F64 through the exact float32 value). They are never rounded.
 - **Results** are new tensors. `Rows.*` are the row kernels on spans, with no allocation except in `topK`, for CpuDevice to run over heap memory. The tensor ops in `CpuRef.*` apply them per row.
 
@@ -51,17 +52,19 @@ In the formulas, `widen` is exact bf16 widening and `fma(a, b, c)` is `a·b + c`
 | `siluMul gate up` | `s = g / (1 + exp(−g))`, then `y = s · u` |
 | `add a b` | `a + b` |
 | `copyRows src r0 dst d0 rows` | Copies whole rows, bit for bit |
-| `softmax x` | Per row: `m = max`; `e[i] = exp(x[i] − m)`; `l = Σ e`; `y[i] = e[i] / l`. A NaN anywhere makes the whole row NaN |
-| `logSumExp x` | Per row: `m + log(Σ exp(x[i] − m))` |
+| `softmax x` | Per row: `m = max`; `e[i] = exp(x[i] − m)`; `l = Σ e`; `y[i] = e[i] / l`. A NaN anywhere makes the whole row NaN. As in torch, a −∞ entry gives 0, while a +∞ entry or an all −∞ row gives NaN |
+| `logSumExp x` | Per row: `m + log(Σ exp(x[i] − m))`, with `m` the row maximum. When `m` is infinite, the result is `m`, as in `torch.logsumexp`: +∞ for a row holding +∞, and −∞ for a row of only −∞. The formula alone would give ∞ − ∞ = NaN. A NaN anywhere gives NaN |
 | `argmax x` | Per row: the lowest index of the maximum, by strict `>`, so +0 and −0 tie. A row holding a NaN raises `ArgumentException`; an empty row raises too |
 | `argmaxRows x` | The `argmax_rows` kernel's form: the same index, or `0xFFFFFFFF` for a row holding a NaN |
 | `topK x k` | Per row: the indices of the k largest values, largest first, equal values in index order. A NaN raises |
-| `kl p q` | Per row of logits: `KL(P ‖ Q) = Σ_i fma(exp(lp[i]), lp[i] − lq[i], ·)`, where `lp = p − logSumExp p` and `lq = q − logSumExp q` |
+| `kl p q` | Per row of logits: `KL(P ‖ Q) = Σ_i fma(exp(lp[i]), lp[i] − lq[i], ·)`, where `lp = p − logSumExp p` and `lq = q − logSumExp q`. A term whose computed `exp(lp[i])` is 0 is skipped (0 · log 0 = 0), as in `Metrics.klRow`. So a logit masked to −∞ in both rows adds nothing, where the formula would add 0 · (−∞ − −∞) = NaN. A skipped term with a finite `lp[i] − lq[i]` would have added a zero. Mass of P where Q has none gives +∞. A NaN, a +∞ logit or a row of only −∞ gives NaN |
 
 ### The KV cache
 
 - **K is stored after k_norm and RoPE; V is stored raw**, the `v_proj` output. These are the `attn.k_rope` and `attn.v_cache` taps.
 - **The cache is in the mode's dtype.** It is float32 for CpuRef F32, which is what every GPU keeps, and float64 for CpuRef F64 (ActivationNames: a tap has the dtype of its computation).
+  - This refines the plan's wording "both fp32" (dev plan, section 5). The cache is fp32 in F32 mode and on every GPU, and in the mode's dtype in CpuRef.
+  - An fp32 cache in F64 mode would round K and V to float32 at every layer. That error alone exceeds the 1e-12 acceptance against torch64p, whose cache is float64.
 - **Layout.** Each cache is `[maxPos, KvHeads·HeadDim]`, row `p` for position `p`. Attention reads only rows `0 .. past + rows − 1`, so rows beyond them may hold anything.
 
 ### ropeTable: T_spec without libm
@@ -69,6 +72,9 @@ In the formulas, `widen` is exact bf16 widening and `fma(a, b, c)` is `a·b + c`
 `ropeTable invFreqBits maxPos` (also `RopeTable.create exec`) builds the ReferenceOracles table:
 
 1. `freq[pos, j] = f32(f32(pos) · inv_freq[j])`, one float32 multiply of the exact position (`pos < 2^24`) and the pinned bits.
+   - `maxPos` lies in `1 .. 2^24`.
+   - `maxPos · head_dim/2` is at most `Array.MaxLength` (2,147,483,591), because cos and sin are each one .NET array. For example, head_dim 256 at 2^24 positions is 2^31 entries.
+   - Anything else raises `ArgumentException` naming `maxPos`, before any allocation.
 2. `cos[pos, j] = f32(RN64(cos freq))` and `sin[pos, j] = f32(RN64(sin freq))`. RN64 is the correctly rounded float64, and f32 rounds that to nearest even.
 
 **The float64 values are computed in exact fixed-point integer arithmetic** (`ExactTrig.cosSin`), never by the C runtime. This is recorded in `docs/decisions/O2-0001-exact-rope-table.md`.
@@ -137,6 +143,11 @@ The bounds are 1e-12 (F64) and 1e-6 (F32) per op. The chain is held to 1e-12 (F6
 The cpu tier of `Lrm.Tensor.Tests` covers:
 - **The vectors** above.
 - **Exactness:** exact bf16 widening, including subnormal and NaN bits; a one-hot matmul returns the widened weight column; the shape checks.
+- **Infinities and ranks:**
+  - `logSumExp` gives +∞, −∞ and NaN as above;
+  - `kl` stays finite for logits masked to −∞ in both rows, in both modes. It equals the KL without the masked entry bit for bit, and `Metrics.klRow` to 1e-13;
+  - every row op refuses a vector and a scalar;
+  - `ropeTable` refuses a table beyond the array limit.
 - **Batch invariance for T in {1, 7, 33, 128}, in both modes:** every row of embed, rmsNorm, matmul, RoPE, attention, siluMul and add equals the row computed alone. Each attention row equals a decode step over the same cache, and a prefill split into two chunks equals the whole.
 - **Thread counts:** every op is bit-identical at 1, 7 and 32 threads, in both modes, at T = 128.
 - **Properties** (fixed FsCheck seed):

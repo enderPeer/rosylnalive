@@ -58,6 +58,8 @@ A safetensors file is an 8-byte little-endian header length N, then N bytes of h
 1. The file has at least 8 bytes.
 2. N is at most 100,000,000 (the reference implementation's limit) and at most the file length minus 8.
 3. The header starts with `{` and is a UTF-8 JSON object.
+   - **Strict UTF-8.** The header bytes must be valid UTF-8: no invalid or truncated sequence, no overlong form and no encoded surrogate. This is checked before parsing, because System.Text.Json checks the bytes of a string only when it decodes it.
+   - **Valid Unicode escapes.** No key or string value may hold an escape that is not valid UTF-16, such as a lone `\ud800` or `\udc00`, or a high surrogate followed by anything but a low one. A surrogate pair such as `😀` is one character and is accepted. The writer refuses lone surrogates too.
 4. Keys are unique, at the top level, in `__metadata__` and inside each entry.
 5. `__metadata__`, when present, is an object of string values.
 6. Each tensor name is non-empty. Its entry is an object with exactly the fields `dtype`, `shape` and `data_offsets`.
@@ -163,7 +165,8 @@ The cpu tier of `Lrm.Tensor.Tests` covers:
   - every tiny golden safetensors file rebuilt byte for byte, with its manifest SHA-256.
 - **The reader:**
   - S1 read back, with `RebuildHeader` = `HeaderBytes`;
-  - one test for each of 19 malformed headers, plus a short file, an N beyond the file and an N above the cap;
+  - one test for each of 30 malformed headers, plus a short file, an N beyond the file and an N above the cap. Among the headers are invalid UTF-8 (a bad byte, a truncated sequence, CESU-8 and an overlong form) and lone surrogate escapes in a name, a field name, a dtype and a metadata key and value. Each case must raise exactly `SafetensorsFormatException` from both `Validate` and `Open`, and `Open`'s message must name the file;
+  - escaped names that are valid Unicode (a surrogate pair, `A`), decoded;
   - an N that is not a multiple of 8 accepted, with `IsAligned` false;
   - writers refused while a file is open;
   - spans invalid after `Dispose`;

@@ -43,6 +43,6 @@ Loading the dumped table instead would make a 4 MiB data file, the G2 dump for p
 ## Consequences
 
 - **The fallback of O1-0002 is never needed.** There is no table to load, and no platform dependence. The dumped tables remain the cross-check, and the cpu tier compares the tiny one bit for bit.
-- **The table is the same on every machine, runtime and thread count.** M2's RopeConstants hold only the pinned `inv_freq` bits, and any maxPos up to 2^24 works.
+- **The table is the same on every machine, runtime and thread count.** M2's RopeConstants hold only the pinned `inv_freq` bits. Any maxPos up to 2^24 works when the table fits a .NET array, that is, when maxPos · head_dim/2 ≤ `Array.MaxLength` (2,147,483,591). For Qwen3-0.6B (head_dim 128) that is every maxPos up to 2^24. A larger table raises `ArgumentException` before anything is allocated.
 - **The GPU kernels** (`rope_apply`) read this table and never evaluate sin or cos (KernelAbiAndCatalog). So a GPU run's RoPE inputs are identical on every node.
 - **`exp` and `log` stay libm.** The other CpuRef functions still come from the .NET runtime, and ExecutionClass scopes their bits through `Driver` and `Arch` (CpuReferenceSemantics, rule 6). Only the table, a model constant, is made exact.
