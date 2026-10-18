@@ -10,7 +10,7 @@ Last updated: 2026-10-18 (integrator, `int/wave1-fixes`). Phase 1 (Qwen3-0.6B fo
 | #2, #3 | `ws/S0a-scaffold`, `ws/S1-core` | Wave 0: scaffold, build, test runner, CI; Lrm.Core | open, reviewed |
 | #4 to #12 | `ws/O1-…` to `ws/R4b-…` | Wave 1: O1, R1, R3, C1, T1, S0b, R4a, O2, R4b | open, reviewed |
 | #13 | `int/wave1` | Integration preview of #2 to #12 (not a merge unit) | draft |
-| this | `int/wave1-fixes` | Cross-cutting fixes from the wave-1 requests, on top of #13 | open |
+| #14 | `int/wave1-fixes` | Cross-cutting fixes from the wave-1 requests, on top of #13 | open |
 
 R2a and R2b (Vulkan interop generator) have not started: they need vk.xml and Vulkan-Headers, which wait for the user's approval (AP-1). V1 depends on R2a.
 
@@ -35,7 +35,7 @@ R2a and R2b (Vulkan interop generator) have not started: they need vk.xml and Vu
 
 ## Next
 
-1. **The user:** merge #1, then #2 to #12 in order and this PR; then the integrator tags `contracts-v1` and `contracts-v1.1` (both after every wave-1 text is on `main`) and `wave-1-done`.
+1. **The user:** merge #1, then #2 to #12 in order and #14; then the integrator tags `contracts-v1` and `contracts-v1.1` (both after every wave-1 text is on `main`) and `wave-1-done`.
 2. **The user:** AP-1 (vk.xml, Vulkan-Headers and the tokenizer download on CI runners), so that R2a, R2b and V1 can start and M1's corpus test can run in CI; the repo labels `contract-change` and `ownership-exception`; AP-2 (branch protection).
 3. **Wave 2:** G2, M1, M2a, M2b, E1, D1 and R5 can start from `main`; V1 after R2a. Each starts from the routed notes in `LRM_DATA/spikes-staging/routed-notes.json`.
 4. **Template slots.** Several wave-1 metrics (R3's device and interop checks, R4b's shader metrics, C1's `cluster.*` names, S0b's hygiene summary) have no template slot yet. Each is added, through an `int/` change to T1's templates, in the PR whose run log first carries the metric.
