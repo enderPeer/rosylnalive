@@ -106,6 +106,11 @@ let tests =
                             |]
                         )
 
+                    // Long runs of one character (indentation, rules such as '=====', blobs): every BPE step looks up
+                    // a self-pair such as ('a', 'a'), the worst case for a weak merge-key hash.
+                    let runs =
+                        String.Join("\n", [| for c in [ 'a'; ' '; '='; '!' ] -> String(c, 1 <<< 16) |])
+
                     let measure mode threads input f =
                         {
                             Mode = mode
@@ -124,6 +129,9 @@ let tests =
                         measure "encode_cold" 1 "csharp" (fun () ->
                             t.ClearCache()
                             t.Encode(csharp).Length)
+                        measure "encode_cold" 1 "runs" (fun () ->
+                            t.ClearCache()
+                            t.Encode(runs).Length)
                     ],
                     List.min loads
 

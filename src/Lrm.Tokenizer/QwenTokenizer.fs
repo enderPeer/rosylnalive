@@ -17,7 +17,16 @@ type internal TokenizerMarker = class end
 /// oracle's NFC (Nfc), the Split pre-tokenizer (PreTokenizer) and byte-level BPE (BpeModel). It adds no BOS or EOS.
 [<Sealed>]
 type QwenTokenizer internal (parsed: TokenizerJson.Parsed, sha256: string) =
-    let bpe = BpeModel(parsed.TokenBytes, parsed.ByteIds, parsed.Merges, 1 <<< 16)
+    let bpe =
+        BpeModel(
+            parsed.TokenBytes,
+            parsed.ByteIds,
+            parsed.Merges,
+            QwenTokenizer.CacheCapacity,
+            QwenTokenizer.CacheUnits,
+            QwenTokenizer.CachedPieceUnits
+        )
+
     let trie = AddedTokenTrie parsed.Added
     let addedById = Dictionary<int, AddedToken>()
     let addedByContent = Dictionary<string, int>(StringComparer.Ordinal)
@@ -208,8 +217,18 @@ type QwenTokenizer internal (parsed: TokenizerJson.Parsed, sha256: string) =
     /// Forgets every cached piece (for cold-cache measurements); results never depend on the cache.
     member _.ClearCache() = bpe.ClearCache()
 
-    /// The number of cached pieces.
+    /// The number of pieces the piece cache holds: at most CacheCapacity, plus at most one per thread and generation
+    /// from threads racing a generation swap.
     member _.CachedPieces = bpe.CacheCount
+
+    /// The most pieces the piece cache holds: two generations of 32,768 (TokenizerApi contract, "The cache").
+    static member CacheCapacity = 1 <<< 16
+
+    /// The most UTF-16 units of piece text the piece cache holds: two generations of 1 Mi.
+    static member CacheUnits = 1 <<< 21
+
+    /// Pieces of more UTF-16 units than this are never cached.
+    static member CachedPieceUnits = 1 <<< 16
 
     /// The rows of Qwen3-0.6B's embedding and lm_head (config.json vocab_size). Ids from VocabSize up to here have no
     /// token and decode to nothing; ids at or above it are outside the model.

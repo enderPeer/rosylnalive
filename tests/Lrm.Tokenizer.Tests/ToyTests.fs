@@ -348,6 +348,97 @@ let private behaviourTests =
                 Expect.equal parallel' sequential "parallel = sequential"
                 Expect.isGreaterThan t.CachedPieces 0 "the cache filled"
 
+            testCase "the piece cache holds at most CacheCapacity pieces over generation swaps and never changes an id"
+            <| fun () ->
+                let t = QwenTokenizer.parse (toyJson ignore)
+                let cold = QwenTokenizer.parse (toyJson ignore)
+                let capacity = QwenTokenizer.CacheCapacity
+                Expect.equal capacity 65_536 "TokenizerApi, The cache"
+
+                // Distinct one-piece words: " w" and i in bijective base 26 over a to z.
+                let word (i: int) =
+                    let rec letters n acc =
+                        if n < 26 then
+                            char (97 + n) :: acc
+                        else
+                            letters (n / 26 - 1) (char (97 + n % 26) :: acc)
+
+                    " w" + String(Array.ofList (letters i []))
+
+                let words = Array.init (3 * capacity) word
+                Expect.equal (Array.distinct words).Length words.Length "distinct words"
+                t.ClearCache()
+                Expect.equal t.CachedPieces 0 "empty after ClearCache"
+                let mutable most = 0
+
+                let first =
+                    words
+                    |> Array.map (fun w ->
+                        let ids = t.Encode w
+                        most <- max most t.CachedPieces
+                        ids)
+
+                Expect.isLessThanOrEqual most capacity "never more than CacheCapacity pieces"
+                Expect.isGreaterThan most (capacity / 2) "the generations swapped"
+                Expect.isLessThanOrEqual t.CachedPieces capacity "after the pass"
+                // A second pass hits the current or previous generation, or misses; the ids are the same.
+                Expect.equal (Array.map t.Encode words) first "second pass"
+
+                for i in 0..97 .. words.Length - 1 do
+                    cold.ClearCache()
+                    Expect.equal (cold.Encode words[i]) first[i] words[i]
+
+                // 8 threads across the same swaps: the same ids, and at most one extra piece per thread and generation.
+                let p = QwenTokenizer.parse (toyJson ignore)
+                let parallel' = Array.zeroCreate<int[]> words.Length
+
+                Parallel.For(
+                    0,
+                    words.Length,
+                    ParallelOptions(MaxDegreeOfParallelism = 8),
+                    fun i -> parallel'[i] <- p.Encode words[i]
+                )
+                |> ignore
+
+                Expect.equal parallel' first "8 threads = sequential"
+                Expect.isLessThanOrEqual p.CachedPieces (capacity + 2 * 8) "8 threads racing swaps"
+
+            testCase "only pieces of at most CachedPieceUnits UTF-16 units are cached"
+            <| fun () ->
+                let t = QwenTokenizer.parse (toyJson ignore)
+                let limit = QwenTokenizer.CachedPieceUnits
+                Expect.equal limit 65_536 "TokenizerApi, The cache"
+
+                let cachedAfter (text: string) =
+                    t.ClearCache()
+                    let ids = t.Encode text
+                    Expect.equal (t.Encode text) ids "cached or not, the same ids"
+                    t.CachedPieces
+
+                Expect.equal (cachedAfter (String('b', 300))) 1 "a long piece: cached"
+                Expect.equal (cachedAfter (String('b', limit))) 1 "CachedPieceUnits units: cached"
+                Expect.equal (cachedAfter (String('b', limit + 1))) 0 "one more: not cached"
+                // U+1F600 is 2 UTF-16 units.
+                Expect.equal (cachedAfter (String.replicate (limit / 2) "\U0001F600")) 1 "astral, at the limit"
+                Expect.equal (cachedAfter (String.replicate (limit / 2 + 1) "\U0001F600")) 0 "astral, over it"
+
+            testCase "the piece cache holds about CacheUnits units of long pieces"
+            <| fun () ->
+                let t = QwenTokenizer.parse (toyJson ignore)
+                let limit = QwenTokenizer.CachedPieceUnits
+                Expect.equal QwenTokenizer.CacheUnits (1 <<< 21) "TokenizerApi, The cache"
+                let pieces = [| for i in 0..63 -> String('b', limit - i) |]
+                let mutable most = 0
+
+                for p in pieces do
+                    t.Encode p |> ignore
+                    most <- max most t.CachedPieces
+
+                // Each generation is full once it reaches CacheUnits / 2, so its last piece may overshoot.
+                let bound = (QwenTokenizer.CacheUnits + 2 * limit) / (limit - 63)
+                Expect.isLessThanOrEqual most bound "about CacheUnits units"
+                Expect.isGreaterThan most (QwenTokenizer.CacheUnits / 2 / limit) "the generations filled"
+
             testCase "decoding the encoding gives the NFC text back"
             <| fun () ->
                 let t = toy.Force()

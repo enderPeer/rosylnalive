@@ -155,7 +155,8 @@ let private readMerges (model: JsonElement) (ids: Dictionary<string, int>) =
     if merges.ValueKind <> JsonValueKind.Array then
         fail "model.merges is not an array"
 
-    let table = Dictionary<int64, int64>(merges.GetArrayLength())
+    // The default Int64 hash collides on these keys (MergeKey).
+    let table = Dictionary<int64, int64>(merges.GetArrayLength(), MergeKey.comparer)
     let mutable rank = 0
 
     for m in merges.EnumerateArray() do
@@ -176,7 +177,7 @@ let private readMerges (model: JsonElement) (ids: Dictionary<string, int>) =
         let l = idOf left
         let r = idOf right
         let merged = idOf (left + right)
-        let key = (int64 l <<< 32) ||| int64 (uint32 r)
+        let key = MergeKey.pack l r
 
         if not (table.TryAdd(key, (int64 rank <<< 32) ||| int64 merged)) then
             fail (sprintf "model.merges[%d] repeats the pair '%s' '%s'" rank left right)
