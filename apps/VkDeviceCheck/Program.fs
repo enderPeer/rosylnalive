@@ -1,75 +1,55 @@
-open Lrm.Gpu.Vulkan
-open Lrm.Gpu.Vulkan.DeviceCheck
+/// VkDeviceCheck: checks the binding's struct layouts against vk.xml, then lists every Vulkan device with the
+/// VK_EXT_descriptor_heap verdict (VulkanHeapRecipe section 1).
+///
+///     dotnet artifacts/bin/VkDeviceCheck/release/VkDeviceCheck.dll [--json]
+///
+/// Exit codes: 0 at least one device accepted; 1 no Vulkan loader; 2 layout mismatch; 3 no device accepted.
+module VkDeviceCheck.Program
 
-let deviceTypeName =
-    function
-    | VkPhysicalDeviceType.VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU -> "integrated GPU"
-    | VkPhysicalDeviceType.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU -> "discrete GPU"
-    | VkPhysicalDeviceType.VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU -> "virtual GPU"
-    | VkPhysicalDeviceType.VK_PHYSICAL_DEVICE_TYPE_CPU -> "CPU"
-    | _ -> "other"
-
-let yesNo b = if b then "yes" else "no"
-
-let printOptional (o: OptionalFeatures) =
-    printfn "  optional:"
-    printfn "    descriptorHeapCaptureReplay       %s" (yesNo o.DescriptorHeapCaptureReplay)
-    printfn "    VK_KHR_shader_untyped_pointers    %s" (yesNo o.ShaderUntypedPointers)
-    printfn "    VK_KHR_cooperative_matrix         %s" (yesNo o.CooperativeMatrix)
-    printfn "    shaderFloat16                     %s" (yesNo o.ShaderFloat16)
-    printfn "    shaderInt8                        %s" (yesNo o.ShaderInt8)
-
-let printHeap (h: DescriptorHeapLimits) =
-    printfn "  descriptor heap:"
-    printfn "    maxPushDataSize                   %d" h.MaxPushDataSize
-    printfn "    maxResourceHeapSize               %d" h.MaxResourceHeapSize
-    printfn "    resourceHeapAlignment             %d" h.ResourceHeapAlignment
-    printfn "    minResourceHeapReservedRange      %d" h.MinResourceHeapReservedRange
-    printfn "    bufferDescriptorSize / align      %d / %d" h.BufferDescriptorSize h.BufferDescriptorAlignment
-    printfn "    imageDescriptorSize / align       %d / %d" h.ImageDescriptorSize h.ImageDescriptorAlignment
-    printfn "    samplerDescriptorSize / align     %d / %d" h.SamplerDescriptorSize h.SamplerDescriptorAlignment
-    printfn "    maxSamplerHeapSize                %d" h.MaxSamplerHeapSize
+open Lrm.Gpu.Vulkan.Interop
 
 [<EntryPoint>]
-let main _ =
+let main argv =
     Lrm.Core.Process.init ()
+    let json = argv |> Array.contains "--json"
 
     match LayoutCheck.run () with
-    | [] -> printfn "struct layouts: %d structs match vk.xml" VkXmlLayout.expected.Length
+    | [] ->
+        if not json then
+            printfn
+                "struct layouts: %d structs and unions match vk.xml (VK_HEADER_VERSION %d)"
+                VkMeta.Structs.Length
+                VkMeta.HeaderVersion
+
+        match VulkanLoader.TryOpen() with
+        | None ->
+            eprintfn "no Vulkan loader (vulkan-1.dll / libvulkan.so.1) found"
+            1
+        | Some loader ->
+            use loader = loader
+            let instanceVersion, reports = DeviceCheck.checkAll loader
+
+            if json then
+                printfn "%s" (DeviceCheck.toJson instanceVersion reports)
+            else
+                printfn "loader instance version: %s" (VkVersion.toString instanceVersion)
+                printfn "physical devices: %d" reports.Length
+
+                for r in reports do
+                    printfn ""
+
+                    for line in DeviceCheck.format r do
+                        printfn "%s" line
+
+                let accepted = reports |> List.filter _.Accepted |> List.length
+                printfn ""
+                printfn "%d of %d device(s) accepted" accepted reports.Length
+
+            if reports |> List.exists _.Accepted then 0 else 3
     | errors ->
         printfn "struct layouts: MISMATCH"
-        errors |> List.iter (printfn "  %s")
-        exit 2
 
-    match VulkanLoader.TryOpen() with
-    | None ->
-        printfn "no Vulkan loader (vulkan-1.dll / libvulkan.so.1) found"
-        1
-    | Some loader ->
-        use loader = loader
-        let instanceVersion, reports = checkAll loader
-        printfn "loader instance version: %s" (VkVersion.toString instanceVersion)
-        printfn "physical devices: %d" reports.Length
+        for e in errors do
+            printfn "  %s" e
 
-        for r in reports do
-            let id = r.Identity
-            printfn ""
-            printfn "%s (%s, vendor 0x%04x device 0x%04x)" id.Name (deviceTypeName id.Type) id.VendorId id.DeviceId
-            printfn "  Vulkan %s, driver %s %s" (VkVersion.toString id.ApiVersion) id.DriverName id.DriverInfo
-
-            match r.Verdict with
-            | Accepted caps ->
-                printfn "  verdict: ACCEPTED"
-                printHeap caps.DescriptorHeap
-            | Rejected reasons ->
-                printfn "  verdict: REJECTED"
-
-                for reason in reasons do
-                    printfn "    - %s" reason
-
-            printOptional r.Optional
-
-        let accepted = reports |> List.filter (fun r -> r.Verdict.IsAccepted) |> List.length
-        printfn ""
-        printfn "%d of %d device(s) accepted" accepted reports.Length
-        if accepted > 0 then 0 else 3
+        2
