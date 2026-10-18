@@ -166,6 +166,12 @@ let tests =
                         let bytes = Safetensors.toBytes f.Metadata tensors
                         Expect.equal (Hash.sha256 bytes) g.Sha256 (g.Name + " rewritten")
 
+                use m = set.OpenSafetensors "model/model.safetensors"
+                Expect.equal (m.Entries.Length, m.HeaderLength) (24, 2480L) "tiny model: 24 tensors, N = 2,480"
+                Expect.sequenceEqual m.Metadata [| "format", "pt" |] "tiny model metadata"
+                Expect.isTrue (m.Entries |> Array.forall (fun e -> e.Desc.DType = DType.BF16)) "all BF16"
+                Expect.isFalse (m.Contains "lm_head.weight") "no lm_head (tied)"
+
             testCase "while a file is open nobody can write it, and spans end with Dispose"
             <| fun () ->
                 withFile (Safetensors.toBytes S1.metadata S1.tensors) (fun path ->
