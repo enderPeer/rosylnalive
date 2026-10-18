@@ -1,0 +1,18 @@
+# English lines written for the LRM tokenizer corpus, one case per line; lines starting with # are comments.
+The model reads C# and IL as Roslyn objects, and its experts call the compiler from inside its layers.
+It's not a toy: we've measured it, and they'll see the numbers when it's done.
+I'm sure you're right, but I'd check the tolerance before we'd merge it.
+Don't, can't, won't, shouldn't, wouldn't, couldn't, isn't, aren't, wasn't, weren't.
+THAT'S WHAT IT'S FOR. YOU'RE LATE. WE'VE GOT IT. THEY'LL COME. I'D GO. I'M HERE.
+Rock 'n' roll, 'twas the night, o'clock, ma'am, y'all, ne'er-do-well.
+The 'quoted' word and the "double-quoted" word and the `backticked` word.
+Prices rose 3.5% to $1,299.99 on 2026-10-18; the CPU ran at 5.8 GHz with 32 threads.
+Version 1.4.365 of the registry; build 10.0.402 of the SDK; 0x7FFF_FFFF is the mask.
+Gate 1: logits match within 1e-4 and greedy ids are identical over 64 steps.
+An e-mail to someone@example.com about https://example.com/path?query=1&x=2#frag was sent.
+Hello,world.No space after punctuation!Really?Yes;indeed:quite.
+A sentence with  two spaces, three   spaces, and a tab	here.
+Trailing spaces at the end of this line.
+    Leading spaces at the start of this line.
+...and an ellipsis... and dashes -- and — and – too.
+CamelCaseIdentifier snake_case_identifier SCREAMING_CASE kebab-case-identifier.

@@ -1,6 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: O2. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
+    <Compile Include="Common.fs" />
+    <Compile Include="TinyModel.fs" />
+    <Compile Include="TensorTests.fs" />
+    <Compile Include="SafetensorsTests.fs" />
+    <Compile Include="CompareTests.fs" />
+    <Compile Include="GoldensTests.fs" />
+    <Compile Include="ToleranceTests.fs" />
+    <Compile Include="RopeTests.fs" />
+    <Compile Include="CpuRefTests.fs" />
+    <Compile Include="TinyModelTests.fs" />
+    <Compile Include="ModelTests.fs" />
+    <Compile Include="Bench.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 </Project>

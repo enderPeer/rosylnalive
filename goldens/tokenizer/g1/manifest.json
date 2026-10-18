@@ -1,0 +1,317 @@
+{
+  "about": "Qwen3 tokenizer corpus for M1 (TokenizerApi): ids from HF tokenizers for C# and IL text, CRLF and lone CR, tabs, space runs, Unicode spaces, digits, contractions with case folding, de/zh/ja and other scripts, emoji, astral letters, newer Unicode, every added token, NFC, invalid UTF-8, lone surrogates and decode cases.",
+  "added_tokens": [
+    {
+      "content": "<|endoftext|>",
+      "id": 151643,
+      "special": true
+    },
+    {
+      "content": "<|im_start|>",
+      "id": 151644,
+      "special": true
+    },
+    {
+      "content": "<|im_end|>",
+      "id": 151645,
+      "special": true
+    },
+    {
+      "content": "<|object_ref_start|>",
+      "id": 151646,
+      "special": true
+    },
+    {
+      "content": "<|object_ref_end|>",
+      "id": 151647,
+      "special": true
+    },
+    {
+      "content": "<|box_start|>",
+      "id": 151648,
+      "special": true
+    },
+    {
+      "content": "<|box_end|>",
+      "id": 151649,
+      "special": true
+    },
+    {
+      "content": "<|quad_start|>",
+      "id": 151650,
+      "special": true
+    },
+    {
+      "content": "<|quad_end|>",
+      "id": 151651,
+      "special": true
+    },
+    {
+      "content": "<|vision_start|>",
+      "id": 151652,
+      "special": true
+    },
+    {
+      "content": "<|vision_end|>",
+      "id": 151653,
+      "special": true
+    },
+    {
+      "content": "<|vision_pad|>",
+      "id": 151654,
+      "special": true
+    },
+    {
+      "content": "<|image_pad|>",
+      "id": 151655,
+      "special": true
+    },
+    {
+      "content": "<|video_pad|>",
+      "id": 151656,
+      "special": true
+    },
+    {
+      "content": "<tool_call>",
+      "id": 151657,
+      "special": false
+    },
+    {
+      "content": "</tool_call>",
+      "id": 151658,
+      "special": false
+    },
+    {
+      "content": "<|fim_prefix|>",
+      "id": 151659,
+      "special": false
+    },
+    {
+      "content": "<|fim_middle|>",
+      "id": 151660,
+      "special": false
+    },
+    {
+      "content": "<|fim_suffix|>",
+      "id": 151661,
+      "special": false
+    },
+    {
+      "content": "<|fim_pad|>",
+      "id": 151662,
+      "special": false
+    },
+    {
+      "content": "<|repo_name|>",
+      "id": 151663,
+      "special": false
+    },
+    {
+      "content": "<|file_sep|>",
+      "id": 151664,
+      "special": false
+    },
+    {
+      "content": "<tool_response>",
+      "id": 151665,
+      "special": false
+    },
+    {
+      "content": "</tool_response>",
+      "id": 151666,
+      "special": false
+    },
+    {
+      "content": "<think>",
+      "id": 151667,
+      "special": false
+    },
+    {
+      "content": "</think>",
+      "id": 151668,
+      "special": false
+    }
+  ],
+  "checks": {
+    "decode_equals_errors_replace": 519,
+    "no_bos": 5070,
+    "reject_exception": "TypeError",
+    "rejected": 8,
+    "round_trip_mismatch": [],
+    "round_trip_nfc": 5070,
+    "transformers": {
+      "agree": 5070,
+      "class": "Qwen2Tokenizer",
+      "differ": []
+    }
+  },
+  "counts": {
+    "by_category": {
+      "added": 522,
+      "astral": 318,
+      "casefold": 198,
+      "chatml": 9,
+      "codepoint": 255,
+      "contractions": 420,
+      "csharp": 365,
+      "decode": 519,
+      "digits": 133,
+      "emoji": 442,
+      "il": 364,
+      "long": 17,
+      "mixture": 395,
+      "multilingual": 187,
+      "nfc": 173,
+      "number-class": 260,
+      "prose": 34,
+      "surrogate": 8,
+      "unicode-space": 399,
+      "unicode-version": 72,
+      "utf8": 141,
+      "whitespace": 366
+    },
+    "by_kind": {
+      "decode": 519,
+      "encode": 4929,
+      "encode_bytes": 141,
+      "encode_reject": 8
+    },
+    "cases": 5597
+  },
+  "double_run": {
+    "attempts": [
+      {
+        "digest_a": "e9d91d4013a1092788902f708c63ed51d60908c3bc8be57a66a0a679f3ce9580",
+        "digest_b": "e9d91d4013a1092788902f708c63ed51d60908c3bc8be57a66a0a679f3ce9580",
+        "identical": true,
+        "threads": 8
+      }
+    ],
+    "digest": "e9d91d4013a1092788902f708c63ed51d60908c3bc8be57a66a0a679f3ce9580",
+    "identical": true,
+    "threads": 8
+  },
+  "env": {
+    "cpu_capability": "AVX2",
+    "deterministic_algorithms": true,
+    "library_sources": {
+      "transformers/cache_utils.py": "17b4aff340ca287cd248d179819db77e775f857678f17088528f1e14227773c2",
+      "transformers/generation/utils.py": "7944240ff1ee27a7b3acc16571b7a480cc14f16e7222aeb1a79d289ebc96e3ea",
+      "transformers/masking_utils.py": "ef6f77df4c9bd9bbe93e21c8fe03c830b461d21dc1c6013cc2690f248cf1dee8",
+      "transformers/modeling_rope_utils.py": "6a0727073e080e163d0287e15fc1acb90035e9a9df9cb19a13b632a40abfac24",
+      "transformers/models/qwen3/configuration_qwen3.py": "49d9ccd0f29ccd977b93dba2004f84b867891b3d0509b71fd8ba3ed01054e64d",
+      "transformers/models/qwen3/modeling_qwen3.py": "ca9535e36ea4e689c76d7d753b91aec9ea00da837fbf223c8ea4c01a3b50cac0"
+    },
+    "machine": "AMD64",
+    "mkl": true,
+    "os": "Windows",
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "threads": 8,
+    "torch_config_sha256": "a29c96e46c8d9375db30335ca82560abddfa6ce33cf55c1440eca5d188898eb1",
+    "venv_lock": {
+      "file": "tools/goldens/requirements.lock",
+      "matches": true,
+      "sha256": "4541c53d833e82da1b5c959008b0e03620f68d9522a6519176da6fb3c86a6190"
+    },
+    "versions": {
+      "numpy": "2.4.6",
+      "python": "3.11.9",
+      "safetensors": "0.8.0",
+      "tokenizers": "0.23.3",
+      "torch": "2.14.1+cpu",
+      "transformers": "5.20.1"
+    }
+  },
+  "eos": {
+    "ignored": true,
+    "note": "the tokenizer adds no BOS or EOS; EOS ids are ordinary added tokens here"
+  },
+  "files": [
+    {
+      "bytes": 995340,
+      "location": "repo",
+      "path": "goldens/tokenizer/g1/cases.jsonl",
+      "role": "cases",
+      "sha256": "35ff0c43a1bc4325588b1a22953f861784e4ca76e0f3f863a5f70ff9ceb16c66"
+    }
+  ],
+  "generator": {
+    "command": "pwsh tools/goldens/run.ps1 make_tokenizer.py",
+    "files": {
+      "tools/goldens/common.py": "236c33403fb3ed1b5ccf82dca2f6131056b64bea731f700ef8f0237b99b73dec",
+      "tools/goldens/make_tokenizer.py": "8574eb38d7ae04f9a8407a6f6f3a4449c64c610d50feb6d88803f2ee34cf130b",
+      "tools/goldens/tokenizer/csharp.txt": "66904bdc441535cad637c72318b1bf25eaa428bcf3ef5dfd9811d1f5831c959d",
+      "tools/goldens/tokenizer/il.txt": "88703a9a3c55912cb1da3150d1a87a5ae452d6db4cc21eadb94cf4d322c52689",
+      "tools/goldens/tokenizer/multilingual.txt": "b26d6bc4293e1984d0cbfb675094e6db15078ac5025be65cd56f379957c4614f",
+      "tools/goldens/tokenizer/prose.txt": "769f2d92744fe45edcd674a3d79968e1046a5db2f749dedaa75e8d6e56bb4ea2"
+    }
+  },
+  "guards": {
+    "env": {
+      "HF_HUB_DISABLE_TELEMETRY": "1",
+      "HF_HUB_OFFLINE": "1",
+      "TOKENIZERS_PARALLELISM": "false",
+      "TRANSFORMERS_OFFLINE": "1",
+      "USE_HUB_KERNELS": "0"
+    },
+    "hf_hub_offline": true,
+    "hub_is_offline_mode": true,
+    "hub_kernels_enabled": false,
+    "kernels_importable": false,
+    "python_isolated": true
+  },
+  "kind": "tokenizer-corpus",
+  "model": {
+    "files": {
+      "tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"
+    },
+    "path": "LRM_DATA/models/Qwen3-0.6B",
+    "revision": "c1899de289a04d12100db370d81485cdf75e47ca"
+  },
+  "oracle": {
+    "decode": "decode(ids, skip_special_tokens=False)",
+    "decoder": {
+      "add_prefix_space": false,
+      "trim_offsets": false,
+      "type": "ByteLevel",
+      "use_regex": false
+    },
+    "encode": "encode(text, add_special_tokens=False).ids",
+    "library": "tokenizers 0.23.3",
+    "load": "Tokenizer.from_file(tokenizer.json)",
+    "normalizer": {
+      "type": "NFC"
+    },
+    "pre_tokenizer": {
+      "pretokenizers": [
+        {
+          "behavior": "Isolated",
+          "invert": false,
+          "pattern": {
+            "Regex": "(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+"
+          },
+          "type": "Split"
+        },
+        {
+          "add_prefix_space": false,
+          "trim_offsets": false,
+          "type": "ByteLevel",
+          "use_regex": false
+        }
+      ],
+      "type": "Sequence"
+    }
+  },
+  "schema": "lrm.golden/1",
+  "semantics": {
+    "decode": "bytes = concatenated token bytes (DecodeBytes); text = Decode(ids) = bytes decoded with errors=replace; ids 151669..151935 (lm_head rows with no token) add no bytes",
+    "encode": "ids = Encode(text): added tokens first, NFC, the Split regex, byte-level BPE; no BOS",
+    "encode_bytes": "text = bytes decoded as UTF-8 with U+FFFD per maximal invalid subpart (errors=replace); ids = Encode(text)",
+    "encode_reject": "text = the UTF-16 code units in utf16 (big-endian hex, 4 digits per unit); Encode(text) raises: the text holds a lone surrogate"
+  },
+  "set": "tokenizer",
+  "threads": 8,
+  "version": "g1",
+  "vocab_model_rows": 151936,
+  "vocab_real_ids": 151669
+}

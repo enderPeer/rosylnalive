@@ -1,0 +1,195 @@
+// IL listings written for the LRM tokenizer corpus, in ildasm style. Snippets are separated by a line holding %%.
+%%
+.assembly extern System.Runtime
+{
+  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )
+  .ver 10:0:0:0
+}
+.assembly Lrm.Samples
+{
+  .hash algorithm 0x00008004
+  .ver 1:0:0:0
+}
+.module Lrm.Samples.dll
+// MVID: {6B1E2C3D-4A5F-4E6D-9C8B-7A6F5E4D3C2B}
+.imagebase 0x00400000
+.file alignment 0x00000200
+.stackreserve 0x00100000
+.subsystem 0x0003       // WINDOWS_CUI
+.corflags 0x00000001    //  ILONLY
+%%
+.class public abstract auto ansi sealed beforefieldinit Lrm.Samples.MathUtil
+       extends [System.Runtime]System.Object
+{
+  .method public hidebysig static int32  Add(int32 a,
+                                             int32 b) cil managed
+  {
+    // Code size       4 (0x4)
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ldarg.1
+    IL_0002:  add
+    IL_0003:  ret
+  } // end of method MathUtil::Add
+}
+%%
+  .method public hidebysig static int64  Factorial(int32 n) cil managed
+  {
+    // Code size       45 (0x2d)
+    .maxstack  2
+    .locals init (int64 V_0,
+             int32 V_1)
+    IL_0000:  ldarg.0
+    IL_0001:  ldc.i4.0
+    IL_0002:  bge.s      IL_0014
+    IL_0004:  ldstr      "n"
+    IL_0009:  newobj     instance void [System.Runtime]System.ArgumentOutOfRangeException::.ctor(string)
+    IL_000e:  throw
+    IL_0014:  ldc.i4.1
+    IL_0015:  conv.i8
+    IL_0016:  stloc.0
+    IL_0017:  ldc.i4.2
+    IL_0018:  stloc.1
+    IL_0019:  br.s       IL_0025
+    IL_001b:  ldloc.0
+    IL_001c:  ldloc.1
+    IL_001d:  conv.i8
+    IL_001e:  mul
+    IL_001f:  stloc.0
+    IL_0020:  ldloc.1
+    IL_0021:  ldc.i4.1
+    IL_0022:  add
+    IL_0023:  stloc.1
+    IL_0025:  ldloc.1
+    IL_0026:  ldarg.0
+    IL_0027:  ble.s      IL_001b
+    IL_0029:  ldloc.0
+    IL_002a:  ret
+  } // end of method MathUtil::Factorial
+%%
+  .method public hidebysig specialname rtspecialname
+          instance void  .ctor(float64 X,
+                               float64 Y) cil managed
+  {
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 )
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  ldarg.1
+    IL_0002:  stfld      float64 Lrm.Samples.Point::'<X>k__BackingField'
+    IL_0007:  ldarg.0
+    IL_0008:  ldarg.2
+    IL_0009:  stfld      float64 Lrm.Samples.Point::'<Y>k__BackingField'
+    IL_000e:  ldarg.0
+    IL_000f:  call       instance void [System.Runtime]System.Object::.ctor()
+    IL_0014:  ret
+  } // end of method Point::.ctor
+%%
+  .method private hidebysig static string
+          '<Main>g__Describe|0_0'(object o) cil managed
+  {
+    .maxstack  3
+    .locals init (string V_0, int32 V_1, string V_2)
+    IL_0000:  ldarg.0
+    IL_0001:  brtrue.s   IL_000a
+    IL_0003:  ldstr      "null"
+    IL_0008:  stloc.0
+    IL_0009:  ret
+    IL_000a:  ldarg.0
+    IL_000b:  isinst     [System.Runtime]System.Int32
+    IL_0010:  brfalse.s  IL_0030
+    IL_0012:  ldarg.0
+    IL_0013:  unbox.any  [System.Runtime]System.Int32
+    IL_0018:  stloc.1
+    IL_0019:  ldloc.1
+    IL_001a:  ldc.i4.0
+    IL_001b:  bge.s      IL_0024
+    IL_001d:  ldstr      bytearray (6E 00 65 00 67 00 61 00 74 00 69 00 76 00 65 00 )
+    IL_0022:  stloc.0
+    IL_0023:  ret
+    IL_0030:  ldnull
+    IL_0031:  ret
+  }
+%%
+  .method public hidebysig newslot virtual final
+          instance class [System.Runtime]System.Threading.Tasks.Task`1<string>
+          FetchAsync(class [System.Net.Http]System.Net.Http.HttpClient client,
+                     class [System.Runtime]System.Uri uri,
+                     [opt] valuetype [System.Runtime]System.Threading.CancellationToken ct) cil managed
+  {
+    .param [3] = nullref
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.AsyncStateMachineAttribute::.ctor(class [System.Runtime]System.Type) = ( 01 00 1F 4C 72 6D 2E 53 61 6D 70 6C 65 73 00 00 )
+    .maxstack  2
+    .locals init (valuetype Lrm.Samples.'<FetchAsync>d__3' V_0)
+    IL_0000:  ldloca.s   V_0
+    IL_0002:  call       valuetype [System.Runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [System.Runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<string>::Create()
+    IL_0007:  stfld      valuetype [System.Runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<string> Lrm.Samples.'<FetchAsync>d__3'::'<>t__builder'
+    IL_000c:  ldloca.s   V_0
+    IL_000e:  ldc.i4.m1
+    IL_000f:  stfld      int32 Lrm.Samples.'<FetchAsync>d__3'::'<>1__state'
+    IL_0014:  ret
+  }
+%%
+    .try
+    {
+      IL_0000:  ldc.i4     0x7fffffff
+      IL_0005:  ldarg.0
+      IL_0006:  add.ovf
+      IL_0007:  pop
+      IL_0008:  leave.s    IL_0020
+    }  // end .try
+    filter
+    {
+      IL_000a:  isinst     [System.Runtime]System.OverflowException
+      IL_000f:  dup
+      IL_0010:  brtrue.s   IL_0016
+      IL_0012:  pop
+      IL_0013:  ldc.i4.0
+      IL_0014:  br.s       IL_001e
+      IL_0016:  callvirt   instance string [System.Runtime]System.Exception::get_Message()
+      IL_001b:  ldc.i4.1
+      IL_001e:  endfilter
+    }  // end filter
+    {  // handler
+      IL_001f:  pop
+      IL_0020:  leave.s    IL_0022
+    }  // end handler
+    finally
+    {
+      IL_0022:  endfinally
+    }
+%%
+  .method public hidebysig static float32 Cos(int32 pos, float32 invFreq) cil managed
+  {
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  conv.r4
+    IL_0002:  ldarg.1
+    IL_0003:  mul
+    IL_0004:  conv.r8
+    IL_0005:  call       float64 [System.Runtime]System.Math::Cos(float64)
+    IL_000a:  conv.r4
+    IL_000b:  ret
+  }
+  .field private static literal int32 Mask = int32(0x7FFFFFFF)
+  .field private static literal float64 Pi = float64(3.1415926535897931)
+  .field private static literal float32 Eps = float32(9.9999999747524271e-07)
+  .field private initonly class [System.Collections]System.Collections.Generic.Dictionary`2<string,class [System.Collections]System.Collections.Generic.List`1<int32>> _index
+%%
+  .method public hidebysig static void  Unsafe(uint8* p, native int n) cil managed
+  {
+    .maxstack  3
+    IL_0000:  ldarg.0
+    IL_0001:  ldc.i4.0
+    IL_0002:  ldarg.1
+    IL_0003:  initblk
+    IL_0005:  ldarg.0
+    IL_0006:  ldind.u1
+    IL_0007:  ldc.i4.s   42
+    IL_0009:  stind.i1
+    IL_000a:  ldsflda    valuetype '<PrivateImplementationDetails>'/'__StaticArrayInitTypeSize=16' '<PrivateImplementationDetails>'::'1A2B3C4D5E6F7A8B9C0D1E2F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B'
+    IL_000f:  pop
+    IL_0010:  sizeof     Lrm.Samples.VkBufferCreateInfo
+    IL_0016:  localloc
+    IL_0018:  pop
+    IL_0019:  ret
+  }
