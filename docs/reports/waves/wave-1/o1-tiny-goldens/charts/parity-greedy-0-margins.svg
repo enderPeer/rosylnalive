@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="parity-greedy-0-margins-title parity-greedy-0-margins-desc">
+<title id="parity-greedy-0-margins-title">Smallest top-2 margin over the greedy steps</title>
+<desc id="parity-greedy-0-margins-desc">Bar chart of top-1 minus top-2 logit for 2 prompt values, 2 series.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="379" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Smallest top-2 margin over the greedy steps</text>
+<text class="t2" x="16" y="45" font-size="12">Per prompt and oracle; a gate prompt needs at least max(0.05, 4·τ_logit) (ReferenceOracles)</text>
+<rect class="f0" x="19" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="38" y="66" font-size="12">torch32</text>
+<rect class="f1" x="100.28" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="119.28" y="66" font-size="12">torch64p</text>
+<line class="grid" x1="48" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="40" y="338" font-size="11" text-anchor="end">0.00</text>
+<line class="grid" x1="48" y1="286.8" x2="696" y2="286.8" stroke-width="1"/>
+<text class="t3" x="40" y="290.8" font-size="11" text-anchor="end">0.02</text>
+<line class="grid" x1="48" y1="239.6" x2="696" y2="239.6" stroke-width="1"/>
+<text class="t3" x="40" y="243.6" font-size="11" text-anchor="end">0.04</text>
+<line class="grid" x1="48" y1="192.4" x2="696" y2="192.4" stroke-width="1"/>
+<text class="t3" x="40" y="196.4" font-size="11" text-anchor="end">0.06</text>
+<line class="grid" x1="48" y1="145.2" x2="696" y2="145.2" stroke-width="1"/>
+<text class="t3" x="40" y="149.2" font-size="11" text-anchor="end">0.08</text>
+<line class="grid" x1="48" y1="98" x2="696" y2="98" stroke-width="1"/>
+<text class="t3" x="40" y="102" font-size="11" text-anchor="end">0.10</text>
+<text class="t3" x="48" y="88" font-size="11" text-anchor="start">top-1 minus top-2 logit</text>
+<text class="t3" x="372" y="370" font-size="11" text-anchor="middle">prompt</text>
+<text class="t3" x="210" y="351" font-size="11" text-anchor="middle">p0</text>
+<path class="f0" d="M198.5 334V204.1Q198.5 200.1 202.5 200.1H205.5Q209.5 200.1 209.5 204.1V334Z"><title>p0, torch32: 0.0567</title></path>
+<path class="f1" d="M210.5 334V204.1Q210.5 200.1 214.5 200.1H217.5Q221.5 200.1 221.5 204.1V334Z"><title>p0, torch64p: 0.0567</title></path>
+<text class="t3" x="534" y="351" font-size="11" text-anchor="middle">p1</text>
+<path class="f0" d="M522.5 334V107.21Q522.5 103.21 526.5 103.21H529.5Q533.5 103.21 533.5 107.21V334Z"><title>p1, torch32: 0.0978</title></path>
+<path class="f1" d="M534.5 334V107.21Q534.5 103.21 538.5 103.21H541.5Q545.5 103.21 545.5 107.21V334Z"><title>p1, torch64p: 0.0978</title></path>
+<line class="axis" x1="48" y1="334" x2="696" y2="334" stroke-width="1"/>
+</svg>

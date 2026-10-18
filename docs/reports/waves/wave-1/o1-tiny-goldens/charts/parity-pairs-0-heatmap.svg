@@ -1,9 +1,82 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="96" viewBox="0 0 720 96" role="img" aria-labelledby="parity-pairs-0-heatmap-title parity-pairs-0-heatmap-desc">
-<title id="parity-pairs-0-heatmap-title">Worst measured/bound, oracle-selftest</title>
-<desc id="parity-pairs-0-heatmap-desc">No data: this run has no per-layer rel_l2 golden.compare records</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="446" viewBox="0 0 720 446" role="img" aria-labelledby="parity-pairs-0-heatmap-title parity-pairs-0-heatmap-desc">
+<title id="parity-pairs-0-heatmap-title">Measured rel_l2 by tap and layer, torch32-vs-torch64p</title>
+<desc id="parity-pairs-0-heatmap-desc">Heatmap of 18 tap rows by 2 layer columns, 36 cells with values.</desc>
 <style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
-<rect class="bg" x="0" y="0" width="720" height="96" rx="8"/>
-<rect class="frame" x="0.5" y="0.5" width="719" height="95" rx="8"/>
-<text class="t1" x="16" y="26" font-size="15" font-weight="600">Worst measured/bound, oracle-selftest</text>
-<text class="t2" x="16" y="66" font-size="12">this run has no per-layer rel_l2 golden.compare records</text>
+<rect class="bg" x="0" y="0" width="720" height="446" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="445" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Measured rel_l2 by tap and layer, torch32-vs-torch64p</text>
+<text class="t2" x="16" y="45" font-size="12">Largest value over all cases; these checks are measurements with no bound (such as e_ref)</text>
+<text class="t3" x="16" y="67" font-size="11">5.0e-08</text>
+<rect class="q0" x="62.48" y="58" width="13" height="10"/>
+<rect class="q1" x="76.48" y="58" width="13" height="10"/>
+<rect class="q2" x="90.48" y="58" width="13" height="10"/>
+<rect class="q3" x="104.48" y="58" width="13" height="10"/>
+<rect class="q4" x="118.48" y="58" width="13" height="10"/>
+<rect class="q5" x="132.48" y="58" width="13" height="10"/>
+<rect class="q6" x="146.48" y="58" width="13" height="10"/>
+<rect class="q7" x="160.48" y="58" width="13" height="10"/>
+<rect class="q8" x="174.48" y="58" width="13" height="10"/>
+<rect class="q9" x="188.48" y="58" width="13" height="10"/>
+<rect class="q10" x="202.48" y="58" width="13" height="10"/>
+<rect class="q11" x="216.48" y="58" width="13" height="10"/>
+<rect class="q12" x="230.48" y="58" width="13" height="10"/>
+<text class="t3" x="249.48" y="67" font-size="11">7.4e-07 (log scale)</text>
+<text class="t3" x="175.38" y="92" font-size="11" text-anchor="start">tap</text>
+<text class="t3" x="169.38" y="112.33" font-size="11" text-anchor="end">attn.k_norm.out</text>
+<rect class="q5" x="175.38" y="100" width="263.31" height="15.67"><title>attn.k_norm.out, layer 0: 1.5e-07</title></rect>
+<rect class="q10" x="439.69" y="100" width="263.31" height="15.67"><title>attn.k_norm.out, layer 1: 4.6e-07</title></rect>
+<text class="t3" x="169.38" y="129" font-size="11" text-anchor="end">attn.k_proj.out</text>
+<rect class="q5" x="175.38" y="116.67" width="263.31" height="15.67"><title>attn.k_proj.out, layer 0: 1.4e-07</title></rect>
+<rect class="q10" x="439.69" y="116.67" width="263.31" height="15.67"><title>attn.k_proj.out, layer 1: 4.5e-07</title></rect>
+<text class="t3" x="169.38" y="145.67" font-size="11" text-anchor="end">attn.k_rope</text>
+<rect class="q5" x="175.38" y="133.33" width="263.31" height="15.67"><title>attn.k_rope, layer 0: 1.5e-07</title></rect>
+<rect class="q10" x="439.69" y="133.33" width="263.31" height="15.67"><title>attn.k_rope, layer 1: 4.6e-07</title></rect>
+<text class="t3" x="169.38" y="162.33" font-size="11" text-anchor="end">attn.o_proj.in</text>
+<rect class="q6" x="175.38" y="150" width="263.31" height="15.67"><title>attn.o_proj.in, layer 0: 2.1e-07</title></rect>
+<rect class="q10" x="439.69" y="150" width="263.31" height="15.67"><title>attn.o_proj.in, layer 1: 4.5e-07</title></rect>
+<text class="t3" x="169.38" y="179" font-size="11" text-anchor="end">attn.o_proj.out</text>
+<rect class="q8" x="175.38" y="166.67" width="263.31" height="15.67"><title>attn.o_proj.out, layer 0: 3.0e-07</title></rect>
+<rect class="q10" x="439.69" y="166.67" width="263.31" height="15.67"><title>attn.o_proj.out, layer 1: 4.6e-07</title></rect>
+<text class="t3" x="169.38" y="195.67" font-size="11" text-anchor="end">attn.q_norm.out</text>
+<rect class="q5" x="175.38" y="183.33" width="263.31" height="15.67"><title>attn.q_norm.out, layer 0: 1.5e-07</title></rect>
+<rect class="q11" x="439.69" y="183.33" width="263.31" height="15.67"><title>attn.q_norm.out, layer 1: 4.9e-07</title></rect>
+<text class="t3" x="169.38" y="212.33" font-size="11" text-anchor="end">attn.q_proj.out</text>
+<rect class="q5" x="175.38" y="200" width="263.31" height="15.67"><title>attn.q_proj.out, layer 0: 1.5e-07</title></rect>
+<rect class="q10" x="439.69" y="200" width="263.31" height="15.67"><title>attn.q_proj.out, layer 1: 4.9e-07</title></rect>
+<text class="t3" x="169.38" y="229" font-size="11" text-anchor="end">attn.q_rope</text>
+<rect class="q5" x="175.38" y="216.67" width="263.31" height="15.67"><title>attn.q_rope, layer 0: 1.6e-07</title></rect>
+<rect class="q11" x="439.69" y="216.67" width="263.31" height="15.67"><title>attn.q_rope, layer 1: 4.9e-07</title></rect>
+<text class="t3" x="169.38" y="245.67" font-size="11" text-anchor="end">attn.v_cache</text>
+<rect class="q5" x="175.38" y="233.33" width="263.31" height="15.67"><title>attn.v_cache, layer 0: 1.5e-07</title></rect>
+<rect class="q10" x="439.69" y="233.33" width="263.31" height="15.67"><title>attn.v_cache, layer 1: 4.6e-07</title></rect>
+<text class="t3" x="169.38" y="262.33" font-size="11" text-anchor="end">attn.v_proj.out</text>
+<rect class="q5" x="175.38" y="250" width="263.31" height="15.67"><title>attn.v_proj.out, layer 0: 1.5e-07</title></rect>
+<rect class="q10" x="439.69" y="250" width="263.31" height="15.67"><title>attn.v_proj.out, layer 1: 4.6e-07</title></rect>
+<text class="t3" x="169.38" y="279" font-size="11" text-anchor="end">input_layernorm.out</text>
+<rect class="q0" x="175.38" y="266.67" width="263.31" height="15.67"><title>input_layernorm.out, layer 0: 5.0e-08</title></rect>
+<rect class="q10" x="439.69" y="266.67" width="263.31" height="15.67"><title>input_layernorm.out, layer 1: 4.4e-07</title></rect>
+<text class="t3" x="169.38" y="295.67" font-size="11" text-anchor="end">mlp.down.in</text>
+<rect class="q11" x="175.38" y="283.33" width="263.31" height="15.67"><title>mlp.down.in, layer 0: 5.5e-07</title></rect>
+<rect class="q12" x="439.69" y="283.33" width="263.31" height="15.67"><title>mlp.down.in, layer 1: 7.0e-07</title></rect>
+<text class="t3" x="169.38" y="312.33" font-size="11" text-anchor="end">mlp.down.out</text>
+<rect class="q11" x="175.38" y="300" width="263.31" height="15.67"><title>mlp.down.out, layer 0: 5.6e-07</title></rect>
+<rect class="q12" x="439.69" y="300" width="263.31" height="15.67"><title>mlp.down.out, layer 1: 7.4e-07</title></rect>
+<text class="t3" x="169.38" y="329" font-size="11" text-anchor="end">mlp.gate.out</text>
+<rect class="q9" x="175.38" y="316.67" width="263.31" height="15.67"><title>mlp.gate.out, layer 0: 3.7e-07</title></rect>
+<rect class="q10" x="439.69" y="316.67" width="263.31" height="15.67"><title>mlp.gate.out, layer 1: 4.7e-07</title></rect>
+<text class="t3" x="169.38" y="345.67" font-size="11" text-anchor="end">mlp.up.out</text>
+<rect class="q9" x="175.38" y="333.33" width="263.31" height="15.67"><title>mlp.up.out, layer 0: 3.6e-07</title></rect>
+<rect class="q11" x="439.69" y="333.33" width="263.31" height="15.67"><title>mlp.up.out, layer 1: 5.2e-07</title></rect>
+<text class="t3" x="169.38" y="362.33" font-size="11" text-anchor="end">out</text>
+<rect class="q10" x="175.38" y="350" width="263.31" height="15.67"><title>out, layer 0: 4.1e-07</title></rect>
+<rect class="q11" x="439.69" y="350" width="263.31" height="15.67"><title>out, layer 1: 4.9e-07</title></rect>
+<text class="t3" x="169.38" y="379" font-size="11" text-anchor="end">post_attention_layernorm.out</text>
+<rect class="q9" x="175.38" y="366.67" width="263.31" height="15.67"><title>post_attention_layernorm.out, layer 0: 3.2e-07</title></rect>
+<rect class="q10" x="439.69" y="366.67" width="263.31" height="15.67"><title>post_attention_layernorm.out, layer 1: 4.5e-07</title></rect>
+<text class="t3" x="169.38" y="395.67" font-size="11" text-anchor="end">resid_mid</text>
+<rect class="q8" x="175.38" y="383.33" width="263.31" height="15.67"><title>resid_mid, layer 0: 3.0e-07</title></rect>
+<rect class="q10" x="439.69" y="383.33" width="263.31" height="15.67"><title>resid_mid, layer 1: 4.4e-07</title></rect>
+<text class="t3" x="307.54" y="416" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="571.85" y="416" font-size="11" text-anchor="middle">1</text>
+<text class="t3" x="439.69" y="436" font-size="11" text-anchor="middle">layer</text>
 </svg>

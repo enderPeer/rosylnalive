@@ -2,7 +2,7 @@
 
 - **Status:** accepted (integrator, 2026-10-18, `int/wave1-fixes`).
 - **Affects:** GpuBackendInterface (the denormal probe), KernelAbiAndCatalog (class-dependent denormals), ShaderBuildAndSourceConvention (the DXC flags), KernelBounds (O2), the ConformanceHarness (E1), D1, V1, K1 to K3.
-- **Evidence:** the gpu-tier test "the fp32 denormal probe on the real scale_f32 blob is bit-identical twice" in `tests/Lrm.Gpu.D3D12.Interop.Tests/GpuTests.fs`; its run log renders to [`docs/reports/waves/wave-1/d3d12-denormals/kernels.md`](../reports/waves/wave-1/d3d12-denormals/kernels.md).
+- **Evidence:** the gpu-tier tests "the fp32 denormal probe on the real scale_f32 blob is bit-identical twice" and "control: the same probe on scale_f32 built without -denorm is bit-identical twice" in `tests/Lrm.Gpu.D3D12.Interop.Tests/GpuTests.fs`; their run log, with the probe's words, renders to [`docs/reports/waves/wave-1/d3d12-denormals/kernels.md`](../reports/waves/wave-1/d3d12-denormals/kernels.md).
 
 ## Context
 
@@ -21,23 +21,24 @@ The probe of GpuBackendInterface, through R3's interop and nothing else of LRM's
 - the canonical `rootsig.bin`, and LRM's heap layout: slot 0 the 1 MiB tensor table with tokens 1 (x) and 2 (y) built by `TensorRow.create`, slot 1 a 64 KiB page;
 - the ArgBlock {groups_x 1, x 1, y 2, n 7, a = 0.5} as the 32 root constants;
 - `Fp32Denormals.probeInputs`, the output words poisoned with signalling-NaN patterns before each run, and a check that no poison is left;
-- `Fp32Denormals.classify` on the 7 result words, run twice (`Determinism.testTwice`), under the D3D12 mutex of the gpu tier.
+- `Fp32Denormals.classify` on the 7 result words, run twice (`Determinism.testTwice`), under the D3D12 mutex of the gpu tier; `Fp32Denormals.recordProbe` records the mode and the words in the run log.
+- **The control:** the same probe, in the same harness and process, on `scale_f32.hlsl` compiled at test time with the pinned DXC and the shader set's own DXIL flags without `-denorm preserve` (`-T cs_6_6 -E main -HV 2021 -O3 -WX`), as R1's spike compiled its sources.
 
-Device: NVIDIA GeForce RTX 4080 (`pci:10de:2704`), UMD 32.0.16.1692 (driver 616.92), Windows 11 10.0.26200. Runs `20261018-025830-95d7263e` (the probe alone) and `20261018-031937-1f674011` (the full gpu tier of this branch).
+Device: NVIDIA GeForce RTX 4080 (`pci:10de:2704`), UMD 32.0.16.1692 (driver 616.92), Windows 11 10.0.26200. Runs `20261018-025830-95d7263e` and `20261018-031937-1f674011` (the shader-set blob), and `20261018-042410-b20091fc` (the shader-set blob and the control, with their words in the run log; commit `872a967`).
 
-| Input | Preserve | Flush | Measured |
-| --- | --- | --- | --- |
-| `3f800000` (1.0, control) | `3f000000` | `3f000000` | `3f000000` |
-| `01000000` (control) | `00800000` | `00800000` | `00800000` |
-| `00800000` | `00400000` | `00000000` | `00400000` |
-| `80800000` | `80400000` | `80000000` | `80400000` |
-| `00000002` | `00000001` | `00000000` | `00000001` |
-| `807ffffe` | `803fffff` | `80000000` | `803fffff` |
-| `00400000` | `00200000` | `00000000` | `00200000` |
+| Input | Preserve | Flush | Shader set (`-denorm preserve`) | Control (no `-denorm`) |
+| --- | --- | --- | --- | --- |
+| `3f800000` (1.0, control) | `3f000000` | `3f000000` | `3f000000` | `3f000000` |
+| `01000000` (control) | `00800000` | `00800000` | `00800000` | `00800000` |
+| `00800000` | `00400000` | `00000000` | `00400000` | `00000000` |
+| `80800000` | `80400000` | `80000000` | `80400000` | `80000000` |
+| `00000002` | `00000001` | `00000000` | `00000001` | `00000000` |
+| `807ffffe` | `803fffff` | `80000000` | `803fffff` | `80000000` |
+| `00400000` | `00200000` | `00000000` | `00200000` | `00000000` |
 
-**The mode is `preserve`**, the same bits in both runs. Denormal inputs and denormal results are kept, exactly as on the CPU reference.
+**The mode is `preserve`** for the shader set's blob, the same bits in every run. Denormal inputs and denormal results are kept, exactly as on the CPU reference.
 
-**Why R1 saw a flush.** With the pinned DXC, `scale_f32.hlsl` compiled with `-denorm preserve` carries `attributes #0 = { "fp32-denorm-mode"="preserve" }` in its DXIL; compiled without the flag, as R1's spike compiled its sources, it carries no denormal attribute, which leaves the choice to the driver. On the same device and driver the spike's blobs flushed. The flag, not the hardware, decides the D3D12 mode.
+**The flag decides the D3D12 mode.** With the pinned DXC, `scale_f32.hlsl` compiled with `-denorm preserve` carries `attributes #0 = { "fp32-denorm-mode"="preserve" }` in its DXIL; compiled without the flag, it carries no denormal attribute, which leaves the choice to the driver. The control measures that choice on the same device, driver and harness: **flush**, inputs and results alike. That is what R1's spike saw with its own blobs, which were built without the flag.
 
 **A second finding: DXIL float arithmetic is `fast`.** Without `-Gis` (IEEE strictness), DXC marks the multiply `fmul fast`. Fast-math flags allow the compiler and driver to assume no NaN or infinity and to reassociate or contract. For a single multiply the result above is still exact, but a NaN test written as `v != v` is folded away: compiled with LRM's flags, a scratch kernel that stores `(v != v) ? 1 : 0` loses the load and stores a constant 0. On SPIR-V the same expression becomes `OpFOrdNotEqual`, which is false for a NaN. `isnan(v)` survives on both targets (`dx.op.isSpecialFloat` IsNaN, `OpIsNan`), and with `-Gis` DXIL keeps `fcmp uno`. NaN payloads were not re-measured here; R1's observation (`0x7FFFFFFF` for any NaN operand on both backends) stands.
 
@@ -54,9 +55,9 @@ Device: NVIDIA GeForce RTX 4080 (`pci:10de:2704`), UMD 32.0.16.1692 (driver 616.
 - **D1** runs the probe after `LoadKernels` exactly as this test does, expects `preserve`, and reports any other mode as a finding; this test is the reference until D1's own selftest replaces it.
 - **V1** runs the probe after `LoadKernels`, records the mode in its class, and applies the mode's comparison rule in its selftests.
 - **E1** compares fp32 arithmetic kernels in the class's measured mode, emulates `preserve` in CpuDevice (which matches D3D12), and treats NaN payloads from GPU arithmetic as class-dependent (R1 saw `0x7FFFFFFF`).
-- **O2 (KernelBounds)** states, for the BitExact fp32 arithmetic kernels (`scale_f32`, `add`), that bit-exact means "in the class's denormal mode" and how NaN results compare; relative bounds already cover a flushed denormal.
+- **KernelBounds** (amended by the integrator in `int/wave1-fixes`, before contracts-v1, because O2 has no session after wave 1): the reference of every kernel that computes on fp32 values is CpuRef in the class's measured denormal mode; for `scale_f32` and `add` any NaN matches any NaN; relative bounds add an allowance of 2^-126 per reference result below 2^-126, so a flushed result never fails a case.
 - **K1 to K3** use `isnan()` for NaN rules (`argmax_rows`), never `v != v`, and keep bit-exact claims of fp32 arithmetic class-dependent.
-- **Reports.** The kernels template's `denormals` table shows each backend's measured mode next to its class.
+- **Reports.** The kernels template's `denormals` table shows each backend's measured mode next to its class, and its `denormal_words` table the probe's bit table from the words `Fp32Denormals.recordProbe` records.
 
 ## Alternatives
 
