@@ -29,7 +29,7 @@ let main argv = Runner.main argv tiers
 - **bench**: local timing, informational only; it holds every mutex.
 - **Property tests:** use `Props.testProperty`, which replays a fixed FsCheck seed. Override it with `LRM_FSCHECK_SEED=seed[,gamma]` (decimal or `0x` hex; the gamma must be odd).
 - **Child processes** started by a test get `Env.workerEnvironment` (`LRM_TEST_WORKER=1`); workers never take a mutex.
-- **Tail calls.** GPU, interop and backend projects, and the test exes and apps that reach them, build with `Tailcalls=false` (`Directory.Build.props`, ADR R3-0001). `TailCalls.scan <assembly path>` lists every IL `tail.` call site of an assembly, so a test can check the setting took effect: `Expect.isEmpty (TailCalls.scan asm.Location) "no tail. prefixes"`.
+- **Tail calls.** GPU, interop and backend projects, and the test exes and apps that reach them, build with `Tailcalls=false` (`Directory.Build.props`, ADR R3-0001). `TailCalls.scan <assembly path>` lists every IL `tail.` call site of an assembly, so a test can check the setting took effect: `Expect.isEmpty (TailCalls.scan asm.Location) "no tail. prefixes"`. In a Debug build the F# SDK turns tail calls off for every project, so such a scan proves nothing there: skip it with `if TailCalls.builtWithoutOptimization asm then skiptest TailCalls.UnoptimizedBuild`.
 - **Run logs.** A test that writes a run log (T1's `RunContext`) records the commit with `GitSha = Env.commit ()`, read from the test exe's informational version.
 
 ## Running

@@ -246,6 +246,10 @@ let private idiom =
         [
             testCase "no tail calls in the interop or its tests (Tailcalls=false)"
             <| fun () ->
+                // In a Debug build every project has Tailcalls=false, so an empty scan would pass trivially.
+                if TailCalls.builtWithoutOptimization (Assembly.GetExecutingAssembly()) then
+                    skiptest TailCalls.UnoptimizedBuild
+
                 for asm in [ typeof<IUnknown>.Assembly; Assembly.GetExecutingAssembly() ] do
                     Expect.isEmpty (TailCalls.scan asm.Location) (asm.GetName().Name + " has no tail. prefixes")
 

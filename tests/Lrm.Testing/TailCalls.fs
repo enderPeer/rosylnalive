@@ -1,6 +1,7 @@
 namespace Lrm.Testing
 
 open System
+open System.Diagnostics
 open System.IO
 open System.Reflection
 open System.Reflection.Emit
@@ -110,3 +111,17 @@ module TailCalls =
                         tail <- op = OpCodes.Tailcall
                         i <- i + len + operandSize op il (i + len)
         ]
+
+    /// True when `asm` was compiled without optimization, as in a Debug build: its DebuggableAttribute disables the JIT
+    /// optimizer. The F# SDK's Debug configuration also defaults Tailcalls to false for every project
+    /// (Microsoft.FSharp.NetSdk.props), so in such a build a scan proves nothing about the root setting: an empty scan
+    /// passes trivially and a control that expects tail calls fails. Tests skip their scans then.
+    let builtWithoutOptimization (asm: Assembly) =
+        match asm.GetCustomAttribute<DebuggableAttribute>() with
+        | null -> false
+        | a -> a.IsJITOptimizerDisabled
+
+    /// The reason a scan is skipped in an unoptimized build (`skiptest` text).
+    [<Literal>]
+    let UnoptimizedBuild =
+        "built without optimization (Debug): the F# SDK defaults Tailcalls=false for every project there, so the scan cannot tell the root setting; run the Release build (CI and tools/test.ps1 default)"
