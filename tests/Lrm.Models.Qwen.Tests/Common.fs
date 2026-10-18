@@ -25,11 +25,19 @@ let tinyWeights = lazy (Qwen3Weights.Open(tinyModelDir ()))
 [<Literal>]
 let Threads = 8
 
-/// Options for the tiny model: 8 threads, its 512 positions.
+/// The plan for the tiny model's tests: 8 threads, its 512 positions and rows, the whole model, every tap and two
+/// caches alive at once.
 let tinyOptions () =
-    {
+    { OpsOptions.defaults tinyWeights.Value.Config with
         Threads = Threads
-        MaxContext = tinyWeights.Value.Config.MaxPositionEmbeddings
+        Taps = TapFilter.All
+        Caches = 2
+    }
+
+/// The same plan over the stages of a split at the boundaries (Stage.split) instead of the whole model.
+let splitOptions (boundaries: int list) =
+    { tinyOptions () with
+        Stages = Stage.split tinyWeights.Value.Config boundaries
     }
 
 /// cpu-f32 ops on the tiny model.

@@ -12,6 +12,8 @@ let tiers: TestTiers =
                 WeightsTests.tests
                 ForwardTests.tests
                 DeterminismTests.tests
+                SeamTests.tests
+                GoldenCheckTests.tests
                 TelemetryTests.tests
             ]
         Model = [ None, [ ModelTests.tests ] ]

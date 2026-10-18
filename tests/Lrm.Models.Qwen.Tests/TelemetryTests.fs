@@ -130,7 +130,7 @@ let tests =
             testCase "two stages: each model.forward names its stage and layers; tokens are metered once, by the head"
             <| fun () ->
                 let sink = InMemorySink()
-                let ops = tinyF32 ()
+                use ops = CpuOps.f32 tinyWeights.Value (splitOptions [ 1 ])
                 let model = tinyModel ()
                 let stages = Stage.split model.Config [ 1 ]
                 let caches = stages |> List.map (fun s -> KvCache.create ops model s 13)

@@ -20,9 +20,18 @@ let Cpu32RelL2 = 1e-5
 let Cpu32LogitMaxAbs = 2e-3
 let Cpu32LogitKl = 1e-7
 
+/// The backend a CPU pair measures: cpu-f64 for cpu64-vs-torch64p, else cpu-f32.
+let backendOfPair (pair: TolerancePair) =
+    match pair with
+    | TolerancePair.Cpu64VsTorch64p -> ExecutionBackend.name ExecutionBackend.CpuF64
+    | _ -> ExecutionBackend.name ExecutionBackend.CpuF32
+
+/// The golden.compare attributes of one comparison: the parity and gate1 templates' keys (pair, backend, prompt,
+/// tap, layer, kind).
 let attrs (pair: TolerancePair) (prompt: string) (tapName: string) =
     [
         Attr.str "pair" (TolerancePair.name pair)
+        Attr.str "backend" (backendOfPair pair)
         Attr.str "prompt" prompt
         Attr.str "tap" tapName
         Attr.int TelemetryKeys.Layer (ActivationNames.layer tapName)
@@ -32,7 +41,7 @@ let attrs (pair: TolerancePair) (prompt: string) (tapName: string) =
 /// A prefill of `ids` with every tap: the logits [T, vocab] and the taps by name, on the host.
 let prefillTaps (ops: IForwardOps<'t>) (ids: int[]) =
     let model = tinyModel ()
-    let cache = KvCache.create ops model (Stage.whole model.Config) ids.Length
+    use cache = KvCache.create ops model (Stage.whole model.Config) ids.Length
     let store = TapStore<'t>(TapFilter.All)
     let logits = Forward.run ops model cache 0 ids (ForwardOptions.withTaps store)
     let taps = Dictionary<string, IHostTensor>(StringComparer.Ordinal)
@@ -97,26 +106,20 @@ let logitChecks (logits: IHostTensor) (oracleFile: string) (prompt: string) (pai
         Compare.kl Cpu32LogitKl a logits golden
     ]
 
-/// A greedy_match golden.compare check (ReportTemplates, parity): the steps that match the golden before the first
-/// difference, against the golden's length; it passes only when every step matches.
+/// A greedy_match golden.compare check (ReportTemplates, parity; GoldenCheck.greedy): the steps that match the
+/// golden before the first difference, against the steps generated; it passes only when every step matches.
 let greedyCheck (pair: TolerancePair) (prompt: string) (got: int[]) (golden: int[]) =
-    let matched =
-        Seq.zip got golden |> Seq.takeWhile (fun (a, b) -> a = b) |> Seq.length
-
-    Compare.check
-        "greedy_match"
-        BoundOp.AtLeast
-        (float matched)
-        (float golden.Length)
-        (int64 golden.Length)
+    GoldenCheck.greedy
         [
             Attr.str "pair" (TolerancePair.name pair)
+            Attr.str "backend" (backendOfPair pair)
             Attr.str "prompt" prompt
             Attr.str "tap" "greedy.ids"
             Attr.int TelemetryKeys.Layer -1
             Attr.str "kind" "chain"
-            Attr.int "steps" golden.Length
         ]
+        got
+        golden
 
 /// The greedy margin record the parity template charts (`goldens.greedy.min_margin`, ReportTemplates), with the
 /// backend as the `oracle`.
@@ -141,7 +144,7 @@ let private greedyCase
     use _ = ParityRun.install backend
     let golden = goldenGreedy prompt oracle
     let ids = promptIds prompt
-    let ops = ops ()
+    use ops = ops ()
     let model = tinyModel ()
 
     let r64 =
@@ -155,6 +158,8 @@ let private greedyCase
 
     let r16 = Greedy.run ops model ids (GreedyOptions.parity 16)
     greedyCheck pair prompt r64.Ids golden |> ignore
+    // 16 steps against the 64-step golden: its first 16 ids.
+    Expect.isTrue (greedyCheck pair prompt r16.Ids golden).Passed "16 steps against the 64-id golden"
     marginGauge prompt (ExecutionBackend.name backend) r64.Margins
     printfn "%s greedy %s: min margin %s" (ExecutionBackend.name backend) prompt (Invariant.f64 (Array.min r64.Margins))
     Expect.sequenceEqual r64.Ids golden (sprintf "64 steps = %s" oracle)
@@ -224,9 +229,9 @@ let tests =
                     testCase "the taps come in ActivationNames order, [T, features], in the mode's dtype"
                     <| fun () ->
                         let ids = promptIds "p0"
-                        let ops = tinyF32 ()
+                        use ops = tinyF32 ()
                         let model = tinyModel ()
-                        let cache = KvCache.create ops model (Stage.whole model.Config) ids.Length
+                        use cache = KvCache.create ops model (Stage.whole model.Config) ids.Length
                         let store = TapStore(TapFilter.All)
                         Forward.run ops model cache 0 ids (ForwardOptions.withTaps store) |> ignore
                         Expect.sequenceEqual (store.Taps |> List.map fst) (ActivationNames.all 2) "order"
@@ -241,9 +246,9 @@ let tests =
 
                     testCase "a tap filter records only the named taps"
                     <| fun () ->
-                        let ops = tinyF32 ()
+                        use ops = tinyF32 ()
                         let model = tinyModel ()
-                        let cache = KvCache.create ops model (Stage.whole model.Config) 13
+                        use cache = KvCache.create ops model (Stage.whole model.Config) 13
                         let store = TapStore(TapFilter.Parse "L1.attn.q_rope, logits")
 
                         Forward.run ops model cache 0 (promptIds "p0") (ForwardOptions.withTaps store)
@@ -276,14 +281,15 @@ let tests =
                                 (fun () -> QwenRunner.ofOps "cpu-f32" (tinyModel ()) (tinyF32 ()))
                                 (fun () -> QwenRunner.ofOps "cpu-f64" (tinyModel ()) (tinyF64 ()))
                             ] do
+                            use runner = ops ()
+
                             let r =
-                                (ops ())
-                                    .Greedy(
-                                        ids,
-                                        { GreedyOptions.parity 64 with
-                                            StopAtEos = true
-                                        }
-                                    )
+                                runner.Greedy(
+                                    ids,
+                                    { GreedyOptions.parity 64 with
+                                        StopAtEos = true
+                                    }
+                                )
 
                             Expect.isTrue r.StoppedAtEos "stopped"
                             Expect.equal r.Ids.Length 10 "10 ids, the last one EOS"
@@ -296,7 +302,7 @@ let tests =
                         let w = tinyWeights.Value
 
                         for f in CpuBackends.all do
-                            let runner = f.Create w (tinyOptions ())
+                            use runner = f.Create w (tinyOptions ())
                             let r = runner.Forward(ids, TapFilter.All, HeadRows.All)
                             Expect.equal runner.Backend f.Name "name"
 

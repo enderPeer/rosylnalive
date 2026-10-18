@@ -56,7 +56,8 @@ module Greedy =
     /// The positions a greedy run uses: the prompt and every generated id but the last.
     let positions (promptLength: int) (steps: int) = promptLength + steps - 1
 
-    /// Generates options.Steps ids after `prompt` into a new cache of exactly the positions it uses.
+    /// Generates options.Steps ids after `prompt` into a new cache of exactly the positions it uses, released when the
+    /// run ends. The ops' plan must cover a forward of the prompt's rows on the whole model.
     let run (ops: IForwardOps<'t>) (model: Qwen3Model) (prompt: int[]) (options: GreedyOptions) : GreedyResult =
         let c = model.Config
 
@@ -81,7 +82,7 @@ module Greedy =
             )
 
         let stage = Stage.whole c
-        let cache = KvCache.create ops model stage maxPos
+        use cache = KvCache.create ops model stage maxPos
         let eos = Set.ofList c.EosTokenIds
 
         use _ =

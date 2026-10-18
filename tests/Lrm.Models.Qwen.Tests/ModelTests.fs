@@ -19,18 +19,25 @@ let private weights = lazy (Qwen3Weights.Open(dir ()))
 /// Prompt ids of the real vocabulary (no tokenizer needed): arbitrary ids below 151,643.
 let private prompt = [| 785; 3974; 13876; 38835 |]
 
+/// The plan of these short runs: 8 positions and rows on the whole model, two caches.
+let private options () =
+    { OpsOptions.defaults weights.Value.Config with
+        Threads = Threads
+        MaxContext = 8
+        MaxRows = 8
+        Caches = 2
+    }
+
 let private shortForward (ops: IForwardOps<'t>) =
     let w = weights.Value
     let model = w.Model
     let n = prompt.Length
 
-    let prefill =
-        Forward.run ops model (KvCache.create ops model (Stage.whole model.Config) n) 0 prompt ForwardOptions.all
-
-    let all = ops.Read prefill
+    use c1 = KvCache.create ops model (Stage.whole model.Config) n
+    let all = ops.Read(Forward.run ops model c1 0 prompt ForwardOptions.all)
     Expect.equal all.Desc.Shape (Shape.matrix n 151936) "logits"
     Expect.isTrue (all.ToFloat64() |> Array.forall Double.IsFinite) "finite logits"
-    let cache = KvCache.create ops model (Stage.whole model.Config) n
+    use cache = KvCache.create ops model (Stage.whole model.Config) n
 
     for t in 0 .. n - 1 do
         let step =
@@ -60,20 +67,22 @@ let tests =
                 Expect.equal w.Config (Qwen3Config.parse ConfigTests.qwenConfigText) "config"
 
             testCase "cpu-f32: a 4-token prefill equals 4 decode steps, bit for bit"
-            <| fun () -> shortForward (CpuOps.f32 weights.Value { Threads = Threads; MaxContext = 8 })
+            <| fun () ->
+                use ops = CpuOps.f32 weights.Value (options ())
+                shortForward ops
 
             testCase "cpu-f64: a 4-token prefill equals 4 decode steps, bit for bit"
-            <| fun () -> shortForward (CpuOps.f64 weights.Value { Threads = Threads; MaxContext = 8 })
+            <| fun () ->
+                use ops = CpuOps.f64 weights.Value (options ())
+                shortForward ops
 
             testCase "greedy decoding gives the same ids twice and on the runner"
             <| fun () ->
                 let w = weights.Value
-                let ops = CpuOps.f32 w { Threads = Threads; MaxContext = 8 }
+                use ops = CpuOps.f32 w (options ())
                 let a = Greedy.run ops w.Model prompt (GreedyOptions.parity 3)
-
-                let b =
-                    (CpuBackends.cpuF32.Create w { Threads = Threads; MaxContext = 8 })
-                        .Greedy(prompt, GreedyOptions.parity 3)
+                use runner = CpuBackends.cpuF32.Create w (options ())
+                let b = runner.Greedy(prompt, GreedyOptions.parity 3)
 
                 Expect.sequenceEqual a.Ids b.Ids "same ids"
                 Expect.equal a.Ids.Length 3 "3 ids"

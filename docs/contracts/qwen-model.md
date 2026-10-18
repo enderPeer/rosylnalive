@@ -12,12 +12,13 @@ The model consumes CpuReferenceSemantics (`cpu-reference.md`: every op and the K
 | `Qwen3Weights` | A verified model folder: config, mapped `model.safetensors`, REVISION and SHA256SUMS |
 | `Qwen3Params`, `Qwen3Model` | The tensor names the forward reads (aliases resolved) and the config: what the forward runs on |
 | `RopeConstants` | The pinned RoPE `inv_freq` bits, keyed by (rope_theta, head_dim) |
-| `IForwardOps<'t>` | The op seam. CpuOps implements it on CpuRef; X1 implements it on the GPU |
+| `IForwardOps<'t>`, `OpsOptions`, `ForwardCall` | The op seam, the plan its ops are created with, and one forward call as the ops see it. CpuOps implements the seam on CpuRef; X1 implements it on the GPU |
 | `Forward` | The forward, written once over the seam: `runStage`, `run`, `runStages` |
 | `KvCache<'t>`, `Stage` | One stage's KV cache, and a contiguous layer range |
 | `Greedy` | Greedy decoding on the canonical schedule |
 | `CpuOps<'T>` | cpu-f32 (`'T = float32`) and cpu-f64 (`'T = float`) |
 | `IQwenRunner`, `OpsFactory`, `CpuBackends` | A model bound to one backend with the handle type hidden, and the registry entries |
+| `GoldenCheck` | The comparisons of `lrm forward --compare` and `lrm generate --expect` |
 
 ## Config
 
@@ -72,32 +73,62 @@ torch's float32 `inv_freq` differs from every closed-form F# formula in some ent
 
 ## The op seam: IForwardOps<'t>
 
-`'t` is the backend's activation handle: `HostTensor<float32>` or `HostTensor<float>` for CpuOps, a tensor token for a GPU. Every handle is a row-major `[rows, cols]` tensor in the ops' `DType`.
+`'t` is the backend's activation handle: `HostTensor<float32>` or `HostTensor<float>` for CpuOps, a tensor token for a GPU. Every handle is a row-major `[rows, cols]` tensor in the ops' `DType`. The ops are `IDisposable`.
 
 | Member | Semantics (the CpuRef op it is, CpuReferenceSemantics) |
 | --- | --- |
 | `ExecutionClass` | The class whose bits these ops produce |
 | `DType` | F32, or F64 for cpu-f64. Activations, caches and the stage residual are in it |
 | `MaxContext` | The positions the RoPE table covers; a cache holds at most this many |
-| `Rows x` | The rows of a handle |
+| `Rows x`, `Cols x` | The rows and the columns of a handle |
+| `BeginForward call` | Starts a forward (`ForwardCall`: `Stage`, `Rows`, `Pos0`, `Head`, `Taps`). Raises `ForwardException` for a call outside the plan or inside another forward. A GPU picks or records the call's plan here |
+| `EndForward result` | Ends it: `Some` the result when the forward completed, `None` when an op raised |
 | `Embed ids` | `embed`: `[ids, hidden]`. An id outside the vocabulary raises `ArgumentOutOfRangeException` |
 | `RmsNorm(x, weight, eps)` | `rmsNorm`, over rows of the weight's length, so `[T, heads·hd]` with an `hd` weight is the per-head q_norm and k_norm. `eps` is rounded once to `DType` |
 | `MatMul(x, weight)` | `matmulBf16W`: `x [T, k]` times `w [n, k]` transposed |
 | `Rope(x, heads, pos0)` | `ropeApply` with the pinned table; row t is at position pos0 + t |
-| `NewCache(rows, cols)` | A zero tensor `[rows, cols]` in `DType` (a GPU puts it in its KvCache arena) |
+| `NewCache(stage, layer, rows)` | A zero tensor `[rows, KvHeads·HeadDim]` in `DType` for one layer of a planned stage: its K or V (a GPU takes it from its KvCache arena) |
+| `ReleaseCache x` | Returns a cache tensor to the ops; the handle is invalid afterwards |
 | `KvWrite(cache, x, pos0)` | `copyRows`: x's rows into cache rows pos0 .. pos0 + T − 1, bit for bit |
 | `Attention(q, k, v, shape, past)` | `attention` with `attentionScale head_dim`, over cache rows 0 .. past + T − 1 |
 | `SiluMul(gate, up)`, `Add(a, b)` | `siluMul`, `add` |
 | `LastRow x` | The last row as `[1, cols]` |
 | `Argmax x` | `argmaxRows`: per row the lowest maximal index, or `0xFFFFFFFF` for a row holding a NaN. Reads back |
-| `Tap(name, x)` | A snapshot of x that later ops never change. A GPU copies it into its Taps arena when the op is recorded; CpuOps returns x itself, because CpuRef results are fresh arrays and the forward never taps a cache |
+| `Tap(name, x)` | A snapshot of x that later ops never change, valid as long as the forward's result (below). A GPU copies it into its Taps arena when the op is recorded; CpuOps returns x itself, because CpuRef results are fresh arrays and the forward never taps a cache. Called only for a tap the call's filter wants, which the plan's filter covers |
 | `Read x` | x on the host, `[rows, cols]` in `DType`: a copy the caller owns. Reads back |
+| `ReadRows(x, row0, count)` | Rows row0 .. row0 + count − 1 of x on the host, count ≥ 1. Reads back only those rows |
 | `Upload x` | A handle holding a host tensor `[rows, cols]` in `DType` (a stage boundary's residual). Another dtype or rank raises `ArgumentException` |
 
 **Rules a backend relies on.**
-- **No hidden readback.** Every op but `Argmax` and `Read` returns its handle at once. The forward never reads a value back in the middle of a forward.
-- **A static order.** The forward calls the ops in one order that depends only on the model, the stage, T, pos0 and the tap filter, never on values (a cpu-tier test records two prompts and compares). A backend can record a plan.
+- **No hidden readback.** Every op but `Argmax`, `Read` and `ReadRows` returns its handle at once. The forward never reads a value back in the middle of a forward.
+- **A static order.** The forward calls the ops in one order that depends only on the model and the `ForwardCall` (stage, T, pos0, head rows, tap filter), never on values (a cpu-tier test records two prompts and compares). A backend can record a plan.
 - **Weights by name.** Ops are created over one verified `Qwen3Weights` and resolve names themselves. The forward passes `Qwen3Params` names, so a tied lm_head arrives as the embedding's name.
+
+### Lifetimes and the plan
+
+A GPU executor seals one tensor table before its first dispatch (HeapLayoutAndTensorTable: 16,383 rows, written once). The seam therefore fixes, before any forward, everything the ops will be asked for, and when each handle ends.
+
+**The plan.** The ops are created with `OpsOptions`, which bound every call; a GPU sizes and seals its heap and table from them. `OpsOptions.validate` refuses a plan with `ArgumentException`, and a call outside it raises `ForwardException` before any op runs.
+
+| Field | Bounds | `OpsOptions.defaults` |
+| --- | --- | --- |
+| `Threads` | CPU threads (the bits are the same at every count) | 8, or fewer cores |
+| `MaxContext` | Positions: the RoPE table, and each cache's rows | `max_position_embeddings` |
+| `MaxRows` | The rows T of one forward | `max_position_embeddings` |
+| `Stages` | The stages these ops run, with distinct indices | the whole model as stage 0 |
+| `Taps` | The taps any forward may record (`TapFilter.Covers`); ActivationNames names only | `Off` |
+| `Caches` | The `KvCache`s of each planned stage alive at once | 1 |
+
+**Handle lifetimes.** `Forward.runStage` brackets each forward with `BeginForward` and `EndForward`.
+- **Where ops run.** The compute ops (`Embed` to `LastRow`, and `Tap`) run only inside a forward. `NewCache`, `ReleaseCache` and `Upload` run only outside one. `Rows`, `Cols`, `Argmax`, `Read` and `ReadRows` work on any live handle at any time.
+- **Intermediates**, the handles the ops return inside a forward, are valid until its `EndForward`.
+- **The result and the taps** of a forward (the handle `EndForward` receives, and the handles `Tap` returned) stay valid until the next `BeginForward` of a stage with the same `Index` on these ops. So a stage's result can be the next stage's input without the host, the taps of every stage of a `runStages` call can be read after it, and a greedy step's logits are read before the next step begins.
+- **A failed forward** ends with `EndForward None`; every handle it made, taps included, is invalid.
+- **An upload** stays valid until the next forward ends; a second `Upload` before then invalidates it.
+- **A cache tensor** stays valid until `ReleaseCache`. `KvCache.Dispose` releases a cache's tensors; `Greedy.run` and `IQwenRunner.Forward` release theirs before they return.
+- **Dispose** releases everything; the ops are unusable after it. One ops instance serves one caller at a time.
+
+**CpuOps enforces all of it**, although host memory would not need it: a call outside the plan, an op outside a forward, a handle past its lifetime, or more caches than planned raises `ForwardException`, and anything after `Dispose` raises `ObjectDisposedException`. Code that runs on CpuOps (Forward, Greedy, the runner, the commands and the tests) therefore keeps to what a static GPU plan can serve. With these rules a GPU recycles each intermediate's token by its place in the static order, keeps the result and taps of each planned stage in fixed slots, and pools `Stages × Caches` cache sets, so its table never grows after it is sealed.
 
 ## The forward
 
@@ -122,17 +153,17 @@ torch's float32 `inv_freq` differs from every closed-form F# formula in some ent
 | 19 | `Add(resid_mid, down.out)` | `out` |
 
 **The ends.**
-- **Input.** The stage that starts at layer 0 takes `StageInput.Ids` and runs `Embed` first (tap `embed.out`). Every later stage takes `StageInput.Hidden`, the residual stream `[T, hidden]` in `DType`. The wrong kind raises `ForwardException`.
+- **Input.** The stage that starts at layer 0 takes `StageInput.Ids` and runs `Embed` first (tap `embed.out`). Every later stage takes `StageInput.Hidden`, the residual stream `[T, hidden]` in `DType`. The wrong kind, or a residual whose width is not `hidden`, raises `ForwardException` before any op (a `[T, 2·hidden]` residual would otherwise pass the first RmsNorm as two per-head norms).
 - **Head.** The stage that ends at the last layer runs `RmsNorm(x, model.norm)` on every row (tap `final_norm.out`, `[T, hidden]`), then, for `HeadRows.Last` with T > 1, `LastRow`, then `MatMul(·, LmHead)` (tap `logits`). It returns the logits: `[T, vocab]` for `HeadRows.All`, `[1, vocab]` for `HeadRows.Last`. The final norm runs on every row because the FLOP registry's forward does. Other stages return the residual after their last layer.
-- **Taps** go to `options.Taps` (a `TapStore` with a `TapFilter`: `Off`, `All` or `Names`), in forward order, as snapshots. A stage emits only its own taps (ActivationNames, "Two-stage splits").
+- **Taps** go to `options.Taps` (a `TapStore` with a `TapFilter`: `Off`, `All` or `Names`), in forward order, as snapshots. A stage emits only its own taps (ActivationNames, "Two-stage splits"). A `Names` filter with a name that is not an ActivationNames tap of the model (`TapFilter.unknown`) raises `ForwardException`, so a misspelt tap is never silently not recorded.
 
 **Positions and the cache.**
 - T ≥ 1, `0 ≤ pos0 ≤ cache.Length` and `pos0 + T ≤ cache.MaxPos`; otherwise `ForwardException`, before any op runs.
 - The stage writes cache rows pos0 .. pos0 + T − 1 of each of its layers and sets `cache.Length` to pos0 + T. A pos0 below `Length` rewrites from there: a replay.
-- `Length` is pos0 while the stage runs, so a call that raises leaves it at pos0.
-- The cache must hold exactly the stage's layers.
+- A call refused before its first op (by these checks or by the plan in `BeginForward`) changes nothing. Once the ops run, `Length` is pos0 until the forward completes, so a forward whose op raises leaves it at pos0.
+- The cache must hold exactly the stage's layers, and must not be disposed.
 
-`Forward.run` is the whole model as one stage. `Forward.runStages ops model stages caches pos0 ids transfer options` runs stages that cover the model in order, each with its own cache, passing the residual through `transfer` at each boundary; `Forward.hostRoundTrip ops` is `Upload ∘ Read`, what a pipeline node does.
+`Forward.run` is the whole model as one stage. `Forward.runStages ops model stages caches pos0 ids transfer options` runs stages that cover the model in order, each with its own cache, passing the residual through `transfer` at each boundary; `Forward.hostRoundTrip ops` is `Upload ∘ Read`, what a pipeline node does. It checks every cache before the first stage runs. If a stage or a transfer raises, every cache's `Length` is pos0: the rows from pos0 on are then valid in none of them, and the pipeline is consistent for a replay from pos0.
 
 **Phase.** `Forward.phaseOf rows pos0` is `decode` for a single-token call after position 0, else `prefill`. A one-token prompt at position 0 is a prefill; a chunk after position 0 is a prefill.
 
@@ -140,14 +171,14 @@ torch's float32 `inv_freq` differs from every closed-form F# formula in some ent
 
 - **Layout.** `KvCache<'t>` holds, per layer of one stage, K after k_norm and RoPE and V raw, each `[MaxPos, KvHeads·HeadDim]`, row p for position p. Rows 0 .. `Length` − 1 are valid. Rows beyond may hold anything and are never read.
 - **Dtype.** The cache is in the ops' `DType` (CpuReferenceSemantics): fp32 for cpu-f32 and every GPU, fp64 for cpu-f64. An fp32 cache in cpu-f64 would break the 1e-12 chain to torch64p.
-- **Creation.** `KvCache.create ops model stage maxPos`, with maxPos in 1 .. `ops.MaxContext`.
+- **Creation and release.** `KvCache.create ops model stage maxPos`, for a planned stage, with maxPos in 1 .. `ops.MaxContext`. The cache holds tensors of its ops; `Dispose` returns them (`ReleaseCache`), after which the cache refuses use (`ObjectDisposedException`, and `ForwardException` from a forward). A `KvCache` built over tensors the caller owns releases nothing on `Dispose`.
 - **Length.** The forward sets it. A caller sets it directly only to rewind, or after filling rows another way, such as restoring a snapshot. It must lie in 0 .. MaxPos.
 - **Digest.** `KvCache.digest ops cache` is the SHA-256 of:
   - the ASCII tag `lrm.kvcache/1` and one 0 byte;
   - FirstLayer, LayerCount, Length and the DType code (LrmCore), each as u32 little-endian;
   - then for each layer in order, K rows 0 .. Length − 1 and then V rows 0 .. Length − 1, as their little-endian element bytes.
 
-  Within one class, two caches have the same digest exactly when their valid rows are bit-identical. C2 compares a fast rebuild with exact replay by digest.
+  Within one class, two caches have the same digest exactly when their valid rows are bit-identical. C2 compares a fast rebuild with exact replay by digest. The digest reads back only the valid rows (`ReadRows`), never a whole `[MaxPos, cols]` tensor.
 
 ## Stages
 
@@ -164,20 +195,21 @@ torch's float32 `inv_freq` differs from every closed-form F# formula in some ent
 2. Then single-token decode steps, each feeding back the previous step's argmax (lowest index on ties).
 
 It returns `GreedyResult { Prompt; Ids; Margins; StoppedAtEos }`.
-- **Steps.** `options.Steps` ≥ 1 ids are generated: the prefill gives the first, each decode step one more. The cache has exactly `Greedy.positions prompt steps` = prompt + steps − 1 positions, which must fit `ops.MaxContext`.
+- **Steps.** `options.Steps` ≥ 1 ids are generated: the prefill gives the first, each decode step one more. The cache has exactly `Greedy.positions prompt steps` = prompt + steps − 1 positions, which must fit `ops.MaxContext`; it is released when the run ends. The ops' plan must cover a forward of the prompt's rows on the whole model.
 - **EOS.** `StopAtEos = true` stops after the first id in the config's `EosTokenIds` and keeps it as the last id. **Parity runs pass false** (`GreedyOptions.parity`): the goldens ignore EOS. On the tiny model, p0 stops after 10 ids, the tenth being EOS 7, which is the golden's first 10.
 - **NaN.** A step whose logits hold a NaN (`Argmax` gives `0xFFFFFFFF`) raises `ForwardException` naming the step.
 - **Margins.** With `Margins = true`, each step's top-1 minus top-2 logit, in float64 from `DType` (a full logits readback on a GPU).
 
 ## CpuOps and the registry
 
-- **CpuOps.** `CpuOps.f32 weights options` and `CpuOps.f64 weights options` are cpu-f32 and cpu-f64, with `OpsOptions { Threads; MaxContext }`. `OpsOptions.defaults` is 8 threads (the plan's limit for long CPU jobs) and `max_position_embeddings`.
+- **CpuOps.** `CpuOps.f32 weights options` and `CpuOps.f64 weights options` are cpu-f32 and cpu-f64, created with the plan (`OpsOptions`, "Lifetimes and the plan").
   - The class is `ExecutionClass.forCpu`.
   - Every op is CpuRef's, so the bits are the same at every thread count.
   - The RoPE table covers 0 .. MaxContext − 1.
-  - `Read` returns a clone. `Upload` refuses another dtype.
-- **IQwenRunner.** A model bound to one backend with the handle type hidden. It has Backend, ExecutionClass, DType, Model, MaxContext, `Forward(ids, taps, head)` (a prefill into a fresh cache, results on the host) and `Greedy(prompt, options)`. `QwenRunner.ofOps backend model ops` builds one over any ops.
-- **OpsFactory** is `{ Name; Summary; Create: Qwen3Weights -> OpsOptions -> IQwenRunner }`. `CpuBackends.cpuF32` and `cpuF64` are named by their ExecutionBackend names.
+  - `Read` and `ReadRows` return copies. `Upload` refuses another dtype.
+  - It enforces the plan and the lifetimes exactly.
+- **IQwenRunner.** A model bound to one backend with the handle type hidden. It has Backend, ExecutionClass, DType, Model, MaxContext, `Forward(ids, taps, head)` (a prefill into a fresh cache that it releases, results on the host) and `Greedy(prompt, options)`. It is `IDisposable` and owns its ops: `Dispose` releases them (a GPU's weights and heap), so callers `use` it. `QwenRunner.ofOps backend model ops` builds one over any ops.
+- **OpsFactory** is `{ Name; Summary; Create: Qwen3Weights -> OpsOptions -> IQwenRunner }`; the options are the runner's plan, and the caller disposes the runner. `CpuBackends.cpuF32` and `cpuF64` are named by their ExecutionBackend names.
 - **The registry** is `apps/Lrm.Cli/Commands/Backends.fs`. It starts with cpu-f32 and cpu-f64. `Backends.register factory` adds one and refuses a name twice; GpuBackends.fs (X1) registers cpu-device, vulkan and d3d12 there. `Backends.all ()` and `tryFind name` read it.
 
 ## The commands
@@ -185,15 +217,15 @@ It returns `GreedyResult { Prompt; Ids; Margins; StoppedAtEos }`.
 | Command | What it does |
 | --- | --- |
 | `lrm backends` | Lists the registry |
-| `lrm forward` | A prefill from position 0 on one backend: prints the logits' shape and top-5 and the argmax per row; `--out FILE` writes `input_ids` (I64 `[T]`), the taps and `logits` in the golden `fwd_*` layout, with `lrm.*` metadata; `--compare FILE` measures every written tensor the file also holds (relL2, plus max \|Δ\| and KL for logits) as `golden.compare` checks and exits 1 when one fails |
-| `lrm generate` | Greedy decoding on one or more backends (`--backend cpu-f32,cpu-f64`), each a node of one run; prints the ids, the text for a byte-level model, the margins and the tokens/s of prefill and decode (`--warmup N` runs N untimed, unrecorded steps first); `--expect FILE:TENSOR` compares with golden ids (a `greedy_match` check) and exits 1 on a mismatch |
+| `lrm forward` | A prefill from position 0 on one backend: prints the logits' shape and top-5 and the argmax per row. `--taps` takes `none`, `all` or ActivationNames names; any other name is refused (exit 2). `--out FILE` writes `input_ids` (I64 `[T]`), the taps and `logits` in the golden `fwd_*` layout, with `lrm.*` metadata. `--compare FILE` measures every written tensor the file also holds (relL2, plus max \|Δ\| and KL for logits) as `golden.compare` checks and exits 1 when one fails (`GoldenCheck.tensors`). A tensor whose shape differs from the golden's is a failed check, never skipped; with `--require-taps`, so is every tensor of the file but `input_ids` that the run did not produce. A file whose `input_ids` differ from the prompt is refused (exit 2) unless `--allow-other-ids` is given |
+| `lrm generate` | Greedy decoding on one or more backends (`--backend cpu-f32,cpu-f64`); prints the ids, the text for a byte-level model, the margins and the tokens/s of prefill and decode (`--warmup N` runs N untimed, unrecorded steps first). `--expect FILE:TENSOR` compares the ids generated with the tensor's first ids (a `greedy_match` check, `GoldenCheck.greedy`): `--steps 16` against a 64-id golden compares 16, an EOS stop compares the ids up to it, and `--steps` beyond the golden's length is refused (exit 2). It exits 1 on a mismatch |
 
 **Shared options.**
 - `--model DIR`: `tiny` is `goldens/tiny/g1/model`, and `qwen3-0.6b` (the default) is `LRM_DATA/models/Qwen3-0.6B`.
 - `--backend NAME`.
 - The prompt, given once: `--ids 1,2,3`, `--ids-from FILE[:TENSOR]` (an integer tensor, `input_ids` by default) or `--prompt TEXT`.
 - `--threads N` (8 by default).
-- `--run-log`: a run under `LRM_DATA/runs`, of kind `inference`, or `parity` for `lrm forward --compare`; `--title TEXT` names it.
+- `--run-log`: a run under `LRM_DATA/runs`, of kind `inference`, or `parity` for `lrm forward --compare`; `--title TEXT` names it. Each backend gets its own run with its own ExecutionClass (its parameters name the `backend`), so an inference report's headline rates are one class's; `lrm generate` on several backends writes one run each, titled `..., on <backend>`.
 
 **Text prompts.** `--prompt` is UTF-8 bytes for a byte-level model: a vocabulary of 256 and no `tokenizer.json`, which is the tiny model. Any other model needs the Qwen tokenizer (TokenizerApi, M1), which this version does not use yet; such a model takes `--ids` or `--ids-from`.
 
@@ -215,7 +247,7 @@ The forward emits these through the ambient facade (TelemetryFacade; reserved pr
 
 - **Metering.** Every op is metered by the FLOP registry (`Metering.op "model"`, RunLog contract, "FLOP registry"), so per forward the meters equal `OpCost.forward dims T pos0 headRows`, with the argmax metered by Greedy (`component` `forward`, the stage's `stage`). CpuRef, CpuDevice and the GPUs therefore meter the same work identically. Bytes follow the registry's fp32-activation convention in every class.
 - **Attribution.** The forward sets `component` = `forward` and `stage` with `Telemetry.scope`, and `layer` inside each layer, so CpuRef's `cpuref.*` spans and the meters attribute per layer and stage.
-- **Comparisons** by the tests and `lrm forward --compare` and `lrm generate --expect` are `golden.compare` checks with ComparatorsAndGoldenReader's keys: `pair`, `prompt`, `tap`, `layer` (−1 for model-level taps and `greedy.ids`), and `kind` = `chain`.
+- **Comparisons** by the tests and `lrm forward --compare` and `lrm generate --expect` are `golden.compare` checks with ComparatorsAndGoldenReader's keys: `pair`, `backend` (the registry name, which the gate1 template groups by), `prompt`, `tap`, `layer` (−1 for model-level taps and `greedy.ids`), and `kind` = `chain`; `greedy_match` also carries `steps`. A comparison that measured nothing (a shape mismatch, a required tap the run did not produce) is relL2 = NaN, which never passes and which the parity report sorts first, with the reason in `detail`.
 - **The bit-identity proofs** of the tests (prefill = decode, stages, threads) are `golden.compare` `exact` checks with a `check` and no `tap`, which the parity report lists in its self-test table.
 - **Greedy margins** of the tests are `goldens.greedy.min_margin` gauges with `prompt` and `oracle` = the backend name, which the parity report charts.
 
@@ -283,7 +315,9 @@ The cpu tier of `Lrm.Models.Qwen.Tests` covers:
 - **Config:** every field of Qwen3-0.6B's and the tiny config; both rope_theta spellings; eos lists; 18 refusals, one per rule; the registry dims.
 - **RoPE:** the bit digests; the tiny bits against `rope.safetensors`, and the Qwen bits against the planning probe `spikes/probes/redteam/inv_torch.txt`; both table digests; the entry vectors; the refusal; copies.
 - **Loading:** the tiny folder and its manifest hash; shared tensors and the lm_head alias. Refusals on tampered copies: a flipped byte, a changed config, an unlisted, missing or malformed SHA256SUMS line, a missing SHA256SUMS, a bad or unpinned REVISION, a pin that disagrees. lm_head equal, different, untied and missing; extra, missing, misshaped and F32 tensors; the pin against `toolchain.json`.
-- **The tiny acceptance** above, each check a `golden.compare` record in the parity run log (`ParityRun`, nodes n0 cpu-f64 and n1 cpu-f32). Also the tap order, shapes and dtypes; the tap filter; StopAtEos on p0; and the runner and both factories against the generic forward, bit for bit.
+- **The tiny acceptance** above, each check a `golden.compare` record in the parity run log (`ParityRun`, nodes n0 cpu-f64 and n1 cpu-f32). The run goes to a temporary folder that the exe deletes, or, with `LRM_WRITE_PARITY_RUN=1`, under `LRM_DATA/runs` for `lrm report`. Also the tap order, shapes and dtypes; the tap filter; StopAtEos on p0; and the runner and both factories against the generic forward, bit for bit.
+- **The seam** (`SeamTests`): the bracket of every forward, and a refused call reaching no op; an intermediate ending with its forward, and the result and taps with the stage's next forward; two stages on one ops; ops outside a forward and cache ops inside one; each bound of the plan; caches released by `Dispose`, Greedy and the runner (two runs in one planned cache); uploads; `Dispose`; `ReadRows`; `runStages` rolling every cache back to pos0.
+- **The comparisons** (`GoldenCheckTests`): every tap of p0 passing; a shape mismatch failing; a last-row head against the golden's last row; required taps; `greedy_match` of 16 ids against the 64-id golden, a mismatch, and too many ids.
 - **Determinism:**
   - prefill = decode = chunked prefill;
   - the last-row head;
@@ -295,7 +329,7 @@ The cpu tier of `Lrm.Models.Qwen.Tests` covers:
   - the KvCache vectors K1 to K4;
   - the static op order;
   - telemetry changing no value;
-  - the forward's refusals;
+  - the forward's refusals, a residual of another width and an unknown tap name among them;
   - a NaN stopping greedy decoding.
 - **Telemetry:** the spans and their attributes; the meters against `OpCost.forward`; stages and tokens; a real run log that the inference template renders with data in every chart the forward feeds.
 

@@ -186,17 +186,19 @@ let private oneStage (ops: IForwardOps<'t>) (ids: int[]) (steps: int) =
 
     ids'.ToArray(), List.ofSeq logits, cache
 
-let private stagesEqualOne (ops: IForwardOps<'t>) =
+/// Two stages on ops planned for the split (`split`) against one stage on ops planned for the whole model (`whole`),
+/// both of one class.
+let private stagesEqualOne (split: IForwardOps<'t>) (whole: IForwardOps<'t>) =
     let ids = promptIds "p0"
     let steps = 17
-    let i2, l2, caches = twoStage ops ids steps 1
-    let i1, l1, cache = oneStage ops ids steps
-    let mode = backendOf ops
+    let i2, l2, caches = twoStage split ids steps 1
+    let i1, l1, cache = oneStage whole ids steps
+    let mode = backendOf whole
     Expect.sequenceEqual i2 i1 "ids"
     let golden = goldenGreedy "p0" (if mode = "cpu-f32" then "torch32" else "torch64p")
     Expect.sequenceEqual i1 golden[0..16] "golden ids"
 
-    let cacheTwo = caches |> List.collect (fun c -> cacheRows ops "two-stage" c)
+    let cacheTwo = caches |> List.collect (fun c -> cacheRows split "two-stage" c)
 
     exactCheck
         (Invariant.format
@@ -205,7 +207,7 @@ let private stagesEqualOne (ops: IForwardOps<'t>) =
             for s in 0 .. steps - 1 do
                 yield Invariant.format $"step {s} logits", l2[s], l1[s]
             yield!
-                List.zip cacheTwo (cacheRows ops "one-stage" cache)
+                List.zip cacheTwo (cacheRows whole "one-stage" cache)
                 |> List.map (fun ((l, a), (_, b)) -> l, a, b)
         ]
 
@@ -218,6 +220,9 @@ type private RecordingOps<'t>(inner: IForwardOps<'t>, log: ResizeArray<string>) 
         member _.DType = inner.DType
         member _.MaxContext = inner.MaxContext
         member _.Rows x = inner.Rows x
+        member _.Cols x = inner.Cols x
+        member _.BeginForward call = inner.BeginForward call
+        member _.EndForward r = inner.EndForward r
 
         member _.Embed ids =
             note (Invariant.format $"embed {ids.Length}")
@@ -235,7 +240,8 @@ type private RecordingOps<'t>(inner: IForwardOps<'t>, log: ResizeArray<string>) 
             note (Invariant.format $"rope {inner.Rows x} {h} {p}")
             inner.Rope(x, h, p)
 
-        member _.NewCache(r, c) = inner.NewCache(r, c)
+        member _.NewCache(s, l, r) = inner.NewCache(s, l, r)
+        member _.ReleaseCache c = inner.ReleaseCache c
 
         member _.KvWrite(c, x, p) =
             note (Invariant.format $"kv_write {inner.Rows x} {p}")
@@ -260,7 +266,11 @@ type private RecordingOps<'t>(inner: IForwardOps<'t>, log: ResizeArray<string>) 
         member _.Argmax x = inner.Argmax x
         member _.Tap(n, x) = inner.Tap(n, x)
         member _.Read x = inner.Read x
+        member _.ReadRows(x, r, n) = inner.ReadRows(x, r, n)
         member _.Upload x = inner.Upload x
+
+    interface IDisposable with
+        member _.Dispose() = inner.Dispose()
 
 /// A decorator whose lm_head returns NaN logits.
 type private NanHeadOps(inner: IForwardOps<HostTensor<float32>>, head: string) =
@@ -269,6 +279,9 @@ type private NanHeadOps(inner: IForwardOps<HostTensor<float32>>, head: string) =
         member _.DType = inner.DType
         member _.MaxContext = inner.MaxContext
         member _.Rows x = inner.Rows x
+        member _.Cols x = inner.Cols x
+        member _.BeginForward call = inner.BeginForward call
+        member _.EndForward r = inner.EndForward r
         member _.Embed ids = inner.Embed ids
         member _.RmsNorm(x, w, e) = inner.RmsNorm(x, w, e)
 
@@ -281,7 +294,8 @@ type private NanHeadOps(inner: IForwardOps<HostTensor<float32>>, head: string) =
             y
 
         member _.Rope(x, h, p) = inner.Rope(x, h, p)
-        member _.NewCache(r, c) = inner.NewCache(r, c)
+        member _.NewCache(s, l, r) = inner.NewCache(s, l, r)
+        member _.ReleaseCache c = inner.ReleaseCache c
         member _.KvWrite(c, x, p) = inner.KvWrite(c, x, p)
         member _.Attention(q, k, v, s, p) = inner.Attention(q, k, v, s, p)
         member _.SiluMul(g, u) = inner.SiluMul(g, u)
@@ -290,7 +304,11 @@ type private NanHeadOps(inner: IForwardOps<HostTensor<float32>>, head: string) =
         member _.Argmax x = inner.Argmax x
         member _.Tap(n, x) = inner.Tap(n, x)
         member _.Read x = inner.Read x
+        member _.ReadRows(x, r, n) = inner.ReadRows(x, r, n)
         member _.Upload x = inner.Upload x
+
+    interface IDisposable with
+        member _.Dispose() = inner.Dispose()
 
 let tests =
     testList
@@ -323,10 +341,13 @@ let tests =
                 let check (ops: IForwardOps<'t>) =
                     let ids = promptIds "p2"
                     let model = tinyModel ()
-                    let all = Forward.run ops model (cacheOf ops 70) 0 ids ForwardOptions.all
-                    let last = Forward.run ops model (cacheOf ops 70) 0 ids ForwardOptions.last
+                    use c1 = cacheOf ops 70
+                    use c2 = cacheOf ops 70
+                    // The full head's logits end when the next forward of the stage begins: read them first.
+                    let all = ops.Read(Forward.run ops model c1 0 ids ForwardOptions.all)
+                    let last = Forward.run ops model c2 0 ids ForwardOptions.last
                     Expect.equal (ops.Rows last) 1 "one row"
-                    expectSameBits (backendOf ops) (ops.Read last) (rowsOf (ops.Read all) 69 70)
+                    expectSameBits (backendOf ops) (ops.Read last) (rowsOf all 69 70)
 
                 check (tinyF32 ())
                 check (tinyF64 ())
@@ -335,15 +356,15 @@ let tests =
             <| fun () ->
                 do
                     use _ = ParityRun.install ExecutionBackend.CpuF64
-                    stagesEqualOne (tinyF64 ())
+                    stagesEqualOne (CpuOps.f64 tinyWeights.Value (splitOptions [ 1 ])) (tinyF64 ())
 
                 do
                     use _ = ParityRun.install ExecutionBackend.CpuF32
-                    stagesEqualOne (tinyF32 ())
+                    stagesEqualOne (CpuOps.f32 tinyWeights.Value (splitOptions [ 1 ])) (tinyF32 ())
 
             testCase "a stage's taps and boundary residual are the one-stage taps; the boundary is L{b-1}.out"
             <| fun () ->
-                let ops = tinyF32 ()
+                use ops = CpuOps.f32 tinyWeights.Value (splitOptions [ 1 ])
                 let model = tinyModel ()
                 let ids = promptIds "p0"
                 let stages = Stage.split model.Config [ 1 ]
@@ -364,7 +385,7 @@ let tests =
                     (ForwardOptions.withTaps s1)
                 |> ignore
 
-                let _, whole = ForwardTests.prefillTaps ops ids
+                let _, whole = ForwardTests.prefillTaps (tinyF32 ()) ids
                 let names = (s0.Taps @ s1.Taps) |> List.map fst
                 Expect.sequenceEqual names (ActivationNames.all 2) "stage 0 then stage 1 emit every tap once"
                 Expect.isTrue (s0.Taps |> List.forall (fun (n, _) -> n = "embed.out" || n.StartsWith "L0.")) "stage 0"
@@ -459,8 +480,12 @@ let tests =
                 check (tinyF32 ())
                 check (tinyF64 ())
 
+                use ops64 = tinyF64 ()
+
                 Expect.equal
-                    ((tinyF64 ()).NewCache(4, 64) |> (tinyF64 ()).Read |> _.Desc.DType)
+                    (ops64.NewCache(Stage.whole (tinyModel ()).Config, 0, 4)
+                     |> ops64.Read
+                     |> _.Desc.DType)
                     DType.F64
                     "the F64 cache is float64"
 
@@ -506,11 +531,11 @@ let tests =
                 let f32 (xs: float[]) =
                     HostTensor.f32 shape (xs |> Array.map float32)
 
-                let c32 =
-                    KvCache<HostTensor<float32>>(3, [| f32 k3; f32 k4 |], [| f32 v3; f32 v4 |], 4, 2, Length = 2)
+                use c32 =
+                    new KvCache<HostTensor<float32>>(3, [| f32 k3; f32 k4 |], [| f32 v3; f32 v4 |], 4, 2, Length = 2)
 
-                let c64 =
-                    KvCache<HostTensor<float>>(
+                use c64 =
+                    new KvCache<HostTensor<float>>(
                         3,
                         [| HostTensor.f64 shape k3; HostTensor.f64 shape k4 |],
                         [| HostTensor.f64 shape v3; HostTensor.f64 shape v4 |],
@@ -552,7 +577,7 @@ let tests =
             <| fun () ->
                 let record (ids: int[]) (pos0: int) =
                     let log = ResizeArray<string>()
-                    let ops = RecordingOps(tinyF32 (), log) :> IForwardOps<_>
+                    use ops = new RecordingOps<_>(tinyF32 (), log) :> IForwardOps<_>
                     let model = tinyModel ()
                     let cache = cacheOf ops 32
 
@@ -608,10 +633,18 @@ let tests =
 
             testCase "the forward's rules: inputs, positions and caches"
             <| fun () ->
-                let ops = tinyF32 ()
                 let model = tinyModel ()
                 let c = model.Config
-                let cache = cacheOf ops 8
+                let s1 = (Stage.split c [ 1 ])[1]
+                // Planned for the whole model (stage 0) and for layer 1 alone as stage 1.
+                use ops =
+                    CpuOps.f32
+                        tinyWeights.Value
+                        { tinyOptions () with
+                            Stages = [ Stage.whole c; s1 ]
+                        }
+
+                use cache = cacheOf ops 8
 
                 let raises (label: string) (f: unit -> unit) =
                     Expect.throwsT<ForwardException> f label
@@ -635,22 +668,48 @@ let tests =
                     Forward.runStage ops model (Stage.whole c) cache 0 (StageInput.Hidden hidden) ForwardOptions.last
                     |> ignore)
 
-                let s1 = (Stage.split c [ 1 ])[1]
+                use c1 = KvCache.create ops model s1 8
 
                 raises "ids into a later stage" (fun () ->
-                    Forward.runStage
-                        ops
-                        model
-                        s1
-                        (KvCache.create ops model s1 8)
-                        0
-                        (StageInput.Ids [| 1 |])
-                        ForwardOptions.last
+                    Forward.runStage ops model s1 c1 0 (StageInput.Ids [| 1 |]) ForwardOptions.last
                     |> ignore)
 
                 raises "a cache of other layers" (fun () ->
                     Forward.runStage ops model s1 cache 0 (StageInput.Hidden hidden) ForwardOptions.last
                     |> ignore)
+
+                // A residual of twice the width would pass the first RmsNorm as two per-head norms; it is refused
+                // before any op runs.
+                let wide =
+                    ops.Upload(HostTensor.zeros<float32> DType.F32 (Shape.matrix 2 (2 * c.Hidden)))
+
+                let e =
+                    throws<ForwardException> "a residual of another width" (fun () ->
+                        Forward.runStage ops model s1 c1 0 (StageInput.Hidden wide) ForwardOptions.last
+                        |> ignore)
+
+                Expect.stringContains e.Message "128 columns" "the width"
+                Expect.equal c1.Length 0 "nothing ran"
+
+                let unknown =
+                    throws<ForwardException> "a tap name ActivationNames does not define" (fun () ->
+                        Forward.run
+                            ops
+                            model
+                            cache
+                            0
+                            [| 1 |]
+                            (ForwardOptions.withTaps (TapStore(TapFilter.Parse "L0.attn.qrope, logits")))
+                        |> ignore)
+
+                Expect.stringContains unknown.Message "'L0.attn.qrope'" "the unknown name"
+
+                Expect.equal
+                    (TapFilter.unknown 2 (TapFilter.Parse "L0.bogus, logits, L7.out"))
+                    [ "L0.bogus"; "L7.out" ]
+                    "unknown"
+
+                Expect.isEmpty (TapFilter.unknown 2 TapFilter.All) "all"
 
                 Expect.throwsT<ArgumentException>
                     (fun () -> KvCache.create ops model (Stage.whole c) 513 |> ignore)
@@ -666,7 +725,7 @@ let tests =
 
             testCase "a NaN in the logits stops greedy decoding with the step"
             <| fun () ->
-                let ops = NanHeadOps(tinyF32 (), (tinyModel ()).Params.LmHead) :> IForwardOps<_>
+                use ops = new NanHeadOps(tinyF32 (), (tinyModel ()).Params.LmHead) :> IForwardOps<_>
 
                 let e =
                     throws<ForwardException> "NaN" (fun () ->
