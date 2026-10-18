@@ -620,6 +620,7 @@ let tests =
                         "kernels"
                         "cluster"
                         "gate1"
+                        "goldens"
                         "training"
                         "routing"
                         "thinking"

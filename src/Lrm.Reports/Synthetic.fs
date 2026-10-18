@@ -165,6 +165,37 @@ let private parity (root: string) =
             emit pair case "logits" None "max_abs" (absBase * lognormal r 0.4) absBound
             emit pair case "greedy" None "greedy_match" 64.0 64.0
 
+    // The oracle self-tests and greedy margins that G2's golden tools record (ReferenceOracles, "Telemetry").
+    for check, measured, bound in [ "rmsnorm_fp64", 1.2e-16, 1e-15; "attention_fp64", 4.5e-16, 1e-13 ] do
+        clock.Advance 40_000L
+
+        t.Check(
+            TelemetryNames.GoldenCompare,
+            true,
+            [
+                Attr.str "pair" "oracle-selftest"
+                Attr.str "check" check
+                Attr.str "metric" "relL2"
+                Attr.float "measured" measured
+                Attr.float "bound" bound
+            ]
+        )
+
+    for check in [ "bf16_rne"; "rope_t_spec"; "safetensors" ] do
+        t.Check("goldens.selftest", true, [ Attr.str "check" check ])
+
+    for c in 1..8 do
+        let prompt = Invariant.format $"g{c:D2}"
+        let margin32 = 0.06 + 0.5 * r.NextF64()
+
+        for oracle, margin in [ "torch32", margin32; "torch64p", margin32 * (1.0 + 1e-6 * normal r) ] do
+            let attrs = [ Attr.str "prompt" prompt; Attr.str "oracle" oracle ]
+            clock.Advance 40_000L
+            t.Gauge("goldens.greedy.min_margin", margin, "", attrs)
+            // One float32 ulp of a top logit near 20 is 2^-19.
+            t.Gauge("goldens.greedy.min_margin_f32_ulps", margin * 524288.0, "ulp", attrs)
+            t.Check("goldens.greedy.f32_argmax_agrees", true, attrs)
+
     run.Finish RunStatus.Ok
     run.Directory
 
@@ -395,6 +426,10 @@ let private kernels (root: string) =
 
 // ---- cluster ------------------------------------------------------------------------------------------------------
 
+/// A two-stage pipeline in C1's record names (ClusterProtocol, "Telemetry"): the coordinator writes every cluster.*
+/// record, with the worker in `node`, as C1's coordinator does; the workers join as run-log nodes with their GPU
+/// classes, and the spare writes its replay count. s0a is killed at step 9 while s0b lags, so the unit is reissued to
+/// the spare, which replays the chain first; s0a is demoted and later leaves when its lease runs out.
 let private cluster (root: string) =
     let clock = VirtualClock epochNs
     let r = rngFor "cluster"
@@ -419,144 +454,192 @@ let private cluster (root: string) =
     use s1a = join "s1a" d3d12Class
     use s1b = join "s1b" d3d12Class
     use spare = join "spare" vulkanClass
-    let ct = coord.Telemetry.Child [ Attr.str TelemetryKeys.Component "coordinator" ]
 
-    let worker (ctx: RunContext) =
-        ctx.Telemetry.Child [ Attr.str TelemetryKeys.Component "stage" ]
+    let ct =
+        coord.Telemetry.Child
+            [
+                Attr.str TelemetryKeys.Component "cluster.coordinator"
+                Attr.str TelemetryKeys.Node "coord"
+            ]
 
-    // The frame a finished unit sends on: stage 0 its activations to stage 1, stage 1 its token and digest back to
-    // the coordinator.
-    let outputBytes stage step =
-        if stage = 0 then
-            (if step = 0 then 512 else 1) * int qwen.Hidden * 4
-        else
-            64
+    let node (n: string) = Attr.str TelemetryKeys.Node n
+    let stageAttr (s: int) = Attr.int TelemetryKeys.Stage s
+    let names = [ "s0a"; "s0b"; "s1a"; "s1b"; "spare" ]
+    let mutable epoch = 0
 
-    let unitSpan (ctx: RunContext) (start: int64) (dur: int64) stage step status unitId =
-        clock.Set start
-        let w = worker ctx
+    for i, n in List.indexed names do
+        clock.Set(epochNs + 200_000L + int64 i * 150_000L)
+        epoch <- epoch + 1
+        ct.Event("cluster.member.join", [ node n; Attr.str "incarnation" "1"; Attr.str "reason" "join" ])
+        ct.Gauge("cluster.epoch", float epoch, "", [ Attr.str "reason" "join"; Attr.int "members" (i + 1) ])
+        ct.Meter("cluster.bytes_sent", 70.0, TelemetryUnits.Bytes, [ Attr.str "kind" "membership" ])
 
-        use _ =
-            w.Span(
-                "cluster.unit",
-                [
-                    Attr.int TelemetryKeys.Stage stage
-                    Attr.int "step" step
-                    Attr.str "unit" unitId
-                    Attr.str "status" status
-                ]
-            )
+    for i, n in List.indexed names do
+        clock.Set(epochNs + 8_000_000L + int64 i * 400_000L)
+        ct.Event("cluster.ready", [ node n; Attr.str "scope" "node" ])
 
-        clock.Set(start + dur)
+    let samples = [| 0; 0 |]
 
-        if status <> "lost" then
-            w.Meter(
-                "cluster.frame_bytes",
-                float (outputBytes stage step),
-                TelemetryUnits.Bytes,
-                [ Attr.int TelemetryKeys.Stage stage; Attr.int "step" step ]
-            )
+    let deadline (stage: int) (value: float) =
+        ct.Gauge("cluster.deadline", value, "ns", [ stageAttr stage; Attr.int "samples" samples[stage] ])
+
+    let assign (at: int64) (stage: int) (n: string) (bytes: int) =
+        clock.Set at
+        ct.Counter("cluster.assign", 1.0, "count", [ stageAttr stage; node n; Attr.bool "retransmit" false ])
+        ct.Meter("cluster.bytes_sent", float bytes, TelemetryUnits.Bytes, [ Attr.str "kind" "assign" ])
+
+    let accept (step: int) (stage: int) (n: string) (start: int64) (finish: int64) =
+        clock.Set finish
+
+        ct.Event(
+            "cluster.unit.done",
+            [
+                Attr.int "lane" 0
+                stageAttr stage
+                Attr.int "step" step
+                node n
+                Attr.int64 "start_ns" start
+                Attr.int64 "end_ns" finish
+                Attr.int64 "latency_ns" (finish - start)
+            ]
+        )
+
+        ct.Histogram("cluster.unit.latency", float (finish - start), "ns", [ stageAttr stage; node n ])
+        samples[stage] <- samples[stage] + 1
+
+        if samples[stage] = 8 then
+            deadline stage 250e6
+
+    let confirm (stage: int) (n: string) (at: int64) (lagNs: int64) =
+        clock.Set at
+        ct.Counter("cluster.duplicate", 1.0, "count", [ stageAttr stage; node n ])
+        ct.Histogram("cluster.lag", float lagNs, "ns", [ stageAttr stage; node n ])
+
+    // Runs one stage of one step on its replicas: the first result is accepted, the other confirms it.
+    let runStage (step: int) (stage: int) (replicas: string list) (start: int64) (baseNs: float) (bytes: int) =
+        for n in replicas do
+            assign start stage n bytes
+
+        let timed =
+            replicas
+            |> List.map (fun n -> n, start + ns (baseNs * lognormal r 0.06))
+            |> List.sortBy snd
+
+        let first, firstEnd = List.head timed
+        accept step stage first start firstEnd
+
+        for n, finish in List.tail timed do
+            confirm stage n finish (finish - firstEnd)
+
+        firstEnd
 
     let killStep = 9
-    let mutable t = epochNs + 20_000_000L
+    let mutable s0Replicas = [ "s0a"; "s0b" ]
+    let mutable leaveAt = Int64.MaxValue
+    let mutable t = epochNs + 12_000_000L
 
     for step in 0..23 do
         let prefill = step = 0
-        let stepStart = t
-        clock.Set stepStart
-
-        use stepSpan = ct.Span("cluster.step", [ Attr.int "step" step ])
-
-        let unitOf stage =
-            (Canonical.hash "lrm.test/1" (fun w ->
-                w.I32 stage
-                w.I32 step))
-                .Short
-
-        // Stage 0 on both replicas (s0b and, after the kill, the spare), stage 1 after it.
-        // The spare serves as the second replica once its replay has finished, three steps after the loss.
-        let s0Nodes =
-            if step < killStep then [ s0a; s0b ]
-            elif step = killStep then [ s0b; s0a ]
-            elif step <= killStep + 3 then [ s0b ]
-            else [ s0b; spare ]
-
-        // Every replica of a stage runs the same unit; the first result is accepted ("ok"), the others match it and
-        // are "duplicate", and a replica that dies mid-unit is "lost".
-        let runStage (replicas: (RunContext * bool) list) (start: int64) (baseNs: float) (stage: int) =
-            let timed =
-                replicas
-                |> List.map (fun (ctx, killed) -> ctx, killed, ns (baseNs * lognormal r 0.06))
-
-            let accepted =
-                timed
-                |> List.filter (fun (_, k, _) -> not k)
-                |> List.map (fun (_, _, d) -> start + d)
-                |> List.min
-
-            let mutable taken = false
-
-            for ctx, killed, d in timed do
-                if killed then
-                    unitSpan ctx start (d / 3L) stage step "lost" (unitOf stage)
-                elif not taken && start + d = accepted then
-                    taken <- true
-                    unitSpan ctx start d stage step "ok" (unitOf stage)
-                else
-                    unitSpan ctx start d stage step "duplicate" (unitOf stage)
-
-            accepted
-
         let base0 = if prefill then 41e6 else 9.2e6
-        let starts0 = t + 600_000L
-
-        let first0 =
-            runStage (s0Nodes |> List.mapi (fun i ctx -> ctx, step = killStep && i = 1)) starts0 base0 0
-
-        if step = killStep then
-            clock.Set(starts0 + ns (base0 / 3.0) + 30_000_000L)
-            ct.Event("cluster.node_lost", [ Attr.str "target" "s0a"; Attr.str "reason" "heartbeat timeout" ])
-            ct.Event("cluster.reissue", [ Attr.str "unit" (unitOf 0); Attr.str "from" "s0a"; Attr.str "to" "spare" ])
-            // The spare rebuilds its KV cache by exact replay of steps 0..9, then serves as the second replica.
-            unitSpan spare (clock.Now()) (ns 48e6) 0 step "reissued" (unitOf 0)
-
-        let s1Start = first0 + 1_100_000L
-
-        // The coordinator sends the step's token ids to stage 0.
-        ct.Meter(
-            "cluster.frame_bytes",
-            float (if prefill then 512 * 4 else 4),
-            TelemetryUnits.Bytes,
-            [ Attr.int TelemetryKeys.Stage 0; Attr.int "step" step ]
-        )
-
         let base1 = if prefill then 46e6 else 11.1e6
+        let tokens = if prefill then 512 else 1
 
-        let first1 = runStage [ s1a, false; s1b, false ] s1Start base1 1
-        let done' = first1 + 700_000L
+        if t >= leaveAt then
+            clock.Set leaveAt
+            ct.Event("cluster.member.leave", [ node "s0a"; Attr.str "reason" "lease" ])
+            epoch <- epoch + 1
+            ct.Gauge("cluster.epoch", float epoch, "", [ Attr.str "reason" "lease"; Attr.int "members" 4 ])
+            leaveAt <- Int64.MaxValue
 
-        let done' =
-            if step = killStep then
-                max done' (clock.Now() + 1_000_000L)
+        let accepted0 =
+            if step <> killStep then
+                runStage step 0 s0Replicas t base0 (tokens * 4)
             else
-                done'
+                // s0a dies 3 ms into the unit and s0b runs 45 times slower, so both miss the 250 ms deadline. The
+                // coordinator reissues the unit to the spare, which first replays the 9 earlier units of the chain,
+                // and drops s0a from the stage; the late result of s0b then confirms the result of the spare.
+                for n in s0Replicas do
+                    assign t 0 n 4
 
-        clock.Set done'
-        stepSpan.Add(Attr.int "tokens" (if prefill then 512 else 1))
-        stepSpan.Dispose()
-        t <- done' + 300_000L
+                clock.Set(t + 3_000_000L)
+                ct.Counter("cluster.chaos", 1.0, "count", [ Attr.str "fault" "kill"; node "s0a" ])
+                let missed = t + 250_000_000L
+                clock.Set missed
 
-    clock.Set(t + 5_000_000L)
+                for n in s0Replicas do
+                    ct.Counter("cluster.deadline.miss", 1.0, "count", [ stageAttr 0; node n ])
 
-    for stage in 0..1 do
-        ct.Check(
-            "cluster.replica_digest",
-            true,
-            [
-                Attr.int TelemetryKeys.Stage stage
-                Attr.str "digest" (Hash.sha256Utf8 ("stage" + Invariant.i32 stage)).Short
-            ]
-        )
+                ct.Counter(
+                    "cluster.reissue",
+                    1.0,
+                    "count",
+                    [ Attr.int "lane" 0; stageAttr 0; Attr.int "step" step; node "spare" ]
+                )
+
+                assign missed 0 "spare" 4
+
+                ct.Counter(
+                    "cluster.replay.served",
+                    float step,
+                    "count",
+                    [ Attr.int "lane" 0; stageAttr 0; node "spare" ]
+                )
+
+                ct.Meter("cluster.bytes_sent", float (step * 4096), TelemetryUnits.Bytes, [ Attr.str "kind" "replay" ])
+                ct.Event("cluster.demote", [ stageAttr 0; node "s0a" ])
+                let replayed = missed + ns (float step * 4.8e6 * lognormal r 0.05)
+                clock.Set replayed
+
+                spare.Telemetry.Counter(
+                    "cluster.replay.units",
+                    float step,
+                    "count",
+                    [
+                        Attr.str TelemetryKeys.Component "cluster.node"
+                        node "spare"
+                        Attr.int "lane" 0
+                        stageAttr 0
+                    ]
+                )
+
+                let finish = replayed + ns (base0 * lognormal r 0.06)
+                accept step 0 "spare" t finish
+                let late = t + 420_000_000L
+                confirm 0 "s0b" late (late - finish)
+                deadline 0 1.32e9
+                s0Replicas <- [ "s0b"; "spare" ]
+                leaveAt <- t + 500_000_000L
+                finish
+
+        if step = killStep + 9 then
+            clock.Set accepted0
+            deadline 0 250e6
+
+        let start1 = accepted0 + 1_100_000L
+
+        let accepted1 =
+            runStage step 1 [ "s1a"; "s1b" ] start1 base1 (tokens * int qwen.Hidden * 4)
+
+        t <- accepted1 + 300_000L
+
+    clock.Set(t + 2_000_000L)
+
+    ct.Event(
+        "cluster.run",
+        [
+            Attr.str "status" "completed"
+            Attr.int "units" 48
+            Attr.int "epoch" epoch
+            Attr.int "reissues" 1
+            Attr.int "duplicates" 48
+            Attr.int "divergences" 0
+            Attr.int "replays" 1
+            Attr.int "cross_checked" 48
+            Attr.int "unconfirmed" 0
+            Attr.str "run_digest" (Hash.sha256Utf8 "synthetic cluster run").Hex
+            Attr.int64 "end_ns" (clock.Now())
+        ]
+    )
 
     for ctx in [ s1b; s1a; spare; s0b ] do
         ctx.Finish RunStatus.Ok
@@ -906,6 +989,101 @@ let private thinking (root: string) =
     run.Finish RunStatus.Ok
     run.Directory
 
+// ---- goldens ------------------------------------------------------------------------------------------------------
+
+/// A tokenizer golden run with --check, in the records of tools/goldens (ReferenceOracles, "Telemetry").
+let private goldens (root: string) =
+    let clock = VirtualClock epochNs
+    let r = rngFor "goldens"
+
+    use run =
+        RunContext.Create(
+            options
+                "goldens"
+                "make_tokenizer --check (synthetic)"
+                root
+                clock
+                None
+                [ "tool", "make_tokenizer"; "set", "goldens/tokenizer/g1" ]
+        )
+
+    let t =
+        run.Telemetry.Child [ Attr.str TelemetryKeys.Component "goldens"; Attr.str "tool" "make_tokenizer" ]
+
+    let set = Attr.str "set" "tokenizer"
+
+    let categories =
+        [
+            "added", 520
+            "astral", 320
+            "casefold", 200
+            "csharp", 360
+            "decode", 520
+            "digits", 130
+            "emoji", 440
+            "il", 360
+            "multilingual", 190
+            "nfc", 170
+            "unicode-space", 400
+            "utf8", 140
+            "whitespace", 370
+        ]
+        |> List.map (fun (c, n) -> c, n + int (40.0 * (r.NextF64() - 0.5)))
+
+    let total = categories |> List.sumBy snd
+
+    do
+        use _ = t.Span("goldens.tokenizer.build", [ set ])
+        clock.Advance(ns (4.7e9 * lognormal r 0.05))
+
+    do
+        use _ = t.Span("goldens.tokenizer.crosscheck", [ set ])
+        clock.Advance(ns (0.6e9 * lognormal r 0.05))
+
+    t.Check("goldens.double_run_identical", true, [ set; Attr.int "threads" 8 ])
+
+    t.Check(
+        "goldens.tokenizer.transformers",
+        true,
+        [
+            Attr.int "agree" (total - 520)
+            Attr.int "differ" 0
+            Attr.str "tokenizer_class" "Qwen2Tokenizer"
+        ]
+    )
+
+    for c, n in categories do
+        t.Gauge("goldens.tokenizer.cases", float n, "count", [ Attr.str "category" c ])
+
+    for kind, n in
+        [
+            "decode", 520
+            "encode", total - 520 - 150
+            "encode_bytes", 142
+            "encode_reject", 8
+        ] do
+        t.Gauge("goldens.tokenizer.case_kinds", float n, "count", [ Attr.str "kind" kind ])
+
+    let files =
+        [
+            "goldens/tokenizer/g1/cases.jsonl", float total * 172.0
+            "goldens/tokenizer/g1/manifest.json", 12_400.0
+        ]
+
+    for f, b in files do
+        t.Gauge("goldens.file_bytes", Math.Round b, TelemetryUnits.Bytes, [ Attr.str "file" f ])
+
+    t.Gauge(
+        "goldens.set_bytes",
+        files |> List.sumBy (fun (_, b) -> Math.Round b),
+        TelemetryUnits.Bytes,
+        [ set; Attr.int64 "budget" 2097152L ]
+    )
+
+    t.Check("goldens.regen_identical", true, [ set ])
+    run.Finish RunStatus.Ok
+    run.Directory
+
 /// The template names that have a synthetic generator, in report order.
 let kinds =
     [
@@ -914,6 +1092,7 @@ let kinds =
         "kernels"
         "cluster"
         "gate1"
+        "goldens"
         "training"
         "routing"
         "thinking"
@@ -928,6 +1107,7 @@ let write (kind: string) (runsRoot: string) : string =
     | "kernels" -> kernels runsRoot
     | "cluster" -> cluster runsRoot
     | "gate1" -> gate1 runsRoot
+    | "goldens" -> goldens runsRoot
     | "training" -> training runsRoot
     | "routing" -> routing runsRoot
     | "thinking" -> thinking runsRoot

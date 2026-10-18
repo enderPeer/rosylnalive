@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="462" viewBox="0 0 720 462" role="img" aria-labelledby="goldens-corpus-0-categories-title goldens-corpus-0-categories-desc">
+<title id="goldens-corpus-0-categories-title">Tokenizer cases per category</title>
+<desc id="goldens-corpus-0-categories-desc">Bar chart of cases for 13 category values, 1 series.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="462" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="461" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Tokenizer cases per category</text>
+<text class="t2" x="16" y="45" font-size="12">4,198 cases in 13 categories</text>
+<line class="grid" x1="110.48" y1="78" x2="110.48" y2="416" stroke-width="1"/>
+<line class="grid" x1="286.99" y1="78" x2="286.99" y2="416" stroke-width="1"/>
+<line class="grid" x1="463.49" y1="78" x2="463.49" y2="416" stroke-width="1"/>
+<line class="grid" x1="640" y1="78" x2="640" y2="416" stroke-width="1"/>
+<text class="t3" x="110.48" y="433" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="286.99" y="433" font-size="11" text-anchor="middle">200</text>
+<text class="t3" x="463.49" y="433" font-size="11" text-anchor="middle">400</text>
+<text class="t3" x="640" y="433" font-size="11" text-anchor="middle">600</text>
+<text class="t3" x="110.48" y="68" font-size="11" text-anchor="start">category</text>
+<text class="t3" x="375.24" y="452" font-size="11" text-anchor="middle">cases</text>
+<text class="t2" x="102.48" y="95" font-size="12" text-anchor="end">added</text>
+<path class="f0" d="M110.48 83H574.22Q578.22 83 578.22 87V95Q578.22 99 574.22 99H110.48Z"><title>added, cases: 530</title></path>
+<text class="t2" x="584.22" y="95" font-size="11">530</text>
+<text class="t2" x="102.48" y="121" font-size="12" text-anchor="end">astral</text>
+<path class="f0" d="M110.48 109H403.89Q407.89 109 407.89 113V121Q407.89 125 403.89 125H110.48Z"><title>astral, cases: 337</title></path>
+<text class="t2" x="413.89" y="121" font-size="11">337</text>
+<text class="t2" x="102.48" y="147" font-size="12" text-anchor="end">casefold</text>
+<path class="f0" d="M110.48 135H298.87Q302.87 135 302.87 139V147Q302.87 151 298.87 151H110.48Z"><title>casefold, cases: 218</title></path>
+<text class="t2" x="308.87" y="147" font-size="11">218</text>
+<text class="t2" x="102.48" y="173" font-size="12" text-anchor="end">csharp</text>
+<path class="f0" d="M110.48 161H410.07Q414.07 161 414.07 165V173Q414.07 177 410.07 177H110.48Z"><title>csharp, cases: 344</title></path>
+<text class="t2" x="420.07" y="173" font-size="11">344</text>
+<text class="t2" x="102.48" y="199" font-size="12" text-anchor="end">decode</text>
+<path class="f0" d="M110.48 187H568.93Q572.93 187 572.93 191V199Q572.93 203 568.93 203H110.48Z"><title>decode, cases: 524</title></path>
+<text class="t2" x="578.93" y="199" font-size="11">524</text>
+<text class="t2" x="102.48" y="225" font-size="12" text-anchor="end">digits</text>
+<path class="f0" d="M110.48 213H222.97Q226.97 213 226.97 217V225Q226.97 229 222.97 229H110.48Z"><title>digits, cases: 132</title></path>
+<text class="t2" x="232.97" y="225" font-size="11">132</text>
+<text class="t2" x="102.48" y="251" font-size="12" text-anchor="end">emoji</text>
+<path class="f0" d="M110.48 239H508.92Q512.92 239 512.92 243V251Q512.92 255 508.92 255H110.48Z"><title>emoji, cases: 456</title></path>
+<text class="t2" x="518.92" y="251" font-size="11">456</text>
+<text class="t2" x="102.48" y="277" font-size="12" text-anchor="end">il</text>
+<path class="f0" d="M110.48 265H434.78Q438.78 265 438.78 269V277Q438.78 281 434.78 281H110.48Z"><title>il, cases: 372</title></path>
+<text class="t2" x="444.78" y="277" font-size="11">372</text>
+<text class="t2" x="102.48" y="303" font-size="12" text-anchor="end">multilingual</text>
+<path class="f0" d="M110.48 291H272.4Q276.4 291 276.4 295V303Q276.4 307 272.4 307H110.48Z"><title>multilingual, cases: 188</title></path>
+<text class="t2" x="282.4" y="303" font-size="11">188</text>
+<text class="t2" x="102.48" y="329" font-size="12" text-anchor="end">nfc</text>
+<path class="f0" d="M110.48 317H258.28Q262.28 317 262.28 321V329Q262.28 333 258.28 333H110.48Z"><title>nfc, cases: 172</title></path>
+<text class="t2" x="268.28" y="329" font-size="11">172</text>
+<text class="t2" x="102.48" y="355" font-size="12" text-anchor="end">unicode-space</text>
+<path class="f0" d="M110.48 343H450.67Q454.67 343 454.67 347V355Q454.67 359 450.67 359H110.48Z"><title>unicode-space, cases: 390</title></path>
+<text class="t2" x="460.67" y="355" font-size="11">390</text>
+<text class="t2" x="102.48" y="381" font-size="12" text-anchor="end">utf8</text>
+<path class="f0" d="M110.48 369H237.09Q241.09 369 241.09 373V381Q241.09 385 237.09 385H110.48Z"><title>utf8, cases: 148</title></path>
+<text class="t2" x="247.09" y="381" font-size="11">148</text>
+<text class="t2" x="102.48" y="407" font-size="12" text-anchor="end">whitespace</text>
+<path class="f0" d="M110.48 395H448.02Q452.02 395 452.02 399V407Q452.02 411 448.02 411H110.48Z"><title>whitespace, cases: 387</title></path>
+<text class="t2" x="458.02" y="407" font-size="11">387</text>
+<line class="axis" x1="110.48" y1="78" x2="110.48" y2="78" stroke-width="1"/>
+<line class="axis" x1="110.48" y1="78" x2="110.48" y2="416" stroke-width="1"/>
+</svg>

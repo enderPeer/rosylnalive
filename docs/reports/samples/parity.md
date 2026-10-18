@@ -2,7 +2,7 @@
 
 > **Synthetic data.** This report was rendered from a run log made by a synthetic generator (`lrm report --synthetic`), so the visuals can be reviewed before the real runs exist. None of its numbers are measurements.
 
-**PASS.** All 2,768 comparisons are within their bounds.
+**PASS.** All 2,768 comparisons are within their bounds. All 5 oracle self-tests pass.
 
 - Comparisons: 2,768, failed: 0
 - Pairs: cpu64-vs-torch64p, cpu32-vs-torch32; cases: 8
@@ -43,6 +43,43 @@ Every per-layer tap's rel_l2 against the golden, summarized per layer over all c
 | g07 | 346 | 0 | cpu32-vs-torch32 logits max_abs | 0.220 | cpu64-vs-torch64p 9.79e-13, cpu32-vs-torch32 3.04e-06 | 64/64, 64/64 |
 | g08 | 346 | 0 | cpu32-vs-torch32 L22.out rel_l2 | 0.138 | cpu64-vs-torch64p 1.27e-12, cpu32-vs-torch32 1.54e-06 | 64/64, 64/64 |
 
+## Oracle self-tests
+
+5 of 5 pass.
+
+| Self-test | Metric | Measured | Bound | Ratio | Result |
+| --- | --- | ---: | ---: | ---: | --- |
+| rmsnorm_fp64 | rel_l2 | 1.20e-16 | 1.00e-15 | 0.120 | ✓ pass |
+| attention_fp64 | rel_l2 | 4.50e-16 | 1.00e-13 | 0.004 | ✓ pass |
+| bf16_rne | exact |  |  |  | ✓ pass |
+| rope_t_spec | exact |  |  |  | ✓ pass |
+| safetensors | exact |  |  |  | ✓ pass |
+
+## Greedy margins
+
+The smallest margin is 0.1172 (g01, torch32). The float32 argmax agrees with the oracle at every step of every prompt.
+
+![Smallest top-2 margin over the greedy steps](charts/parity-greedy-0-margins.svg)
+
+| Prompt | Oracle | Smallest margin | In float32 ulps | float32 argmax agrees |
+| --- | --- | ---: | ---: | --- |
+| g01 | torch32 | 0.1172 | 61,426 | ✓ pass |
+| g01 | torch64p | 0.1172 | 61,426 | ✓ pass |
+| g02 | torch32 | 0.3519 | 184,484 | ✓ pass |
+| g02 | torch64p | 0.3519 | 184,484 | ✓ pass |
+| g03 | torch32 | 0.2387 | 125,135 | ✓ pass |
+| g03 | torch64p | 0.2387 | 125,135 | ✓ pass |
+| g04 | torch32 | 0.4317 | 226,337 | ✓ pass |
+| g04 | torch64p | 0.4317 | 226,336 | ✓ pass |
+| g05 | torch32 | 0.5324 | 279,107 | ✓ pass |
+| g05 | torch64p | 0.5324 | 279,107 | ✓ pass |
+| g06 | torch32 | 0.4252 | 222,911 | ✓ pass |
+| g06 | torch64p | 0.4252 | 222,912 | ✓ pass |
+| g07 | torch32 | 0.5187 | 271,933 | ✓ pass |
+| g07 | torch64p | 0.5187 | 271,933 | ✓ pass |
+| g08 | torch32 | 0.3507 | 183,874 | ✓ pass |
+| g08 | torch64p | 0.3507 | 183,874 | ✓ pass |
+
 ## Closest to the bound
 
 | Pair | Case | Tap | Metric | Measured | Bound | Ratio | Result |
@@ -72,13 +109,13 @@ Every per-layer tap's rel_l2 against the golden, summarized per layer over all c
 | Kind | parity |
 | Status | ok |
 | Started | 2026-10-18T09:00:00.000Z |
-| Ended | 2026-10-18T09:00:00.126Z |
+| Ended | 2026-10-18T09:00:00.127Z |
 | Execution class | cpu-f32 cpu, .NET 10.0.13, win-x64+avx2+fma |
 | Class id | `7cc3fe8cde13` |
 | Driver | .NET 10.0.13 |
 | Commit | not recorded |
 | Nodes | 1 |
-| Records | 2,776 |
+| Records | 2,829 |
 | Synthetic | yes |
 
 | Parameter | Value |
@@ -94,7 +131,7 @@ Every per-layer tap's rel_l2 against the golden, summarized per layer over all c
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| n0 | creator | cpu-f32 cpu, .NET 10.0.13, win-x64+avx2+fma | 2,776 | ok | 0 |
+| n0 | creator | cpu-f32 cpu, .NET 10.0.13, win-x64+avx2+fma | 2,829 | ok | 0 |
 
 ### Log problems
 

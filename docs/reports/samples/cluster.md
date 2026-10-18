@@ -2,50 +2,69 @@
 
 > **Synthetic data.** This report was rendered from a run log made by a synthetic generator (`lrm report --synthetic`), so the visuals can be reviewed before the real runs exist. None of its numbers are measurements.
 
-**PASS.** 94 work units, 1 reissued after 1 node loss; no divergence, and every replica digest matches.
+**PASS.** 48 work units, every one cross-checked by a second replica; 1 unit reissued, 1 node loss, no divergence.
 
-| Work units | Reissued | Nodes lost | Divergences | Replica digests equal |
-| ---: | ---: | ---: | ---: | ---: |
-| 94 | 1 | 1 | 0 | 2/2 |
+| Outcome | Work units | Cross-checked | Reissued | Nodes lost | Divergences | Epoch |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| completed | 48 | 48 of 48 | 1 | 1 | 0 | 6 |
+
+Run digest: `9563af1d0c1580c8aba6fb4750d67978181bb2d9f15b222adb6628b6169246dc`
 
 ## Pipeline
 
-Green units were accepted, grey ones are matching duplicates from the other replica, amber ones were reissued after a node loss, and red ones were cut off when their node died.
+Each bar is a work unit the coordinator accepted, drawn on the node whose result it took, from the assignment to the acceptance. Green units were accepted from their first assignment; amber ones were reissued to another node after the first missed its deadline. Markers are node losses, kills, restarts and demotions.
 
 ![Stage Gantt chart](charts/cluster-gantt.svg)
 
 ![End-to-end step latency](charts/cluster-step_latency.svg)
 
+![Stage deadlines](charts/cluster-deadlines.svg)
+
+![Unit latency, deadline start to accepted result](charts/cluster-latency.svg)
+
 ## Nodes
 
-![Busy time per node by unit outcome](charts/cluster-busy.svg)
+![Accepted work per node and stage, by outcome](charts/cluster-busy.svg)
 
-| Node | Stage | Backend | Units | Reissued | Lost | Busy | Bytes sent |
-| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |
-| s0a | 0 | vulkan | 10 | 0 | 1 | 117.44 ms | 2.03 MiB |
-| s0b | 0 | vulkan | 24 | 0 | 0 | 250.45 ms | 2.09 MiB |
-| spare | 0 | vulkan | 12 | 1 | 0 | 152.03 ms | 48.00 KiB |
-| s1a | 1 | d3d12 | 24 | 0 | 0 | 295.88 ms | 1.50 KiB |
-| s1b | 1 | d3d12 | 24 | 0 | 0 | 299.07 ms | 1.50 KiB |
+| Node | Stage | Backend | Assigned | Accepted | Reissued to it | Duplicates | Deadline misses | Accepted time |
+| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| s0a | 0 | vulkan | 10 | 2 | 0 | 7 | 1 | 48.14 ms |
+| s0b | 0 | vulkan | 24 | 14 | 0 | 10 | 1 | 122.66 ms |
+| spare | 0 | vulkan | 15 | 8 | 1 | 7 | 0 | 362.32 ms |
+| s1a | 1 | d3d12 | 24 | 8 | 0 | 16 | 0 | 118.02 ms |
+| s1b | 1 | d3d12 | 24 | 16 | 0 | 8 | 0 | 172.03 ms |
+
+### Counters
+
+| Counter | Split | Total |
+| --- | --- | ---: |
+| cluster.assign | retransmit=false | 97 |
+| cluster.reissue |  | 1 |
+| cluster.duplicate |  | 48 |
+| cluster.deadline.miss |  | 2 |
+| cluster.replay.served |  | 9 |
+| cluster.replay.units |  | 9 |
+| cluster.chaos | fault=kill | 1 |
 
 ### Cluster events
 
 | Time | Node | Event | Detail |
 | ---: | --- | --- | --- |
-| 295.82 ms | coord | cluster.node_lost | target=s0a reason=heartbeat timeout |
-| 295.82 ms | coord | cluster.reissue | unit=7db4c2db05c7 from=s0a to=spare |
+| 0 ns | coord | cluster.member.join | node=s0a incarnation=1 reason=join |
+| 150.00 µs | coord | cluster.member.join | node=s0b incarnation=1 reason=join |
+| 300.00 µs | coord | cluster.member.join | node=s1a incarnation=1 reason=join |
+| 450.00 µs | coord | cluster.member.join | node=s1b incarnation=1 reason=join |
+| 600.00 µs | coord | cluster.member.join | node=spare incarnation=1 reason=join |
+| 265.25 ms | coord | cluster.chaos | node=s0a fault=kill |
+| 512.25 ms | coord | cluster.demote | node=s0a stage=0 |
+| 762.25 ms | coord | cluster.member.leave | node=s0a reason=lease |
+| 870.57 ms | coord | cluster.run | node=coord status=completed units=48 epoch=6 reissues=1 duplicates=48 divergences=0 replays=1 cross_checked=48 unconfirmed=0 end_ns=1792314000870773720 |
 
 ## Metering
 
 | Node | Component | Stage | Wall (self) | GPU | FLOPs | Bytes moved | Tokens | Records |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| coord | coordinator |  | 590.26 ms | 0 ns | 0 | 0 B | 0 | 24 |
-| coord | coordinator | 0 | 0 ns | 0 ns | 0 | 2.09 KiB | 0 | 24 |
-| s0a | stage | 0 | 117.44 ms | 0 ns | 0 | 2.03 MiB | 0 | 19 |
-| s0b | stage | 0 | 250.45 ms | 0 ns | 0 | 2.09 MiB | 0 | 48 |
-| s1a | stage | 1 | 295.88 ms | 0 ns | 0 | 1.50 KiB | 0 | 48 |
-| s1b | stage | 1 | 299.07 ms | 0 ns | 0 | 1.50 KiB | 0 | 48 |
-| spare | stage | 0 | 152.03 ms | 0 ns | 0 | 48.00 KiB | 0 | 24 |
+| coord | cluster.coordinator |  | 0 ns | 0 ns | 0 | 4.22 MiB | 0 | 103 |
 
 ## Run
 
@@ -56,13 +75,13 @@ Green units were accepted, grey ones are matching duplicates from the other repl
 | Kind | cluster |
 | Status | ok |
 | Started | 2026-10-18T09:00:00.000Z |
-| Ended | 2026-10-18T09:00:00.622Z |
+| Ended | 2026-10-18T09:00:00.870Z |
 | Execution class | not recorded |
 | Class id | n/a |
 | Driver | n/a |
 | Commit | not recorded |
 | Nodes | 6 |
-| Records | 239 |
+| Records | 421 |
 | Synthetic | yes |
 
 | Parameter | Value |
@@ -80,12 +99,12 @@ Green units were accepted, grey ones are matching duplicates from the other repl
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| coord | creator | not recorded | 52 | ok | 0 |
-| s0a | joined | vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 19 | no | 0 |
-| s0b | joined | vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 48 | ok | 0 |
-| s1a | joined | d3d12 pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 48 | ok | 0 |
-| s1b | joined | d3d12 pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 48 | ok | 0 |
-| spare | joined | vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 24 | ok | 0 |
+| coord | creator | not recorded | 420 | ok | 0 |
+| s0a | joined | vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 0 | no | 0 |
+| s0b | joined | vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 0 | ok | 0 |
+| s1a | joined | d3d12 pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 0 | ok | 0 |
+| s1b | joined | d3d12 pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 0 | ok | 0 |
+| spare | joined | vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 1 | ok | 0 |
 
 ### Log problems
 

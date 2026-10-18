@@ -57,6 +57,13 @@ module Reports =
                 Build = Builders.Gate1.build
             }
             {
+                Name = "goldens"
+                Description =
+                    "A golden tool's run: set size against the budget, regeneration, self-tests, the tokenizer corpus"
+                Phase = 1
+                Build = Builders.Goldens.build
+            }
+            {
                 Name = "training"
                 Description = "Loss per curriculum stage, gradient and activation statistics per layer"
                 Phase = 2
