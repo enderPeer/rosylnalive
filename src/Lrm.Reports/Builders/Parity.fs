@@ -21,11 +21,13 @@ type private Cmp =
         Layer: int option
         Measured: float
         Bound: float
+        /// False for a measurement, such as an e_ref (ReferenceOracles), which records a value without a bound.
+        HasBound: bool
         Passed: bool
     }
 
-    /// greedy_match has a minimum as its bound, not a maximum: it has no ratio.
-    member c.HasRatio = c.Metric <> "greedy_match"
+    /// greedy_match has a minimum as its bound, not a maximum: it has no ratio; nor has a measurement without a bound.
+    member c.HasRatio = c.Metric <> "greedy_match" && c.HasBound
 
     /// measured / bound for at-most metrics: NaN when either is NaN, infinity when the bound is 0 and the measured
     /// value is not, NaN for greedy_match.
@@ -59,6 +61,14 @@ let private worstFirst (c: Cmp) =
 let private ratioText (c: Cmp) =
     if c.HasRatio then Fmt.dp 3 c.Ratio else "n/a"
 
+/// The layer of a comparison: `layer` when it is 0 or more, else parsed from `L<i>.` in the tap. A negative `layer` is
+/// ComparatorsAndGoldenReader's -1 for a model-level tap (embed.out, final_norm.out, logits), which has no layer.
+let private layerOf (e: RunEvent) (tap: string) =
+    match e.TryInt TelemetryKeys.Layer with
+    | Some l when l >= 0L -> Some(int l)
+    | Some _ -> None
+    | None -> tapLayer tap
+
 let private compares (log: RunLog) =
     log.Named TelemetryNames.GoldenCompare
     |> List.filter (fun e -> e.Kind = TelemetryKind.Check)
@@ -67,12 +77,13 @@ let private compares (log: RunLog) =
 
         {
             Pair = defaultArg (e.TryStr "pair") "(no pair)"
-            Case = defaultArg (e.TryStr "case") ""
+            Case = compareCase e |> Option.defaultValue ""
             Tap = tap
-            Metric = defaultArg (e.TryStr "metric") ""
-            Layer = e.TryInt TelemetryKeys.Layer |> Option.map int |> Option.orElse (tapLayer tap)
+            Metric = metricName (defaultArg (e.TryStr "metric") "")
+            Layer = layerOf e tap
             Measured = defaultArg (e.TryFloat "measured") nan
             Bound = defaultArg (e.TryFloat "bound") nan
+            HasBound = (e.TryFloat "bound").IsSome
             Passed = e.Value = 1.0
         })
 
@@ -90,7 +101,7 @@ let private worstRatioText (xs: Cmp list) =
 let private heatmapOf (pair: string) (cmps: Cmp list) =
     let layered =
         cmps
-        |> List.filter (fun c -> c.Pair = pair && c.Metric = relL2 && c.Layer.IsSome)
+        |> List.filter (fun c -> c.Pair = pair && c.Metric = relL2 && c.Layer.IsSome && c.HasRatio)
 
     if layered.IsEmpty then
         noData ("Worst measured/bound, " + pair) "per-layer rel_l2 golden.compare"
@@ -193,18 +204,26 @@ let build (log: RunLog) : Scope =
                                                 |> spread i median)
                                     }
                         ]
+                    // One line per distinct bound: pairs that share a bound share its line and label, so labels
+                    // never print over each other.
                     RefLines =
                         [
                             for p in pairs do
                                 let b =
-                                    layered |> List.filter (fun c -> c.Pair = p) |> List.map _.Bound |> maxOr nan
+                                    layered
+                                    |> List.filter (fun c -> c.Pair = p && c.HasBound)
+                                    |> List.map _.Bound
+                                    |> maxOr nan
 
                                 if Double.IsFinite b then
-                                    {
-                                        Value = b
-                                        Label = "bound " + p + " " + Fmt.sci 1 b
-                                    }
+                                    p, b
                         ]
+                        |> List.groupBy snd
+                        |> List.map (fun (b, ps) ->
+                            {
+                                Value = b
+                                Label = "bound " + String.concat ", " (List.map fst ps) + " " + Fmt.sci 1 b
+                            })
                 }
 
     let ratioHist =
