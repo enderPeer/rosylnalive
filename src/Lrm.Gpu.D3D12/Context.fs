@@ -100,6 +100,24 @@ type internal Staging(resource: ComPtr<ID3D12Resource>, bytes: int64, mapped: na
 
         ComPtr.release &resource
 
+/// gpu.buffer_memory: a Gauge in bytes of the device memory the backend holds outside the heap's arenas (mem.arena),
+/// per `buffer`: `upload_staging` and `readback_staging` (two buffers each), `copy_scratch`, and `probe_heap` (the
+/// denormal probe's transient heap, back to 0 once it is released). Emitted whenever that amount changes.
+[<RequireQualifiedAccess>]
+module internal BufferMemory =
+    [<Literal>]
+    let Name = "gpu.buffer_memory"
+
+    let report (buffer: string) (bytes: int64) =
+        Telemetry.gauge
+            Name
+            (float bytes)
+            TelemetryUnits.Bytes
+            [
+                Attr.str TelemetryKeys.Backend (ExecutionBackend.name ExecutionBackend.D3D12)
+                Attr.str "buffer" buffer
+            ]
+
 /// What a native command list binds and how the encoder's targets resolve to resources.
 type internal Bindings =
     {
@@ -382,6 +400,8 @@ type internal DeviceContext(device: ComPtr<ID3D12Device>, dredEnabled: bool, wai
                 let p = r.Map(0u, NativePtr.toNativeInt &&none)
                 uploads.Add(new Staging(r, bytes, p))
 
+            BufferMemory.report "upload_staging" (2L * bytes)
+
         List.ofSeq uploads
 
     /// The two readback staging buffers, each at least `bytes`.
@@ -398,12 +418,15 @@ type internal DeviceContext(device: ComPtr<ID3D12Device>, dredEnabled: bool, wai
 
                 readbacks.Add(new Staging(r, bytes, 0n))
 
+            BufferMemory.report "readback_staging" (2L * bytes)
+
         List.ofSeq readbacks
 
     /// Creates the scratch buffer for copies within one page, once.
     member x.EnsureScratch() =
         if scratch.IsNull then
             scratch <- x.CreateBuffer(D3D12_HEAP_TYPE.DEFAULT, Plan.ScratchBytes, "lrm.d3d12.scratch")
+            BufferMemory.report "copy_scratch" Plan.ScratchBytes
 
     member _.HasScratch = not scratch.IsNull
 

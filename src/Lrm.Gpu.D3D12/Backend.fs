@@ -8,16 +8,37 @@ open Lrm.Core
 open Lrm.Gpu.Core
 open Lrm.Gpu.D3D12.Interop
 
-/// One submitted command list: its encoding, its fence value and, once it has completed, its Completion.
-type internal SubmissionRecord =
+/// A submitted command list until its frame retires: its fence value and what reading its timestamps needs. The
+/// native ops are not kept: they were recorded into the frame's list at Submit.
+type internal PendingSubmission =
     {
-        Number: uint64
-        Encoded: Encoded
-        mutable Fence: uint64
-        mutable Completion: Completion option
-        /// True once Wait has emitted the timers as telemetry (once per submission).
-        mutable Emitted: bool
+        Fence: uint64
+        Queries: int
+        Timers: TimerSlot list
+        DispatchTimers: TimerSlot list
     }
+
+/// The timer results of a retired submission that had timers, kept so that every Wait returns the same Completion
+/// (GpuBackendInterface): the timers as TimerResults, and the gpu.dispatch timings as columns (the kernel's shared
+/// attribute list, start and duration: 24 bytes per timed dispatch), from which Results rebuilds an equal list.
+[<Sealed>]
+type internal RetiredTimers(timers: TimerResult list, dispatchAttrs: Attr list[], starts: int64[], durations: int64[]) =
+    /// True once Wait has emitted the timers as telemetry (once per submission).
+    member val Emitted = false with get, set
+
+    /// Timers in the order they were opened, then the gpu.dispatch timings (Completion.Timers).
+    member _.Results: TimerResult list =
+        if starts.Length = 0 then
+            timers
+        else
+            timers
+            @ List.init starts.Length (fun i ->
+                {
+                    Name = GpuTelemetry.Dispatch
+                    Attrs = dispatchAttrs[i]
+                    GpuStartNs = starts[i]
+                    DurationNs = durations[i]
+                })
 
 /// The d3d12 backend (GpuBackendInterface) on in-box Direct3D 12 at shader model 6.6: a COMPUTE queue and fence,
 /// committed pages with per-page state tracking, one shader-visible heap of 64 raw UAVs written once, a pipeline per
@@ -32,9 +53,16 @@ type D3D12Backend private (info: DeviceInfo, options: DeviceOptions, ctx: Device
     let mutable kernels: D3D12Kernels option = None
     let mutable klass: ExecutionClass option = None
     let mutable denormals: (Fp32DenormalMode * uint32[]) option = None
-    let records = Dictionary<uint64, SubmissionRecord>()
+    // What Wait needs, and nothing more (a long run makes millions of submissions): the dispatch count of every
+    // submission (index number - 1, 4 bytes each); the fence and timer slots of each one until its frame retires; and
+    // from then on the timer results of the submissions that have timers. GpuBackendInterface keeps every completion
+    // waitable, so those last two stay for the backend's lifetime.
+    let dispatchCounts = ResizeArray<int>()
+    let pending = Dictionary<uint64, PendingSubmission>()
+    let retiredTimers = Dictionary<uint64, RetiredTimers>()
     let mutable submitted = 0UL
     let mutable probeRuns = 0
+    let mutable probeDescriptorWrites = 0
     let mutable disposed = false
 
     let checkLive () =
@@ -51,17 +79,28 @@ type D3D12Backend private (info: DeviceInfo, options: DeviceOptions, ctx: Device
             DurationNs = max 0L (ctx.TicksToNs ticks[s.End] - start)
         }
 
-    /// Reads a completed submission's timestamps into its Completion (run when its frame retires).
-    let materialize (r: SubmissionRecord) (frame: Frame) =
-        let ticks = frame.ReadStamps r.Encoded.Queries
+    /// Runs when submission `number`'s frame retires: drops its pending entry and keeps its timer results, if it has
+    /// timers. A frame whose Submit raised after ExecuteCommandLists (device loss) left no entry, or one with another
+    /// fence value once the number was reused, and is ignored.
+    let retire (number: uint64) (frame: Frame) =
+        match pending.TryGetValue number with
+        | true, p when p.Fence = frame.FenceValue ->
+            pending.Remove number |> ignore
 
-        r.Completion <-
-            Some
-                {
-                    Submission = Submission r.Number
-                    Dispatches = r.Encoded.Dispatches
-                    Timers = (r.Encoded.Timers @ r.Encoded.DispatchTimers) |> List.map (result ticks)
-                }
+            if p.Queries > 0 then
+                let ticks = frame.ReadStamps p.Queries
+                let dispatches = Array.ofList p.DispatchTimers
+                let starts = dispatches |> Array.map (fun s -> ctx.TicksToNs ticks[s.Begin])
+
+                retiredTimers[number] <-
+                    RetiredTimers(
+                        p.Timers |> List.map (result ticks),
+                        dispatches |> Array.map _.Attrs,
+                        starts,
+                        dispatches
+                        |> Array.mapi (fun i s -> max 0L (ctx.TicksToNs ticks[s.End] - starts[i]))
+                    )
+        | _ -> ()
 
     /// Devices this process created through the backend. The debug layer may only be enabled before the first one:
     /// enabling it while a device exists removes that device.
@@ -140,11 +179,22 @@ type D3D12Backend private (info: DeviceInfo, options: DeviceOptions, ctx: Device
 
     member _.Options = options
 
-    /// Descriptors the heap wrote when it was created (64; 0 before CreateHeap).
-    member _.DescriptorWrites =
+    /// Descriptors the resource heap wrote when CreateHeap created it (64; 0 before CreateHeap), and never again.
+    member _.HeapDescriptorWrites =
         match heap with
         | Some h -> h.DescriptorWrites
         | None -> 0
+
+    /// Descriptors the fp32 denormal probe's transient heap wrote at LoadKernels (64, on its own shader-visible heap,
+    /// released when the probe ends; 0 before LoadKernels or without scale_f32).
+    member _.ProbeDescriptorWrites = probeDescriptorWrites
+
+    /// Every descriptor this backend has written, on every descriptor heap it created: HeapDescriptorWrites plus
+    /// ProbeDescriptorWrites.
+    member x.DescriptorWrites = x.HeapDescriptorWrites + probeDescriptorWrites
+
+    /// Submissions whose frame has not retired yet (their fence values are kept until then).
+    member _.PendingSubmissions = pending.Count
 
     /// Command allocators and lists created so far. It stays flat in a soak once the in-flight depth stops growing.
     member _.FramesCreated = ctx.FramesCreated
@@ -181,9 +231,12 @@ type D3D12Backend private (info: DeviceInfo, options: DeviceOptions, ctx: Device
 
     member internal _.Backend = backend
 
-    /// The fp32 denormal probe on a private heap (slot 0 a table with tokens x and y, slot 1 a 64 KiB page): scale_f32
-    /// with a = Fp32Denormals.ProbeScale over Fp32Denormals.probeInputs, the outputs poisoned first. Records
-    /// gpu.fp32_denormals with the words and the dispatch's gpu.dispatch interval (case fp32_denormal_probe).
+    /// The fp32 denormal probe on a transient private heap (slot 0 a table with tokens x and y, slot 1 a 64 KiB page,
+    /// its own 64 descriptors, counted in ProbeDescriptorWrites): scale_f32 with a = Fp32Denormals.ProbeScale over
+    /// Fp32Denormals.probeInputs, the outputs poisoned first. Records gpu.fp32_denormals with the words, the dispatch in
+    /// gpu.dispatches and, with TimeDispatches, its gpu.dispatch interval (case fp32_denormal_probe). Its private
+    /// transfers are not IGpuHeap transfers, so they are not gpu.bytes_moved: the gpu.probe span carries them
+    /// (`upload_bytes`, `download_bytes`) with the heap's `descriptor_writes`, and gpu.buffer_memory its memory.
     member private _.RunProbe(k: D3D12Kernels) : (Fp32DenormalMode * uint32[]) option =
         if not (k.Contains Kernels.ScaleF32.Id) then
             None
@@ -191,8 +244,13 @@ type D3D12Backend private (info: DeviceInfo, options: DeviceOptions, ctx: Device
             probeRuns <- probeRuns + 1
             let run = probeRuns
             use _ = Telemetry.scope [ Attr.str TelemetryKeys.Case "fp32_denormal_probe" ]
+            use span = Telemetry.span "gpu.probe" [ backendAttr ]
             let layout = HeapLayout.ofPages [ ArenaKind.Scratch, Heap.PageGranularity ]
             let h = new D3D12Heap(ctx, layout, "lrm.d3d12.probe")
+            probeDescriptorWrites <- probeDescriptorWrites + h.DescriptorWrites
+            // The table and the page; TotalBytes includes the table.
+            BufferMemory.report "probe_heap" layout.TotalBytes
+            span.Add(Attr.int "descriptor_writes" h.DescriptorWrites)
 
             try
                 let inputs = Fp32Denormals.probeInputs
@@ -229,7 +287,7 @@ type D3D12Backend private (info: DeviceInfo, options: DeviceOptions, ctx: Device
                                 A = Fp32Denormals.ProbeScale
                             })
 
-                let enc = Plan.encode true [ Command.Dispatch prepared ]
+                let enc = Plan.encode options.TimeDispatches [ Command.Dispatch prepared ]
                 let stamps = ref [||]
 
                 let frame =
@@ -239,11 +297,12 @@ type D3D12Backend private (info: DeviceInfo, options: DeviceOptions, ctx: Device
                         enc.Ops
                         (Some(fun f -> stamps.Value <- f.ReadStamps enc.Queries))
 
+                GpuTelemetry.dispatches backend enc.Dispatches
                 ctx.WaitFor frame.FenceValue
                 let out = Array.zeroCreate<uint32> n
                 h.ReadSpan(1, int64 yOffset, MemoryMarshal.AsBytes(Span out))
-                GpuTelemetry.bytesMoved backend "upload" (Heap.TableBytes + int64 pageBytes.Length)
-                GpuTelemetry.bytesMoved backend "download" (int64 (4 * n))
+                span.Add(Attr.int64 "upload_bytes" (Heap.TableBytes + int64 pageBytes.Length))
+                span.Add(Attr.int64 "download_bytes" (int64 (4 * n)))
 
                 for i in 0 .. n - 1 do
                     if out[i] = poison i then
@@ -262,6 +321,7 @@ type D3D12Backend private (info: DeviceInfo, options: DeviceOptions, ctx: Device
                 Some(mode, out)
             finally
                 h.Dispose()
+                BufferMemory.report "probe_heap" 0L
 
     member internal x.SubmitCommands(commands: Command list) : Submission =
         let enc = Plan.encode options.TimeDispatches commands
@@ -294,25 +354,25 @@ type D3D12Backend private (info: DeviceInfo, options: DeviceOptions, ctx: Device
                 | Some k -> h.Bindings(k.RootSignature, k.Pipeline)
                 | None -> h.Bindings(ComPtr<ID3D12RootSignature>.Null, fun _ -> invalidOp "LoadKernels has not run"))
 
-        let r =
+        let number = submitted + 1UL
+        let frame = ctx.Execute bindings enc.Queries enc.Ops (Some(retire number))
+
+        pending[number] <-
             {
-                Number = submitted + 1UL
-                Encoded = enc
-                Fence = 0UL
-                Completion = None
-                Emitted = false
+                Fence = frame.FenceValue
+                Queries = enc.Queries
+                Timers = enc.Timers
+                DispatchTimers = enc.DispatchTimers
             }
 
-        let frame = ctx.Execute bindings enc.Queries enc.Ops (Some(materialize r))
-        r.Fence <- frame.FenceValue
-        submitted <- r.Number
-        records[r.Number] <- r
+        dispatchCounts.Add enc.Dispatches
+        submitted <- number
         GpuTelemetry.dispatches backend enc.Dispatches
 
         for bytes in enc.Copies do
             GpuTelemetry.bytesMoved backend "copy" bytes
 
-        Submission r.Number
+        Submission number
 
     interface IGpuBackend with
         member _.Info = info
@@ -372,22 +432,42 @@ type D3D12Backend private (info: DeviceInfo, options: DeviceOptions, ctx: Device
         member _.Wait(s: Submission) =
             checkLive ()
 
-            match records.TryGetValue s.Value with
-            | true, r ->
-                use _ = Telemetry.span GpuTelemetry.Wait [ backendAttr ]
+            let number = s.Value
 
-                if r.Completion.IsNone then
-                    ctx.WaitFor r.Fence
+            if number = 0UL || number > submitted then
+                Contract.fail "submission %d was not made by this backend" number
 
-                match r.Completion with
-                | Some c ->
-                    if not r.Emitted then
-                        r.Emitted <- true
-                        GpuTelemetry.timers backend c.Timers
+            use _ = Telemetry.span GpuTelemetry.Wait [ backendAttr ]
 
-                    c
-                | None -> invalidOp (sprintf "submission %d completed without its completion record" s.Value)
-            | _ -> Contract.fail "submission %d was not made by this backend" s.Value
+            match pending.TryGetValue number with
+            | true, p ->
+                ctx.WaitFor p.Fence
+
+                if pending.ContainsKey number then
+                    invalidOp (sprintf "submission %d completed but its frame did not retire" number)
+            | _ -> ()
+
+            let dispatches = dispatchCounts[int (number - 1UL)]
+
+            match retiredTimers.TryGetValue number with
+            | true, t ->
+                let timers = t.Results
+
+                if not t.Emitted then
+                    t.Emitted <- true
+                    GpuTelemetry.timers backend timers
+
+                {
+                    Submission = s
+                    Dispatches = dispatches
+                    Timers = timers
+                }
+            | _ ->
+                {
+                    Submission = s
+                    Dispatches = dispatches
+                    Timers = []
+                }
 
         member _.Dispose() =
             if not disposed then
@@ -464,7 +544,11 @@ and [<Sealed>] D3D12CommandList internal (owner: D3D12Backend) =
     let mutable nextTimer = 0
     let mutable closed = false
 
+    // A list from before the backend's Dispose raises ObjectDisposedException, as the backend's own calls do, before any
+    // contract check (whose state Dispose has released).
     let checkOpen () =
+        owner.CheckLive()
+
         if closed then
             Contract.fail "the command list was already submitted"
 

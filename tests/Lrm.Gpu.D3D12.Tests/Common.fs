@@ -91,6 +91,15 @@ let options () =
 let create () : D3D12Backend =
     D3D12Backend.Create(accepted (), options ())
 
+/// A backend on the first accepted adapter, with dispatches timed or not (debug checks on).
+let createWith (timeDispatches: bool) : D3D12Backend =
+    D3D12Backend.Create(
+        accepted (),
+        { options () with
+            TimeDispatches = timeDispatches
+        }
+    )
+
 /// Records the device for the test summary (device, driver, ShaderSetHash).
 let recordDevice () =
     let info = accepted ()

@@ -23,8 +23,10 @@ type internal D3D12Kernels(ctx: DeviceContext, shaders: ShaderSet) =
 
     do
         try
+            // Not a GpuBackendInterface rule (RecordingBackend accepts such a set; ShaderSet.embedded already refuses
+            // one), so not a GpuContractException: D3D12 alone builds PSOs from these bytes.
             if not (RootSignature.isCanonical shaders.RootSignature) then
-                Contract.fail "the shader set's rootsig.bin is not the canonical root signature"
+                invalidArg "shaders" "d3d12: the shader set's rootsig.bin is not the canonical root signature"
 
             rootSignature <- device.CreateRootSignature(0u, ReadOnlySpan shaders.RootSignature)
             rootSignature.SetName "lrm.d3d12.rootsig"

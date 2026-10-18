@@ -148,6 +148,19 @@ module Plan =
         | [] -> []
         | bs -> [ NativeOp.Barriers bs ]
 
+    /// The gpu.dispatch attributes of each catalog kernel, one list per kernel shared by all its timed dispatches, so
+    /// a retained timing costs no attribute list of its own.
+    let private dispatchAttrs: Attr list[] =
+        Kernels.all |> Array.map (fun k -> [ Attr.str TelemetryKeys.Kernel k.Name ])
+
+    let private attrsOf (d: PreparedDispatch) =
+        let i = d.Kernel.Value
+
+        if i >= 0 && i < dispatchAttrs.Length then
+            dispatchAttrs[i]
+        else
+            [ Attr.str TelemetryKeys.Kernel d.Spec.Name ]
+
     /// Encodes one command list:
     /// - a dispatch first moves the table (page 0) and the pages of its tokens to UNORDERED_ACCESS, sets the pipeline
     ///   when the kernel changes, sets the 32 root constants and dispatches the physical grid;
@@ -201,7 +214,7 @@ module Plan =
                     dispatchTimers.Add
                         {
                             Name = GpuTelemetry.Dispatch
-                            Attrs = [ Attr.str TelemetryKeys.Kernel d.Spec.Name ]
+                            Attrs = attrsOf d
                             Begin = q0
                             End = q1
                         }

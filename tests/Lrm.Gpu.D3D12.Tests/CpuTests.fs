@@ -238,6 +238,15 @@ let private planTests =
 
                 Expect.equal (List.last enc.Ops) (NativeOp.ResolveTimestamps 8) "resolved last"
 
+                // The backend keeps a timed dispatch's attributes until the backend is disposed (every completion stays
+                // waitable), so dispatches of one kernel share one list, in every encoding.
+                let again = Plan.encode true [ scale; scale ]
+
+                Expect.isTrue
+                    (again.DispatchTimers
+                     |> List.forall (fun t -> obj.ReferenceEquals(t.Attrs, enc.DispatchTimers[0].Attrs)))
+                    "one attribute list per kernel"
+
                 // A timed dispatch runs alone: a UAV barrier before each of its timestamps.
                 let i =
                     enc.Ops
