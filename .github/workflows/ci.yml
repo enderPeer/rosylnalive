@@ -83,6 +83,16 @@ jobs:
       - name: Release build
         run: dotnet build Lrm.slnx -c Release --nologo --no-restore
 
+      # R3: the generated D3D12 binding is diff-clean against the pinned Windows SDK headers. On a runner whose SDK
+      # servicing build differs from the pinned per-header SHA-256 values, the diff is skipped with a warning.
+      - name: D3D12 codegen diff
+        run: ./tools/d3d12gen/check.ps1 -NoBuild -SkipIfHeadersDiffer
+
+      # R3: the cl.exe ABI oracle compiles static_asserts of every bound struct, slot, enum and signature against the
+      # real d3d12.h and dxgi headers, then runs the oracle and its mutants.
+      - name: cl.exe oracles (D3D12)
+        run: ./tools/abi-oracle/d3d12/run.ps1 -NoBuild
+
       # R4a: catalog codegen diff, reproducible ShaderSetHash, incremental shader build, pinned DXC only.
       - name: Shader checks
         run: ./src/Lrm.Shaders.Build/check-shaders.ps1
@@ -132,6 +142,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: ./tools/ci/hygiene.ps1 -Ci
+
+      # O1: every committed golden set against its manifest (hashes, the 2 MiB file limit, budgets, unlisted files,
+      # safetensors and tokenizer-corpus rules). Standard library only, so the runner's Python runs it in isolated mode.
+      - name: Golden sets
+        run: python3 -I tools/goldens/verify_goldens.py
 
       # The step above runs this PR's own tools/ci. A branch outside S0 that edits it fails the ownership check, unless
       # the edit switches that check off too; so the base commit's checker also judges the same tree.
