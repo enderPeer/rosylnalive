@@ -1,6 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Owner: R4. References come only from docs/project-graph.json; this file lists files. -->
+  <!--
+    Owner: R4. References come only from docs/project-graph.json; this file lists files.
+    The shader build is Lrm.Shaders.lrm.targets (LrmCompileShaders); kernel sources live under hlsl/.
+  -->
   <ItemGroup>
-    <Compile Include="Placeholder.fs" />
+    <Compile Include="Shaders.fs" />
   </ItemGroup>
 </Project>

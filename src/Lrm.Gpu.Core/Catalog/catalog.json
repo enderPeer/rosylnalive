@@ -1,0 +1,232 @@
+{
+  "schema": "lrm.catalog/1",
+  "version": 1,
+  "about": "The kernel catalog (KernelAbiAndCatalog contract, docs/contracts/kernel-abi.md), frozen at contracts-v1. Field i is argument word i + 1; word 0 is lrm_groups_x, written by Dispatch. Grid formulas use u32 fields, integers, +, * and ceildiv(a, b). A grid whose y and z are 1 is linear and may be folded above 65,535 groups. Run Lrm.Shaders.Build gen-catalog after any change; the cpu tier and the shader build fail on stale generated files.",
+  "kernels": [
+    {
+      "name": "scale_f32",
+      "family": "selftest",
+      "doc": "y[i] = a * x[i] for i < n, one thread per element. Bit-exact.",
+      "threads": [256, 1, 1],
+      "grid": ["ceildiv(n, 256)", "1", "1"],
+      "fields": [
+        { "name": "x", "type": "token", "access": "read", "dtypes": ["f32"], "doc": "Input, at least n elements." },
+        { "name": "y", "type": "token", "access": "write", "dtypes": ["f32"], "alias": ["x"], "doc": "Output, at least n elements." },
+        { "name": "n", "type": "u32", "doc": "Element count." },
+        { "name": "a", "type": "f32", "doc": "The scale factor." }
+      ]
+    },
+    {
+      "name": "table_echo",
+      "family": "selftest",
+      "doc": "Writes the 16 words of the tensor row of src, as lrm_tensor decodes them, to y[0..15].",
+      "threads": [16, 1, 1],
+      "grid": ["1", "1", "1"],
+      "fields": [
+        { "name": "src", "type": "token", "access": "meta", "doc": "The token whose row is echoed; may be the null token." },
+        { "name": "y", "type": "token", "access": "write", "dtypes": ["u32"], "doc": "Output, at least 16 elements." }
+      ]
+    },
+    {
+      "name": "args_echo",
+      "family": "selftest",
+      "doc": "Writes all 32 argument words, lrm_groups_x included, to y[0..31].",
+      "threads": [32, 1, 1],
+      "grid": ["1", "1", "1"],
+      "fields": [
+        { "name": "y", "type": "token", "access": "write", "dtypes": ["u32"], "doc": "Output, at least 32 elements." },
+        { "name": "v2", "type": "u32", "doc": "Echoed to y[2]." },
+        { "name": "v3", "type": "u32", "doc": "Echoed to y[3]." },
+        { "name": "v4", "type": "u32", "doc": "Echoed to y[4]." },
+        { "name": "v5", "type": "u32", "doc": "Echoed to y[5]." },
+        { "name": "v6", "type": "u32", "doc": "Echoed to y[6]." },
+        { "name": "v7", "type": "u32", "doc": "Echoed to y[7]." },
+        { "name": "v8", "type": "u32", "doc": "Echoed to y[8]." },
+        { "name": "v9", "type": "u32", "doc": "Echoed to y[9]." },
+        { "name": "v10", "type": "u32", "doc": "Echoed to y[10]." },
+        { "name": "v11", "type": "u32", "doc": "Echoed to y[11]." },
+        { "name": "v12", "type": "u32", "doc": "Echoed to y[12]." },
+        { "name": "v13", "type": "u32", "doc": "Echoed to y[13]." },
+        { "name": "v14", "type": "u32", "doc": "Echoed to y[14]." },
+        { "name": "v15", "type": "u32", "doc": "Echoed to y[15]." },
+        { "name": "v16", "type": "u32", "doc": "Echoed to y[16]." },
+        { "name": "v17", "type": "u32", "doc": "Echoed to y[17]." },
+        { "name": "v18", "type": "u32", "doc": "Echoed to y[18]." },
+        { "name": "v19", "type": "u32", "doc": "Echoed to y[19]." },
+        { "name": "v20", "type": "u32", "doc": "Echoed to y[20]." },
+        { "name": "v21", "type": "u32", "doc": "Echoed to y[21]." },
+        { "name": "v22", "type": "u32", "doc": "Echoed to y[22]." },
+        { "name": "v23", "type": "u32", "doc": "Echoed to y[23]." },
+        { "name": "v24", "type": "u32", "doc": "Echoed to y[24]." },
+        { "name": "v25", "type": "u32", "doc": "Echoed to y[25]." },
+        { "name": "v26", "type": "u32", "doc": "Echoed to y[26]." },
+        { "name": "v27", "type": "u32", "doc": "Echoed to y[27]." },
+        { "name": "v28", "type": "u32", "doc": "Echoed to y[28]." },
+        { "name": "v29", "type": "u32", "doc": "Echoed to y[29]." },
+        { "name": "v30", "type": "u32", "doc": "Echoed to y[30]." },
+        { "name": "v31", "type": "u32", "doc": "Echoed to y[31]." }
+      ]
+    },
+    {
+      "name": "groups_echo",
+      "family": "selftest",
+      "doc": "Logical group g < groups writes g to y[g]; tests grid folding above 65,535 groups.",
+      "threads": [1, 1, 1],
+      "grid": ["groups", "1", "1"],
+      "fields": [
+        { "name": "y", "type": "token", "access": "write", "dtypes": ["u32"], "doc": "Output, at least groups elements." },
+        { "name": "groups", "type": "u32", "doc": "Logical group count." }
+      ]
+    },
+    {
+      "name": "bf16_unpack",
+      "family": "selftest",
+      "doc": "y[i] = widen(x[i]) for i < n: bf16 bits shifted into the high half of an f32. Bit-exact.",
+      "threads": [256, 1, 1],
+      "grid": ["ceildiv(n, 256)", "1", "1"],
+      "fields": [
+        { "name": "x", "type": "token", "access": "read", "dtypes": ["bf16"], "doc": "Input, at least n elements." },
+        { "name": "y", "type": "token", "access": "write", "dtypes": ["f32"], "doc": "Output, at least n elements." },
+        { "name": "n", "type": "u32", "doc": "Element count." }
+      ]
+    },
+    {
+      "name": "embed_gather_bf16",
+      "family": "basic",
+      "doc": "y[r, c] = widen(table[ids[r], c]) for r < rows, c < cols; an id >= vocab gives a row of quiet NaN (0x7FC00000). Bit-exact.",
+      "threads": [256, 1, 1],
+      "grid": ["ceildiv(cols, 256)", "rows", "1"],
+      "fields": [
+        { "name": "ids", "type": "token", "access": "read", "dtypes": ["u32"], "doc": "Token ids [rows]." },
+        { "name": "table", "type": "token", "access": "read", "dtypes": ["bf16"], "doc": "Embedding table [vocab, cols]." },
+        { "name": "y", "type": "token", "access": "write", "dtypes": ["f32"], "doc": "Output [rows, cols]." },
+        { "name": "rows", "type": "u32", "doc": "Number of ids." },
+        { "name": "cols", "type": "u32", "doc": "Hidden size." },
+        { "name": "vocab", "type": "u32", "doc": "Rows of the table; larger ids are out of range." }
+      ]
+    },
+    {
+      "name": "rmsnorm_rows",
+      "family": "basic",
+      "doc": "y[r, :] = x[r, :] * rsqrt(mean(x[r, :]^2) + eps) * widen(w[:]), one group per row; the reduction order depends only on cols.",
+      "threads": [256, 1, 1],
+      "grid": ["rows", "1", "1"],
+      "fields": [
+        { "name": "x", "type": "token", "access": "read", "dtypes": ["f32"], "doc": "Input [rows, cols]." },
+        { "name": "w", "type": "token", "access": "read", "dtypes": ["bf16"], "doc": "Weight [cols], used as w, not 1 + w." },
+        { "name": "y", "type": "token", "access": "write", "dtypes": ["f32"], "alias": ["x"], "doc": "Output [rows, cols]." },
+        { "name": "rows", "type": "u32", "doc": "Rows (tokens, or tokens * heads for q_norm and k_norm)." },
+        { "name": "cols", "type": "u32", "doc": "Row length." },
+        { "name": "eps", "type": "f32", "doc": "rms_norm_eps." }
+      ]
+    },
+    {
+      "name": "rope_apply",
+      "family": "basic",
+      "doc": "NeoX rotate-half RoPE from tables, never evaluating sin or cos: row r has position pos0 + r / heads; for i < head_dim / 2, y[i] = x[i] * c - x[i + h] * s and y[i + h] = x[i + h] * c + x[i] * s.",
+      "threads": [64, 1, 1],
+      "grid": ["rows", "1", "1"],
+      "fields": [
+        { "name": "x", "type": "token", "access": "read", "dtypes": ["f32"], "doc": "Input [rows, head_dim], rows = tokens * heads." },
+        { "name": "cos_table", "type": "token", "access": "read", "dtypes": ["f32"], "doc": "cos table [max_pos, head_dim / 2]." },
+        { "name": "sin_table", "type": "token", "access": "read", "dtypes": ["f32"], "doc": "sin table [max_pos, head_dim / 2]." },
+        { "name": "y", "type": "token", "access": "write", "dtypes": ["f32"], "alias": ["x"], "doc": "Output [rows, head_dim]." },
+        { "name": "rows", "type": "u32", "doc": "tokens * heads." },
+        { "name": "heads", "type": "u32", "doc": "Heads per token." },
+        { "name": "head_dim", "type": "u32", "doc": "Head size; even." },
+        { "name": "pos0", "type": "u32", "doc": "Position of the first token." }
+      ]
+    },
+    {
+      "name": "silu_mul",
+      "family": "basic",
+      "doc": "y[i] = silu(gate[i]) * up[i] for i < n, silu(g) = g / (1 + exp(-g)).",
+      "threads": [256, 1, 1],
+      "grid": ["ceildiv(n, 256)", "1", "1"],
+      "fields": [
+        { "name": "gate", "type": "token", "access": "read", "dtypes": ["f32"], "doc": "Gate projection, at least n elements." },
+        { "name": "up", "type": "token", "access": "read", "dtypes": ["f32"], "doc": "Up projection, at least n elements." },
+        { "name": "y", "type": "token", "access": "write", "dtypes": ["f32"], "alias": ["gate", "up"], "doc": "Output, at least n elements." },
+        { "name": "n", "type": "u32", "doc": "Element count." }
+      ]
+    },
+    {
+      "name": "add",
+      "family": "basic",
+      "doc": "y[i] = a[i] + b[i] for i < n. Bit-exact.",
+      "threads": [256, 1, 1],
+      "grid": ["ceildiv(n, 256)", "1", "1"],
+      "fields": [
+        { "name": "a", "type": "token", "access": "read", "dtypes": ["f32"], "doc": "First addend, at least n elements." },
+        { "name": "b", "type": "token", "access": "read", "dtypes": ["f32"], "doc": "Second addend, at least n elements." },
+        { "name": "y", "type": "token", "access": "write", "dtypes": ["f32"], "alias": ["a", "b"], "doc": "Sum, at least n elements." },
+        { "name": "n", "type": "u32", "doc": "Element count." }
+      ]
+    },
+    {
+      "name": "copy_rows",
+      "family": "basic",
+      "doc": "dst[(dst_row0 + r) * dst_stride + c] = src[(src_row0 + r) * src_stride + c] for r < rows, c < cols, 4-byte elements of one dtype. Bit-exact.",
+      "threads": [256, 1, 1],
+      "grid": ["ceildiv(rows * cols, 256)", "1", "1"],
+      "fields": [
+        { "name": "src", "type": "token", "access": "read", "dtypes": ["f32", "u32", "i32"], "doc": "Source rows." },
+        { "name": "dst", "type": "token", "access": "write", "dtypes": ["f32", "u32", "i32"], "doc": "Destination rows; same dtype as src." },
+        { "name": "rows", "type": "u32", "doc": "Rows to copy." },
+        { "name": "cols", "type": "u32", "doc": "Elements per row." },
+        { "name": "src_row0", "type": "u32", "doc": "First source row." },
+        { "name": "dst_row0", "type": "u32", "doc": "First destination row." },
+        { "name": "src_stride", "type": "u32", "doc": "Elements between source rows." },
+        { "name": "dst_stride", "type": "u32", "doc": "Elements between destination rows." }
+      ]
+    },
+    {
+      "name": "argmax_rows",
+      "family": "basic",
+      "doc": "y[r] = the lowest c with x[r, c] maximal, for r < rows; a row holding any NaN gives 0xFFFFFFFF. The index is bit-exact.",
+      "threads": [256, 1, 1],
+      "grid": ["rows", "1", "1"],
+      "fields": [
+        { "name": "x", "type": "token", "access": "read", "dtypes": ["f32"], "doc": "Input [rows, cols], such as logits." },
+        { "name": "y", "type": "token", "access": "write", "dtypes": ["u32"], "doc": "Indices [rows]." },
+        { "name": "rows", "type": "u32", "doc": "Rows." },
+        { "name": "cols", "type": "u32", "doc": "Row length." }
+      ]
+    },
+    {
+      "name": "matmul_bf16w",
+      "family": "matmul",
+      "doc": "y[i, j] = sum over p < k of x[i, p] * widen(w[j, p]), 64x64 output tiles, p accumulated sequentially in increasing order with mad; one kernel for decode, prefill and lm_head.",
+      "threads": [16, 16, 1],
+      "grid": ["ceildiv(n, 64)", "ceildiv(m, 64)", "1"],
+      "fields": [
+        { "name": "x", "type": "token", "access": "read", "dtypes": ["f32"], "doc": "Activations [m, k]." },
+        { "name": "w", "type": "token", "access": "read", "dtypes": ["bf16"], "doc": "Weight [n, k] (PyTorch Linear layout)." },
+        { "name": "y", "type": "token", "access": "write", "dtypes": ["f32"], "doc": "Output [m, n]." },
+        { "name": "m", "type": "u32", "doc": "Rows of x and y." },
+        { "name": "n", "type": "u32", "doc": "Rows of w, columns of y." },
+        { "name": "k", "type": "u32", "doc": "The reduction length." }
+      ]
+    },
+    {
+      "name": "attention_gqa_causal",
+      "family": "attention",
+      "doc": "Causal GQA attention, one group per (query row, q head), fixed 64-key blocks with online softmax, the causal mask as a loop bound: query row i reads q row q_row0 + i, has position past + i and attends keys 0..past + i.",
+      "threads": [64, 1, 1],
+      "grid": ["rows", "q_heads", "1"],
+      "fields": [
+        { "name": "q", "type": "token", "access": "read", "dtypes": ["f32"], "doc": "Queries [tokens, q_heads * head_dim], after norm and RoPE." },
+        { "name": "k", "type": "token", "access": "read", "dtypes": ["f32"], "doc": "Key cache [max_pos, kv_heads * head_dim], after norm and RoPE." },
+        { "name": "v", "type": "token", "access": "read", "dtypes": ["f32"], "doc": "Value cache [max_pos, kv_heads * head_dim]." },
+        { "name": "y", "type": "token", "access": "write", "dtypes": ["f32"], "doc": "Output [tokens, q_heads * head_dim]; row q_row0 + i." },
+        { "name": "rows", "type": "u32", "doc": "Query rows in this dispatch." },
+        { "name": "q_row0", "type": "u32", "doc": "First q and y row of this dispatch." },
+        { "name": "past", "type": "u32", "doc": "Position of the first query row." },
+        { "name": "q_heads", "type": "u32", "doc": "Query heads." },
+        { "name": "kv_heads", "type": "u32", "doc": "Key and value heads; divides q_heads." },
+        { "name": "head_dim", "type": "u32", "doc": "Head size." },
+        { "name": "scale", "type": "f32", "doc": "Score scale, 1 / sqrt(head_dim)." }
+      ]
+    }
+  ]
+}

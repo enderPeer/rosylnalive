@@ -1,6 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: R4. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
+    <Compile Include="Common.fs" />
+    <Compile Include="HeapLayoutTests.fs" />
+    <Compile Include="TensorTableTests.fs" />
+    <Compile Include="ArgBlockTests.fs" />
+    <Compile Include="CatalogTests.fs" />
+    <Compile Include="ShaderTests.fs" />
+    <Compile Include="SpirvTests.fs" />
+    <Compile Include="BackendTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 </Project>
