@@ -1,10 +1,10 @@
 # Kernels: Conformance on CpuDevice (every case, bit-exact to CpuRef F32)
 
 
-**PASS.** All 49 conformance cases pass. Every dispatch is under the 100 ms budget.
+**PASS.** All 54 conformance cases pass. Every dispatch is under the 100 ms budget.
 
-- Conformance cases: 49, failed: 0
-- GPU dispatches: 199, total GPU time 124.67 ms
+- Conformance cases: 54, failed: 0
+- GPU dispatches: 221, total GPU time 55.43 ms
 
 ## Conformance matrix
 
@@ -12,12 +12,12 @@ Passing cases out of all cases, per kernel and backend.
 
 | Kernel | Family | cpu-device |
 | --- | --- | --- |
-| matmul_bf16w | matmul | ✓ 3/3 |
+| matmul_bf16w | matmul | ✓ 4/4 |
 | attention_gqa_causal | attention | ✓ 2/2 |
-| rmsnorm_rows | norm | ✓ 4/4 |
+| rmsnorm_rows | norm | ✓ 6/6 |
 | rope_apply | rope | ✓ 2/2 |
-| add | elementwise | ✓ 3/3 |
-| scale_f32 | elementwise | ✓ 10/10 |
+| add | elementwise | ✓ 4/4 |
+| scale_f32 | elementwise | ✓ 11/11 |
 | silu_mul | elementwise | ✓ 2/2 |
 | bf16_unpack | memory | ✓ 5/5 |
 | copy_rows | memory | ✓ 3/3 |
@@ -69,39 +69,39 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Kernel | Backend | Layer | Step | Duration | Of budget |
 | --- | --- | ---: | ---: | ---: | ---: |
-| rmsnorm_rows | cpu-device |  |  | 22.48 ms | 22.5% |
-| rmsnorm_rows | cpu-device |  |  | 20.06 ms | 20.1% |
-| argmax_rows | cpu-device |  |  | 12.42 ms | 12.4% |
-| argmax_rows | cpu-device |  |  | 11.33 ms | 11.3% |
-| groups_echo | cpu-device |  |  | 8.61 ms | 8.6% |
-| rmsnorm_rows | cpu-device |  |  | 8.04 ms | 8.0% |
-| groups_echo | cpu-device |  |  | 7.69 ms | 7.7% |
-| groups_echo | cpu-device |  |  | 4.99 ms | 5.0% |
-| groups_echo | cpu-device |  |  | 4.98 ms | 5.0% |
-| groups_echo | cpu-device |  |  | 4.42 ms | 4.4% |
+| groups_echo | cpu-device |  |  | 5.02 ms | 5.0% |
+| groups_echo | cpu-device |  |  | 4.78 ms | 4.8% |
+| argmax_rows | cpu-device |  |  | 4.27 ms | 4.3% |
+| rmsnorm_rows | cpu-device |  |  | 4.21 ms | 4.2% |
+| argmax_rows | cpu-device |  |  | 4.03 ms | 4.0% |
+| groups_echo | cpu-device |  |  | 4.03 ms | 4.0% |
+| rmsnorm_rows | cpu-device |  |  | 3.52 ms | 3.5% |
+| groups_echo | cpu-device |  |  | 2.97 ms | 3.0% |
+| groups_echo | cpu-device |  |  | 2.49 ms | 2.5% |
+| groups_echo | cpu-device |  |  | 2.47 ms | 2.5% |
 
 ## Run
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-051543-803fb8d0` |
+| Run | `20261018-060808-bd6e5208` |
 | Title | Conformance on CpuDevice (every case, bit-exact to CpuRef F32) |
 | Kind | kernels |
 | Status | ok |
-| Started | 2026-10-18T05:15:43.744Z |
-| Ended | 2026-10-18T05:15:44.396Z |
+| Started | 2026-10-18T06:08:08.332Z |
+| Ended | 2026-10-18T06:08:08.710Z |
 | Execution class | cpu-device cpu, .NET 10.0.13, win-x64+avx2+fma |
 | Class id | `00f093f75ec2` |
 | Driver | .NET 10.0.13 |
-| Commit | `0f1e51469821425bc947a7a661d93f84f5b660f5` |
+| Commit | `06ff482bad52ea1412916eb74dbf38e0f4670fc3` |
 | Nodes | 1 |
-| Records | 1,534 |
+| Records | 1,733 |
 | Synthetic | no |
 
 | Parameter | Value |
 | --- | --- |
 | backend | cpu-device |
-| cases | 49 |
+| cases | 54 |
 | device | CPU device (emulated kernel catalog) |
 | source | tests/Lrm.Kernels.Conformance (ConformanceHarness) |
 
@@ -109,7 +109,7 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| n0 | creator | cpu-device cpu, .NET 10.0.13, win-x64+avx2+fma | 1,534 | ok | 0 |
+| n0 | creator | cpu-device cpu, .NET 10.0.13, win-x64+avx2+fma | 1,733 | ok | 0 |
 
 ### Log problems
 

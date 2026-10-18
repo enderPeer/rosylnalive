@@ -1,10 +1,10 @@
 # Kernels: Conformance on d3d12
 
 
-**PASS.** All 27 conformance cases pass. Every dispatch is under the 100 ms budget.
+**PASS.** All 28 conformance cases pass. Every dispatch is under the 100 ms budget.
 
-- Conformance cases: 27, failed: 0
-- GPU dispatches: 105, total GPU time 600.32 µs
+- Conformance cases: 28, failed: 0
+- GPU dispatches: 110, total GPU time 636.32 µs
 
 ## Conformance matrix
 
@@ -12,7 +12,7 @@ Passing cases out of all cases, per kernel and backend.
 
 | Kernel | Family | d3d12 |
 | --- | --- | --- |
-| scale_f32 | elementwise | ✓ 10/10 |
+| scale_f32 | elementwise | ✓ 11/11 |
 | bf16_unpack | memory | ✓ 5/5 |
 | args_echo | other | ✓ 2/2 |
 | groups_echo | other | ✓ 6/6 |
@@ -60,39 +60,39 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Kernel | Backend | Layer | Step | Duration | Of budget |
 | --- | --- | ---: | ---: | ---: | ---: |
-| groups_echo | d3d12 |  |  | 66.82 µs | 0.1% |
-| groups_echo | d3d12 |  |  | 65.38 µs | 0.1% |
-| groups_echo | d3d12 |  |  | 34.59 µs | 0.0% |
-| groups_echo | d3d12 |  |  | 33.98 µs | 0.0% |
-| groups_echo | d3d12 |  |  | 33.92 µs | 0.0% |
-| groups_echo | d3d12 |  |  | 33.44 µs | 0.0% |
-| groups_echo | d3d12 |  |  | 33.38 µs | 0.0% |
-| groups_echo | d3d12 |  |  | 33.34 µs | 0.0% |
-| groups_echo | d3d12 |  |  | 33.22 µs | 0.0% |
-| groups_echo | d3d12 |  |  | 18.30 µs | 0.0% |
+| groups_echo | d3d12 |  |  | 66.34 µs | 0.1% |
+| groups_echo | d3d12 |  |  | 66.05 µs | 0.1% |
+| groups_echo | d3d12 |  |  | 34.75 µs | 0.0% |
+| groups_echo | d3d12 |  |  | 33.79 µs | 0.0% |
+| groups_echo | d3d12 |  |  | 33.79 µs | 0.0% |
+| groups_echo | d3d12 |  |  | 33.79 µs | 0.0% |
+| groups_echo | d3d12 |  |  | 33.79 µs | 0.0% |
+| groups_echo | d3d12 |  |  | 33.79 µs | 0.0% |
+| groups_echo | d3d12 |  |  | 33.76 µs | 0.0% |
+| groups_echo | d3d12 |  |  | 18.43 µs | 0.0% |
 
 ## Run
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-051908-a788ae25` |
+| Run | `20261018-061035-5afbadf5` |
 | Title | Conformance on d3d12 |
 | Kind | kernels |
 | Status | ok |
-| Started | 2026-10-18T05:19:08.162Z |
-| Ended | 2026-10-18T05:19:08.697Z |
+| Started | 2026-10-18T06:10:35.840Z |
+| Ended | 2026-10-18T06:10:36.514Z |
 | Execution class | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders b12cabbf300b |
 | Class id | `9469669b5935` |
 | Driver | 32.0.16.1692 |
-| Commit | `d551eabba992ff7bd040b298fc9f53404700bcfe` |
+| Commit | `06ff482bad52ea1412916eb74dbf38e0f4670fc3` |
 | Nodes | 1 |
-| Records | 1,032 |
+| Records | 1,090 |
 | Synthetic | no |
 
 | Parameter | Value |
 | --- | --- |
 | backend | d3d12 |
-| cases | 49 |
+| cases | 54 |
 | device | NVIDIA GeForce RTX 4080 |
 | source | tests/Lrm.Kernels.Conformance (ConformanceHarness) |
 
@@ -100,7 +100,7 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| n0 | creator | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders b12cabbf300b | 1,032 | ok | 0 |
+| n0 | creator | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders b12cabbf300b | 1,090 | ok | 0 |
 
 ### Log problems
 

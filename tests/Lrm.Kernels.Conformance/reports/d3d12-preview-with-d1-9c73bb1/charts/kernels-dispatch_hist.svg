@@ -1,39 +1,38 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="kernels-dispatch_hist-title kernels-dispatch_hist-desc">
 <title id="kernels-dispatch_hist-title">Dispatch durations</title>
-<desc id="kernels-dispatch_hist-desc">Histogram of duration: 105 samples, 105 in 24 bins.</desc>
+<desc id="kernels-dispatch_hist-desc">Histogram of duration: 110 samples, 110 in 24 bins.</desc>
 <style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
 <rect class="bg" x="0" y="0" width="720" height="320" rx="8"/>
 <rect class="frame" x="0.5" y="0.5" width="719" height="319" rx="8"/>
 <text class="t1" x="16" y="26" font-size="15" font-weight="600">Dispatch durations</text>
-<text class="t2" x="16" y="45" font-size="12">105 dispatches on a log scale; the longest is 66.82 µs (budget 100 ms)</text>
+<text class="t2" x="16" y="45" font-size="12">110 dispatches on a log scale; the longest is 66.34 µs (budget 100 ms)</text>
 <line class="grid" x1="38.32" y1="274" x2="696" y2="274" stroke-width="1"/>
 <text class="t3" x="30.32" y="278" font-size="11" text-anchor="end">0</text>
 <line class="grid" x1="38.32" y1="225" x2="696" y2="225" stroke-width="1"/>
-<text class="t3" x="30.32" y="229" font-size="11" text-anchor="end">10</text>
+<text class="t3" x="30.32" y="229" font-size="11" text-anchor="end">20</text>
 <line class="grid" x1="38.32" y1="176" x2="696" y2="176" stroke-width="1"/>
-<text class="t3" x="30.32" y="180" font-size="11" text-anchor="end">20</text>
+<text class="t3" x="30.32" y="180" font-size="11" text-anchor="end">40</text>
 <line class="grid" x1="38.32" y1="127" x2="696" y2="127" stroke-width="1"/>
-<text class="t3" x="30.32" y="131" font-size="11" text-anchor="end">30</text>
+<text class="t3" x="30.32" y="131" font-size="11" text-anchor="end">60</text>
 <line class="grid" x1="38.32" y1="78" x2="696" y2="78" stroke-width="1"/>
-<text class="t3" x="30.32" y="82" font-size="11" text-anchor="end">40</text>
-<text class="t3" x="127.67" y="291" font-size="11" text-anchor="middle">2 µs</text>
-<text class="t3" x="276.09" y="291" font-size="11" text-anchor="middle">5 µs</text>
-<text class="t3" x="388.36" y="291" font-size="11" text-anchor="middle">10 µs</text>
-<text class="t3" x="500.63" y="291" font-size="11" text-anchor="middle">20 µs</text>
-<text class="t3" x="649.04" y="291" font-size="11" text-anchor="middle">50 µs</text>
+<text class="t3" x="30.32" y="82" font-size="11" text-anchor="end">80</text>
+<text class="t3" x="123.96" y="291" font-size="11" text-anchor="middle">2 µs</text>
+<text class="t3" x="273.65" y="291" font-size="11" text-anchor="middle">5 µs</text>
+<text class="t3" x="386.89" y="291" font-size="11" text-anchor="middle">10 µs</text>
+<text class="t3" x="500.13" y="291" font-size="11" text-anchor="middle">20 µs</text>
+<text class="t3" x="649.82" y="291" font-size="11" text-anchor="middle">50 µs</text>
 <text class="t3" x="38.32" y="68" font-size="11" text-anchor="start">count</text>
 <text class="t3" x="367.16" y="310" font-size="11" text-anchor="middle">duration</text>
-<path class="f0" d="M39.32 274V258.4Q39.32 254.4 43.32 254.4H60.72Q64.72 254.4 64.72 258.4V274Z"><title>[1.15 µs, 1.36 µs): 4</title></path>
-<path class="f0" d="M66.72 274V184.9Q66.72 180.9 70.72 180.9H88.13Q92.13 180.9 92.13 184.9V274Z"><title>[1.36 µs, 1.62 µs): 19</title></path>
-<path class="f0" d="M94.13 274V189.8Q94.13 185.8 98.13 185.8H115.53Q119.53 185.8 119.53 189.8V274Z"><title>[1.62 µs, 1.91 µs): 18</title></path>
-<path class="f0" d="M121.53 274V82Q121.53 78 125.53 78H142.93Q146.93 78 146.93 82V274Z"><title>[1.91 µs, 2.27 µs): 40</title></path>
-<path class="f0" d="M148.93 274V238.8Q148.93 234.8 152.93 234.8H170.34Q174.34 234.8 174.34 238.8V274Z"><title>[2.27 µs, 2.68 µs): 8</title></path>
-<path class="f0" d="M176.34 274V263.3Q176.34 259.3 180.34 259.3H197.74Q201.74 259.3 201.74 263.3V274Z"><title>[2.68 µs, 3.18 µs): 3</title></path>
-<path class="f0" d="M203.74 274V271.55Q203.74 269.1 206.19 269.1H226.69Q229.14 269.1 229.14 271.55V274Z"><title>[3.18 µs, 3.77 µs): 1</title></path>
-<path class="f0" d="M450.37 274V271.55Q450.37 269.1 452.82 269.1H473.32Q475.77 269.1 475.77 271.55V274Z"><title>[14.57 µs, 17.26 µs): 1</title></path>
-<path class="f0" d="M477.77 274V268.2Q477.77 264.2 481.77 264.2H499.18Q503.18 264.2 503.18 268.2V274Z"><title>[17.26 µs, 20.44 µs): 2</title></path>
-<path class="f0" d="M559.98 274V253.5Q559.98 249.5 563.98 249.5H581.39Q585.39 249.5 585.39 253.5V274Z"><title>[28.67 µs, 33.96 µs): 5</title></path>
-<path class="f0" d="M587.39 274V268.2Q587.39 264.2 591.39 264.2H608.79Q612.79 264.2 612.79 268.2V274Z"><title>[33.96 µs, 40.22 µs): 2</title></path>
-<path class="f0" d="M669.6 274V268.2Q669.6 264.2 673.6 264.2H691Q695 264.2 695 268.2V274Z"><title>[56.42 µs, 66.82 µs): 2</title></path>
+<path class="f0" d="M39.32 274V270.33Q39.32 266.65 43 266.65H61.05Q64.72 266.65 64.72 270.33V274Z"><title>[1.18 µs, 1.40 µs): 3</title></path>
+<path class="f0" d="M66.72 274V270.33Q66.72 266.65 70.4 266.65H88.45Q92.13 266.65 92.13 270.33V274Z"><title>[1.40 µs, 1.66 µs): 3</title></path>
+<path class="f0" d="M94.13 274V255.95Q94.13 251.95 98.13 251.95H115.53Q119.53 251.95 119.53 255.95V274Z"><title>[1.66 µs, 1.96 µs): 9</title></path>
+<path class="f0" d="M121.53 274V118.75Q121.53 114.75 125.53 114.75H142.93Q146.93 114.75 146.93 118.75V274Z"><title>[1.96 µs, 2.32 µs): 65</title></path>
+<path class="f0" d="M148.93 274V270.33Q148.93 266.65 152.61 266.65H170.66Q174.34 266.65 174.34 270.33V274Z"><title>[2.32 µs, 2.74 µs): 3</title></path>
+<path class="f0" d="M176.34 274V243.7Q176.34 239.7 180.34 239.7H197.74Q201.74 239.7 201.74 243.7V274Z"><title>[2.74 µs, 3.24 µs): 14</title></path>
+<path class="f0" d="M231.14 274V272.78Q231.14 271.55 232.37 271.55H255.32Q256.55 271.55 256.55 272.78V274Z"><title>[3.83 µs, 4.53 µs): 1</title></path>
+<path class="f0" d="M477.77 274V270.33Q477.77 266.65 481.45 266.65H499.5Q503.18 266.65 503.18 270.33V274Z"><title>[17.34 µs, 20.50 µs): 3</title></path>
+<path class="f0" d="M559.98 274V263.3Q559.98 259.3 563.98 259.3H581.39Q585.39 259.3 585.39 263.3V274Z"><title>[28.67 µs, 33.91 µs): 6</title></path>
+<path class="f0" d="M587.39 274V272.78Q587.39 271.55 588.61 271.55H611.57Q612.79 271.55 612.79 272.78V274Z"><title>[33.91 µs, 40.11 µs): 1</title></path>
+<path class="f0" d="M669.6 274V271.55Q669.6 269.1 672.05 269.1H692.55Q695 269.1 695 271.55V274Z"><title>[56.09 µs, 66.34 µs): 2</title></path>
 <line class="axis" x1="38.32" y1="274" x2="696" y2="274" stroke-width="1"/>
 </svg>

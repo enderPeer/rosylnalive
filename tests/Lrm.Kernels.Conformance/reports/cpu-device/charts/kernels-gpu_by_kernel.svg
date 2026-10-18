@@ -7,57 +7,59 @@
 <text class="t1" x="16" y="26" font-size="15" font-weight="600">GPU time by kernel</text>
 <text class="t2" x="16" y="45" font-size="12">Sum of gpu.dispatch durations over the run</text>
 <line class="grid" x1="146" y1="78" x2="146" y2="442" stroke-width="1"/>
-<line class="grid" x1="310.67" y1="78" x2="310.67" y2="442" stroke-width="1"/>
-<line class="grid" x1="475.33" y1="78" x2="475.33" y2="442" stroke-width="1"/>
+<line class="grid" x1="269.5" y1="78" x2="269.5" y2="442" stroke-width="1"/>
+<line class="grid" x1="393" y1="78" x2="393" y2="442" stroke-width="1"/>
+<line class="grid" x1="516.5" y1="78" x2="516.5" y2="442" stroke-width="1"/>
 <line class="grid" x1="640" y1="78" x2="640" y2="442" stroke-width="1"/>
 <text class="t3" x="146" y="459" font-size="11" text-anchor="middle">0</text>
-<text class="t3" x="310.67" y="459" font-size="11" text-anchor="middle">20 ms</text>
-<text class="t3" x="475.33" y="459" font-size="11" text-anchor="middle">40 ms</text>
-<text class="t3" x="640" y="459" font-size="11" text-anchor="middle">60 ms</text>
+<text class="t3" x="269.5" y="459" font-size="11" text-anchor="middle">10 ms</text>
+<text class="t3" x="393" y="459" font-size="11" text-anchor="middle">20 ms</text>
+<text class="t3" x="516.5" y="459" font-size="11" text-anchor="middle">30 ms</text>
+<text class="t3" x="640" y="459" font-size="11" text-anchor="middle">40 ms</text>
 <text class="t3" x="146" y="68" font-size="11" text-anchor="start">kernel</text>
 <text class="t3" x="393" y="478" font-size="11" text-anchor="middle">GPU time</text>
-<text class="t2" x="138" y="95" font-size="12" text-anchor="end">rmsnorm_rows</text>
-<path class="f2" d="M146 83H561.84Q565.84 83 565.84 87V95Q565.84 99 561.84 99H146Z"><title>rmsnorm_rows, cpu-device: 50.99 ms</title></path>
-<text class="t2" x="571.84" y="95" font-size="11">50.99 ms</text>
-<text class="t2" x="138" y="121" font-size="12" text-anchor="end">groups_echo</text>
-<path class="f2" d="M146 109H460.41Q464.41 109 464.41 113V121Q464.41 125 460.41 125H146Z"><title>groups_echo, cpu-device: 38.67 ms</title></path>
-<text class="t2" x="470.41" y="121" font-size="11">38.67 ms</text>
-<text class="t2" x="138" y="147" font-size="12" text-anchor="end">argmax_rows</text>
-<path class="f2" d="M146 135H371.91Q375.91 135 375.91 139V147Q375.91 151 371.91 151H146Z"><title>argmax_rows, cpu-device: 27.92 ms</title></path>
-<text class="t2" x="381.91" y="147" font-size="11">27.92 ms</text>
+<text class="t2" x="138" y="95" font-size="12" text-anchor="end">groups_echo</text>
+<path class="f2" d="M146 83H551.6Q555.6 83 555.6 87V95Q555.6 99 551.6 99H146Z"><title>groups_echo, cpu-device: 33.17 ms</title></path>
+<text class="t2" x="561.6" y="95" font-size="11">33.17 ms</text>
+<text class="t2" x="138" y="121" font-size="12" text-anchor="end">argmax_rows</text>
+<path class="f2" d="M146 109H264.88Q268.88 109 268.88 113V121Q268.88 125 264.88 125H146Z"><title>argmax_rows, cpu-device: 9.95 ms</title></path>
+<text class="t2" x="274.88" y="121" font-size="11">9.95 ms</text>
+<text class="t2" x="138" y="147" font-size="12" text-anchor="end">rmsnorm_rows</text>
+<path class="f2" d="M146 135H252.17Q256.17 135 256.17 139V147Q256.17 151 252.17 151H146Z"><title>rmsnorm_rows, cpu-device: 8.92 ms</title></path>
+<text class="t2" x="262.17" y="147" font-size="11">8.92 ms</text>
 <text class="t2" x="138" y="173" font-size="12" text-anchor="end">matmul_bf16w</text>
-<path class="f2" d="M146 161H161.72Q165.72 161 165.72 165V173Q165.72 177 161.72 177H146Z"><title>matmul_bf16w, cpu-device: 2.40 ms</title></path>
-<text class="t2" x="171.72" y="173" font-size="11">2.40 ms</text>
-<text class="t2" x="138" y="199" font-size="12" text-anchor="end">copy_rows</text>
-<path class="f2" d="M146 187H151.58Q155.58 187 155.58 191V199Q155.58 203 151.58 203H146Z"><title>copy_rows, cpu-device: 1.16 ms</title></path>
-<text class="t2" x="161.58" y="199" font-size="11">1.16 ms</text>
+<path class="f2" d="M146 161H162.13Q166.13 161 166.13 165V173Q166.13 177 162.13 177H146Z"><title>matmul_bf16w, cpu-device: 1.63 ms</title></path>
+<text class="t2" x="172.13" y="173" font-size="11">1.63 ms</text>
+<text class="t2" x="138" y="199" font-size="12" text-anchor="end">attention_gqa_causal</text>
+<path class="f2" d="M146 187H147.92Q149.85 187 149.85 188.92V201.08Q149.85 203 147.92 203H146Z"><title>attention_gqa_causal, cpu-device: 311.50 µs</title></path>
+<text class="t2" x="155.85" y="199" font-size="11">311.50 µs</text>
 <text class="t2" x="138" y="225" font-size="12" text-anchor="end">scale_f32</text>
-<path class="f2" d="M146 213H149.54Q153.08 213 153.08 216.54V225.46Q153.08 229 149.54 229H146Z"><title>scale_f32, cpu-device: 859.40 µs</title></path>
-<text class="t2" x="159.08" y="225" font-size="11">859.40 µs</text>
-<text class="t2" x="138" y="251" font-size="12" text-anchor="end">bf16_unpack</text>
-<path class="f2" d="M146 239H148.22Q150.44 239 150.44 241.22V252.78Q150.44 255 148.22 255H146Z"><title>bf16_unpack, cpu-device: 538.90 µs</title></path>
-<text class="t2" x="156.44" y="251" font-size="11">538.90 µs</text>
-<text class="t2" x="138" y="277" font-size="12" text-anchor="end">attention_gqa_causal</text>
-<path class="f2" d="M146 265H148.17Q150.34 265 150.34 267.17V278.83Q150.34 281 148.17 281H146Z"><title>attention_gqa_causal, cpu-device: 527.40 µs</title></path>
-<text class="t2" x="156.34" y="277" font-size="11">527.40 µs</text>
-<text class="t2" x="138" y="303" font-size="12" text-anchor="end">add</text>
-<path class="f2" d="M146 291H148.01Q150.02 291 150.02 293.01V304.99Q150.02 307 148.01 307H146Z"><title>add, cpu-device: 488.80 µs</title></path>
-<text class="t2" x="156.02" y="303" font-size="11">488.80 µs</text>
+<path class="f2" d="M146 213H147.85Q149.7 213 149.7 214.85V227.15Q149.7 229 147.85 229H146Z"><title>scale_f32, cpu-device: 299.50 µs</title></path>
+<text class="t2" x="155.7" y="225" font-size="11">299.50 µs</text>
+<text class="t2" x="138" y="251" font-size="12" text-anchor="end">copy_rows</text>
+<path class="f2" d="M146 239H147.68Q149.36 239 149.36 240.68V253.32Q149.36 255 147.68 255H146Z"><title>copy_rows, cpu-device: 271.80 µs</title></path>
+<text class="t2" x="155.36" y="251" font-size="11">271.80 µs</text>
+<text class="t2" x="138" y="277" font-size="12" text-anchor="end">bf16_unpack</text>
+<path class="f2" d="M146 265H147.38Q148.75 265 148.75 266.38V279.62Q148.75 281 147.38 281H146Z"><title>bf16_unpack, cpu-device: 222.80 µs</title></path>
+<text class="t2" x="154.75" y="277" font-size="11">222.80 µs</text>
+<text class="t2" x="138" y="303" font-size="12" text-anchor="end">embed_gather_bf16</text>
+<path class="f2" d="M146 291H147.35Q148.71 291 148.71 292.35V305.65Q148.71 307 147.35 307H146Z"><title>embed_gather_bf16, cpu-device: 219.40 µs</title></path>
+<text class="t2" x="154.71" y="303" font-size="11">219.40 µs</text>
 <text class="t2" x="138" y="329" font-size="12" text-anchor="end">silu_mul</text>
-<path class="f2" d="M146 317H147.58Q149.17 317 149.17 318.58V331.42Q149.17 333 147.58 333H146Z"><title>silu_mul, cpu-device: 384.50 µs</title></path>
-<text class="t2" x="155.17" y="329" font-size="11">384.50 µs</text>
-<text class="t2" x="138" y="355" font-size="12" text-anchor="end">embed_gather_bf16</text>
-<path class="f2" d="M146 343H147.48Q148.95 343 148.95 344.48V357.52Q148.95 359 147.48 359H146Z"><title>embed_gather_bf16, cpu-device: 358.70 µs</title></path>
-<text class="t2" x="154.95" y="355" font-size="11">358.70 µs</text>
-<text class="t2" x="138" y="381" font-size="12" text-anchor="end">rope_apply</text>
-<path class="f2" d="M146 369H147.16Q148.33 369 148.33 370.16V383.84Q148.33 385 147.16 385H146Z"><title>rope_apply, cpu-device: 282.70 µs</title></path>
-<text class="t2" x="154.33" y="381" font-size="11">282.70 µs</text>
+<path class="f2" d="M146 317H146.98Q147.97 317 147.97 317.98V332.02Q147.97 333 146.98 333H146Z"><title>silu_mul, cpu-device: 159.40 µs</title></path>
+<text class="t2" x="153.97" y="329" font-size="11">159.40 µs</text>
+<text class="t2" x="138" y="355" font-size="12" text-anchor="end">rope_apply</text>
+<path class="f2" d="M146 343H146.74Q147.47 343 147.47 343.74V358.26Q147.47 359 146.74 359H146Z"><title>rope_apply, cpu-device: 119.10 µs</title></path>
+<text class="t2" x="153.47" y="355" font-size="11">119.10 µs</text>
+<text class="t2" x="138" y="381" font-size="12" text-anchor="end">add</text>
+<path class="f2" d="M146 369H146.68Q147.37 369 147.37 369.68V384.32Q147.37 385 146.68 385H146Z"><title>add, cpu-device: 110.70 µs</title></path>
+<text class="t2" x="153.37" y="381" font-size="11">110.70 µs</text>
 <text class="t2" x="138" y="407" font-size="12" text-anchor="end">table_echo</text>
-<path class="f2" d="M146 395H146.24Q146.47 395 146.47 395.24V410.76Q146.47 411 146.24 411H146Z"><title>table_echo, cpu-device: 57.10 µs</title></path>
-<text class="t2" x="152.47" y="407" font-size="11">57.10 µs</text>
+<path class="f2" d="M146 395H146.24Q146.48 395 146.48 395.24V410.76Q146.48 411 146.24 411H146Z"><title>table_echo, cpu-device: 38.70 µs</title></path>
+<text class="t2" x="152.48" y="407" font-size="11">38.70 µs</text>
 <text class="t2" x="138" y="433" font-size="12" text-anchor="end">args_echo</text>
-<path class="f2" d="M146 421H146.09Q146.19 421 146.19 421.09V436.91Q146.19 437 146.09 437H146Z"><title>args_echo, cpu-device: 23.00 µs</title></path>
-<text class="t2" x="152.19" y="433" font-size="11">23.00 µs</text>
+<path class="f2" d="M146 421H146.08Q146.16 421 146.16 421.08V436.92Q146.16 437 146.08 437H146Z"><title>args_echo, cpu-device: 13.10 µs</title></path>
+<text class="t2" x="152.16" y="433" font-size="11">13.10 µs</text>
 <line class="axis" x1="146" y1="78" x2="146" y2="78" stroke-width="1"/>
 <line class="axis" x1="146" y1="78" x2="146" y2="442" stroke-width="1"/>
 </svg>
