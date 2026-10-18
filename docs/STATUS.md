@@ -1,33 +1,50 @@
 # Status
 
-Last updated: 2026-10-17. Phase 1 (Qwen3-0.6B forward pass) has not started coding yet; the multi-agent development plan is being produced.
+Last updated: 2026-10-18 (integrator, `int/wave1-fixes`). Phase 1 (Qwen3-0.6B forward pass) is in progress: waves 0 and 1 are built and reviewed, and nothing is merged to `main` yet, because the merges wait for the user.
 
-## Done
+## Where the work is
+
+| PR | Branch | What | State |
+| --- | --- | --- | --- |
+| #1 | `int/dev-plan` | The multi-agent development plan (`docs/dev-plan.md`) | open, waiting for merge |
+| #2, #3 | `ws/S0a-scaffold`, `ws/S1-core` | Wave 0: scaffold, build, test runner, CI; Lrm.Core | open, reviewed |
+| #4 to #12 | `ws/O1-…` to `ws/R4b-…` | Wave 1: O1, R1, R3, C1, T1, S0b, R4a, O2, R4b | open, reviewed |
+| #13 | `int/wave1` | Integration preview of #2 to #12 (not a merge unit) | draft |
+| this | `int/wave1-fixes` | Cross-cutting fixes from the wave-1 requests, on top of #13 | open |
+
+R2a and R2b (Vulkan interop generator) have not started: they need vk.xml and Vulkan-Headers, which wait for the user's approval (AP-1). V1 depends on R2a.
+
+## Done and verified (on `int/wave1` plus `int/wave1-fixes`, locally)
 
 | Item | Where | Verified |
 | --- | --- | --- |
-| Design document, with an independent review applied | `docs/LRM-design.md` | Reviewed by a first-principles reviewer agent |
-| F# Vulkan binding (query only) and device check | `src/Lrm.Gpu.Vulkan.Interop`, `apps/VkDeviceCheck` | Builds with no warnings; RTX 4080 accepted; 17 struct layouts match vk.xml |
-| Qwen3-0.6B weights and tokenizer | `C:\Users\end\dev\lrm-data\models\Qwen3-0.6B` | SHA-256 of `model.safetensors` and `tokenizer.json` match Hugging Face |
-| Public GitHub repo | https://github.com/enderPeer/rosylnalive | `main` pushed |
-| Shader compiler: DXC 1.9.2609.5 from NuGet, pinned in `tools/bootstrap/toolchain.json` | `lrm-data\toolchain\dxc\1.9.2609.5` | SHA-512 matches nuget.org; Microsoft signature valid; a bindless test kernel compiles to DXIL and to SPIR-V (heap at set 0 binding 0, arguments in push constants) |
-| Golden-tool venv: torch 2.14.1+cpu, transformers 5.20.1, tokenizers 0.23.3 (lock file `tools/goldens/requirements.lock`) | `lrm-data\venv-golden` | Qwen3 fp32 forward runs in 2.3 s; `lm_head` is bitwise equal to `embed_tokens`, so it can be an alias |
-
-## In progress
-
-- **Multi-agent dev plan.** A planning workflow (run `wf_320f4061-04c`) does research, then 3 planners, 2 judges, synthesis, a red-team and a final pass. Its output becomes `docs/dev-plan.md`.
+| Design document, with an independent review | `docs/LRM-design.md` | Reviewed before the plan |
+| Qwen3-0.6B weights and tokenizer; DXC 1.9.2609.5; the golden venv | `LRM_DATA` (`C:/Users/end/dev/lrm-data`) | SHA-256 against Hugging Face and nuget.org; pins in `tools/bootstrap/toolchain.json` |
+| Scaffold, project graph, test tiers, mutexes, CI | S0a, S0b | Release build with 0 warnings; codegen checks; locked restore; hygiene self-test (125 fixtures); hygiene checks |
+| Lrm.Core: canonical encoding, hashes, DType and bf16, RNGs, telemetry facade, ExecutionClass | S1 | Known-answer vectors; bf16 exhaustive; de-DE identical; `run.*` now reserved for the run log |
+| Golden tooling, torch32/torch64p oracles, tiny and tokenizer goldens | O1 | Self-tests pass; `make_tiny.py --check` regenerates byte-identically; the tools now write T1's RunLog format, so their runs render with `lrm report` |
+| Tensors, safetensors, CpuRef F32/F64, comparators, KernelBounds, ToleranceSpec | O2 | Tiny model: F64 vs torch64p within 1e-12, F32 vs torch32 within 1e-6, greedy identical, 1/7/32 threads bit-equal, prefill = decode; parity report from a real run in `docs/reports/cpuref/tiny/` |
+| Telemetry runtime, run logs, reports, samples | T1 | Byte-deterministic Markdown and SVG; samples in `docs/reports/samples/` |
+| Cluster core: frames, transports, coordinator, chaos | C1 | 200 seeds bit-identical; replica-loss replay; 3-process kill test |
+| D3D12 COM interop, ABI oracle, device check | R3 | Slots match the probe; cl.exe oracle passes; RTX 4080 ACCEPTED; no tail calls (now a repo-wide default for GPU code) |
+| Vulkan descriptor-heap recipe | R1 | Bit-exact `scale`, table and bf16 on the RTX 4080; 32 push dwords echo; ADR `R1-heap-recipe.md`; VulkanHeapRecipe v1.1 names the typed argument blocks |
+| GPU core contracts, catalog, shader build | R4a | DXIL and SPIR-V compile with the pinned DXC; ShaderSetHash reproducible; catalog diff-clean |
+| SPIR-V binding and inspector | R4b | One variable at set 0 binding 0; push offsets equal the catalog; 16 inspector rules, 18 DXC fixtures, 66 mutations; typed blocks pass R1's spike on the device |
+| fp32 denormals on D3D12 | integrator | The probe on the real `scale_f32` DXIL blob gives `preserve` on the RTX 4080, driver 616.92 (ADR `int-0001-denormals.md`) |
+| Every wave-1 contract registered | `docs/contracts/README.md`, `CHANGELOG.md` | v1, or v1.1 for R4b's three and VulkanHeapRecipe |
 
 ## Next
 
-1. Fold the observability workstream into the plan: telemetry library, report generator with Markdown templates and SVG charts, HTML dashboard. Then write and push `docs/dev-plan.md`.
-2. Wire DXC into the shader build: an MSBuild target that calls the pinned path and fails if it is missing.
-3. Execute Phase 1 wave by wave, pushing after every green checkpoint and merging through PRs.
-4. Phase 2 (backward pass, cluster, fault tolerance), then the Phase 3 LRM core.
+1. **The user:** merge #1, then #2 to #12 in order and this PR; then the integrator tags `contracts-v1` and `contracts-v1.1` (both after every wave-1 text is on `main`) and `wave-1-done`.
+2. **The user:** AP-1 (vk.xml, Vulkan-Headers and the tokenizer download on CI runners), so that R2a, R2b and V1 can start and M1's corpus test can run in CI; the repo labels `contract-change` and `ownership-exception`; AP-2 (branch protection).
+3. **Wave 2:** G2, M1, M2a, M2b, E1, D1 and R5 can start from `main`; V1 after R2a. Each starts from the routed notes in `LRM_DATA/spikes-staging/routed-notes.json`.
+4. **Template slots.** Several wave-1 metrics (R3's device and interop checks, R4b's shader metrics, C1's `cluster.*` names, S0b's hygiene summary) have no template slot yet. Each is added, through an `int/` change to T1's templates, in the PR whose run log first carries the metric.
 
 ## Known gaps
 
-- The Vulkan binding detects `VK_EXT_descriptor_heap` but cannot use it yet. It has no logical device, memory, buffers, heap writes, push data, pipelines or dispatch.
-- No D3D12 binding exists yet.
-- No Vulkan validation layers or D3D12 debug layer are installed.
-- DXC's SPIR-V output declares a separate heap variable for each access, all aliasing binding 0. The first Vulkan spike must confirm that the heap mapping handles this.
-- Golden reference outputs have not been generated yet; the tool environment is ready.
+- No Vulkan validation layers or D3D12 debug layer are installed (AP-3 is optional).
+- The cluster template reads `cluster.unit` and `cluster.step` spans and `cluster.node_lost`; C1's coordinator emits `cluster.unit.done` events and `cluster.member.leave`. C2a's cluster report needs the two aligned.
+- DXIL float arithmetic carries fast-math flags (no `-Gis`), so a NaN test written as `v != v` is folded away; kernels use `isnan()` (ADR int-0001).
+- GPU NaN results do not keep their payloads (R1: `0x7FFFFFFF`), unlike the CPU reference.
+- The hygiene job has not yet run on GitHub's Linux runner; every check was run locally.
+- The Vulkan fp32 denormal mode is not measured yet (V1).
