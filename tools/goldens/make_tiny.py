@@ -29,6 +29,7 @@ import numpy as np  # noqa: E402
 
 import selftest  # noqa: E402
 import tiny_model as tm  # noqa: E402
+from verify_goldens import SET_BUDGETS  # noqa: E402  (the committed-size budgets CI checks)
 
 OUT_REL = f"goldens/{tm.SET}/{tm.VERSION}"
 TOOL_FILES = ["common.py", "make_tiny.py", "selftest.py", "tiny_model.py"]
@@ -317,7 +318,8 @@ def main() -> int:
     total = sum(len(b) for b in files.values())
     for n, b in sorted(files.items()):
         log.gauge("goldens.file_bytes", len(b), "B", file=f"{OUT_REL}/{n}")
-    log.gauge("goldens.set_bytes", total, "B", set="tiny")
+    log.gauge("goldens.set_bytes", total, "B", set="tiny", budget=SET_BUDGETS["tiny"])
+    log.check("goldens.double_run_identical", dbl["identical"], set="tiny", threads=dbl["threads"])
     mins = {f"{n}/{o}": round(g["min_margin"], 4) for n, per in results["greedy"].items() for o, g in per.items()}
     print(f"{len(files)} files, {total} bytes; prompts {[(p['name'], p['candidate']) for p in prompts]}; eos {eos}; "
           f"min margins {mins}; max e_ref(p0) {man['measurements']['e_ref_max_p0']:.3e}; double run at {dbl['threads']} threads identical")
