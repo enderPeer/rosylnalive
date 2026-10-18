@@ -12,9 +12,14 @@
 ///
 /// The m = 512 and m = 4,000 prefills and lm_head are GPU-only: CpuRef F32 and F64 of them cost tens of G
 /// multiply-adds, which the cpu tier (CI, four emulation threads) does not spend. Decode and m = 37 of every projection
-/// and every edge shape run in CI on CpuDevice too. The GPU-only cases are built only outside the cpu tier
-/// (LRM_TEST_TIER, which tools/test.ps1 sets): the harness's own model tests (HarnessTests "models") run every
-/// discovered case on CpuDevice, GPU-only cases included, so in the cpu tier they would emulate them three times.
+/// and every edge shape run in CI on CpuDevice too. lm_head runs at m = 1 and at m = 64, the most rows X1 gives one
+/// lm_head dispatch (ADR K2-0001), so the harness times that dispatch against the budget.
+///
+/// The GPU-only cases are built only outside the cpu tier: the harness's own model tests (HarnessTests "models") run
+/// every discovered case on CpuDevice, GPU-only cases included, so in the cpu tier they would emulate them three times
+/// (about 140 s each). The tier is read as Lrm.Testing's runner reads it: the last `--tier <t>` on the command line,
+/// else LRM_TEST_TIER (which tools/test.ps1 sets). This gate is a workaround: it goes once E1's model tests skip
+/// GpuOnly cases (ADR K2-0001, the request to E1).
 module Lrm.Kernels.Conformance.Cases.Matmul
 
 open System
@@ -147,9 +152,21 @@ let private shapeCases (s: Shape) (seed: uint64) (ms: (int * bool) list) =
             if gpuOnly then Case.gpuOnly c else c
     ]
 
+/// The tier the runner selects (Runner.main): the last `--tier <t>` of the command line, else LRM_TEST_TIER.
+let private selectedTier =
+    let rec lastTier (found: string option) (args: string list) =
+        match args with
+        | "--tier" :: t :: rest -> lastTier (Some t) rest
+        | _ :: rest -> lastTier found rest
+        | [] -> found
+
+    match lastTier None (List.ofArray (Environment.GetCommandLineArgs())) with
+    | Some t -> Some t
+    | None -> Env.tryGet "LRM_TEST_TIER"
+
 /// True in the cpu tier, where the GPU-only cases are not built (see the module's doc).
 let private cpuTier =
-    match Env.tryGet "LRM_TEST_TIER" with
+    match selectedTier with
     | Some t -> String.Equals(t.Trim(), "cpu", StringComparison.OrdinalIgnoreCase)
     | None -> false
 
@@ -168,16 +185,24 @@ let private qwenCases =
     |> List.mapi (fun i s -> shapeCases s (0x4B324D4D00000000UL + uint64 i * 0x100UL) projectionRows)
     |> List.concat
 
-/// lm_head (GPU only): decode, and 64 rows of a prefill's logits.
+/// The most rows X1 gives one lm_head dispatch (ADR K2-0001, MatmulBench.LmHeadMaxRows): from idle clocks 64 rows take
+/// about a quarter of the budget, 128 rows up to half of it and 256 rows nearly all of it.
+[<Literal>]
+let private LmHeadMaxRows = 64
+
+/// lm_head (GPU only): decode, and the largest chunk of a prefill's logits X1 dispatches.
 let private lmHeadCases =
     if cpuTier then
         []
     else
-        shapeCases lmHead 0x4B324D4D0000FF00UL [ 1, true; 64, true ]
+        shapeCases lmHead 0x4B324D4D0000FF00UL [ 1, true; LmHeadMaxRows, true ]
 
-/// Small and edge shapes: tile edges in m and n, every remainder of k against the 32-wide slab and the 4-wide run,
-/// odd k (bf16 rows that start in the middle of a u32 word, read element by element), k below one slab, k = 0, and
-/// the widest grid the catalog allows without folding (matmul_bf16w is not linear, so x is at most 65,535 groups).
+/// Small and edge shapes: tile edges in m and n; every remainder of k against the 4-wide run (k mod 4 = 0 to 3, a
+/// tail of 0 to 3 steps); a full or partial last slab of 32 for odd and for even k; odd k (bf16 rows that start in the
+/// middle of a u32 word, read element by element); even k whose last 8-element w chunk crosses k (read element by
+/// element although the rows are word-aligned), next to chunks below k (one Load4) and past k (not read); k below one
+/// slab; k = 0; and the widest grid the catalog allows without folding (matmul_bf16w is not linear, so x is at most
+/// 65,535 groups).
 let private edgeCases =
     let edge (name: string) (m: int) (n: int) (k: int) (doc: string) =
         let seed = DetRng.streamOf ("k2.matmul." + name)
@@ -202,6 +227,30 @@ let private edgeCases =
         edge "m70_n65_k0" 70 65 0 "k = 0 over 2 x 2 tiles: every output is +0, nothing is read"
         edge "m3_n67_k33" 3 67 33 "Odd k: w rows alternate between word-aligned and half-word starts; a 1-step tail"
         edge "m9_n33_k31" 9 33 31 "k below one slab: 7 runs of 4 and a 3-step tail"
+        edge
+            "m7_n64_k2"
+            7
+            64
+            2
+            "k = 2: even k below one 8-element w chunk, read element by element; no run and a 2-step tail"
+        edge
+            "m5_n70_k34"
+            5
+            70
+            34
+            "One full slab, then a 2-step slab: even k whose w chunk crosses k (element-wise); k mod 4 = 2"
+        edge
+            "m3_n130_k44"
+            3
+            130
+            44
+            "Second slab of 12 steps: one w chunk by Load4, one crossing k element by element, two past k; no tail"
+        edge
+            "m37_n65_k66"
+            37
+            65
+            66
+            "Two full slabs and a 2-step third with even k; one column into a second tile; k mod 4 = 2"
         edge "m17_n96_k35" 17 96 35 "One slab and a 3-step second slab; n not a multiple of 64"
         edge "m63_n63_k63" 63 63 63 "One row and one column short of a tile; odd k"
         edge "m64_n64_k64" 64 64 64 "Exactly one tile and two slabs"
