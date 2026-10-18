@@ -4,7 +4,7 @@
 No conformance cases were recorded. Every dispatch is under the 100 ms budget.
 
 - Conformance cases: 0, failed: 0
-- GPU dispatches: 83, total GPU time 264.56 ms
+- GPU dispatches: 83, total GPU time 256.40 ms
 
 ## Conformance matrix
 
@@ -22,13 +22,13 @@ The mode each shader backend measured with the `scale_f32` denormal probe right 
 
 | Backend | Node | Blob | fp32 denormals | Bit-exact fp32 arithmetic means |
 | --- | --- | --- | --- | --- |
-| d3d12 | n0 |  | preserve | equal to CpuRef as it is |
+| d3d12 | hw |  | preserve | equal to CpuRef as it is |
 | d3d12-warp | n0 |  | preserve | equal to CpuRef as it is |
 | d3d12-warp | n0 | control, no -denorm | flush | equal to CpuRef with every fp32 denormal input and result set to zero of the same sign |
 
 The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush give, and what each measurement returned.
 
-| Input | Preserve | Flush | d3d12 n0 | d3d12-warp n0 | d3d12-warp n0, control, no -denorm |
+| Input | Preserve | Flush | d3d12 hw | d3d12-warp n0 | d3d12-warp n0, control, no -denorm |
 | --- | --- | --- | --- | --- | --- |
 | `3f800000` | 3f000000 | 3f000000 | 3f000000 | 3f000000 | 3f000000 |
 | `01000000` | 00800000 | 00800000 | 00800000 | 00800000 | 00800000 |
@@ -56,38 +56,39 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Kernel | Backend | Layer | Step | Duration | Of budget |
 | --- | --- | ---: | ---: | ---: | ---: |
-| scale_f32 | d3d12-warp |  |  | 66.46 ms | 66.5% |
-| scale_f32 | d3d12-warp |  |  | 65.75 ms | 65.7% |
-| scale_f32 | d3d12-warp |  |  | 16.34 ms | 16.3% |
-| groups_echo | d3d12-warp |  | 4 | 15.61 ms | 15.6% |
-| scale_f32 | d3d12-warp |  |  | 14.50 ms | 14.5% |
-| groups_echo | d3d12-warp |  | 1 | 13.04 ms | 13.0% |
-| groups_echo | d3d12-warp |  | 2 | 12.94 ms | 12.9% |
-| groups_echo | d3d12-warp |  | 1 | 12.82 ms | 12.8% |
-| groups_echo | d3d12-warp |  | 2 | 12.69 ms | 12.7% |
-| scale_f32 | d3d12-warp |  |  | 5.91 ms | 5.9% |
+| scale_f32 | d3d12-warp |  |  | 62.64 ms | 62.6% |
+| scale_f32 | d3d12-warp |  |  | 58.69 ms | 58.7% |
+| scale_f32 | d3d12-warp |  |  | 18.25 ms | 18.2% |
+| scale_f32 | d3d12-warp |  |  | 15.68 ms | 15.7% |
+| groups_echo | d3d12-warp |  | 2 | 13.13 ms | 13.1% |
+| groups_echo | d3d12-warp |  | 1 | 13.00 ms | 13.0% |
+| groups_echo | d3d12-warp |  | 4 | 12.40 ms | 12.4% |
+| groups_echo | d3d12-warp |  | 1 | 12.20 ms | 12.2% |
+| groups_echo | d3d12-warp |  | 2 | 11.88 ms | 11.9% |
+| scale_f32 | d3d12-warp |  |  | 6.69 ms | 6.7% |
 
 ## Run
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-064937-ce781a73` |
+| Run | `20261018-071748-c5cfc372` |
 | Title | WARP spike: device, denormal probe, D1's selftests (R5) |
 | Kind | kernels |
 | Status | ok |
-| Started | 2026-10-18T06:49:37.466Z |
-| Ended | 2026-10-18T06:49:40.807Z |
+| Started | 2026-10-18T07:17:48.334Z |
+| Ended | 2026-10-18T07:17:51.720Z |
 | Execution class | d3d12-warp pci:1414:008c, 10.0.26100.9711, win-x64+avx2+fma shaders b12cabbf300b |
 | Class id | `ab6cc56163bb` |
 | Driver | 10.0.26100.9711 |
-| Commit | `ddd32a703854a7501e606526c0e715cc5b47d777` |
-| Nodes | 1 |
-| Records | 785 |
+| Commit | `b13765b8a194149a971511f4bbdee80a789c0520` |
+| Nodes | 2 |
+| Records | 781 |
 | Synthetic | no |
 
 | Parameter | Value |
 | --- | --- |
 | D3D12Core.dll | 10.0.26100.9549 |
+| D3D12SDKLayers.dll | missing |
 | affinity_mask | f |
 | d3d10warp.dll | 10.0.26100.9711 |
 | d3d12.dll | 10.0.26100.9549 |
@@ -106,7 +107,8 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| n0 | creator | d3d12-warp pci:1414:008c, 10.0.26100.9711, win-x64+avx2+fma shaders b12cabbf300b | 785 | ok | 0 |
+| hw | joined | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders b12cabbf300b | 77 | ok | 0 |
+| n0 | creator | d3d12-warp pci:1414:008c, 10.0.26100.9711, win-x64+avx2+fma shaders b12cabbf300b | 704 | ok | 0 |
 
 ### Log problems
 

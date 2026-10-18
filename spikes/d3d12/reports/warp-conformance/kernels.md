@@ -4,7 +4,7 @@
 **PASS.** All 28 conformance cases pass. Every dispatch is under the 100 ms budget.
 
 - Conformance cases: 28, failed: 0
-- GPU dispatches: 110, total GPU time 91.11 ms
+- GPU dispatches: 110, total GPU time 89.78 ms
 
 ## Conformance matrix
 
@@ -60,31 +60,31 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Kernel | Backend | Layer | Step | Duration | Of budget |
 | --- | --- | ---: | ---: | ---: | ---: |
-| groups_echo | d3d12-warp |  |  | 14.58 ms | 14.6% |
-| groups_echo | d3d12-warp |  |  | 13.48 ms | 13.5% |
-| groups_echo | d3d12-warp |  |  | 8.05 ms | 8.1% |
-| groups_echo | d3d12-warp |  |  | 7.79 ms | 7.8% |
-| groups_echo | d3d12-warp |  |  | 6.82 ms | 6.8% |
-| groups_echo | d3d12-warp |  |  | 6.69 ms | 6.7% |
+| groups_echo | d3d12-warp |  |  | 15.01 ms | 15.0% |
+| groups_echo | d3d12-warp |  |  | 13.32 ms | 13.3% |
+| groups_echo | d3d12-warp |  |  | 7.17 ms | 7.2% |
+| groups_echo | d3d12-warp |  |  | 6.72 ms | 6.7% |
+| groups_echo | d3d12-warp |  |  | 6.59 ms | 6.6% |
+| groups_echo | d3d12-warp |  |  | 6.54 ms | 6.5% |
+| groups_echo | d3d12-warp |  |  | 6.52 ms | 6.5% |
 | groups_echo | d3d12-warp |  |  | 6.48 ms | 6.5% |
-| groups_echo | d3d12-warp |  |  | 6.45 ms | 6.5% |
-| groups_echo | d3d12-warp |  |  | 5.89 ms | 5.9% |
-| groups_echo | d3d12-warp |  |  | 3.83 ms | 3.8% |
+| groups_echo | d3d12-warp |  |  | 6.38 ms | 6.4% |
+| groups_echo | d3d12-warp |  |  | 3.81 ms | 3.8% |
 
 ## Run
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-064940-3cfef694` |
+| Run | `20261018-071751-a0558ce5` |
 | Title | Conformance on d3d12-warp (in-box WARP, R5) |
 | Kind | kernels |
 | Status | ok |
-| Started | 2026-10-18T06:49:40.394Z |
-| Ended | 2026-10-18T06:49:40.808Z |
+| Started | 2026-10-18T07:17:51.245Z |
+| Ended | 2026-10-18T07:17:51.722Z |
 | Execution class | d3d12-warp pci:1414:008c, 10.0.26100.9711, win-x64+avx2+fma shaders b12cabbf300b |
 | Class id | `ab6cc56163bb` |
 | Driver | 10.0.26100.9711 |
-| Commit | `ddd32a703854a7501e606526c0e715cc5b47d777` |
+| Commit | `b13765b8a194149a971511f4bbdee80a789c0520` |
 | Nodes | 1 |
 | Records | 1,090 |
 | Synthetic | no |
