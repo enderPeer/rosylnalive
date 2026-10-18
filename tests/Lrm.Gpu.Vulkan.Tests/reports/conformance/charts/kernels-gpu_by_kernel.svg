@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="488" viewBox="0 0 720 488" role="img" aria-labelledby="kernels-gpu_by_kernel-title kernels-gpu_by_kernel-desc">
+<title id="kernels-gpu_by_kernel-title">GPU time by kernel</title>
+<desc id="kernels-gpu_by_kernel-desc">Bar chart of GPU time for 14 kernel values, 1 series.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="488" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="487" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">GPU time by kernel</text>
+<text class="t2" x="16" y="45" font-size="12">Sum of gpu.dispatch durations over the run</text>
+<line class="grid" x1="146" y1="78" x2="146" y2="442" stroke-width="1"/>
+<line class="grid" x1="310.67" y1="78" x2="310.67" y2="442" stroke-width="1"/>
+<line class="grid" x1="475.33" y1="78" x2="475.33" y2="442" stroke-width="1"/>
+<line class="grid" x1="640" y1="78" x2="640" y2="442" stroke-width="1"/>
+<text class="t3" x="146" y="459" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="310.67" y="459" font-size="11" text-anchor="middle">100 ms</text>
+<text class="t3" x="475.33" y="459" font-size="11" text-anchor="middle">200 ms</text>
+<text class="t3" x="640" y="459" font-size="11" text-anchor="middle">300 ms</text>
+<text class="t3" x="146" y="68" font-size="11" text-anchor="start">kernel</text>
+<text class="t3" x="393" y="478" font-size="11" text-anchor="middle">GPU time</text>
+<text class="t2" x="138" y="95" font-size="12" text-anchor="end">matmul_bf16w</text>
+<path class="f3" d="M146 83H627.6Q631.6 83 631.6 87V95Q631.6 99 627.6 99H146Z"><title>matmul_bf16w, vulkan: 294.90 ms</title></path>
+<text class="t2" x="637.6" y="95" font-size="11">294.90 ms</text>
+<text class="t2" x="138" y="121" font-size="12" text-anchor="end">attention_gqa_causal</text>
+<path class="f3" d="M146 109H369.5Q373.5 109 373.5 113V121Q373.5 125 369.5 125H146Z"><title>attention_gqa_causal, vulkan: 138.16 ms</title></path>
+<text class="t2" x="379.5" y="121" font-size="11">138.16 ms</text>
+<text class="t2" x="138" y="147" font-size="12" text-anchor="end">silu_mul</text>
+<path class="f3" d="M146 135H189.99Q193.99 135 193.99 139V147Q193.99 151 189.99 151H146Z"><title>silu_mul, vulkan: 29.14 ms</title></path>
+<text class="t2" x="199.99" y="147" font-size="11">29.14 ms</text>
+<text class="t2" x="138" y="173" font-size="12" text-anchor="end">add</text>
+<path class="f3" d="M146 161H182.79Q186.79 161 186.79 165V173Q186.79 177 182.79 177H146Z"><title>add, vulkan: 24.77 ms</title></path>
+<text class="t2" x="192.79" y="173" font-size="11">24.77 ms</text>
+<text class="t2" x="138" y="199" font-size="12" text-anchor="end">argmax_rows</text>
+<path class="f3" d="M146 187H160.96Q164.96 187 164.96 191V199Q164.96 203 160.96 203H146Z"><title>argmax_rows, vulkan: 11.51 ms</title></path>
+<text class="t2" x="170.96" y="199" font-size="11">11.51 ms</text>
+<text class="t2" x="138" y="225" font-size="12" text-anchor="end">rmsnorm_rows</text>
+<path class="f3" d="M146 213H157.9Q161.9 213 161.9 217V225Q161.9 229 157.9 229H146Z"><title>rmsnorm_rows, vulkan: 9.66 ms</title></path>
+<text class="t2" x="167.9" y="225" font-size="11">9.66 ms</text>
+<text class="t2" x="138" y="251" font-size="12" text-anchor="end">copy_rows</text>
+<path class="f3" d="M146 239H155.3Q159.3 239 159.3 243V251Q159.3 255 155.3 255H146Z"><title>copy_rows, vulkan: 8.08 ms</title></path>
+<text class="t2" x="165.3" y="251" font-size="11">8.08 ms</text>
+<text class="t2" x="138" y="277" font-size="12" text-anchor="end">rope_apply</text>
+<path class="f3" d="M146 265H147.7Q149.4 265 149.4 266.7V279.3Q149.4 281 147.7 281H146Z"><title>rope_apply, vulkan: 2.07 ms</title></path>
+<text class="t2" x="155.4" y="277" font-size="11">2.07 ms</text>
+<text class="t2" x="138" y="303" font-size="12" text-anchor="end">embed_gather_bf16</text>
+<path class="f3" d="M146 291H146.65Q147.3 291 147.3 291.65V306.35Q147.3 307 146.65 307H146Z"><title>embed_gather_bf16, vulkan: 788.19 µs</title></path>
+<text class="t2" x="153.3" y="303" font-size="11">788.19 µs</text>
+<text class="t2" x="138" y="329" font-size="12" text-anchor="end">groups_echo</text>
+<path class="f3" d="M146 317H146.62Q147.24 317 147.24 317.62V332.38Q147.24 333 146.62 333H146Z"><title>groups_echo, vulkan: 751.39 µs</title></path>
+<text class="t2" x="153.24" y="329" font-size="11">751.39 µs</text>
+<text class="t2" x="138" y="355" font-size="12" text-anchor="end">scale_f32</text>
+<path class="f3" d="M146 343H146.13Q146.26 343 146.26 343.13V358.87Q146.26 359 146.13 359H146Z"><title>scale_f32, vulkan: 156.22 µs</title></path>
+<text class="t2" x="152.26" y="355" font-size="11">156.22 µs</text>
+<text class="t2" x="138" y="381" font-size="12" text-anchor="end">bf16_unpack</text>
+<path class="f3" d="M146 369H146.05Q146.11 369 146.11 369.05V384.95Q146.11 385 146.05 385H146Z"><title>bf16_unpack, vulkan: 64.22 µs</title></path>
+<text class="t2" x="152.11" y="381" font-size="11">64.22 µs</text>
+<text class="t2" x="138" y="407" font-size="12" text-anchor="end">table_echo</text>
+<path class="f3" d="M146 395H146.02Q146.04 395 146.04 395.02V410.98Q146.04 411 146.02 411H146Z"><title>table_echo, vulkan: 21.28 µs</title></path>
+<text class="t2" x="152.04" y="407" font-size="11">21.28 µs</text>
+<text class="t2" x="138" y="433" font-size="12" text-anchor="end">args_echo</text>
+<path class="f3" d="M146 421H146.01Q146.02 421 146.02 421.01V436.99Q146.02 437 146.01 437H146Z"><title>args_echo, vulkan: 9.95 µs</title></path>
+<text class="t2" x="152.02" y="433" font-size="11">9.95 µs</text>
+<line class="axis" x1="146" y1="78" x2="146" y2="78" stroke-width="1"/>
+<line class="axis" x1="146" y1="78" x2="146" y2="442" stroke-width="1"/>
+</svg>
