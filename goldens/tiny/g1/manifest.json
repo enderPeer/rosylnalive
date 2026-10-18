@@ -19,13 +19,13 @@
   "double_run": {
     "attempts": [
       {
-        "digest_a": "f8ee88df8c156998b739b21823115bb46c65f11370d084b61fad6d5811774e1e",
-        "digest_b": "f8ee88df8c156998b739b21823115bb46c65f11370d084b61fad6d5811774e1e",
+        "digest_a": "3592fafde816e87d394b7b6085815a5b0ecf1a24c540f15ffd567a978d895cce",
+        "digest_b": "3592fafde816e87d394b7b6085815a5b0ecf1a24c540f15ffd567a978d895cce",
         "identical": true,
         "threads": 8
       }
     ],
-    "digest": "f8ee88df8c156998b739b21823115bb46c65f11370d084b61fad6d5811774e1e",
+    "digest": "3592fafde816e87d394b7b6085815a5b0ecf1a24c540f15ffd567a978d895cce",
     "identical": true,
     "threads": 8
   },
@@ -176,8 +176,8 @@
   "generator": {
     "command": "pwsh tools/goldens/run.ps1 make_tiny.py",
     "files": {
-      "tools/goldens/common.py": "c92c4a2b2c344de5c8c30b1b0aac9bf844a59015b919b4cb8aefb8b7a7ea1205",
-      "tools/goldens/make_tiny.py": "6c1b049cf6d169c82f363d8861e8d39b76f6cfbbac0806f9fdef8555c64518cd",
+      "tools/goldens/common.py": "236c33403fb3ed1b5ccf82dca2f6131056b64bea731f700ef8f0237b99b73dec",
+      "tools/goldens/make_tiny.py": "377cd1fb3637133ed94f571d0db7ad689e704d2f24a25a3afe2ba87e596e7d71",
       "tools/goldens/selftest.py": "b1cdc002c6146855502436cc11c8a20a075518ad0f0596af9cb374ca43360af3",
       "tools/goldens/tiny_model.py": "2665abe710c4f31ace7132be33f08bc0ab09729d26df5dd7fed0886ae9b9b0b3"
     }
@@ -200,6 +200,8 @@
           },
           "distinct_tokens": 31,
           "eos_first_step": 9,
+          "f32_argmax_agrees_every_step": true,
+          "generate_argmax_dtype": "float32",
           "generate_effective_config": {
             "do_sample": false,
             "eos_token_id": null,
@@ -214,10 +216,13 @@
           },
           "manual_equals_generate": true,
           "manual_equals_no_cache": true,
-          "min_margin": 0.05673789978027344
+          "min_margin": 0.05673789978027344,
+          "min_margin_f32_ulps": 59494.0
         },
         "torch64p": {
           "equals_torch32": true,
+          "f32_argmax_agrees_every_step": true,
+          "generate_argmax_dtype": "float32",
           "generate_effective_config": {
             "do_sample": false,
             "eos_token_id": null,
@@ -232,7 +237,8 @@
           },
           "manual_equals_generate": true,
           "manual_equals_no_cache": true,
-          "min_margin": 0.05673670202086356
+          "min_margin": 0.05673670202086356,
+          "min_margin_f32_ulps": 59492.74405822903
         }
       },
       "p1": {
@@ -244,6 +250,8 @@
           },
           "distinct_tokens": 4,
           "eos_first_step": null,
+          "f32_argmax_agrees_every_step": true,
+          "generate_argmax_dtype": "float32",
           "generate_effective_config": {
             "do_sample": false,
             "eos_token_id": null,
@@ -258,10 +266,13 @@
           },
           "manual_equals_generate": true,
           "manual_equals_no_cache": true,
-          "min_margin": 0.0977940559387207
+          "min_margin": 0.0977940559387207,
+          "min_margin_f32_ulps": 205089.0
         },
         "torch64p": {
           "equals_torch32": true,
+          "f32_argmax_agrees_every_step": true,
+          "generate_argmax_dtype": "float32",
           "generate_effective_config": {
             "do_sample": false,
             "eos_token_id": null,
@@ -276,7 +287,8 @@
           },
           "manual_equals_generate": true,
           "manual_equals_no_cache": true,
-          "min_margin": 0.09779430492559094
+          "min_margin": 0.09779430492559094,
+          "min_margin_f32_ulps": 205089.52216331288
         }
       }
     },

@@ -6,8 +6,9 @@
 For each goldens/<set>/g<N>/manifest.json it checks: the schema; that every listed repo file exists with the listed
 size and SHA-256; that nothing unlisted sits in the set folder; that committed files are at most 2 MiB; that a
 model folder's SHA256SUMS matches its files and REVISION is a local: revision; that every safetensors file follows the
-GoldenSet rules (sorted names, padded header, contiguous and naturally aligned data); and the size budgets below. Files with
-location "data" live under LRM_DATA/golden and are checked only when --data is given.
+GoldenSet rules (sorted names, padded header, contiguous and naturally aligned data); that a tokenizer corpus follows its
+line rules (check_cases: fields per kind, unique ids, no lone surrogate in any JSON string); and the size budgets below.
+Files with location "data" live under LRM_DATA/golden and are checked only when --data is given.
 """
 
 from __future__ import annotations
@@ -76,6 +77,62 @@ def check_safetensors(path: str, rel: str) -> list[str]:
     return out
 
 
+_CASE_FIELDS = {
+    "encode": {"text", "ids"},
+    "encode_bytes": {"bytes", "text", "ids"},
+    "decode": {"ids", "bytes", "text"},
+    "encode_reject": {"utf16", "error"},
+}
+
+
+def _strings(v):
+    if isinstance(v, str):
+        yield v
+    elif isinstance(v, dict):
+        for k, x in v.items():
+            yield k
+            yield from _strings(x)
+    elif isinstance(v, list):
+        for x in v:
+            yield from _strings(x)
+
+
+def check_cases(path: str, rel: str) -> list[str]:
+    """GoldenSet tokenizer-corpus rules: ASCII, LF lines with a final LF, one compact JSON object per line with sorted
+    keys, a unique id, the fields of its kind and no other, and no string holding a lone surrogate (System.Text.Json
+    cannot read one), so encode_reject carries its text only as utf16."""
+    out, seen = [], set()
+    with open(path, "rb") as f:
+        raw = f.read()
+    try:
+        text = raw.decode("ascii")
+    except UnicodeDecodeError:
+        return [f"{rel}: not ASCII"]
+    if "\r" in text or not text.endswith("\n"):
+        return [f"{rel}: lines must be LF with a final LF"]
+    for n, line in enumerate(text[:-1].split("\n"), 1):
+        case = json.loads(line)
+        if json.dumps(case, sort_keys=True, ensure_ascii=True, separators=(",", ":")) != line:
+            out.append(f"{rel}:{n}: not compact JSON with sorted keys")
+        want = _CASE_FIELDS.get(case.get("kind"))
+        if want is None or set(case) != want | {"kind", "id", "cat"}:
+            out.append(f"{rel}:{n}: kind {case.get('kind')!r} with fields {sorted(case)}")
+        if case.get("id") in seen:
+            out.append(f"{rel}:{n}: duplicate id {case.get('id')!r}")
+        seen.add(case.get("id"))
+        for s in _strings(case):
+            try:
+                s.encode("utf-8")
+            except UnicodeEncodeError:
+                out.append(f"{rel}:{n}: a string holds a lone surrogate")
+                break
+        if case.get("kind") == "encode_reject":
+            h = case.get("utf16", "")
+            if len(h) % 4 or h != h.lower() or any(ch not in "0123456789abcdef" for ch in h):
+                out.append(f"{rel}:{n}: utf16 is not lowercase hex in 4-digit units")
+    return out
+
+
 def verify_set(set_dir: str, data_root: str | None) -> tuple[list[str], int]:
     problems, committed = [], 0
     man_path = os.path.join(set_dir, "manifest.json")
@@ -107,6 +164,8 @@ def verify_set(set_dir: str, data_root: str | None) -> tuple[list[str], int]:
                 problems.append(f"{path}: SHA-256 differs from the manifest")
             if path.endswith(".safetensors"):
                 problems += check_safetensors(full, path)
+            if man.get("kind") == "tokenizer-corpus" and path.endswith(".jsonl"):
+                problems += check_cases(full, path)
         elif e["location"] == "data":
             if data_root:
                 full = os.path.join(data_root, "golden", *path.split("/"))
