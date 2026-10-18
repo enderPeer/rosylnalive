@@ -19,24 +19,15 @@ let utf8 = UTF8Encoding(false)
 
 /// The DXC arguments per target, without include, output and input paths (recorded in the manifest and hashed).
 let flags =
-    // -denorm preserve: fp32 denormals are kept (DXIL fp32-denorm-mode=preserve, SPIR-V DenormPreserve 32), as on
-    // the CPU reference, so the bit-exact kernels never depend on a driver's flush-to-zero choice.
-    let common =
-        [
-            "-T"
-            "cs_6_6"
-            "-E"
-            "main"
-            "-HV"
-            "2021"
-            "-O3"
-            "-WX"
-            "-denorm"
-            "preserve"
-        ]
+    let common = [ "-T"; "cs_6_6"; "-E"; "main"; "-HV"; "2021"; "-O3"; "-WX" ]
 
     [
-        ShaderTarget.Dxil, common
+        // -denorm preserve: DXIL declares fp32-denorm-mode=preserve (shader model 6.2 and later), as on the CPU
+        // reference; the denormal probe confirms it on the device (GpuBackendInterface).
+        ShaderTarget.Dxil, common @ [ "-denorm"; "preserve" ]
+        // No -denorm for SPIR-V: it would declare DenormPreserve 32, which needs shaderDenormPreserveFloat32, and the
+        // RTX 4080 (driver 616.92) reports false. fp32 denormals on Vulkan are the device's behaviour, fixed within one
+        // ExecutionClass; the denormal probe measures and records it.
         ShaderTarget.Spirv, common @ [ "-spirv"; "-fspv-target-env=vulkan1.3" ]
     ]
 
@@ -129,30 +120,38 @@ type Job =
         Target: ShaderTarget
         /// Relative to src/Lrm.Shaders.
         Source: string
+        /// The helper headers the source includes, relative to src/Lrm.Shaders: files beside the source, which the
+        /// source convention keeps free of includes.
+        Helpers: string list
     }
 
 let relativeSlash (root: string) (path: string) =
     Path.GetRelativePath(root, path).Replace('\\', '/')
 
-/// The cache key of one compile: the DXC version, the target and its flags, and the path and bytes of the source and
-/// of every header it can include (include/*.hlsli and the *.hlsli beside it).
-let cacheKey (shadersDir: string) (dxcVersion: string) (job: Job) =
-    let headers =
-        [
-            yield! Directory.GetFiles(Path.Combine(shadersDir, "include"), "*.hlsli")
-            yield! Directory.GetFiles(Path.GetDirectoryName(Path.Combine(shadersDir, job.Source)), "*.hlsli")
-        ]
-        |> List.map (relativeSlash shadersDir)
-        |> List.distinct
-        |> List.sortWith (fun a b -> String.CompareOrdinal(a, b))
+let private ordinalSort (xs: string seq) =
+    xs
+    |> Seq.distinct
+    |> Seq.sortWith (fun a b -> String.CompareOrdinal(a, b))
+    |> List.ofSeq
 
-    Canonical.hash "lrm.shader-cache/1" (fun w ->
+/// Every file under include/ (the -I directory, subfolders included), relative to src/Lrm.Shaders, sorted (ordinal).
+let includeFiles (shadersDir: string) =
+    Directory.GetFiles(Path.Combine(shadersDir, "include"), "*", SearchOption.AllDirectories)
+    |> Seq.map (relativeSlash shadersDir)
+    |> ordinalSort
+
+/// The cache key of one compile: the DXC version, the target and its flags, and the path and bytes of every file the
+/// source can reach: the source, the helpers it includes and every file under include/ (`headers`). The source
+/// convention makes this the whole include closure: a kernel includes only lrm.hlsli and helpers beside it, and
+/// helpers include nothing.
+let cacheKey (shadersDir: string) (dxcVersion: string) (headers: string list) (job: Job) =
+    Canonical.hash "lrm.shader-cache/2" (fun w ->
         w.String dxcVersion
         w.String(ShaderTarget.name job.Target)
         w.Seq(flagsOf job.Target, fun f -> w.String f)
 
         w.Seq(
-            job.Source :: headers,
+            job.Source :: ordinalSort job.Helpers @ headers,
             fun rel ->
                 w.String rel
                 w.Bytes(File.ReadAllBytes(Path.Combine(shadersDir, rel)))
@@ -194,12 +193,19 @@ let checkBlob (job: Job) (bytes: byte[]) : int * int * int =
 type CompileOutcome = { Blob: ShaderBlob; Cached: bool }
 
 /// Compiles one job unless its cached blob has the same key, then checks the blob.
-let compileOne (dxc: string) (dxcVersion: string) (shadersDir: string) (outDir: string) (job: Job) : CompileOutcome =
+let compileOne
+    (dxc: string)
+    (dxcVersion: string)
+    (shadersDir: string)
+    (headers: string list)
+    (outDir: string)
+    (job: Job)
+    : CompileOutcome =
     let blobPath =
         Path.Combine(outDir, ShaderTarget.name job.Target, job.Kernel.Name + ShaderTarget.extension job.Target)
 
     let keyPath = blobPath + ".key"
-    let key = (cacheKey shadersDir dxcVersion job).Hex
+    let key = (cacheKey shadersDir dxcVersion headers job).Hex
 
     let cached =
         File.Exists blobPath
@@ -276,11 +282,56 @@ let compile (repo: string) (outDir: string) (dxc: string) (expectedVersion: stri
     let present, missing =
         catalog.Kernels |> List.partition (fun k -> sources.Contains k.Source)
 
-    let lintProblems =
+    let headers = includeFiles shadersDir
+
+    let headerNames =
+        headers
+        |> List.map Path.GetFileName
+        |> Set.ofList
+        |> Set.map (fun n -> n.ToLowerInvariant())
+
+    // Every helper header under hlsl/ follows the convention and cannot shadow a file of include/.
+    let helperProblems =
+        Directory.GetFiles(Path.Combine(shadersDir, "hlsl"), "*.hlsli", SearchOption.AllDirectories)
+        |> Seq.map (relativeSlash shadersDir)
+        |> ordinalSort
+        |> List.collect (fun rel ->
+            let fileName = Path.GetFileName rel
+
+            [
+                yield! SourceConvention.lintHelper fileName (File.ReadAllText(Path.Combine(shadersDir, rel), utf8))
+
+                if headerNames.Contains(fileName.ToLowerInvariant()) then
+                    yield sprintf "the helper name %s is also a file of include/" fileName
+            ]
+            |> List.map (fun p -> sprintf "%s: %s" rel p))
+
+    let kernelSources =
         present
-        |> List.collect (fun k ->
-            SourceConvention.lint k (File.ReadAllText(Path.Combine(shadersDir, k.Source), utf8))
+        |> List.map (fun k -> k, File.ReadAllText(Path.Combine(shadersDir, k.Source), utf8))
+
+    // The helpers a kernel includes, relative to src/Lrm.Shaders (names the lint accepts, beside the kernel).
+    let helpersOf (k: KernelSpec) (text: string) =
+        let dir = k.Source.Substring(0, k.Source.LastIndexOf '/' + 1)
+
+        SourceConvention.helpers text
+        |> List.filter SourceConvention.isHelperName
+        |> List.map (fun h -> dir + h)
+
+    // Every kernel follows the convention, and each helper it includes exists beside it.
+    let kernelProblems =
+        kernelSources
+        |> List.collect (fun (k, text) ->
+            [
+                yield! SourceConvention.lint k text
+
+                for h in helpersOf k text do
+                    if not (File.Exists(Path.Combine(shadersDir, h))) then
+                        yield sprintf "includes \"%s\", but %s does not exist" (Path.GetFileName h) h
+            ]
             |> List.map (fun p -> sprintf "%s: %s" k.Source p))
+
+    let lintProblems = kernelProblems @ helperProblems
 
     if not lintProblems.IsEmpty then
         fail "source convention violations:\n  %s" (String.concat "\n  " lintProblems)
@@ -290,12 +341,13 @@ let compile (repo: string) (outDir: string) (dxc: string) (expectedVersion: stri
 
     let jobs =
         [|
-            for k in present do
+            for k, text in kernelSources do
                 for t in ShaderTarget.all do
                     {
                         Kernel = k
                         Target = t
                         Source = k.Source
+                        Helpers = helpersOf k text
                     }
         |]
 
@@ -308,7 +360,7 @@ let compile (repo: string) (outDir: string) (dxc: string) (expectedVersion: stri
         ParallelOptions(MaxDegreeOfParallelism = min 8 Environment.ProcessorCount),
         fun i ->
             try
-                outcomes[i] <- compileOne dxc dxcVersion shadersDir outDir jobs[i]
+                outcomes[i] <- compileOne dxc dxcVersion shadersDir headers outDir jobs[i]
             with
             | BuildError e -> errors.Enqueue e
             | e -> errors.Enqueue(sprintf "%s: %s" jobs[i].Source e.Message)

@@ -5,16 +5,24 @@
     Runs `Lrm.Shaders.Build compile` (built first through the build-only ProjectReference):
       - only the pinned DXC, $(LrmDxcExe), checked by the exact version line dxc prints and the SHA-256 pins of
         tools/bootstrap/toolchain.json; a missing or different DXC fails the build;
-      - every catalog kernel whose source exists, linted, then compiled to DXIL (cs_6_6) and SPIR-V (vulkan1.3);
+      - every catalog kernel whose source exists, linted (with its helpers), then compiled to DXIL (cs_6_6) and SPIR-V
+        (vulkan1.3);
       - rootsig/rootsig.hlsl to rootsig.bin, which must equal the canonical bytes;
       - shaders.manifest.json with each blob's SHA-256 and the ShaderSetHash of each target.
     Everything is embedded as lrm.shaders/<path> and read back by Lrm.Shaders.Shaders.embedded.
 
     Incremental: the target is skipped when no input changed (a no-change rebuild never starts dxc), and the tool
-    reuses every blob whose inputs are unchanged (content-keyed cache in $(IntermediateOutputPath)shaders/).
+    reuses every blob whose include closure is unchanged (content-keyed cache in $(IntermediateOutputPath)shaders/).
+    Changes that timestamps alone miss still rerun the target:
+      - sources.stamp lists the input files, so adding, deleting or renaming a source or header reruns it (and the
+        tool then prunes the blobs of kernels that are gone);
+      - dxc.stamp holds the DXC path, its pinned version line, and the name and write time of every file beside
+        dxc.exe (dxc.exe, dxcompiler.dll, dxil.dll, dxv.exe), so a DXC replaced in place reruns it and meets the pins;
+      - every assembly in the tool's folder is an input (Lrm.Gpu.Core holds the lint and the manifest writer, and
+        reference assemblies hide its implementation changes from Lrm.Shaders.Build's own up-to-date check).
   -->
   <ItemGroup>
-    <LrmShaderInput Include="$(MSBuildThisFileDirectory)include/**/*.hlsli" />
+    <LrmShaderInput Include="$(MSBuildThisFileDirectory)include/**/*" />
     <LrmShaderInput Include="$(MSBuildThisFileDirectory)hlsl/**/*.hlsl" />
     <LrmShaderInput Include="$(MSBuildThisFileDirectory)hlsl/**/*.hlsli" />
     <LrmShaderInput Include="$(MSBuildThisFileDirectory)rootsig/rootsig.hlsl" />
@@ -39,20 +47,29 @@
       <LrmDotnet>$(DOTNET_HOST_PATH)</LrmDotnet>
       <LrmDotnet Condition="'$(LrmDotnet)' == ''">dotnet</LrmDotnet>
       <LrmDxcStamp>$(LrmShadersOut)/dxc.stamp</LrmDxcStamp>
+      <LrmSourcesStamp>$(LrmShadersOut)/sources.stamp</LrmSourcesStamp>
+      <_LrmShaderToolDir>$([System.IO.Path]::GetDirectoryName('$(LrmShadersBuildDll)'))</_LrmShaderToolDir>
+      <_LrmDxcDir>$([System.IO.Path]::GetDirectoryName('$(LrmDxcExe)'))</_LrmDxcDir>
     </PropertyGroup>
+    <ItemGroup>
+      <_LrmShaderToolFile Include="$(_LrmShaderToolDir)/*.dll" />
+      <_LrmDxcFile Include="$(_LrmDxcDir)/*.exe;$(_LrmDxcDir)/*.dll" />
+      <_LrmDxcStampLine Include="$(LrmDxcExe)" />
+      <_LrmDxcStampLine Include="$(LrmDxcVersionOutput)" />
+      <_LrmDxcStampLine Include="@(_LrmDxcFile->'%(Filename)%(Extension) %(ModifiedTime)')" />
+    </ItemGroup>
     <!--
-      The DXC identity as an input: the stamp changes whenever the DXC path, its pinned version line or the file's
-      write time changes, so pointing the build at another dxc reruns the compile step, which then refuses it.
+      The stamps are rewritten only when their text changes. The input list is in MSBuild's enumeration order, which
+      is stable for an unchanged tree; a change of order alone would only cost one more run of the cached tool.
     -->
     <MakeDir Directories="$(LrmShadersOut)" />
-    <WriteLinesToFile File="$(LrmDxcStamp)"
-                      Lines="$(LrmDxcExe);$(LrmDxcVersionOutput);$([System.IO.File]::GetLastWriteTime('$(LrmDxcExe)').Ticks)"
-                      Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <WriteLinesToFile File="$(LrmDxcStamp)" Lines="@(_LrmDxcStampLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <WriteLinesToFile File="$(LrmSourcesStamp)" Lines="@(LrmShaderInput->'%(FullPath)')" Overwrite="true" WriteOnlyWhenDifferent="true" />
   </Target>
 
   <Target Name="LrmCompileShadersCore"
           DependsOnTargets="LrmCheckDxc;LrmResolveShaderTool"
-          Inputs="@(LrmShaderInput);$(LrmShadersBuildDll);$(LrmDxcExe);$(LrmDxcStamp)"
+          Inputs="@(LrmShaderInput);@(_LrmShaderToolFile);$(LrmShadersBuildDll);$(LrmDxcExe);$(LrmDxcStamp);$(LrmSourcesStamp)"
           Outputs="$(LrmShadersOut)/shaders.manifest.json">
     <Exec Command="&quot;$(LrmDotnet)&quot; &quot;$(LrmShadersBuildDll)&quot; compile --repo &quot;$(LrmRepoRoot).&quot; --out &quot;$(LrmShadersOut)&quot; --dxc &quot;$(LrmDxcExe)&quot; --dxc-version &quot;$(LrmDxcVersionOutput)&quot; --toolchain &quot;$(LrmRepoRoot)tools/bootstrap/toolchain.json&quot;" />
     <Touch Files="$(LrmShadersOut)/shaders.manifest.json" />

@@ -5,8 +5,9 @@
 ///
 /// gen-catalog writes Kernels.g.fs and lrm_args.g.hlsli from catalog.json (--check only reports stale files).
 /// compile is what the LrmCompileShaders target of Lrm.Shaders runs: it verifies the pinned DXC, lints every kernel
-/// source, compiles each to DXIL (cs_6_6) and SPIR-V (vulkan1.3) with a content-keyed cache, checks every blob and the
-/// root signature, and writes the blobs and shaders.manifest.json (with ShaderSetHash) for embedding.
+/// source and helper header, compiles each kernel to DXIL (cs_6_6) and SPIR-V (vulkan1.3) with a cache keyed on its
+/// include closure, checks every blob and the root signature, and writes the blobs and shaders.manifest.json (with
+/// ShaderSetHash) for embedding.
 module Lrm.Shaders.Build.Program
 
 open System

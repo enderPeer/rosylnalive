@@ -40,12 +40,12 @@ type Fixture =
         ReadOnly: TensorToken
     }
 
-let fixture (options: DeviceOptions) =
+let fixtureWith (options: DeviceOptions) (shaders: ShaderSet) =
     let b = new RecordingBackend(RecordingBackend.DefaultDevice, options)
     let gpu = b :> IGpuBackend
     let layout = smallLayout ()
     let heap = gpu.CreateHeap layout
-    gpu.LoadKernels(Shaders.embedded ()) |> ignore
+    gpu.LoadKernels shaders |> ignore
     let t = TensorTable layout
 
     let row slot offset dtype dims flags name =
@@ -69,6 +69,21 @@ let fixture (options: DeviceOptions) =
         Shifted = shifted
         Out = o
         ReadOnly = r
+    }
+
+let fixture (options: DeviceOptions) =
+    fixtureWith options (Shaders.embedded ())
+
+/// The embedded set without one kernel's blobs, listed as missing instead (in catalog order): a set that lacks a
+/// kernel whatever K1 to K3 have added.
+let without (kernel: string) (set: ShaderSet) =
+    { set with
+        Blobs = set.Blobs |> List.filter (fun b -> b.Kernel <> kernel)
+        Missing =
+            Kernels.all
+            |> Array.map _.Name
+            |> Array.filter (fun n -> n = kernel || List.contains n set.Missing)
+            |> List.ofArray
     }
 
 let scale (x: TensorToken) (y: TensorToken) n : Kernels.ScaleF32Args = { X = x; Y = y; N = n; A = 2.0f }
@@ -222,8 +237,44 @@ let tests =
 
                 raisesContract "not in the catalog" (fun () -> cl.Dispatch(KernelId 99, ArgBlock.Zero))
 
+            testCase "a kernel missing from the loaded set is not contained, and dispatching it raises"
+            <| fun () ->
+                // A synthetic set that leaves out a selftest, so the rule is tested whatever K1 to K3 have added.
+                let full = Shaders.embedded ()
+                let partial = without "bf16_unpack" full
+                Expect.contains partial.Missing "bf16_unpack" "listed as missing"
+                use b = new RecordingBackend()
+                let g = b :> IGpuBackend
+                let heap = g.CreateHeap(smallLayout ())
+                let ks = g.LoadKernels partial
+                Expect.isFalse (ks.Contains Kernels.Bf16Unpack.Id) "bf16_unpack is missing"
+                Expect.isTrue (ks.Contains Kernels.ScaleF32.Id) "scale_f32 is loaded"
+                let t = TensorTable heap.Layout
+
+                let w =
+                    t.Add("w", TensorRow.create 1 0L DType.BF16 [ 1024L ] TensorFlags.None (TensorRow.debugIdOf "w"))
+
+                let y =
+                    t.Add("y", TensorRow.create 2 0L DType.F32 [ 1024L ] TensorFlags.None (TensorRow.debugIdOf "y"))
+
+                heap.WriteTable(t.Seal())
+                let cl = g.Begin()
+
                 raisesContract "not in the loaded shader set" (fun () ->
-                    Kernels.Add.dispatch cl { A = f.X; B = f.X; Y = f.Y; N = 4u })
+                    Kernels.Bf16Unpack.dispatch cl { X = w; Y = y; N = 4u })
+
+                Kernels.ScaleF32.dispatch cl (scale y y 4u)
+                Expect.equal (g.Wait(g.Submit cl)).Dispatches 1 "the loaded kernels still dispatch"
+
+            testCase "the embedded set contains exactly the kernels it does not list as missing"
+            <| fun () ->
+                let set = Shaders.embedded ()
+                use b = new RecordingBackend()
+                let ks = (b :> IGpuBackend).LoadKernels set
+
+                Kernels.all
+                |> Array.iteri (fun i k ->
+                    Expect.equal (ks.Contains(KernelId i)) (not (List.contains k.Name set.Missing)) k.Name)
 
             testCase "aliasing is allowed only where the catalog declares it, over the same bytes"
             <| fun () ->
@@ -375,6 +426,86 @@ let tests =
                     Expect.contains names n (sprintf "emits %s" n)
 
                 Expect.isTrue (records |> List.forall (fun r -> TelemetryNames.isReserved r.Name)) "reserved names only"
+
+            testCase "the fp32 denormal probe: expected results, classification and event"
+            <| fun () ->
+                // The table of docs/contracts/gpu-backend.md, computed independently with numpy float32.
+                let hexes (xs: uint32[]) =
+                    xs |> Array.map (sprintf "%08x") |> List.ofArray
+
+                Expect.equal
+                    (hexes Fp32Denormals.probeInputs)
+                    [
+                        "3f800000"
+                        "01000000"
+                        "00800000"
+                        "80800000"
+                        "00000002"
+                        "807ffffe"
+                        "00400000"
+                    ]
+                    "inputs"
+
+                Expect.equal
+                    (hexes (Fp32Denormals.expected Fp32DenormalMode.Preserve))
+                    [
+                        "3f000000"
+                        "00800000"
+                        "00400000"
+                        "80400000"
+                        "00000001"
+                        "803fffff"
+                        "00200000"
+                    ]
+                    "preserve"
+
+                Expect.equal
+                    (hexes (Fp32Denormals.expected Fp32DenormalMode.Flush))
+                    [
+                        "3f000000"
+                        "00800000"
+                        "00000000"
+                        "80000000"
+                        "00000000"
+                        "80000000"
+                        "00000000"
+                    ]
+                    "flush"
+
+                let classify mode =
+                    Fp32Denormals.classify (Fp32Denormals.expected mode)
+
+                Expect.equal (classify Fp32DenormalMode.Preserve) Fp32DenormalMode.Preserve "preserve"
+                Expect.equal (classify Fp32DenormalMode.Flush) Fp32DenormalMode.Flush "flush"
+
+                // Inputs flushed but results kept: neither model.
+                let daz = Array.copy (Fp32Denormals.expected Fp32DenormalMode.Flush)
+                daz[2] <- 0x00400000u
+                Expect.equal (Fp32Denormals.classify daz) Fp32DenormalMode.Mixed "mixed"
+
+                let broken = Array.copy (Fp32Denormals.expected Fp32DenormalMode.Preserve)
+                broken[0] <- 0u
+                raisesContract "normal controls" (fun () -> Fp32Denormals.classify broken)
+                raisesContract "needs 7 results" (fun () -> Fp32Denormals.classify [| 0u |])
+
+                Expect.throwsT<ArgumentException>
+                    (fun () -> Fp32Denormals.expected Fp32DenormalMode.Mixed |> ignore)
+                    "mixed has no single answer"
+
+                let records =
+                    withSink (fun () -> Fp32Denormals.record ExecutionBackend.Vulkan Fp32DenormalMode.Flush)
+
+                match records with
+                | [ r ] ->
+                    Expect.equal r.Name GpuTelemetry.Fp32Denormals "name"
+                    Expect.equal r.Name "gpu.fp32_denormals" "the reserved name"
+                    Expect.isTrue (TelemetryNames.isReserved r.Name) "reserved"
+
+                    Expect.equal
+                        (r.Attrs |> List.map (fun a -> a.Key, a.Value))
+                        [ "backend", AttrValue.Str "vulkan"; "mode", AttrValue.Str "flush" ]
+                        "attrs"
+                | rs -> failtestf "expected one record, got %A" rs
 
             testCase "the registry enumerates providers and creates accepted devices"
             <| fun () ->

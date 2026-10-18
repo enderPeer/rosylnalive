@@ -254,12 +254,122 @@ let tests =
                 rejects "LRM_NUMTHREADS(scale_f32)" (cleanScale.Replace("LRM_NUMTHREADS(scale_f32)", ""))
                 rejects "exactly one entry point" (add "void main(uint3 t : SV_GroupThreadID) { }")
 
+                rejects "no conditional compilation" (add "#ifdef __spirv__\nfloat f;\n#endif")
+                rejects "#if is not allowed" (add "#if 1\nfloat f;\n#endif")
+                rejects "#else is not allowed" (add "#else")
+                rejects "'__spirv__' is not allowed" (add "static const bool s = __spirv__;")
+                rejects "'vk' is not allowed" (add "uint r = vk::RawBufferLoad<uint>(0);")
+                rejects "unsupported directive" (add "#line 7")
+                rejects "more than once" (add "#include \"lrm.hlsli\"")
+                rejects "not starting with lrm" (add "#include \"lrm_args.g.hlsli\"")
+
                 Expect.equal
                     (SourceConvention.lint
                         k
                         (cleanScale + "// NonUniformResourceIndex half WaveActiveSum\n/* register */\n"))
                     []
                     "comments are ignored"
+
+                Expect.equal
+                    (SourceConvention.lint k (cleanScale.Replace("\nLRM_ARGS", "\n#include \"rows.hlsli\"\nLRM_ARGS")))
+                    []
+                    "a helper beside the kernel"
+
+            testCase "helpers follow the same code rules and include nothing"
+            <| fun () ->
+                let clean =
+                    "#define TILE 64\nfloat helper_sum(float a, float b) { return a + b; }\n"
+
+                Expect.equal (SourceConvention.lintHelper "rows.hlsli" clean) [] "a clean helper"
+
+                let rejects (fragment: string) (name: string) (text: string) =
+                    let ps = SourceConvention.lintHelper name text
+
+                    Expect.isTrue (ps |> List.exists (fun p -> p.Contains fragment)) (sprintf "'%s' in %A" fragment ps)
+
+                rejects "WaveActiveSum" "rows.hlsli" "uint helper_sum(uint v) { return WaveActiveSum(v); }"
+                rejects "InterlockedAdd" "rows.hlsli" "void f(uint o) { InterlockedAdd(o, 1, o); }"
+                rejects "NonUniformResourceIndex" "rows.hlsli" "uint a = NonUniformResourceIndex(1);"
+                rejects "[[vk::" "rows.hlsli" "[[vk::binding(1, 0)]] RWByteAddressBuffer b;"
+                rejects "numthreads" "rows.hlsli" "[numthreads(1, 1, 1)] void h() { }"
+                rejects "16-bit" "rows.hlsli" "uint16_t u;"
+                rejects "#include is not allowed in a helper" "rows.hlsli" "#include \"../shared/deep.hlsli\""
+                rejects "#include is not allowed in a helper" "rows.hlsli" "#include \"other.hlsli\""
+                rejects "no conditional compilation" "rows.hlsli" "#ifdef __spirv__\n#endif"
+                rejects "'__spirv__'" "rows.hlsli" "static const bool s = __spirv__;"
+                rejects "#pragma" "rows.hlsli" "#pragma once"
+                rejects "belong to lrm.hlsli" "rows.hlsli" "#define LRM_BUF(x) x"
+                rejects "LRM_ARGS belongs" "rows.hlsli" "LRM_ARGS(scale_f32)"
+                rejects "LRM_NUMTHREADS belongs" "rows.hlsli" "LRM_NUMTHREADS(scale_f32)"
+                rejects "entry point main" "rows.hlsli" "void main() { }"
+                rejects "does not start with lrm" "lrm.hlsli" clean
+                rejects "does not start with lrm" "lrm_args.g.hlsli" clean
+
+                let twoHelpers =
+                    cleanScale.Replace("\nLRM_ARGS", "\n#include \"b.hlsli\"\n#include \"a.hlsli\"\nLRM_ARGS")
+
+                Expect.equal (SourceConvention.helpers twoHelpers) [ "b.hlsli"; "a.hlsli" ] "in include order"
+                Expect.equal (SourceConvention.helpers cleanScale) [] "no helpers"
+
+                for name, ok in
+                    [
+                        "rows.hlsli", true
+                        "a.hlsli", true
+                        "../x.hlsli", false
+                        "sub/x.hlsli", false
+                        "x.hlsl", false
+                        ".hlsli", false
+                        "LRM_x.hlsli", false
+                    ] do
+                    Expect.equal (SourceConvention.isHelperName name) ok name
+
+            testCase "DXIL declares fp32 denormal preserve; SPIR-V declares no float-controls mode"
+            <| fun () ->
+                let set = Shaders.embedded ()
+                let dxil = ShaderSet.flagsFor ShaderTarget.Dxil set
+                let spirv = ShaderSet.flagsFor ShaderTarget.Spirv set
+                Expect.equal dxil[List.findIndex ((=) "-denorm") dxil + 1] "preserve" "DXIL -denorm preserve"
+
+                Expect.equal
+                    spirv
+                    [
+                        "-T"
+                        "cs_6_6"
+                        "-E"
+                        "main"
+                        "-HV"
+                        "2021"
+                        "-O3"
+                        "-WX"
+                        "-spirv"
+                        "-fspv-target-env=vulkan1.3"
+                    ]
+                    "the SPIR-V flags, without -denorm"
+
+                // Every SPIR-V blob: no DenormPreserve or DenormFlushToZero capability (4464, 4465) and no execution
+                // mode but LocalSize (17), so no device needs shaderDenormPreserveFloat32.
+                for b in ShaderSet.blobsFor ShaderTarget.Spirv set do
+                    let words =
+                        Array.init (b.Bytes.Length / 4) (fun i -> BitConverter.ToUInt32(b.Bytes, 4 * i))
+
+                    let caps = ResizeArray<uint32>()
+                    let modes = ResizeArray<uint32>()
+                    let mutable i = 5
+
+                    while i < words.Length do
+                        let count = int (words[i] >>> 16)
+                        let opcode = words[i] &&& 0xFFFFu
+
+                        if opcode = 17u then
+                            caps.Add words[i + 1]
+
+                        if opcode = 16u then
+                            modes.Add words[i + 2]
+
+                        i <- i + max 1 count
+
+                    Expect.isFalse (caps.Contains 4464u || caps.Contains 4465u) (b.Kernel + ": no denorm capability")
+                    Expect.equal (List.ofSeq modes) [ 17u ] (b.Kernel + ": LocalSize only")
 
             testCase "the shader manifest lists the missing kernels in catalog order"
             <| fun () ->
