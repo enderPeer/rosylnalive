@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="280" viewBox="0 0 720 280" role="img" aria-labelledby="goldens-files-title goldens-files-desc">
+<title id="goldens-files-title">Committed bytes per file</title>
+<desc id="goldens-files-desc">Bar chart of bytes for 6 file values, 1 series.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="280" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="279" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Committed bytes per file</text>
+<text class="t2" x="16" y="45" font-size="12">Every file of the set; a committed golden file is at most 2 MiB</text>
+<line class="grid" x1="266" y1="78" x2="266" y2="234" stroke-width="1"/>
+<line class="grid" x1="359.5" y1="78" x2="359.5" y2="234" stroke-width="1"/>
+<line class="grid" x1="453" y1="78" x2="453" y2="234" stroke-width="1"/>
+<line class="grid" x1="546.5" y1="78" x2="546.5" y2="234" stroke-width="1"/>
+<line class="grid" x1="640" y1="78" x2="640" y2="234" stroke-width="1"/>
+<text class="t3" x="266" y="251" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="359.5" y="251" font-size="11" text-anchor="middle">200 KiB</text>
+<text class="t3" x="453" y="251" font-size="11" text-anchor="middle">400 KiB</text>
+<text class="t3" x="546.5" y="251" font-size="11" text-anchor="middle">600 KiB</text>
+<text class="t3" x="640" y="251" font-size="11" text-anchor="middle">800 KiB</text>
+<text class="t3" x="266" y="68" font-size="11" text-anchor="start">file</text>
+<text class="t3" x="453" y="270" font-size="11" text-anchor="middle">bytes</text>
+<text class="t2" x="258" y="95" font-size="12" text-anchor="end">goldens/qwen3-0.6b/g1/calibration.json</text>
+<path class="f0" d="M266 83H583.7Q587.7 83 587.7 87V95Q587.7 99 583.7 99H266Z"><title>goldens/qwen3-0.6b/g1/calibration.json, bytes: 688.13 KiB</title></path>
+<text class="t2" x="593.7" y="95" font-size="11">688.13 KiB</text>
+<text class="t2" x="258" y="121" font-size="12" text-anchor="end">goldens/qwen3-0.6b/g1/greedy.safeten…</text>
+<path class="f0" d="M266 109H272.96Q276.96 109 276.96 113V121Q276.96 125 272.96 125H266Z"><title>goldens/qwen3-0.6b/g1/greedy.safetensors, bytes: 23.45 KiB</title></path>
+<text class="t2" x="282.96" y="121" font-size="11">23.45 KiB</text>
+<text class="t2" x="258" y="147" font-size="12" text-anchor="end">goldens/qwen3-0.6b/g1/manifest.json</text>
+<path class="f0" d="M266 135H350.15Q354.15 135 354.15 139V147Q354.15 151 350.15 151H266Z"><title>goldens/qwen3-0.6b/g1/manifest.json, bytes: 188.55 KiB</title></path>
+<text class="t2" x="360.15" y="147" font-size="11">188.55 KiB</text>
+<text class="t2" x="258" y="173" font-size="12" text-anchor="end">goldens/qwen3-0.6b/g1/pool.json</text>
+<path class="f0" d="M266 161H304.69Q308.69 161 308.69 165V173Q308.69 177 304.69 177H266Z"><title>goldens/qwen3-0.6b/g1/pool.json, bytes: 91.32 KiB</title></path>
+<text class="t2" x="314.69" y="173" font-size="11">91.32 KiB</text>
+<text class="t2" x="258" y="199" font-size="12" text-anchor="end">goldens/qwen3-0.6b/g1/pool.safetensors</text>
+<path class="f0" d="M266 187H356.39Q360.39 187 360.39 191V199Q360.39 203 356.39 203H266Z"><title>goldens/qwen3-0.6b/g1/pool.safetensors, bytes: 201.91 KiB</title></path>
+<text class="t2" x="366.39" y="199" font-size="11">201.91 KiB</text>
+<text class="t2" x="258" y="225" font-size="12" text-anchor="end">goldens/qwen3-0.6b/g1/tolerances.json</text>
+<path class="f0" d="M266 213H273.08Q277.08 213 277.08 217V225Q277.08 229 273.08 229H266Z"><title>goldens/qwen3-0.6b/g1/tolerances.json, bytes: 23.70 KiB</title></path>
+<text class="t2" x="283.08" y="225" font-size="11">23.70 KiB</text>
+<line class="axis" x1="266" y1="78" x2="266" y2="78" stroke-width="1"/>
+<line class="axis" x1="266" y1="78" x2="266" y2="234" stroke-width="1"/>
+</svg>

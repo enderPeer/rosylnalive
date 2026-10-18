@@ -1,0 +1,174 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="parity-rel_l2_by_layer-title parity-rel_l2_by_layer-desc">
+<title id="parity-rel_l2_by_layer-title">rel_l2 by layer</title>
+<desc id="parity-rel_l2_by_layer-desc">Error bars of rel_l2 (log) per layer: 2 series over 28 categories, whiskers from low to high.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="379" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">rel_l2 by layer</text>
+<text class="t2" x="16" y="45" font-size="12">Dot: median over cases and taps of the layer; whiskers: min to max. Lines: each pair's bound.</text>
+<circle class="fn" cx="24" cy="62" r="4"/>
+<text class="t2" x="38" y="66" font-size="12">bf16-vs-torch64p</text>
+<circle class="fn" cx="162.88" cy="62" r="4"/>
+<text class="t2" x="176.88" y="66" font-size="12">torch32-vs-torch64p</text>
+<line class="grid" x1="50.64" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="42.64" y="338" font-size="11" text-anchor="end">10⁻⁸</text>
+<line class="grid" x1="50.64" y1="304.5" x2="696" y2="304.5" stroke-width="1"/>
+<text class="t3" x="42.64" y="308.5" font-size="11" text-anchor="end">10⁻⁷</text>
+<line class="grid" x1="50.64" y1="275" x2="696" y2="275" stroke-width="1"/>
+<text class="t3" x="42.64" y="279" font-size="11" text-anchor="end">10⁻⁶</text>
+<line class="grid" x1="50.64" y1="245.5" x2="696" y2="245.5" stroke-width="1"/>
+<text class="t3" x="42.64" y="249.5" font-size="11" text-anchor="end">10⁻⁵</text>
+<line class="grid" x1="50.64" y1="216" x2="696" y2="216" stroke-width="1"/>
+<text class="t3" x="42.64" y="220" font-size="11" text-anchor="end">10⁻⁴</text>
+<line class="grid" x1="50.64" y1="186.5" x2="696" y2="186.5" stroke-width="1"/>
+<text class="t3" x="42.64" y="190.5" font-size="11" text-anchor="end">10⁻³</text>
+<line class="grid" x1="50.64" y1="157" x2="696" y2="157" stroke-width="1"/>
+<text class="t3" x="42.64" y="161" font-size="11" text-anchor="end">10⁻²</text>
+<line class="grid" x1="50.64" y1="127.5" x2="696" y2="127.5" stroke-width="1"/>
+<text class="t3" x="42.64" y="131.5" font-size="11" text-anchor="end">10⁻¹</text>
+<line class="grid" x1="50.64" y1="98" x2="696" y2="98" stroke-width="1"/>
+<text class="t3" x="42.64" y="102" font-size="11" text-anchor="end">10⁰</text>
+<text class="t3" x="50.64" y="88" font-size="11" text-anchor="start">rel_l2 (log)</text>
+<text class="t3" x="373.32" y="370" font-size="11" text-anchor="middle">layer</text>
+<text class="t3" x="62.16" y="351" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="85.21" y="351" font-size="11" text-anchor="middle">1</text>
+<text class="t3" x="108.26" y="351" font-size="11" text-anchor="middle">2</text>
+<text class="t3" x="131.31" y="351" font-size="11" text-anchor="middle">3</text>
+<text class="t3" x="154.36" y="351" font-size="11" text-anchor="middle">4</text>
+<text class="t3" x="177.41" y="351" font-size="11" text-anchor="middle">5</text>
+<text class="t3" x="200.46" y="351" font-size="11" text-anchor="middle">6</text>
+<text class="t3" x="223.5" y="351" font-size="11" text-anchor="middle">7</text>
+<text class="t3" x="246.55" y="351" font-size="11" text-anchor="middle">8</text>
+<text class="t3" x="269.6" y="351" font-size="11" text-anchor="middle">9</text>
+<text class="t3" x="292.65" y="351" font-size="11" text-anchor="middle">10</text>
+<text class="t3" x="315.7" y="351" font-size="11" text-anchor="middle">11</text>
+<text class="t3" x="338.75" y="351" font-size="11" text-anchor="middle">12</text>
+<text class="t3" x="361.8" y="351" font-size="11" text-anchor="middle">13</text>
+<text class="t3" x="384.84" y="351" font-size="11" text-anchor="middle">14</text>
+<text class="t3" x="407.89" y="351" font-size="11" text-anchor="middle">15</text>
+<text class="t3" x="430.94" y="351" font-size="11" text-anchor="middle">16</text>
+<text class="t3" x="453.99" y="351" font-size="11" text-anchor="middle">17</text>
+<text class="t3" x="477.04" y="351" font-size="11" text-anchor="middle">18</text>
+<text class="t3" x="500.09" y="351" font-size="11" text-anchor="middle">19</text>
+<text class="t3" x="523.14" y="351" font-size="11" text-anchor="middle">20</text>
+<text class="t3" x="546.18" y="351" font-size="11" text-anchor="middle">21</text>
+<text class="t3" x="569.23" y="351" font-size="11" text-anchor="middle">22</text>
+<text class="t3" x="592.28" y="351" font-size="11" text-anchor="middle">23</text>
+<text class="t3" x="615.33" y="351" font-size="11" text-anchor="middle">24</text>
+<text class="t3" x="638.38" y="351" font-size="11" text-anchor="middle">25</text>
+<text class="t3" x="661.43" y="351" font-size="11" text-anchor="middle">26</text>
+<text class="t3" x="684.48" y="351" font-size="11" text-anchor="middle">27</text>
+<path class="sn" d="M58.32 177.38V150.66M55.32 177.38h6M55.32 150.66h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="58.32" cy="165.47" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 0: 5.2e-03 (2.0e-03 to 1.6e-02)</title></circle>
+<path class="sn" d="M81.37 170.61V146.64M78.37 170.61h6M78.37 146.64h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="81.37" cy="156.15" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 1: 1.1e-02 (3.5e-03 to 2.2e-02)</title></circle>
+<path class="sn" d="M104.42 192.86V147.54M101.42 192.86h6M101.42 147.54h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="104.42" cy="156.8" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 2: 1.0e-02 (6.1e-04 to 2.1e-02)</title></circle>
+<path class="sn" d="M127.47 185.84V144.11M124.47 185.84h6M124.47 144.11h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="127.47" cy="155.68" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 3: 1.1e-02 (1.1e-03 to 2.7e-02)</title></circle>
+<path class="sn" d="M150.52 186.27V143.04M147.52 186.27h6M147.52 143.04h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="150.52" cy="155.96" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 4: 1.1e-02 (1.0e-03 to 3.0e-02)</title></circle>
+<path class="sn" d="M173.57 186.25V144.14M170.57 186.25h6M170.57 144.14h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="173.57" cy="154.41" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 5: 1.2e-02 (1.0e-03 to 2.7e-02)</title></circle>
+<path class="sn" d="M196.61 188.64V142.19M193.61 188.64h6M193.61 142.19h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="196.61" cy="152.71" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 6: 1.4e-02 (8.5e-04 to 3.2e-02)</title></circle>
+<path class="sn" d="M219.66 189.84V141.67M216.66 189.84h6M216.66 141.67h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="219.66" cy="151.77" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 7: 1.5e-02 (7.7e-04 to 3.3e-02)</title></circle>
+<path class="sn" d="M242.71 192.79V136.65M239.71 192.79h6M239.71 136.65h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="242.71" cy="150.34" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 8: 1.7e-02 (6.1e-04 to 4.9e-02)</title></circle>
+<path class="sn" d="M265.76 189.57V140.75M262.76 189.57h6M262.76 140.75h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="265.76" cy="150.43" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 9: 1.7e-02 (7.9e-04 to 3.6e-02)</title></circle>
+<path class="sn" d="M288.81 187.2V139.26M285.81 187.2h6M285.81 139.26h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="288.81" cy="149.95" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 10: 1.7e-02 (9.5e-04 to 4.0e-02)</title></circle>
+<path class="sn" d="M311.86 182.34V134.65M308.86 182.34h6M308.86 134.65h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="311.86" cy="149.06" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 11: 1.9e-02 (1.4e-03 to 5.7e-02)</title></circle>
+<path class="sn" d="M334.91 179.84V127.89M331.91 179.84h6M331.91 127.89h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="334.91" cy="148.02" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 12: 2.0e-02 (1.7e-03 to 9.7e-02)</title></circle>
+<path class="sn" d="M357.95 177.56V127.42M354.95 177.56h6M354.95 127.42h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="357.95" cy="147.92" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 13: 2.0e-02 (2.0e-03 to 1.0e-01)</title></circle>
+<path class="sn" d="M381 175.31V125.78M378 175.31h6M378 125.78h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="381" cy="147.36" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 14: 2.1e-02 (2.4e-03 to 1.1e-01)</title></circle>
+<path class="sn" d="M404.05 174.15V138.13M401.05 174.15h6M401.05 138.13h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="404.05" cy="147.55" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 15: 2.1e-02 (2.6e-03 to 4.4e-02)</title></circle>
+<path class="sn" d="M427.1 172.72V138.73M424.1 172.72h6M424.1 138.73h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="427.1" cy="148.36" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 16: 2.0e-02 (2.9e-03 to 4.2e-02)</title></circle>
+<path class="sn" d="M450.15 171.55V139.8M447.15 171.55h6M447.15 139.8h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="450.15" cy="148.93" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 17: 1.9e-02 (3.2e-03 to 3.8e-02)</title></circle>
+<path class="sn" d="M473.2 173.57V140.94M470.2 173.57h6M470.2 140.94h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="473.2" cy="150.09" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 18: 1.7e-02 (2.7e-03 to 3.5e-02)</title></circle>
+<path class="sn" d="M496.25 177.78V140.61M493.25 177.78h6M493.25 140.61h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="496.25" cy="150.56" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 19: 1.7e-02 (2.0e-03 to 3.6e-02)</title></circle>
+<path class="sn" d="M519.29 177.52V140.22M516.29 177.52h6M516.29 140.22h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="519.29" cy="150.85" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 20: 1.6e-02 (2.0e-03 to 3.7e-02)</title></circle>
+<path class="sn" d="M542.34 173.13V140.04M539.34 173.13h6M539.34 140.04h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="542.34" cy="150.13" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 21: 1.7e-02 (2.8e-03 to 3.8e-02)</title></circle>
+<path class="sn" d="M565.39 170.27V138.2M562.39 170.27h6M562.39 138.2h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="565.39" cy="150.77" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 22: 1.6e-02 (3.5e-03 to 4.3e-02)</title></circle>
+<path class="sn" d="M588.44 166.83V136.39M585.44 166.83h6M585.44 136.39h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="588.44" cy="150.34" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 23: 1.7e-02 (4.6e-03 to 5.0e-02)</title></circle>
+<path class="sn" d="M611.49 164.74V136.69M608.49 164.74h6M608.49 136.69h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="611.49" cy="150.09" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 24: 1.7e-02 (5.5e-03 to 4.9e-02)</title></circle>
+<path class="sn" d="M634.54 163.33V135.22M631.54 163.33h6M631.54 135.22h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="634.54" cy="149.79" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 25: 1.8e-02 (6.1e-03 to 5.5e-02)</title></circle>
+<path class="sn" d="M657.59 165.96V137.85M654.59 165.96h6M654.59 137.85h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="657.59" cy="149.75" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 26: 1.8e-02 (5.0e-03 to 4.5e-02)</title></circle>
+<path class="sn" d="M680.63 164.72V132.61M677.63 164.72h6M677.63 132.61h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="680.63" cy="151.5" r="4" stroke-width="1.5"><title>bf16-vs-torch64p, layer 27: 1.5e-02 (5.5e-03 to 6.7e-02)</title></circle>
+<path class="sn" d="M66.01 312.67V270.82M63.01 312.67h6M63.01 270.82h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="66.01" cy="285.82" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 0: 4.3e-07 (5.3e-08 to 1.4e-06)</title></circle>
+<path class="sn" d="M89.05 290.63V268.13M86.05 290.63h6M86.05 268.13h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="89.05" cy="277.77" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 1: 8.1e-07 (3.0e-07 to 1.7e-06)</title></circle>
+<path class="sn" d="M112.1 318.85V269.17M109.1 318.85h6M109.1 269.17h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="112.1" cy="278.41" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 2: 7.7e-07 (3.3e-08 to 1.6e-06)</title></circle>
+<path class="sn" d="M135.15 318.67V264.2M132.15 318.67h6M132.15 264.2h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="135.15" cy="277.25" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 3: 8.4e-07 (3.3e-08 to 2.3e-06)</title></circle>
+<path class="sn" d="M158.2 318.3V263.63M155.2 318.3h6M155.2 263.63h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="158.2" cy="277.21" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 4: 8.4e-07 (3.4e-08 to 2.4e-06)</title></circle>
+<path class="sn" d="M181.25 315.07V263.08M178.25 315.07h6M178.25 263.08h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="181.25" cy="275.89" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 5: 9.3e-07 (4.4e-08 to 2.5e-06)</title></circle>
+<path class="sn" d="M204.3 313.68V261.01M201.3 313.68h6M201.3 261.01h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="204.3" cy="274.31" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 6: 1.1e-06 (4.9e-08 to 3.0e-06)</title></circle>
+<path class="sn" d="M227.35 311.01V261.2M224.35 311.01h6M224.35 261.2h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="227.35" cy="273.52" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 7: 1.1e-06 (6.0e-08 to 2.9e-06)</title></circle>
+<path class="sn" d="M250.39 311.88V257.12M247.39 311.88h6M247.39 257.12h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="250.39" cy="271.39" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 8: 1.3e-06 (5.6e-08 to 4.0e-06)</title></circle>
+<path class="sn" d="M273.44 309.46V257.83M270.44 309.46h6M270.44 257.83h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="273.44" cy="272.01" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 9: 1.3e-06 (6.8e-08 to 3.8e-06)</title></circle>
+<path class="sn" d="M296.49 306.68V257.62M293.49 306.68h6M293.49 257.62h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="296.49" cy="271.6" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 10: 1.3e-06 (8.4e-08 to 3.9e-06)</title></circle>
+<path class="sn" d="M319.54 305.2V251.46M316.54 305.2h6M316.54 251.46h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="319.54" cy="270.69" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 11: 1.4e-06 (9.5e-08 to 6.3e-06)</title></circle>
+<path class="sn" d="M342.59 304.65V242.16M339.59 304.65h6M339.59 242.16h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="342.59" cy="269.24" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 12: 1.6e-06 (9.9e-08 to 1.3e-05)</title></circle>
+<path class="sn" d="M365.64 303.65V238.46M362.64 303.65h6M362.64 238.46h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="365.64" cy="269.14" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 13: 1.6e-06 (1.1e-07 to 1.7e-05)</title></circle>
+<path class="sn" d="M388.69 303.48V236.82M385.69 303.48h6M385.69 236.82h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="388.69" cy="268.12" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 14: 1.7e-06 (1.1e-07 to 2.0e-05)</title></circle>
+<path class="sn" d="M411.73 301.96V258.57M408.73 301.96h6M408.73 258.57h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="411.73" cy="269.24" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 15: 1.6e-06 (1.2e-07 to 3.6e-06)</title></circle>
+<path class="sn" d="M434.78 299.71V260.26M431.78 299.71h6M431.78 260.26h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="434.78" cy="270.06" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 16: 1.5e-06 (1.5e-07 to 3.2e-06)</title></circle>
+<path class="sn" d="M457.83 296.62V260.89M454.83 296.62h6M454.83 260.89h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="457.83" cy="270.74" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 17: 1.4e-06 (1.8e-07 to 3.0e-06)</title></circle>
+<path class="sn" d="M480.88 294.51V262.5M477.88 294.51h6M477.88 262.5h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="480.88" cy="271.94" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 18: 1.3e-06 (2.2e-07 to 2.7e-06)</title></circle>
+<path class="sn" d="M503.93 293.82V261.6M500.93 293.82h6M500.93 261.6h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="503.93" cy="272.21" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 19: 1.2e-06 (2.3e-07 to 2.8e-06)</title></circle>
+<path class="sn" d="M526.98 291.43V262.37M523.98 291.43h6M523.98 262.37h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="526.98" cy="272.89" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 20: 1.2e-06 (2.8e-07 to 2.7e-06)</title></circle>
+<path class="sn" d="M550.03 289.64V261.22M547.03 289.64h6M547.03 261.22h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="550.03" cy="272.28" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 21: 1.2e-06 (3.2e-07 to 2.9e-06)</title></circle>
+<path class="sn" d="M573.07 288.37V261.1M570.07 288.37h6M570.07 261.1h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="573.07" cy="273.44" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 22: 1.1e-06 (3.5e-07 to 3.0e-06)</title></circle>
+<path class="sn" d="M596.12 286.48V260.29M593.12 286.48h6M593.12 260.29h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="596.12" cy="273.12" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 23: 1.2e-06 (4.1e-07 to 3.2e-06)</title></circle>
+<path class="sn" d="M619.17 285.63V259.14M616.17 285.63h6M616.17 259.14h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="619.17" cy="272.82" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 24: 1.2e-06 (4.4e-07 to 3.4e-06)</title></circle>
+<path class="sn" d="M642.22 284.2V258.51M639.22 284.2h6M639.22 258.51h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="642.22" cy="272.45" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 25: 1.2e-06 (4.9e-07 to 3.6e-06)</title></circle>
+<path class="sn" d="M665.27 284.2V260.45M662.27 284.2h6M662.27 260.45h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="665.27" cy="272.2" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 26: 1.2e-06 (4.9e-07 to 3.1e-06)</title></circle>
+<path class="sn" d="M688.32 283.68V255.66M685.32 283.68h6M685.32 255.66h6" stroke-width="1.5" fill="none"/>
+<circle class="fn ring" cx="688.32" cy="274.59" r="4" stroke-width="1.5"><title>torch32-vs-torch64p, layer 27: 1.0e-06 (5.1e-07 to 4.5e-06)</title></circle>
+<line class="axis" x1="50.64" y1="334" x2="696" y2="334" stroke-width="1"/>
+</svg>
