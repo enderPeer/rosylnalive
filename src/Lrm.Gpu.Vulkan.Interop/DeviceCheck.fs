@@ -197,6 +197,42 @@ let geometry (h: DescriptorHeapLimits) : HeapGeometry =
         HeapRangeSize = offset + h.MinResourceHeapReservedRange
     }
 
+let private isPowerOfTwo (v: uint64) = v <> 0UL && v &&& (v - 1UL) = 0UL
+
+/// Why a device's descriptor-heap limits cannot hold the 64-slot heap of VulkanHeapRecipe section 3; empty when they
+/// can. These are the rules of Heap.vulkanGeometry in Lrm.Gpu.Core, with which V1 sizes the heap: a positive
+/// bufferDescriptorSize, both descriptor alignments powers of two, bufferDescriptorSize a multiple of
+/// bufferDescriptorAlignment, and the heap within maxResourceHeapSize. So the device check never accepts a device whose
+/// heap V1 then refuses to lay out (the cpu tier checks that the two agree).
+let heapReasons (h: DescriptorHeapLimits) : string list =
+    [
+        if h.BufferDescriptorSize = 0UL then
+            "bufferDescriptorSize is 0"
+
+        if
+            not (isPowerOfTwo h.BufferDescriptorAlignment)
+            || not (isPowerOfTwo h.ImageDescriptorAlignment)
+        then
+            sprintf
+                "descriptor alignments %d (buffer) and %d (image) are not both powers of two"
+                h.BufferDescriptorAlignment
+                h.ImageDescriptorAlignment
+        elif h.BufferDescriptorSize % h.BufferDescriptorAlignment <> 0UL then
+            sprintf
+                "bufferDescriptorSize %d is not a multiple of bufferDescriptorAlignment %d"
+                h.BufferDescriptorSize
+                h.BufferDescriptorAlignment
+
+        let g = geometry h
+
+        if g.HeapRangeSize > h.MaxResourceHeapSize then
+            sprintf
+                "the %d-slot heap needs %d bytes > maxResourceHeapSize %d"
+                HeapSlots
+                g.HeapRangeSize
+                h.MaxResourceHeapSize
+    ]
+
 /// The driver version as its vendor writes it. NVIDIA packs 10.8.8.6 bits (616.92); Intel on Windows packs 18.14
 /// bits; everyone else uses VK_MAKE_API_VERSION.
 let formatDriverVersion (vendorId: uint32) (v: uint32) =
@@ -232,14 +268,7 @@ let reasons (c: Capabilities) : string list =
                     h.BufferDescriptorSize
             | _ -> ()
 
-            let g = geometry h
-
-            if g.HeapRangeSize > h.MaxResourceHeapSize then
-                sprintf
-                    "the %d-slot heap needs %d bytes > maxResourceHeapSize %d"
-                    HeapSlots
-                    g.HeapRangeSize
-                    h.MaxResourceHeapSize
+            yield! heapReasons h
         if not (has VkConst.VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME) then
             "VK_KHR_shader_untyped_pointers not supported (VulkanHeapRecipe section 1)"
         if not f.ShaderStorageBufferArrayDynamicIndexing then
