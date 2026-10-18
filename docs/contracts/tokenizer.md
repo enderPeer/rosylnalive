@@ -1,6 +1,6 @@
 # TokenizerApi contract
 
-Owner: M1. Status: v1, proposed with M1's PR; frozen by convention once merged, and through a `contract-change` PR after the contracts tag. Consumers: M2 (prompts and decoding in Models.Qwen and `lrm generate`), C2 (serving), I1 and I3 (the Gate 1 tokenizer check), T1 and T2 (reports and dashboard over `tokenizer.*` records). Code: `src/Lrm.Tokenizer`. Tests: `tests/Lrm.Tokenizer.Tests` (cpu and bench tiers). Oracle data: `tests/Lrm.Tokenizer.Tests/oracle` (ADR M1-0001).
+Owner: M1. Status: v1, proposed with M1's PR; frozen by convention once merged, and through a `contract-change` PR after the contracts tag. Consumers: M2 (prompts and decoding in Models.Qwen and `lrm generate`), C2 (serving), I1 and I3 (the Gate 1 tokenizer check, through `Corpus.verify`), T1 and T2 (reports and dashboard over `tokenizer.*` records). Code: `src/Lrm.Tokenizer`. Tests: `tests/Lrm.Tokenizer.Tests` (cpu and bench tiers). Oracle data: `tests/Lrm.Tokenizer.Tests/oracle` (ADR M1-0001).
 
 The specification is exact id parity with the oracle, HF tokenizers 0.23.3 on the pinned Qwen3-0.6B `tokenizer.json`, as O1's corpus records it (GoldenSet, "The tokenizer corpus"). No `System.Text.RegularExpressions`, no third-party tokenizer and no Python are used at run time.
 
@@ -26,6 +26,9 @@ type QwenTokenizer =
     member ClearCache: unit -> unit
     member CachedPieces: int
     static member ModelRows: int           // 151,936, Qwen3-0.6B's embedding and lm_head rows
+    static member CacheCapacity: int       // 65,536 pieces
+    static member CacheUnits: int          // 2,097,152 UTF-16 units
+    static member CachedPieceUnits: int    // 65,536: longer pieces are never cached
 
 module QwenTokenizer =
     val PinnedSha256: string               // aeb13307…, from $(LrmTokenizerSha256)
@@ -35,6 +38,20 @@ module QwenTokenizer =
     val load: path: string -> QwenTokenizer
     val tryLoadDefault: unit -> QwenTokenizer option
     val parse: json: byte[] -> QwenTokenizer
+
+type CorpusCase =
+    { Id: string; Category: string; Kind: string; Passed: bool; Tokens: int; Detail: string }
+
+type CorpusResult =
+    { Source: string; Path: string; Sha256: string; Cases: int; Passed: int; Failures: CorpusCase list }
+    member Exact: bool                     // Cases > 0 and no failure
+
+module Corpus =
+    val PinnedSha256: string               // 35ff0c43..., GoldenSet v1's cases.jsonl
+    val PinnedCases: int                   // 5,597
+    val RepoPath: string                   // goldens/tokenizer/g1/cases.jsonl
+    val run: tokenizer: QwenTokenizer -> source: string -> path: string -> CorpusResult
+    val verify: tokenizer: QwenTokenizer -> path: string -> CorpusResult
 ```
 
 The stages are public too, for diagnostics and tests: `ByteLevel` (the byte map), `CharClass` (classes and case folding), `Nfc.normalize`, and `PreTokenizer.split`, `PreTokenizer.pieces` and `PreTokenizer.SplitPattern`.
@@ -87,7 +104,11 @@ The stages are public too, for diagnostics and tests: `ByteLevel` (the byte map)
 
    The vocabulary is spelled in these characters.
 6. **BPE.** The piece starts as one symbol per byte. While some adjacent pair has a merge, the pair with the lowest rank is merged, and among equal ranks the leftmost, exactly as tokenizers' `Word::merge_all` pops its heap by (rank, position). The symbols' ids are the piece's ids. A whole piece that is itself a vocabulary token is not looked up directly (`ignore_merges` is false).
-7. **The cache.** Results are cached per piece, up to 65,536 pieces. The cache never changes a result.
+7. **The cache.** BPE results are cached per piece. The cache never changes a result, and its limits bound its memory in a long-running process (C2):
+   - only pieces of at most `CachedPieceUnits` (65,536) UTF-16 units are cached;
+   - the cache has two generations, each of at most 32,768 pieces and 1 Mi UTF-16 units. A new piece goes into the current generation, and a piece found only in the previous one is copied into the current one. A full current generation becomes the previous one, and the old previous one is dropped;
+   - so the cache holds at most `CacheCapacity` (65,536) pieces and about `CacheUnits` (2 Mi) units: a generation's last piece may overshoot by up to `CachedPieceUnits`, and threads racing a swap may each add one piece per generation. With at most 3 ids per unit, that is at most about 40 MB;
+   - pieces in use survive a swap, and a change of input domain refills the cache, so no `ClearCache` schedule is needed. `ClearCache` empties both generations (the bench's cold runs).
 
 `EncodeBytes bytes` is `Encode` of `bytes` decoded as UTF-8 with one U+FFFD per maximal invalid subpart (errors=replace, which Python's `bytes.decode` and .NET's `Encoding.UTF8` both follow).
 
@@ -108,9 +129,25 @@ The stages are public too, for diagnostics and tests: `ByteLevel` (the byte map)
 - **TokenOf.** `TokenOf id` is the inverse, and None for ids with no token.
 - **AddedTokens.** The 26 added tokens with their ids and special flags, as in the corpus manifest (vector A1).
 
+## The corpus check
+
+`Corpus` runs O1's tokenizer corpus (GoldenSet, "The tokenizer corpus") against a tokenizer. The cpu tier, `lrm gate1` (I3) and the Gate 1 suite (I1) all call it, so the rules per kind and the digest check exist once.
+
+- **`Corpus.verify tokenizer path`** reads the file at `path`, normally `Corpus.RepoPath` under the repo root. It requires the file's SHA-256 to be `Corpus.PinnedSha256`, else it raises `InvalidDataException` naming both hashes. Then it runs every case as `run` does, with source `corpus`. The corpus is exact when the result's `Exact` is true; its `Cases` is then `PinnedCases`.
+- **`Corpus.run tokenizer source path`** runs every non-empty line of any file in the corpus format, in order, and checks no digest. The tests run the probe's `oracle/encode-cases.jsonl` with it, as source `probe`.
+- **The rules per kind:**
+  - `encode`: `Encode text` = `ids`;
+  - `encode_bytes`: `bytes` decoded with errors=replace is `text`, and `EncodeBytes bytes` = `ids`;
+  - `decode`: `DecodeBytes ids` = `bytes` when the line has `bytes`, and `Decode ids` = `text`;
+  - `encode_reject`: `Encode` of the UTF-16 units in `utf16` raises `ArgumentException`;
+  - another kind, a missing field or an exception fails the case, and its `Detail` says why. A line that is not JSON raises `InvalidDataException` naming the case.
+- **Ids and categories.** A case's `Id` and `Category` are the line's `id` and `cat`. A line without them gets `<source>-<line number>` (4 digits) and `probe-<kind>`. A failing ids comparison gives the first differing index and the ids around it.
+- **Telemetry.** Through the ambient facade, with the scope attributes `component` = `tokenizer` and `source`: one `tokenizer.case` check per case, then one `tokenizer.corpus` event (see "Telemetry"). Telemetry never changes a result.
+- **For Gate 1.** I3's `tokenizer / corpus exact` check is `Corpus.verify (QwenTokenizer.load (QwenTokenizer.defaultPath ())) (repo root / Corpus.RepoPath)`. It passes when `Exact` is true, and otherwise fails with the first failures' `Id` and `Detail`. Without `tokenizer.json` it is skipped, not passed (`tryLoadDefault` returns None).
+
 ## Threads and determinism
 
-- **Threads.** Every member may be called from any number of threads at once. The tables are immutable; the piece cache is concurrent and capped; work arrays are per thread.
+- **Threads.** Every member may be called from any number of threads at once. The tables are immutable; the piece cache is concurrent and bounded; work arrays are per thread.
 - **Determinism.** A result is a pure function of the text and the pinned file, given the runtime's Unicode tables and its ICU normalization data. The cpu tier checks those against the oracle scalar by scalar on every machine it runs on, CI runners included (`unicode` tests). So a runtime or OS update that changes them fails there, before it can change an id.
 
 ## Telemetry
@@ -123,13 +160,13 @@ Through the Lrm.Core facade (TelemetryFacade), component `tokenizer`:
 | `tokenizer.encode` | span | `Encode`, when telemetry is enabled | `chars`, `tokens`, `pieces`, `added` |
 | `tokenizer.tokens` | meter (`token`) | `Encode` | |
 | `tokenizer.decode` | event | `DecodeBytes`, when enabled | `ids`, `bytes` |
-| `tokenizer.case` (reserved) | check | the corpus tests, one per corpus or probe line | **`case`** (the corpus id), **`cat`**, **`kind`**, `tokens` (expected ids), `detail` (on failure: the first differing index and the ids around it), and the scope's `source` (`corpus` or `probe`) |
-| `tokenizer.corpus` | event | after each corpus file | `source`, `cases`, `passed`, `failed` |
+| `tokenizer.case` (reserved) | check | `Corpus.run` and `Corpus.verify`, one per corpus or probe line | **`case`** (the corpus id), **`cat`**, **`kind`**, `tokens` (expected ids), `detail` (on failure: the first differing index and the ids around it), and the scope's `source` (`corpus` or `probe`) |
+| `tokenizer.corpus` | event | `Corpus.run` and `Corpus.verify`, after each file | `source`, `cases`, `passed`, `failed`, `sha256` |
 | `tokenizer.unicode` | check | the oracle-probe tests | `probe` (`classes`, `contraction_letters`, `apostrophes`, `split_points`, `nfc.<family>`), `checked`, `mismatches` |
 | `tokenizer.split` | check | the split-case test | `cases`, `mismatches` |
 | `tokenizer.regex_regression` | check | the Regex regression test | `cases`, `regex_mismatches`, `state_machine_mismatches` |
 | `tokenizer.skipped` | event | a test skipped without `tokenizer.json` | `test`, `reason` |
-| `tokenizer.bench.tokens_per_s` | gauge (`token/s`) | the bench tier | `mode` (`encode_cold`, `encode_warm`, `decode`), `threads`, `input` (`corpus`, `csharp`) |
+| `tokenizer.bench.tokens_per_s` | gauge (`token/s`) | the bench tier | `mode` (`encode_cold`, `encode_warm`, `decode`), `threads`, `input` (`corpus`, `csharp`, `runs`) |
 | `tokenizer.bench.load` | gauge (`ns`) | the bench tier | |
 
 The tests write these records to a run of kind `tokenizer` (`LRM_DATA/runs/<runId>`, RunLog). Its params record the runtime, OS and ICU versions. Telemetry never changes an id: a cpu-tier test encodes with and without a sink and compares.
@@ -223,19 +260,21 @@ All values are from the oracle (tokenizers 0.23.3, `probe_oracle.py`, or a direc
     - Decode rules and errors=replace;
     - out-of-range ids;
     - IdOf and TokenOf;
+    - the piece cache: at most `CacheCapacity` pieces over generation swaps, sequentially and on 8 threads; about `CacheUnits` units of long pieces; only pieces of at most `CachedPieceUnits` units; never a changed id;
     - 18 refused configurations, and the hash check;
     - the pins against `toolchain.json`;
     - telemetry changes no id;
     - 8 threads equal sequential;
     - Decode(Encode) = NFC.
+  - `corpus.runner`, `Corpus` on the toy tokenizer: each kind's rule, passing and failing, with one `tokenizer.case` per line and the `tokenizer.corpus` totals; the same result with and without a sink; `verify` refuses a file that is not O1's corpus; a line that is not JSON; the pins.
   - The oracle data files and the generated split points have the SHA-256 values above, and every source and data file of M1 is ASCII (escapes only), so no editor can normalize a test string.
 - **Needs `tokenizer.json`** (cpu tier, skipped visibly without it):
-  - every one of the 5,597 corpus cases is exact, one `tokenizer.case` check each;
-  - the 1,800 probe cases are exact;
+  - every one of the 5,597 corpus cases is exact through `Corpus.verify`, one `tokenizer.case` check each (the corpus digest is checked without `tokenizer.json` too);
+  - the 1,800 probe cases are exact through `Corpus.run`;
   - E1 to E11 and D1 to D6;
   - A1: the 26 added tokens round-trip;
   - no BOS;
   - 151,669 real ids, 151,387 merges, and every id maps to its token and back.
 
   Without the file each test is ignored, prints `SKIPPED <test>: tokenizer.json is not at …` to stderr and records `tokenizer.skipped`, so the CI summary shows six ignored tests, not passes. The acceptance "100% of the corpus exact in CI" waits for the user's approval of the CI download (AP-1).
-- **Bench tier:** load time, and Encode (cold and warm cache, 1 and 8 threads) and Decode throughput in tokens per second.
+- **Bench tier:** load time, and Encode (cold and warm cache, 1 and 8 threads) and Decode throughput in tokens per second. The inputs are the corpus's encode texts, its 365 C# cases joined into one text, and `runs`: 64 Ki of each of `a`, space, `=` and `!`, which stresses the merge table with self-pairs such as (`a`, `a`).
