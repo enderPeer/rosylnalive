@@ -139,7 +139,7 @@ dotnet fsi tools/goldens/qwen/cpuref_probe.fsx --long                       # Cp
 pwsh tools/goldens/run.ps1 qwen/make_qwen.py --check                        # regenerate (about 1 h 50 min) and compare
 ```
 
-`--check` passes only on the generation machine with the same `LRM_DATA` (GoldenSet, Verification): the manifest records the machine, and torch's kernels depend on its code path.
+`--check` passes only on the generation machine with the same `LRM_DATA` (GoldenSet, Verification): the manifest records the machine, and torch's kernels depend on its code path. On the generation machine it passed for g1 (run `20261018-095500-e277b974`, 1 h 48 min): every committed byte and every data file's SHA-256 regenerated identically ([`reports/make-qwen-check/goldens.md`](reports/make-qwen-check/goldens.md)).
 
 ## Vectors
 
@@ -157,4 +157,4 @@ The manifest lists the size and SHA-256 of every other file.
 
 ## Reports
 
-The canonical run, rendered with the parity and goldens templates, and the CpuRef probe's parity report are in [`reports/`](reports/).
+In [`reports/`](reports/): the canonical run with the parity and goldens templates (`make-qwen/`), its `--check` regeneration with the goldens template (`make-qwen-check/`), and the CpuRef probe with the parity template (`cpuref-probe/`).

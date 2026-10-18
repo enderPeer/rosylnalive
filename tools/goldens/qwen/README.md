@@ -29,7 +29,7 @@ python -I tools/goldens/verify_goldens.py --data C:/Users/end/dev/lrm-data   # h
 
 - **Cost.** The canonical run takes about 1 h 50 min at 8 threads on the development machine (i9-13900K, AVX2, MKL, shared with other work): pool 40 min, calibration 10 min, selection 2 min, gate 52 min, long prompts 4 min. It writes 6.3 GiB under `LRM_DATA/golden`. The pool's double run and the gate stage's no-cache recomputes dominate. `--quick` (2 candidates per category, 3 calibration prompts, short long prompts) takes about 20 minutes and never writes the canonical folders.
 - **Threads.** Every stage runs at 8 threads and falls back to 1 thread if its double run differs.
-- **`--check`** is a same-machine, same-`LRM_DATA` check, like O1's: the manifest records the machine (`env`), and torch's fp32 and fp64 kernels depend on the CPU's code path.
+- **`--check`** is a same-machine, same-`LRM_DATA` check, like O1's: the manifest records the machine (`env`), and torch's fp32 and fp64 kernels depend on the CPU's code path. It passed for g1 on the generation machine (`goldens/qwen3-0.6b/reports/make-qwen-check/`).
 
 ## The stages
 
@@ -67,4 +67,4 @@ Each run writes a `parity` run log under `LRM_DATA/runs` (`common.RunLog`), whic
 - `goldens.pool.min_margin` per candidate and `goldens.pool.eligible` per category; `goldens.tolerance.bound` per pair, tap kind and metric; `goldens.gate.margin_rule`; `goldens.wall_seconds` per stage (no template slot yet);
 - `goldens.file_bytes`, `goldens.set_bytes` (with the 10 MiB budget), `goldens.data_bytes`, `goldens.double_run_identical` per stage, `goldens.regen_identical` with `--check`; `goldens.*` spans per stage.
 
-The rendered reports of the canonical run and of the CpuRef probe are committed under `goldens/qwen3-0.6b/reports/`.
+The rendered reports of the canonical run, its `--check` and the CpuRef probe are committed under `goldens/qwen3-0.6b/reports/`.
