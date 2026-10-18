@@ -37,7 +37,7 @@ Status as of 2026-10-18. "v1" or "v1.1" means written in full and in review or m
 | ShaderBuildAndSourceConvention | R4 (SPIR-V `LRM_BUF`: R4b) | `shader-build.md` | v1.1 (R4a PR #10; R4b PR #12) |
 | BatchInvariance | R4 | `batch-invariance.md` | v1 (PR #10) |
 | VulkanHeapRecipe | R1 | `vulkan-heap-recipe.md` | v1.1 (R1 PR #5; section 7 amended in `int/wave1-fixes`) |
-| VulkanInteropApi | R2 | `vulkan-interop.md` | planned |
+| VulkanInteropApi | R2 | `vulkan-interop.md` | v1 draft (R2, PR #29; ADR R2-0001) |
 | D3D12ComIdiom | R3 | `d3d12-com-idiom.md` | v1 (PR #6) |
 | ClusterProtocol | C1 | `cluster.md` | v1 (PR #7) |
 | ConformanceHarness | E1 | `conformance-harness.md` | v1 draft (E1, wave 2, PR #17) |
