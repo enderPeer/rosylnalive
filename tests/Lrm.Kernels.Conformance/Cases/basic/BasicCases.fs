@@ -1083,8 +1083,8 @@ let private argmaxCases =
         x[10 * cols + 600] <- 0x7F800000u
         argmax "nan_rows" x rows cols (int64 rows) "Even rows hold a NaN somewhere (0xFFFFFFFF), odd rows none"
 
-    // A positive denormal at 10 above +0 at 5, every other value negative: preserve gives 10; a flushing class ties
-    // them, so 5 (KernelBounds' flushed reference).
+    // A positive denormal at 10 above +0 at 5, every other value negative: preserve gives 10; KernelBounds' flushed
+    // reference ties them, so 5, which a flushing class meets only if its compares flush too (ADR K1-0001: V1 checks).
     let denormal =
         let cols = 300
         let x = Array.create (2 * cols) (f32 -1.0f)

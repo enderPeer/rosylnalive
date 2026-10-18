@@ -11,47 +11,47 @@
 <line class="grid" x1="471.73" y1="78" x2="471.73" y2="390" stroke-width="1"/>
 <line class="grid" x1="640" y1="78" x2="640" y2="390" stroke-width="1"/>
 <text class="t3" x="135.2" y="407" font-size="11" text-anchor="middle">0</text>
-<text class="t3" x="303.47" y="407" font-size="11" text-anchor="middle">5 ms</text>
-<text class="t3" x="471.73" y="407" font-size="11" text-anchor="middle">10 ms</text>
-<text class="t3" x="640" y="407" font-size="11" text-anchor="middle">15 ms</text>
+<text class="t3" x="303.47" y="407" font-size="11" text-anchor="middle">10 ms</text>
+<text class="t3" x="471.73" y="407" font-size="11" text-anchor="middle">20 ms</text>
+<text class="t3" x="640" y="407" font-size="11" text-anchor="middle">30 ms</text>
 <text class="t3" x="135.2" y="68" font-size="11" text-anchor="start">kernel</text>
 <text class="t3" x="387.6" y="426" font-size="11" text-anchor="middle">GPU time</text>
-<text class="t2" x="127.2" y="95" font-size="12" text-anchor="end">silu_mul</text>
-<path class="f4" d="M135.2 83H588.9Q592.9 83 592.9 87V95Q592.9 99 588.9 99H135.2Z"><title>silu_mul, d3d12: 13.60 ms</title></path>
-<text class="t2" x="598.9" y="95" font-size="11">13.60 ms</text>
-<text class="t2" x="127.2" y="121" font-size="12" text-anchor="end">argmax_rows</text>
-<path class="f4" d="M135.2 109H351.3Q355.3 109 355.3 113V121Q355.3 125 351.3 125H135.2Z"><title>argmax_rows, d3d12: 6.54 ms</title></path>
-<text class="t2" x="361.3" y="121" font-size="11">6.54 ms</text>
-<text class="t2" x="127.2" y="147" font-size="12" text-anchor="end">rmsnorm_rows</text>
-<path class="f4" d="M135.2 135H312.46Q316.46 135 316.46 139V147Q316.46 151 312.46 151H135.2Z"><title>rmsnorm_rows, d3d12: 5.39 ms</title></path>
-<text class="t2" x="322.46" y="147" font-size="11">5.39 ms</text>
-<text class="t2" x="127.2" y="173" font-size="12" text-anchor="end">copy_rows</text>
-<path class="f4" d="M135.2 161H247.09Q251.09 161 251.09 165V173Q251.09 177 247.09 177H135.2Z"><title>copy_rows, d3d12: 3.44 ms</title></path>
-<text class="t2" x="257.09" y="173" font-size="11">3.44 ms</text>
-<text class="t2" x="127.2" y="199" font-size="12" text-anchor="end">groups_echo</text>
-<path class="f4" d="M135.2 187H244.54Q248.54 187 248.54 191V199Q248.54 203 244.54 203H135.2Z"><title>groups_echo, d3d12: 3.37 ms</title></path>
-<text class="t2" x="254.54" y="199" font-size="11">3.37 ms</text>
-<text class="t2" x="127.2" y="225" font-size="12" text-anchor="end">add</text>
-<path class="f4" d="M135.2 213H242.43Q246.43 213 246.43 217V225Q246.43 229 242.43 229H135.2Z"><title>add, d3d12: 3.31 ms</title></path>
-<text class="t2" x="252.43" y="225" font-size="11">3.31 ms</text>
-<text class="t2" x="127.2" y="251" font-size="12" text-anchor="end">scale_f32</text>
-<path class="f4" d="M135.2 239H153.98Q157.98 239 157.98 243V251Q157.98 255 153.98 255H135.2Z"><title>scale_f32, d3d12: 676.77 µs</title></path>
-<text class="t2" x="163.98" y="251" font-size="11">676.77 µs</text>
-<text class="t2" x="127.2" y="277" font-size="12" text-anchor="end">rope_apply</text>
-<path class="f4" d="M135.2 265H146.01Q150.01 265 150.01 269V277Q150.01 281 146.01 281H135.2Z"><title>rope_apply, d3d12: 440.10 µs</title></path>
-<text class="t2" x="156.01" y="277" font-size="11">440.10 µs</text>
+<text class="t2" x="127.2" y="95" font-size="12" text-anchor="end">add</text>
+<path class="f4" d="M135.2 83H592.84Q596.84 83 596.84 87V95Q596.84 99 592.84 99H135.2Z"><title>add, d3d12: 27.43 ms</title></path>
+<text class="t2" x="602.84" y="95" font-size="11">27.43 ms</text>
+<text class="t2" x="127.2" y="121" font-size="12" text-anchor="end">silu_mul</text>
+<path class="f4" d="M135.2 109H532.73Q536.73 109 536.73 113V121Q536.73 125 532.73 125H135.2Z"><title>silu_mul, d3d12: 23.86 ms</title></path>
+<text class="t2" x="542.73" y="121" font-size="11">23.86 ms</text>
+<text class="t2" x="127.2" y="147" font-size="12" text-anchor="end">argmax_rows</text>
+<path class="f4" d="M135.2 135H219.19Q223.19 135 223.19 139V147Q223.19 151 219.19 151H135.2Z"><title>argmax_rows, d3d12: 5.23 ms</title></path>
+<text class="t2" x="229.19" y="147" font-size="11">5.23 ms</text>
+<text class="t2" x="127.2" y="173" font-size="12" text-anchor="end">rmsnorm_rows</text>
+<path class="f4" d="M135.2 161H196.72Q200.72 161 200.72 165V173Q200.72 177 196.72 177H135.2Z"><title>rmsnorm_rows, d3d12: 3.89 ms</title></path>
+<text class="t2" x="206.72" y="173" font-size="11">3.89 ms</text>
+<text class="t2" x="127.2" y="199" font-size="12" text-anchor="end">copy_rows</text>
+<path class="f4" d="M135.2 187H187.06Q191.06 187 191.06 191V199Q191.06 203 187.06 203H135.2Z"><title>copy_rows, d3d12: 3.32 ms</title></path>
+<text class="t2" x="197.06" y="199" font-size="11">3.32 ms</text>
+<text class="t2" x="127.2" y="225" font-size="12" text-anchor="end">groups_echo</text>
+<path class="f4" d="M135.2 213H168.44Q172.44 213 172.44 217V225Q172.44 229 168.44 229H135.2Z"><title>groups_echo, d3d12: 2.21 ms</title></path>
+<text class="t2" x="178.44" y="225" font-size="11">2.21 ms</text>
+<text class="t2" x="127.2" y="251" font-size="12" text-anchor="end">rope_apply</text>
+<path class="f4" d="M135.2 239H146.91Q150.91 239 150.91 243V251Q150.91 255 146.91 255H135.2Z"><title>rope_apply, d3d12: 933.89 µs</title></path>
+<text class="t2" x="156.91" y="251" font-size="11">933.89 µs</text>
+<text class="t2" x="127.2" y="277" font-size="12" text-anchor="end">scale_f32</text>
+<path class="f4" d="M135.2 265H138.7Q142.19 265 142.19 268.5V277.5Q142.19 281 138.7 281H135.2Z"><title>scale_f32, d3d12: 415.58 µs</title></path>
+<text class="t2" x="148.19" y="277" font-size="11">415.58 µs</text>
 <text class="t2" x="127.2" y="303" font-size="12" text-anchor="end">embed_gather_bf16</text>
-<path class="f4" d="M135.2 291H143.86Q147.86 291 147.86 295V303Q147.86 307 143.86 307H135.2Z"><title>embed_gather_bf16, d3d12: 376.16 µs</title></path>
-<text class="t2" x="153.86" y="303" font-size="11">376.16 µs</text>
+<path class="f4" d="M135.2 291H138.22Q141.24 291 141.24 294.02V303.98Q141.24 307 138.22 307H135.2Z"><title>embed_gather_bf16, d3d12: 359.23 µs</title></path>
+<text class="t2" x="147.24" y="303" font-size="11">359.23 µs</text>
 <text class="t2" x="127.2" y="329" font-size="12" text-anchor="end">bf16_unpack</text>
-<path class="f4" d="M135.2 317H141.16Q145.16 317 145.16 321V329Q145.16 333 141.16 333H135.2Z"><title>bf16_unpack, d3d12: 295.94 µs</title></path>
-<text class="t2" x="151.16" y="329" font-size="11">295.94 µs</text>
+<path class="f4" d="M135.2 317H136.76Q138.32 317 138.32 318.56V331.44Q138.32 333 136.76 333H135.2Z"><title>bf16_unpack, d3d12: 185.34 µs</title></path>
+<text class="t2" x="144.32" y="329" font-size="11">185.34 µs</text>
 <text class="t2" x="127.2" y="355" font-size="12" text-anchor="end">table_echo</text>
-<path class="f4" d="M135.2 343H136.49Q137.78 343 137.78 344.29V357.71Q137.78 359 136.49 359H135.2Z"><title>table_echo, d3d12: 76.80 µs</title></path>
-<text class="t2" x="143.78" y="355" font-size="11">76.80 µs</text>
+<path class="f4" d="M135.2 343H135.66Q136.11 343 136.11 343.46V358.54Q136.11 359 135.66 359H135.2Z"><title>table_echo, d3d12: 54.27 µs</title></path>
+<text class="t2" x="142.11" y="355" font-size="11">54.27 µs</text>
 <text class="t2" x="127.2" y="381" font-size="12" text-anchor="end">args_echo</text>
-<path class="f4" d="M135.2 369H135.85Q136.51 369 136.51 369.65V384.35Q136.51 385 135.85 385H135.2Z"><title>args_echo, d3d12: 38.91 µs</title></path>
-<text class="t2" x="142.51" y="381" font-size="11">38.91 µs</text>
+<path class="f4" d="M135.2 369H135.41Q135.61 369 135.61 369.21V384.79Q135.61 385 135.41 385H135.2Z"><title>args_echo, d3d12: 24.58 µs</title></path>
+<text class="t2" x="141.61" y="381" font-size="11">24.58 µs</text>
 <line class="axis" x1="135.2" y1="78" x2="135.2" y2="78" stroke-width="1"/>
 <line class="axis" x1="135.2" y1="78" x2="135.2" y2="390" stroke-width="1"/>
 </svg>
