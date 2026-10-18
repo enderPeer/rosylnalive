@@ -4,7 +4,7 @@ Owner: C1. Status: v1, to be frozen at the contracts-v1 tag. Consumers: the serv
 
 After contracts-v1, this text and its vectors change only through a `contract-change` PR, with a CHANGELOG entry and updated vectors.
 
-The cluster runs pure, content-addressed work units on networked nodes that lag, drop and die. Results stay exact anyway: any node of the same execution class can recompute any unit, the first result wins, and replicas that disagree trip a divergence alarm. A chaos run and a fault-free run of one job in one class give the same bits.
+The cluster runs pure, content-addressed work units on networked nodes that lag, drop and die. Results stay exact anyway: any node of the same execution class can recompute any unit, the first result wins, and replicas that disagree trip a divergence alarm. A run counts as Completed only once at least two members have computed every chain's final state and every live replica that was due to confirm it has done so. A chaos run and a fault-free run of one job in one class give the same bits.
 
 ## Contents
 
@@ -44,7 +44,7 @@ Every message travels as one frame: an 80-byte little-endian header, the payload
 
 - **Trailer.** The last 32 bytes are SHA-256 over the header and the payload. It is an integrity check, not a content address, and never a key in a ContentId store.
 - **Strict decoding.** A frame is rejected for a wrong magic or version, an unknown kind or flag, a nonzero reserved word, a payload length over the limit, a total size that differs from 80 + length + 32, or a trailer mismatch. Every single-bit flip of a frame is detected (a test flips each bit of the F1 vector).
-- **Streams.** Frames are self-delimiting, so TCP carries them back to back. A malformed frame closes the connection; the protocol retransmits.
+- **Streams.** Frames are self-delimiting, so TCP carries them back to back. A malformed frame closes the connection; the protocol retransmits. `FrameStream.readAsync` checks the header, then the trailer over the whole frame once, and returns the bytes with the decoded frame. Its buffer starts at 1 MiB and doubles as bytes arrive, so a header that announces a large payload costs memory only as the payload comes in.
 - **Retransmit** is informational: it marks a re-sent Assign. Receivers treat every message idempotently anyway.
 - **No timestamps.** Frames carry durations in milliseconds (heartbeat and lease), never wall-clock times.
 
@@ -80,7 +80,7 @@ Payloads use the canonical encoding (LrmCore contract): fields in order, little-
 | Fetch | chain (lane u32, stage u32), From (unit id, zero = from the start), To (unit id) |
 | Log | chain (lane u32, stage u32), reset (bool), final (bool), entries (seq of: unit, input bytes, output blob id, state digest). Each entry's input must match its unit's Input |
 | Notice | code (u16), value (u64), detail (string) |
-| Ready | chain (option of lane u32, stage u32), head (unit id), state digest (id) |
+| Ready | chain (option of lane u32, stage u32), head (unit id), state digest (id), output (blob id of head's output as this node computed it; zero when there is no head) |
 
 A chain head is lane (u32), stage (u32), head unit id, state digest. Unit phases: 0 Queued, 1 Fetching, 2 Replaying, 3 Positioned. Notice codes: 1 StaleEpoch (value = current epoch), 2 UnknownMember, 3 Shutdown, 4 Leave, 5 WrongClass (value = the stage the node cannot run).
 
@@ -111,8 +111,9 @@ A work unit is a pure piece of work: its output is a deterministic function of t
 The coordinator is member 0 and the single authority (coordinator replication is Phase 2). Nodes talk only to it.
 
 - **Join.** A node sends Hello every heartbeat interval until it gets Welcome. A Hello from a new id adds a member; a Hello from a member with a new incarnation replaces it (a restart, with fresh state); a Hello from a member with the same incarnation is a resync and changes nothing.
-- **Epochs.** Every membership change (join, restart, lease expiry, Leave) increments the epoch. The coordinator then refills the stage replicas, broadcasts Membership, and re-sends every pending Assign under the new epoch.
-- **Stale epochs are rejected.** Every node frame except Hello must carry the current epoch. Otherwise its content is ignored, and the sender gets Notice StaleEpoch (value = current epoch) and the Membership. A stale heartbeat from a member still counts as proof of life for its lease. A frame from a non-member (except Hello) gets Notice UnknownMember, and the node sends Hello. A node adopts any higher epoch it sees in a coordinator frame and ignores Assign, Log and Membership frames of a lower epoch.
+- **Names and ids.** A Hello's name must be a SafeName (LrmCore), other than `coord` (the coordinator's telemetry name), and not the name of another member id; otherwise the Hello is rejected (`bad_name`, `duplicate_name`) and gets no Welcome. A restart keeps its name. A frame whose sender is 0 (the coordinator's own id) is rejected (`reserved_id`) and never answered, so nothing is ever addressed back to member 0.
+- **Epochs.** Every membership change (join, restart, lease expiry, Leave) increments the epoch. The coordinator then refills the stage replicas, broadcasts Membership, and re-sends every pending Assign under the new epoch. A member that stays keeps its assignments' deadlines, so churn elsewhere never postpones the reissue of its lagging work; the assignments of a restarted member (a new incarnation) start over and count from its Ready. Each join, rejoin or restart is a new membership: the obligations of an earlier one (assignments, expected confirmations) end with it.
+- **Stale epochs are rejected.** Every node frame except Hello must carry the current epoch. Otherwise its content is ignored, and the sender gets Notice StaleEpoch (value = current epoch) and the Membership. Two exceptions: a stale heartbeat from a member still counts as proof of life for its lease, and a stale Result for a unit that is already accepted is still compared with it (results are content-addressed, so a confirmation or a divergence does not depend on the epoch). A frame from a non-member (except Hello) gets Notice UnknownMember, and the node sends Hello. A node adopts any higher epoch it sees in a coordinator frame and ignores Assign, Log and Membership frames of a lower epoch.
 - **Heartbeats and leases.** Nodes heartbeat every 100 ms. Each heartbeat renews the member's lease for 1 s from its receipt and is answered by Lease, which echoes the heartbeat's Seq. The node's own lease runs 1 s from the send time of the last answered heartbeat, so it never outlives the coordinator's view. A member whose lease runs out is removed in a new epoch. A node whose own lease runs out stops counting itself a member and sends Hello again, with the chains it holds.
 - **Stage replicas.** Each stage has `Replicas` members (2 by default); every unit of a stage is assigned to all of them. Missing slots are filled from members that can host the stage and have the unit class: fewest roles first, then Ready ones, then the lowest id. Survivors keep their roles.
 
@@ -120,7 +121,7 @@ The coordinator is member 0 and the single authority (coordinator replication is
 
 - **Ready.** A node sends Ready with no chain when its executor is loaded, and Ready with a chain when a replay has brought that chain to Head. Heartbeats also carry the ready flag and the phase of every active unit, so a lost Ready is repaired.
 - **Deadlines count only after Ready.** An assignment's deadline starts when the node is Ready and is not replaying the unit's chain (from a Fetch for the chain until the chain's Ready, a Result on it, or a Positioned phase). Cold start and replay therefore never cause reissues.
-- **The rule** (`DeadlinePolicy.standard`): 30 s until the stage has 8 completion samples, then clamp(4·p95 + 50 ms, 250 ms, 30 s). A sample is the time from the winning assignment's deadline start to the accepted result. p95 is the nearest-rank 95th percentile (the ⌈0.95 n⌉-th smallest) of the stage's last 64 samples.
+- **The rule** (`DeadlinePolicy.standard`): 30 s until the stage has 8 completion samples, then clamp(4·p95 + 50 ms, 250 ms, 30 s). A sample is the time from the winning assignment's deadline start to the accepted result; a result whose assignment has no started deadline (paused by a replay, or the winner was not assigned) is no sample, since its time includes cold start or replay. p95 is the nearest-rank 95th percentile (the ⌈0.95 n⌉-th smallest) of the stage's last 64 samples.
 - **A missed deadline** re-sends the Assign (the Assign or the Result may be lost) and re-arms for another period. An assignment is live while its deadline has not started, or has started and not yet been missed.
 - **Reissue.** When a pending unit has no live assignment left, the coordinator recomputes it elsewhere: it assigns the unit to the Ready, eligible member not yet assigned with the fewest roles (then the lowest id), which joins the stage's replicas. If nobody is free, it waits and emits `cluster.reissue.unavailable` once.
 - **Demotion.** A replica whose assignment had missed its deadline when another replica's result was accepted gains a lag count; any other outcome resets it. While a stage has more than `Replicas` replicas, those with a lag count of 3 or more are dropped from it, the worst first.
@@ -130,11 +131,33 @@ The coordinator is member 0 and the single authority (coordinator replication is
 ## Results, divergence and the unit log
 
 - **First result wins.** The first Result for a pending unit is accepted: its output enters the blob store and the unit log, the workload plans the units it unlocks, and the unit is done.
-- **Duplicates.** A later Result for an accepted unit is compared by output blob id and state digest. Equal: it confirms the unit (`cluster.duplicate`). Different: `cluster.divergence`, recorded in the outcome.
-- **Replica digests.** A chain Ready after a replay carries the replayed state digest. If it differs from the accepted digest at the same head, that is a divergence too.
+- **Duplicates.** A later Result for an accepted unit is compared by output blob id and state digest. Equal, from another member or another incarnation of the accepted one: it confirms the unit (`cluster.duplicate`, `cluster.lag`). Equal, from the accepted member's own incarnation: the same result again (a network duplicate, or an answer from the chain head), which checks nothing and is not counted. Different, from any member, the accepted one included (a node keeps its id across restarts): `cluster.divergence`, recorded once in the outcome.
+- **Replica digests.** A chain Ready carries the node's state digest at Head and Head's output id, as the node computed them. If either differs from the accepted unit, that is a divergence (Source Replay); if both match, the Ready confirms Head.
+- **Replay checks the log.** A replaying node recomputes every entry it applies and compares the output id and the digest with the entry's. At the first difference it sends a chain Ready with that unit as Head and its own digest and output, which the coordinator turns into a replay divergence. When the replay ends at the target with no difference, the coordinator counts the node as a confirmation of every entry it served for that replay.
 - **The tripwire.** With `HaltOnDivergence` (the default), the first divergence ends the run with status Diverged.
-- **Replay of the unit log before execution.** A node that is asked to run a unit whose Prev it does not hold sends Fetch (From = its head, To = the unit's Prev). The coordinator answers with Log batches of at most 16 MiB of inputs: the accepted units after From up to To, with their inputs, outputs and digests. If From is not on the chain, the first batch says Reset and the node replays from the start. The node applies the entries in order, reports the chain Ready, then executes. Fetch is retried every 1 s and on every epoch change until the log arrives.
-- **End of run.** When the workload is complete and nothing is pending, the coordinator waits until every member that was assigned a chain's final unit has confirmed it, or 2 s, then sends Shutdown to every member. Afterwards it answers every frame with Shutdown, so a node that lost the notice stops at its next heartbeat.
+- **Replay of the unit log before execution.** A node that is asked to run a unit whose Prev it does not hold sends Fetch (From = its head, To = the unit's Prev). The coordinator answers with Log batches of at most 16 MiB of encoded entries (at least one entry each; one entry always fits in a frame): the accepted units after From up to To, with their inputs, outputs and digests. If From is not on the chain, the first batch says Reset and the node replays from the start. The node applies the entries in order, reports the chain Ready, then executes. Fetch is retried every 1 s and on every epoch change until the log arrives.
+
+### End of run (the drain)
+
+When the workload is complete and nothing is pending, the coordinator drains for at most `DrainNs` (2 s). For each chain's final unit it knows:
+
+- the **expected** replicas: the live members that were assigned the unit and had not missed its deadline when it was accepted;
+- the **late** ones, which had missed it (asked again, never waited for);
+- the **verifiers** it engaged itself.
+
+A final unit is **settled** when at least two members computed it (one when `Replicas` = 1) and every expected replica confirmed it. Every `ResendNs` (500 ms) after the unit was accepted, the drain re-sends its Assign (Retransmit) to every expected, late or verifier member that has not confirmed it; a node that holds the unit as its chain head answers from its cache. If fewer than two members have confirmed it, each round also engages one more member as a verifier: Ready, eligible, not yet asked, the least lagging first, then the fewest roles, then the lowest id. A verifier that lacks the chain replays it from the log, which checks every logged entry it applies, and then computes the final unit.
+
+The run ends as soon as every final unit is settled (Completed), or when the drain times out. At the timeout it is Completed if every final unit is **verified** (at least two computations, and every expected replica confirmed it or is still computing it, as its last heartbeat says), and Unverified otherwise. A divergence makes it Diverged in either case. Then the coordinator sends Shutdown to every member, and afterwards answers every frame with Shutdown, so a node that lost the notice stops at its next heartbeat.
+
+### The outcome
+
+`RunOutcome` holds the status (Completed, Unverified, Diverged or Aborted), the digests below, the counters (units, epoch, reissues, duplicates, replays, rejected frames), the divergences, and:
+
+- `Chains`: per chain, the final head and its digest; `ConfirmedBy`, the members that computed it (the winner included); `PendingBy`, expected replicas still computing it at the end (laggards); `UnconfirmedBy`, expected replicas that never answered;
+- `CrossChecked`: accepted units that a second member confirmed, by an equal result or by a replay that recomputed them;
+- `Unconfirmed`: final units that were not verified at the end (0 for Completed).
+
+The digest rule makes a chain's final digest commit to every output on it, so the final-state check covers each replica's whole chain. What it cannot cover is an intermediate unit whose only computation came from a member that left before anyone compared it; replays and duplicates usually cover such units, and `CrossChecked` counts the ones that were.
 
 ### Digests
 
@@ -176,7 +199,7 @@ type IWorkload =                                            // the coordinator's
 ```
 
 - A node calls `Apply` only with the unit whose Prev is the chain's head, so a chain state always follows the hash chain; replay is `Apply` over logged units.
-- `Digest` must be a deterministic function of the units applied within one class, and it must change whenever an output changes: replica digests are compared to detect divergence.
+- `Digest` must be a deterministic function of the units applied within one class, and it must change whenever an output changes and stay changed: chain it over the previous digest and the output id, as the fake does, so that a chain's digest commits to every output on it. Replica digests are compared to detect divergence, and the coordinator also compares output ids wherever it has them (results, chain Ready, replay).
 - `Apply` runs on a worker thread, never the actor's, so a long unit does not stop heartbeats.
 - A workload must be deterministic: the units it plans may depend only on accepted outputs.
 
@@ -185,7 +208,7 @@ type IWorkload =                                            // the coordinator's
 `ChaosPolicy(seed, config, faults)` decides every injected fault from DetRng.
 
 - **Per-frame fate.** Each directed link (src, dst) draws from `DetRng(seed, DetRng.streamOf "lrm.cluster.chaos.link/<src>/<dst>")`, in the order of the frames on the link, exactly five decisions per frame: drop, duplicate, reorder (each `NextBelow 1000 < permille`), then two delays uniform in [MinDelay, MaxDelay]. A reordered frame gets ReorderDelay extra; a duplicate's second copy arrives one more delay later.
-- **Faults.** `Kill(node, t)`, `Restart(node, t)` (a new incarnation with no state), `Partition(node, from, until)` (every frame to or from the node is lost), `Lag(node, from, until, factor)` (executor cost times factor), `Corrupt(node, stage, step)` (simulator only: wrong outputs, honest digests) and `Sever(node, t)` (ChaosProxy only: the TCP connection is cut once).
+- **Faults.** `Kill(node, t)`, `Restart(node, t)` (a new incarnation with no state), `Partition(node, from, until)` (every frame to or from the node is lost), `Lag(node, from, until, factor)` (executor cost times factor), `Corrupt(node, stage, step)` (simulator only: a faulty device whose outputs at (stage, step) are wrong and whose digest follows them, as the digest rule requires), `CorruptOutput(node, stage, step)` (simulator only: wrong outputs and honest digests, an executor that breaks the digest rule, so only output comparisons can catch it) and `Sever(node, t)` (ChaosProxy only: the TCP connection is cut once).
 - **Random schedules.** `ChaosPolicy.RandomFaults(seed, nodes, horizon)` draws from `lrm.cluster.chaos.faults`: up to two kills of distinct nodes in [20%, 80%] of the horizon, each restarted after 0.5 to 3 s with probability 1/2; up to two partitions of 0.3 to 3 s; up to two lag windows of 0.5 to 4 s with a factor of 5 to 50.
 - **Configs.** `ChaosConfig.standard` (simulator): 2% drops, 2% duplicates, 5% reordered by 40 ms, 1 to 15 ms of delay. `ChaosConfig.proxy` (real processes): 1%, 1%, 2% by 10 ms, 0 to 3 ms.
 
@@ -193,7 +216,7 @@ type IWorkload =                                            // the coordinator's
 
 `Simulation.run` executes the real coordinator and node actors on a `VirtualClock`. Events (deliveries, timers, executor completions, kills, restarts) are processed in (virtual time, scheduling order); every frame is encoded, passed through the policy and decoded. Nothing reads the wall clock, and every coordinator decision iterates ordered collections, so a configuration always produces the same schedule.
 
-- **Trace hash** = SHA-256(`lrm.cluster.trace/1` || `00` || records): one 57-byte record per processed event, `u8` kind (1 deliver, 2 timer, 3 work done, 4 kill, 5 restart), `i64` virtual time, `u64` actor, `u64` other (the sender, timer tag or work token), and 32 bytes (the frame trailer for a delivery, zero otherwise). It includes virtual times on purpose; it is a test fingerprint, never a content address, and no wall-clock time enters it.
+- **Trace hash** = SHA-256(`lrm.cluster.trace/1` || `00` || records): one 57-byte record per processed event, `u8` kind (1 deliver, 2 timer, 3 work done, 4 kill, 5 restart), `i64` virtual time, `u64` actor, `u64` other (the sender, timer tag or work token), and 32 bytes (the frame trailer for a delivery, zero otherwise). It includes virtual times on purpose; it is a test fingerprint, never a content address, and no wall-clock time enters it. Its known answer for `Simulation.standard 7` (`lrm chaos trace --seed 7`) is `a9ddaf85bf537630191ff9d4d0b0e76b21ad565548ae034b055392d24986e9f2`, with 1,110 events, 3,372,932,801 ns of virtual time, 778 frames sent, 721 delivered, 67 dropped, 16 duplicated, 2 kills and no restart. Any change to the protocol's behaviour changes it, and the cpu tier pins it.
 - **Executor cost** is units × the stage's cost + 0 to CostJitter (from `lrm.cluster.sim.cost/<node>/<incarnation>`), times the active lag factor.
 - **`Simulation.standard seed`**: the standard fake job on 7 nodes (3 stages × 2 replicas plus a spare), cold starts of 300 to 800 ms, `ChaosConfig.standard`, and `RandomFaults` over the expected run time.
 
@@ -231,22 +254,22 @@ The cluster reports through the Lrm.Core facade with the reserved `cluster.*` na
 | `cluster.member.leave` | event | | node, reason (lease, restart, leave) | a node left the membership |
 | `cluster.lease.lost` | event | | | a node's own lease ran out |
 | `cluster.ready` | event | | node, scope (node, chain), lane, stage | a Ready |
-| `cluster.assign` | counter | count | stage, node, retransmit | an Assign sent |
+| `cluster.assign` | counter | count | stage, node, retransmit | an Assign sent (retransmit: a re-send, a drain re-request or a verifier) |
 | `cluster.unit.done` | event | | lane, stage, step, node, start_ns, end_ns, latency_ns | a unit accepted: the stage Gantt chart |
-| `cluster.unit.latency` | histogram | ns | stage, node | deadline start to accepted result |
-| `cluster.lag` | histogram | ns | stage, node | how far a duplicate trailed the accepted result |
+| `cluster.unit.latency` | histogram | ns | stage, node | deadline start to accepted result (only when the deadline had started: a deadline sample) |
+| `cluster.lag` | histogram | ns | stage, node | how far a confirming duplicate trailed the accepted result |
 | `cluster.deadline` | gauge | ns | stage, samples | the stage's deadline, when it changes |
 | `cluster.deadline.miss` | counter | count | stage, node | an assignment missed its deadline |
 | `cluster.reissue` | counter | count | lane, stage, step, node | lagging work recomputed elsewhere |
 | `cluster.reissue.unavailable` | event | | lane, stage, step | no node was free to take it |
-| `cluster.duplicate` | counter | count | stage, node | a matching duplicate |
+| `cluster.duplicate` | counter | count | stage, node | a matching result from another member or incarnation (a confirmation) |
 | `cluster.divergence` | event | | unit, lane, stage, step, first_node, other_node, source (result, replay) | replicas disagree |
 | `cluster.replay.served` | counter | count | lane, stage, node | log entries sent for replay |
 | `cluster.replay.units` | counter | count | lane, stage | units a node replayed |
 | `cluster.demote` | event | | stage, node | a lagging replica left a stage |
-| `cluster.frame.rejected` | counter | count | reason, kind, node | a rejected frame |
+| `cluster.frame.rejected` | counter | count | reason (malformed, stale_epoch, unknown_member, unknown_unit, unexpected_kind, reserved_id, bad_name, duplicate_name), kind, node | a rejected frame |
 | `cluster.chaos` | counter | count | fault (drop, duplicate, kill, restart), node | an injected fault (simulator) |
-| `cluster.run` | event | | status, units, epoch, reissues, duplicates, divergences, replays, run_digest, end_ns | the run finished |
+| `cluster.run` | event | | status (completed, unverified, diverged, aborted), units, epoch, reissues, duplicates, divergences, replays, cross_checked, unconfirmed, run_digest, end_ns | the run finished |
 | `cluster.bytes_sent` | meter | B | kind | coordinator payload bytes sent |
 
 ## Limits and design choices
@@ -255,15 +278,16 @@ The cluster reports through the Lrm.Core facade with the reserved `cluster.*` na
 - **Active replication.** Every replica of a stage executes every unit of that stage, so a failover needs no catch-up while one replica survives; replay rebuilds a replica that has none.
 - **Pull-based replay.** The node that lacks a chain asks for exactly the missing suffix; the coordinator does not track node state beyond replays in progress.
 - **One job per coordinator run.** Fetch, Log and chain heads name chains by (lane, stage) within that job.
-- **Unauthenticated localhost.** The sender field is self-declared. Phase 1 runs on trusted links.
+- **Unauthenticated localhost.** The sender field is self-declared. Phase 1 runs on trusted links: a peer can still make the reader allocate up to a 64 MiB frame by sending that much, and SHA-256 runs once per received frame.
+- **The cross-check is complete only for executors that keep the digest rule.** An executor that breaks it (CorruptOutput) escapes when every other computation of the corrupted unit was lost and no later replay covered it. In a sweep of `Simulation.standard` seeds 1 to 400, each with one extra random corruption, that happened in 1 seed. With the rule kept (Corrupt), every seed whose corruption reached an accepted result ended Diverged; the cpu tier runs the first 200 of those seeds.
 
 ## Verification
 
 All in the cpu tier, so CI runs them on every PR:
 
 - the frame, unit and fake-pipeline vectors below; round trips of every message kind; rejection of every malformed header, payload and single-bit flip; frames reassembled from one-byte reads;
-- the coordinator frame by frame: epochs, StaleEpoch and UnknownMember, lease expiry, deadlines only after Ready (30 s, then reissue), first result wins, the divergence tripwire, replay divergence, Fetch, late Shutdown;
-- the simulator: **200 chaos seeds bit-identical** to `FakeReference` with 2 replicas per stage; the **trace hash stable over 100 runs** of one seed; **loss of both replicas** of a stage recovered by replay (with and without a spare); kill and restart; the tripwire on a corrupt replica; 40 s cold starts with no reissue; lagging work reissued; a partition expelled and rejoined; 20% frame loss; telemetry changing nothing; every reserved name emitted on virtual time;
+- the coordinator frame by frame: epochs, StaleEpoch and UnknownMember, lease expiry, deadlines only after Ready (30 s, then reissue), deadlines kept across membership changes, first result wins, network duplicates of the accepted result, a differing result from the accepted node, stale results of accepted units compared, the divergence tripwire, chain Ready checked on digest and output, Hello names and sender 0, the drain asking again and ending Unverified, deadline samples only from started deadlines, Log batches bounded by encoded size, Fetch, late Shutdown;
+- the simulator: **200 chaos seeds bit-identical** to `FakeReference` with 2 replicas per stage, every final state confirmed by two members, every live node holding a final state holding the reference digest, and at least 95% of units cross-checked; the **trace hash stable over 100 runs** of one seed and equal to its known answer; **loss of both replicas** of a stage recovered by replay (with and without a spare); kill and restart; the tripwire on a corrupt replica; a corrupt result accepted first and caught by a takeover node's replay (both kinds of corruption); a wrong output with an honest digest caught by a duplicate; a final unit whose other replica died computed again by a verifier; stuck replicas reissued despite a flapping spare; 40 s cold starts with no reissue; lagging work reissued; a partition expelled and rejoined; 20% frame loss; telemetry changing nothing; every reserved name emitted on virtual time;
 - real time: an in-process cluster with chaos transports, TCP with an 8 MiB payload, the proxy byte for byte and Sever, a TCP cluster through the proxy, and **3 node processes behind a ChaosProxy with one killed**. These wait at most 60 s and assert digests only.
 
 ### Vectors
@@ -310,8 +334,8 @@ The small job's tokens are `[3360429926, 1564617581, 3831387546]` for lane 0 and
 
 | Command | What it does |
 | --- | --- |
-| `lrm chaos sim [--seeds 200] [--from 1]` | runs `Simulation.standard` for each seed and compares every RunDigest with the reference |
-| `lrm chaos trace [--seed 7] [--runs 100]` | runs one seed many times and prints the distinct trace hashes |
+| `lrm chaos sim [--seeds 200] [--from 1]` | runs `Simulation.standard` for each seed and requires status Completed and the reference RunDigest; prints the cross-check coverage |
+| `lrm chaos trace [--seed 7] [--runs 100]` | runs one seed many times and prints the distinct trace hashes and the stats |
 | `lrm chaos local [--seed 1] [--nodes 3] [--kill 2\|none] [--kill-after N] [--cost-ms 2] [--timeout-ms 60000] [chaos options]` | a coordinator and a ChaosProxy here, node processes behind them, one killed part-way |
 | `lrm chaos node --connect HOST:PORT --id N --name NAME [--cost-ms C] [--stages 0,1,2]` | one fake-executor node process |
 | `lrm chaos-proxy --listen PORT --target HOST:PORT [--seed N] [--chaos none\|lan\|proxy\|standard] [--drop P] [--duplicate P] [--reorder P] [--min-delay-ms] [--max-delay-ms] [--reorder-delay-ms] [--partition node:fromMs:untilMs] [--sever node:ms] [--kill node:ms] [--restart node:ms] [--duration-ms N]` | the standalone proxy |
