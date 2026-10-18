@@ -53,12 +53,12 @@ $checks = if ($Only) { @($Only | ForEach-Object { $_ -split ',' } | ForEach-Obje
 $labelsKnown = $PSBoundParameters.ContainsKey('Labels')
 $labelList = @(Split-Labels $Labels)
 $labelSource = if ($labelsKnown) { 'argument' } else { 'unknown' }
-$event = $null
+$ghEvent = $null
 try {
     if ($Ci) {
         $eventName = $env:GITHUB_EVENT_NAME
-        if ($env:GITHUB_EVENT_PATH -and (Test-Path -LiteralPath $env:GITHUB_EVENT_PATH)) { $event = Get-Content -Raw -LiteralPath $env:GITHUB_EVENT_PATH | ConvertFrom-Json }
-        $pr = if ($event) { Get-Prop $event 'pull_request' } else { $null }
+        if ($env:GITHUB_EVENT_PATH -and (Test-Path -LiteralPath $env:GITHUB_EVENT_PATH)) { $ghEvent = Get-Content -Raw -LiteralPath $env:GITHUB_EVENT_PATH | ConvertFrom-Json }
+        $pr = if ($ghEvent) { Get-Prop $ghEvent 'pull_request' } else { $null }
         if ($pr) {
             if (-not $PSBoundParameters.ContainsKey('Branch')) { $Branch = [string]$pr.head.ref }
             if (-not $PSBoundParameters.ContainsKey('Base')) { $Base = [string]$pr.base.sha }

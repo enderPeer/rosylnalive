@@ -61,7 +61,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$toolchain = Get-Content -Raw -LiteralPath $toolchainPath | ConvertFrom-Json
+$toolchain = Get-Content -Raw -LiteralPath $ToolchainPath | ConvertFrom-Json
 if ($toolchain.schema -ne 'lrm.toolchain/1') { throw "toolchain.json: unknown schema '$($toolchain.schema)'" }
 
 if (-not $DataRoot) { $DataRoot = if ($env:LRM_DATA) { $env:LRM_DATA } else { $toolchain.dataRoot } }
