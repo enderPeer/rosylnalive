@@ -348,8 +348,16 @@ let tests =
                     |> List.map (fun (_, d) -> Heap.alignUp 4L (Array.fold (*) 1L d * 2L))
 
                 Expect.equal weightBytes.Length 310 "310 weights, the head tied"
-                Expect.isGreaterThan (bytes ArenaKind.Weights) (List.sum weightBytes) "weights in two pages"
-                Expect.isLessThan (bytes ArenaKind.Activations) (48L <<< 20) "activations under 48 MiB"
+                Expect.isLessThan (List.sum weightBytes) (bytes ArenaKind.Weights) "weights, packed"
+
+                let weightPages =
+                    plan.Layout.Pages
+                    |> List.filter (fun pg -> pg.Arena = ArenaKind.Weights)
+                    |> List.map _.Bytes
+
+                Expect.equal weightPages [ 1072562176L; 119603200L ] "the two weight pages"
+                Expect.equal (bytes ArenaKind.Activations) 44236800L "activations"
+                Expect.isFalse (plan.Layout.Arenas |> List.contains ArenaKind.Taps) "no taps arena without taps"
 
                 let sp = plan.Stages |> List.exactlyOne
                 Expect.equal sp.Variants[0].Ops.Length 535 "ops"

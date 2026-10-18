@@ -43,7 +43,7 @@ Status as of 2026-10-18. "v1" or "v1.1" means written in full and in review or m
 | ConformanceHarness | E1 | `conformance-harness.md` | v1 draft (E1, wave 2, PR #17) |
 | TokenizerApi | M1 | `tokenizer.md` | v1 (PR #18; ADR M1-0001) |
 | ForwardOpsAndQwenModel | M2 | `qwen-model.md` | v1 (M2a PR #15; full-model parity in M2b) |
-| GpuExecutor | X1 | `gpu-executor.md` | planned (wave 3) |
+| GpuExecutor | X1 | `gpu-executor.md` | v1 (X1a PR #31; ADR X1-0001; the GPUs in X1b) |
 | StagePipeline | C2 | `stage-pipeline.md` | planned (wave 3) |
 | Gate1Evidence | I1, I2, I3 | `gate1-evidence.md` | planned (wave 4) |
 
