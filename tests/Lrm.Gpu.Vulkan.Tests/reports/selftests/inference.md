@@ -23,10 +23,10 @@ _No rows._
 
 | Node | Arena | Peak | Last | Samples |
 | --- | --- | ---: | ---: | ---: |
-| n0 | weights | 1.40 GiB | 128.00 KiB | 17 |
-| n0 | activations | 1.00 GiB | 320.00 KiB | 25 |
-| n0 | scratch | 576.00 KiB | 576.00 KiB | 21 |
-| n0 | table | 1.00 MiB | 1.00 MiB | 31 |
+| n0 | weights | 1.40 GiB | 128.00 KiB | 21 |
+| n0 | activations | 1.00 GiB | 320.00 KiB | 29 |
+| n0 | scratch | 576.00 KiB | 576.00 KiB | 25 |
+| n0 | table | 1.00 MiB | 1.00 MiB | 35 |
 
 ## Metering
 
@@ -34,24 +34,24 @@ Resource use attributed to node, component and stage (layers summed). Wall time 
 
 | Node | Component | Stage | Wall (self) | GPU | FLOPs | Bytes moved | Tokens | Records |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| n0 | (none) |  | 2.98 s | 63.66 ms | 0 | 5.65 GiB | 0 | 23,826 |
+| n0 | (none) |  | 2.06 s | 56.60 ms | 0 | 5.66 GiB | 0 | 23,982 |
 
 ## Run
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-154459-f8574c3a` |
+| Run | `20261018-155431-a38f1165` |
 | Title | Vulkan backend: selftests, probe, soak and transfers (V1) |
 | Kind | kernels |
 | Status | ok |
-| Started | 2026-10-18T15:44:59.394Z |
-| Ended | 2026-10-18T15:45:05.630Z |
+| Started | 2026-10-18T15:54:31.497Z |
+| Ended | 2026-10-18T15:54:36.382Z |
 | Execution class | vulkan pci:10de:2704, 616.92, win-x64 shaders a1a15c99c3fb |
 | Class id | `9c41399f5fa9` |
 | Driver | 616.92 |
-| Commit | `42a93ba4a7bcb1705a7fbd7329a77ad69c7fd178` |
+| Commit | `d6493b708775ebc8648102db781198eed5465b88` |
 | Nodes | 1 |
-| Records | 27,375 |
+| Records | 27,665 |
 | Synthetic | no |
 
 | Parameter | Value |
@@ -69,7 +69,7 @@ Resource use attributed to node, component and stage (layers summed). Wall time 
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| n0 | creator | vulkan pci:10de:2704, 616.92, win-x64 shaders a1a15c99c3fb | 27,375 | ok | 0 |
+| n0 | creator | vulkan pci:10de:2704, 616.92, win-x64 shaders a1a15c99c3fb | 27,665 | ok | 0 |
 
 ### Log problems
 

@@ -4,7 +4,7 @@
 
 | Folder | Run | What ran |
 | --- | --- | --- |
-| [`selftests/`](selftests/kernels.md) | `20261018-154459-f8574c3a`, commit `42a93ba` | The gpu tier of `tests/Lrm.Gpu.Vulkan.Tests`: the probe, the five selftests, the copied-heap fallback, copies, a whole 1 GiB page, timers, the 1.5 GB round trip and three 10,000-dispatch soaks |
+| [`selftests/`](selftests/kernels.md) | `20261018-155431-a38f1165`, commit `d6493b7` | The gpu tier of `tests/Lrm.Gpu.Vulkan.Tests`: the probe, the tininess words, the five selftests (against the CPU, CpuDevice and D3D12), the copied-heap fallback, copies, a whole 1 GiB page, timers, the 1.5 GB round trip and three 10,000-dispatch soaks |
 | [`conformance/`](conformance/kernels.md) | `20261018-154101-9eb7a6c2`, commit `42a93ba` merged locally with `origin/main` at `707427f` | E1's conformance harness on Vulkan over every kernel that exists: the selftests and K1 to K3 (14 kernels, 214 cases, 213 pass) |
 
 - [`selftests/kernels.md`](selftests/kernels.md) is the default template: the fp32 denormal probe's bit table (flush), GPU time by kernel, the timeline of one selftest submission and the dispatch histogram.
@@ -19,6 +19,7 @@ No T1 template reads the records below, so they exist only in the run log (`even
 | --- | --- | --- |
 | `gpu.selftest` | check | One per selftest case and run. The negative control's cases fail by design and carry `negative_control = true` |
 | `gpu.selftest.across_backends` | check | One per selftest case: the words compared with D3D12's, the elements excluded (a denormal input or a tiny product), the two modes |
+| `gpu.selftest.against_cpu_device` | check | One per selftest case: the words that differ from CpuDevice's in the class's mode |
 | `gpu.fp32_tininess` | event | The eight inputs at the bottom of the normal range, the measured words, IEEE, flush after rounding and flush before rounding |
 | `gpu.soak` | check | One per soak run (`mode` = `timed_dispatches`, `submission_timer`, `no_timers`): host, GPU, frame, Vulkan-object and private-memory flatness, and managed memory per dispatch against its bound |
 | `gpu.heap.descriptor_writes` | check | The resource heap's 64 and the probe heap's 64 descriptor writes |

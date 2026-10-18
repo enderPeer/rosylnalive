@@ -4,7 +4,7 @@
 No conformance cases were recorded. Every dispatch is under the 100 ms budget.
 
 - Conformance cases: 0, failed: 0
-- GPU dispatches: 20,176, total GPU time 32.36 ms
+- GPU dispatches: 20,196, total GPU time 28.98 ms
 
 ## Conformance matrix
 
@@ -54,13 +54,13 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Kernel | Backend | Layer | Step | Duration | Of budget |
 | --- | --- | ---: | ---: | ---: | ---: |
-| groups_echo | vulkan |  |  | 66.56 µs | 0.1% |
+| groups_echo | vulkan |  | 1 | 65.54 µs | 0.1% |
+| groups_echo | vulkan |  | 1 | 65.54 µs | 0.1% |
+| groups_echo | vulkan |  | 1 | 65.54 µs | 0.1% |
+| groups_echo | vulkan |  | 1 | 65.54 µs | 0.1% |
+| groups_echo | vulkan |  | 1 | 65.54 µs | 0.1% |
 | groups_echo | vulkan |  | 1 | 65.54 µs | 0.1% |
 | groups_echo | vulkan |  | 2 | 65.54 µs | 0.1% |
-| groups_echo | vulkan |  | 1 | 65.54 µs | 0.1% |
-| groups_echo | vulkan |  | 2 | 65.54 µs | 0.1% |
-| groups_echo | vulkan |  | 1 | 65.54 µs | 0.1% |
-| groups_echo | vulkan |  | 1 | 65.54 µs | 0.1% |
 | groups_echo | vulkan |  | 1 | 65.54 µs | 0.1% |
 | groups_echo | vulkan |  | 2 | 65.54 µs | 0.1% |
 | groups_echo | vulkan |  | 1 | 65.54 µs | 0.1% |
@@ -69,18 +69,18 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-154459-f8574c3a` |
+| Run | `20261018-155431-a38f1165` |
 | Title | Vulkan backend: selftests, probe, soak and transfers (V1) |
 | Kind | kernels |
 | Status | ok |
-| Started | 2026-10-18T15:44:59.394Z |
-| Ended | 2026-10-18T15:45:05.630Z |
+| Started | 2026-10-18T15:54:31.497Z |
+| Ended | 2026-10-18T15:54:36.382Z |
 | Execution class | vulkan pci:10de:2704, 616.92, win-x64 shaders a1a15c99c3fb |
 | Class id | `9c41399f5fa9` |
 | Driver | 616.92 |
-| Commit | `42a93ba4a7bcb1705a7fbd7329a77ad69c7fd178` |
+| Commit | `d6493b708775ebc8648102db781198eed5465b88` |
 | Nodes | 1 |
-| Records | 27,375 |
+| Records | 27,665 |
 | Synthetic | no |
 
 | Parameter | Value |
@@ -98,7 +98,7 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| n0 | creator | vulkan pci:10de:2704, 616.92, win-x64 shaders a1a15c99c3fb | 27,375 | ok | 0 |
+| n0 | creator | vulkan pci:10de:2704, 616.92, win-x64 shaders a1a15c99c3fb | 27,665 | ok | 0 |
 
 ### Log problems
 
