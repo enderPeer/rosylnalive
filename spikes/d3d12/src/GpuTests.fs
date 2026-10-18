@@ -260,6 +260,13 @@ let private versusHardware () =
                 Array.zip hw32 w32
                 |> Array.forall (fun (a, b) -> a = b || (Single.IsNaN(f32 a) && Single.IsNaN(f32 b)))
 
+            // Each backend's words against the CPU's expected words, every bit (NaN payloads included).
+            let unequal (out: uint32[]) (c: SelftestCase) =
+                Array.zip out (wordsOf c.Expected) |> Array.filter (fun (a, b) -> a <> b) |> Array.length
+
+            let warpVsCpu = unequal w32 w
+            let hwVsCpu = unequal hw32 h
+
             Telemetry.check
                 "gpu.warp.versus_hardware"
                 (differing = 0)
@@ -272,10 +279,12 @@ let private versusHardware () =
                     Attr.str "hardware" info.Name
                     Attr.str "hardware_nan_words" (h.NanWords |> List.map (sprintf "%08x") |> String.concat " ")
                     Attr.str "warp_nan_words" (w.NanWords |> List.map (sprintf "%08x") |> String.concat " ")
+                    Attr.int "warp_vs_cpu_bits" warpVsCpu
+                    Attr.int "hardware_vs_cpu_bits" hwVsCpu
                 ]
 
             printfn
-                "versus %s: %-12s %-14s %s%s"
+                "versus %s: %-12s %-14s %s; words unequal to the CPU's, every bit: WARP %d, hardware %d%s"
                 info.Name
                 h.Kernel
                 h.Case
@@ -283,6 +292,8 @@ let private versusHardware () =
                      "same bits"
                  else
                      sprintf "%d of %d words differ%s" differing h.Elements (if nanOnly then ", all NaN" else ""))
+                warpVsCpu
+                hwVsCpu
                 (if h.NanWords.IsEmpty && w.NanWords.IsEmpty then
                      ""
                  else

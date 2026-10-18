@@ -97,7 +97,10 @@ else {
     if (Test-Path $log) {
         Say ""
         Say '```'
-        Get-Content $log | Where-Object { $_ -match '^(fp32 denormal probe|throughput:|d3d12-warp:|EnumWarpAdapter|  feature level|D1.s backend)' } | ForEach-Object { Say $_ }
+        # Expecto colours its own lines; drop the escape sequences before matching the spike's lines.
+        Get-Content $log | ForEach-Object { [regex]::Replace($_, '\x1b\[[0-9;?]*[A-Za-z]', '') } |
+            Where-Object { $_ -match '^(fp32 denormal probe|throughput:|d3d12-warp:|EnumWarpAdapter|  feature level|D1.s backend|versus )' } |
+            ForEach-Object { Say $_ }
         Say '```'
     }
 }
