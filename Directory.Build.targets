@@ -4,16 +4,18 @@
     the fsproj, owned by the project's owner. It is imported here, so the fsproj itself keeps only file items.
     It may add targets, properties and file items, but never references: the guard below treats a reference written
     there like one written in the fsproj.
+    Spike status here comes from the project's path (spikes/**), not from the LrmIsSpike property: a property can be
+    overridden, the path cannot be changed without moving the project out of the graph.
   -->
   <Import Project="$(MSBuildProjectDirectory)/$(MSBuildProjectName).lrm.targets"
-          Condition="'$(LrmIsSpike)' != 'true' and Exists('$(MSBuildProjectDirectory)/$(MSBuildProjectName).lrm.targets')" />
+          Condition="!$(LrmProjectPath.StartsWith('spikes/')) and Exists('$(MSBuildProjectDirectory)/$(MSBuildProjectName).lrm.targets')" />
 
   <!--
     Snapshot of every reference item that exists before the graph adds its own. These come from the fsproj,
     Directory.Build.props or the project's .lrm.targets, so each one is hand-written, whatever metadata it carries
     (LrmGraph="true" included). The SDK's implicit framework reference is told apart by IsImplicitlyDefined.
   -->
-  <ItemGroup Condition="'$(LrmIsSpike)' != 'true'">
+  <ItemGroup Condition="!$(LrmProjectPath.StartsWith('spikes/'))">
     <_LrmHandProjectReference Include="@(ProjectReference)" />
     <_LrmHandPackageReference Include="@(PackageReference)" />
     <_LrmHandPackageDownload Include="@(PackageDownload)" />
@@ -28,7 +30,7 @@
     FSharp.Core for every F# project, at the SDK default version (FSCorePackageVersion, pinned in
     Directory.Packages.props). Central package management switches the SDK's own implicit reference off.
   -->
-  <ItemGroup Condition="'$(LrmIsSpike)' != 'true'">
+  <ItemGroup Condition="!$(LrmProjectPath.StartsWith('spikes/'))">
     <PackageReference Include="FSharp.Core" LrmGraph="true" ExcludeAssets="contentFiles" />
   </ItemGroup>
 
@@ -40,7 +42,7 @@
   -->
   <Target Name="LrmCheckProjectGraph"
           BeforeTargets="CollectPackageReferences;CollectPackageDownloads;ResolveProjectReferences;ResolveAssemblyReferences;CoreCompile"
-          Condition="'$(LrmIsSpike)' != 'true'">
+          Condition="!$(LrmProjectPath.StartsWith('spikes/'))">
     <Error Condition="'$(LrmGraphName)' == ''"
            Text="$(LrmProjectPath) is not registered in docs/project-graph.json. Add it there and run: pwsh tools/ci/gen-project-graph.ps1" />
     <ItemGroup>

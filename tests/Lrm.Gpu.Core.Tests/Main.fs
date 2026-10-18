@@ -16,6 +16,7 @@ let tiers: TestTiers =
                 ShaderTests.tests
                 SpirvTests.tests
                 BackendTests.tests
+                TailCallTests.tests
             ]
     }
 
