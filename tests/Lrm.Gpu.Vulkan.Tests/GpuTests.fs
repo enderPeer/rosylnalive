@@ -731,6 +731,52 @@ let private negativeControl () =
         Expect.isFalse c.Passed (sprintf "%s %s fails without its dispatch" c.Kernel c.Case)
         Expect.equal c.NotWritten c.Elements (sprintf "%s %s: every element is unwritten" c.Kernel c.Case)
 
+/// The five selftests on E1's CpuDevice in the Vulkan class's model (flush, every NaN result 0x7FFFFFFF) give Vulkan's
+/// bytes exactly: the same suite, inputs, layout and table on both.
+let private againstCpuDevice () : byte[] =
+    use b = create ()
+    let ib = b :> IGpuBackend
+    let suite = SelfTests.Suite.Create ib
+    ib.LoadKernels(shaders ()) |> ignore
+    let mode = b.Fp32Denormals.Value
+    let vulkan = suite.Run(1, mode)
+
+    use cpu =
+        Lrm.Gpu.CpuDevice.CpuDevice.create
+            { Lrm.Gpu.CpuDevice.CpuDeviceOptions.Default with
+                Fp32Denormals = mode
+                CanonicalNaN = true
+            }
+            (DeviceOptions.For ExecutionBackend.CpuDevice)
+
+    let cpuSuite = SelfTests.Suite.Create cpu
+    cpu.LoadKernels(shaders ()) |> ignore
+    let emulated = cpuSuite.Run(1, mode)
+
+    for v, c in List.zip vulkan.Cases emulated.Cases do
+        Expect.isTrue c.Passed (sprintf "cpu-device %s %s: %s" c.Kernel c.Case c.Detail)
+
+        let differ =
+            Array.map2 (<>) (wordsOf v.Output) (wordsOf c.Output)
+            |> Array.filter id
+            |> Array.length
+
+        printfn "  %-12s %-14s %d elements, %d differ from CpuDevice" v.Kernel v.Case v.Elements differ
+
+        Telemetry.check
+            "gpu.selftest.against_cpu_device"
+            (differ = 0)
+            [
+                Attr.str TelemetryKeys.Kernel v.Kernel
+                Attr.str TelemetryKeys.Case v.Case
+                Attr.str "mode" (Fp32Denormals.name mode)
+                Attr.int "elements" v.Elements
+                Attr.int "differing" differ
+            ]
+
+    Expect.equal vulkan.Bytes emulated.Bytes "Vulkan's selftest bytes equal CpuDevice's in the class's mode"
+    vulkan.Bytes
+
 // ---- across backends: the D3D12 reference ------------------------------------------------------------------------
 
 /// D3D12's selftest run, from the d3d12 group of this exe (it runs first, under the d3d12 mutex).
@@ -1399,6 +1445,7 @@ let tests =
             gpuTestTwice "the flush class flushes products below 2^-126 before rounding, twice" tininess
             gpuTestTwice "the five selftests are bit-exact against the CPU and bit-identical twice" selftests
             gpuTest "the negative control: without dispatches every selftest case is unwritten" negativeControl
+            gpuTestTwice "the five selftests equal CpuDevice's in the class's mode, twice" againstCpuDevice
             gpuTest "the selftest words equal D3D12's where the two classes agree" acrossBackends
             gpuTestTwice "the copied-heap fallback gives the in-place heap's selftest bits, twice" copiedHeap
             gpuTestTwice "copies across and within pages are state-correct, bit-identical twice" copies
