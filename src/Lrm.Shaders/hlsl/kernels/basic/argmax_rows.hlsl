@@ -43,9 +43,10 @@ void main(uint3 gid : SV_GroupID, uint3 tid : SV_GroupThreadID)
     {
         uint bits = lrm_load_u32(x, base + c);
         float v = asfloat(bits);
+        precise bool greater = v > best;
         if ((bits & 0x7FFFFFFFu) > 0x7F800000u)
             nan = 1u;
-        else if (index == ARGMAX_NONE || v > best)
+        else if (index == ARGMAX_NONE || greater)
         {
             best = v;
             index = c;
@@ -65,7 +66,9 @@ void main(uint3 gid : SV_GroupID, uint3 tid : SV_GroupThreadID)
             uint ib = g_index[t + h];
             float va = g_value[t];
             float vb = g_value[t + h];
-            bool takeB = ib != ARGMAX_NONE && (ia == ARGMAX_NONE || vb > va || (vb == va && ib < ia));
+            precise bool greater = vb > va;
+            precise bool equal = vb == va;
+            bool takeB = ib != ARGMAX_NONE && (ia == ARGMAX_NONE || greater || (equal && ib < ia));
             if (takeB)
             {
                 g_value[t] = vb;

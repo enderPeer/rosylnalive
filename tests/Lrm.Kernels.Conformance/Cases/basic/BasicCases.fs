@@ -643,6 +643,63 @@ let private siluCases =
             (int64 n + 7L)
             "Gates from -100 to 100: exp overflow, tiny and zero gates; capacity beyond n"
 
+    // Bands of large gates, one case each, so that their small outputs are not swamped in relL2 by the larger outputs
+    // of other gates (as in wide_range). Below about -87.34 (ln 2^126), 1 + exp(-g) exceeds 2^126, where the GPU's
+    // fast division returns 0; and an exp evaluated as exp2(-g * log2 e) has an error that grows with |g|. Below about
+    // -88.72, CpuRef F32's exp overflows (silu gives a signed zero) while CpuRef F64's does not, so the reference error
+    // is 1 there. A separate generator, so the cases above keep their inputs.
+    let bands =
+        let rb = rng "silu.bands"
+        let n = 4096
+
+        let band (name: string) (lo: float32) (hi: float32) (doc: string) =
+            silu name (CaseGen.uniform rb n lo hi) (CaseGen.uniform rb n -4.0f 4.0f) (int64 n) doc
+
+        let below =
+            let g = CaseGen.uniform rb n -200.0f -88.8f
+
+            let specials =
+                [|
+                    -88.8f
+                    -92.0f
+                    -103.0f
+                    -104.0f
+                    -110.0f
+                    -120.0f
+                    -121.0f
+                    -1000.0f
+                    -1e30f
+                    -3.4028235e38f
+                |]
+
+            Array.blit specials 0 g 0 specials.Length
+
+            silu
+                "gates_m200_m88p8"
+                g
+                (CaseGen.uniform rb n -4.0f 4.0f)
+                (int64 n)
+                "Gates below -88.8, where exp(-g) overflows in float32: CpuRef F32 gives signed zeros, F64 tiny values"
+
+        [
+            band
+                "gates_m88p7_m87p4"
+                -88.7f
+                -87.4f
+                "Gates in [-88.7, -87.4): 1 + exp(-g) above 2^126, results near -1e-36"
+            silu
+                "gates_m88p7_m87p4_up_huge"
+                (CaseGen.uniform rb n -88.7f -87.4f)
+                (CaseGen.uniform rb n 1e30f 1e31f)
+                (int64 n)
+                "Gates in [-88.7, -87.4), up in [1e30, 1e31): results near -1e-6"
+            band "gates_m87p3_m80" -87.3f -80.0f "Gates in [-87.3, -80)"
+            band "gates_m80_m40" -80.0f -40.0f "Gates in [-80, -40)"
+            band "gates_m40_m8" -40.0f -8.0f "Gates in [-40, -8)"
+            band "gates_8_100" 8.0f 100.0f "Gates in [8, 100): silu(g) close to g"
+            below
+        ]
+
     [
         mlp "qwen_mlp_decode" Intermediate "Decode: one row of Qwen's intermediate size (12 groups)"
         mlp "qwen_mlp_prefill37" (37 * Intermediate) "A 37-token prefill: 113,664 elements"
@@ -655,6 +712,7 @@ let private siluCases =
         mlp "n255" 255 "One group, one thread idle"
         mlp "n257" 257 "Two groups, the second with one element"
     ]
+    @ bands
 
 let private siluLarge () =
     let n = 65537 * 256
