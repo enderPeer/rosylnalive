@@ -74,6 +74,23 @@
     <LrmIsTestExe>true</LrmIsTestExe>
   </PropertyGroup>
 
+  <!--
+    No F# tail calls in GPU code (ADR R3-0001, D3D12ComIdiom rule 3). A call compiled with the tail. prefix frees the
+    caller's frame before the callee runs, so a stack address (NativePtr.toNativeInt &&local, or a span over a local)
+    passed in tail position to native code, to an Fn delegate or to another of the project's functions is read after
+    its frame is gone; on the RTX 4080 this made Close return E_INVALIDARG. Tailcalls is false for every project in the
+    gpu, interop or backends group of docs/project-graph.json, and for every test exe and app whose references reach
+    one of those groups. Group membership comes from build/ProjectKinds.g.props (LrmGroups, LrmReaches). The root
+    owns Tailcalls: a .lrm.targets file never sets it (the hygiene layering check). The cpu tier scans the IL of the
+    D3D12 interop, its tests and Lrm.Gpu.Core for tail. prefixes (Lrm.Testing's TailCalls.scan).
+  -->
+  <PropertyGroup>
+    <_LrmGpuCode>false</_LrmGpuCode>
+    <_LrmGpuCode Condition="$(LrmGroups.Contains(';gpu;')) or $(LrmGroups.Contains(';interop;')) or $(LrmGroups.Contains(';backends;'))">true</_LrmGpuCode>
+    <_LrmGpuCode Condition="'$(LrmProjectKind)' != 'lib' and '$(LrmProjectKind)' != 'tool' and ($(LrmReaches.Contains(';gpu;')) or $(LrmReaches.Contains(';interop;')) or $(LrmReaches.Contains(';backends;')))">true</_LrmGpuCode>
+    <Tailcalls Condition="'$(_LrmGpuCode)' == 'true'">false</Tailcalls>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(LrmIsSpike)' == 'true'">
     <!-- Spikes are throwaway: not in the solution, not in CI, free to pin their own packages. -->
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>

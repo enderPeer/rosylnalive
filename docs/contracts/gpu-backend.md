@@ -104,7 +104,7 @@ Whether a device keeps fp32 denormals in kernel arithmetic is fixed by its devic
 
 1. Dispatch `scale_f32` with `a = Fp32Denormals.ProbeScale` (0.5) over the 7 inputs `Fp32Denormals.probeInputs`, and download the 7 results.
 2. `Fp32Denormals.classify` returns `Preserve` when the bits equal the CPU's (`expected Preserve`), `Flush` when they equal the CPU's with every denormal input and result replaced by zero of the same sign (`expected Flush`), and `Mixed` otherwise. Wrong normal controls raise `GpuContractException`, because then `scale_f32` itself failed.
-3. Emit `gpu.fp32_denormals` (`Fp32Denormals.record`) and keep the mode in the run's device record, next to the ExecutionClass.
+3. Emit `gpu.fp32_denormals` and keep the mode in the run's device record, next to the ExecutionClass. `Fp32Denormals.recordProbe backend results` does steps 2 and 3 in one call and records the words too (`inputs`, `results`, `expected_preserve`, `expected_flush`, each as 7 space-separated 8-digit hex words), so the kernels report shows the bit table; backends use it. `Fp32Denormals.record backend mode` records the mode alone.
 
 | Input bits | `Preserve` result | `Flush` result |
 | --- | --- | --- |
@@ -146,7 +146,7 @@ Every backend reports through the ambient telemetry facade with reserved names (
 | `gpu.dispatch` | GpuInterval | each dispatch, with `TimeDispatches` | `backend`, `kernel` |
 | timer names (`gpu.*`) | GpuInterval | each timer, at `Wait` | `backend`, the timer's attributes |
 | `gpu.wait` | Span | host time blocked in `Wait` | `backend` |
-| `gpu.fp32_denormals` | Event | once per shader backend, after the denormal probe | `backend`, `mode` (`preserve`, `flush`, `mixed`) |
+| `gpu.fp32_denormals` | Event | once per shader backend, after the denormal probe | `backend`, `mode` (`preserve`, `flush`, `mixed`), and from `recordProbe` `inputs`, `results`, `expected_preserve`, `expected_flush` |
 
 `Completion.Timers` lists the same results: timers in the order they were opened, then the `gpu.dispatch` timings. Telemetry never changes a value.
 

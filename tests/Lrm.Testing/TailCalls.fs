@@ -1,6 +1,7 @@
-namespace Lrm.Gpu.D3D12.Interop
+namespace Lrm.Testing
 
 open System
+open System.Diagnostics
 open System.IO
 open System.Reflection
 open System.Reflection.Emit
@@ -19,8 +20,9 @@ type TailCallSite =
 
 /// Finds IL tail. prefixes in an assembly (ADR R3-0001). A tail call frees the caller's frame before the callee runs,
 /// so a callee that receives the address of a caller's local (NativePtr.toNativeInt &&x, or a span over it) reads a
-/// dead stack slot. The generated wrappers cannot be tail-called (they take `this` by reference); projects that
-/// also pass stack addresses to their own functions build with Tailcalls=false and check the result with `scan`.
+/// dead stack slot. Directory.Build.props builds every GPU, interop and backend project, and every test exe and app
+/// that reaches one, with Tailcalls=false; their tests check the result with `scan` (an empty list). Written by R3 for
+/// the D3D12 interop, moved here so that every backend's tests can scan their own assemblies.
 [<RequireQualifiedAccess>]
 module TailCalls =
     let private opcodes =
@@ -109,3 +111,17 @@ module TailCalls =
                         tail <- op = OpCodes.Tailcall
                         i <- i + len + operandSize op il (i + len)
         ]
+
+    /// True when `asm` was compiled without optimization, as in a Debug build: its DebuggableAttribute disables the JIT
+    /// optimizer. The F# SDK's Debug configuration also defaults Tailcalls to false for every project
+    /// (Microsoft.FSharp.NetSdk.props), so in such a build a scan proves nothing about the root setting: an empty scan
+    /// passes trivially and a control that expects tail calls fails. Tests skip their scans then.
+    let builtWithoutOptimization (asm: Assembly) =
+        match asm.GetCustomAttribute<DebuggableAttribute>() with
+        | null -> false
+        | a -> a.IsJITOptimizerDisabled
+
+    /// The reason a scan is skipped in an unoptimized build (`skiptest` text).
+    [<Literal>]
+    let UnoptimizedBuild =
+        "built without optimization (Debug): the F# SDK defaults Tailcalls=false for every project there, so the scan cannot tell the root setting; run the Release build (CI and tools/test.ps1 default)"

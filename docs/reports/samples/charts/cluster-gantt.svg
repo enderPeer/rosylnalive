@@ -1,131 +1,85 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="270" viewBox="0 0 720 270" role="img" aria-labelledby="cluster-gantt-title cluster-gantt-desc">
 <title id="cluster-gantt-title">Stage Gantt chart</title>
-<desc id="cluster-gantt-desc">Timeline of 94 intervals on 5 lanes, 1 event marks.</desc>
+<desc id="cluster-gantt-desc">Timeline of 48 intervals on 5 lanes, 3 event marks.</desc>
 <style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
 <rect class="bg" x="0" y="0" width="720" height="270" rx="8"/>
 <rect class="frame" x="0.5" y="0.5" width="719" height="269" rx="8"/>
 <text class="t1" x="16" y="26" font-size="15" font-weight="600">Stage Gantt chart</text>
-<text class="t2" x="16" y="45" font-size="12">Work units per node and stage; markers are node losses</text>
+<text class="t2" x="16" y="45" font-size="12">Each accepted work unit on the node whose result was taken, from assignment to acceptance; markers are node losses, …</text>
 <rect class="fgood" x="19" y="57" width="10" height="10" rx="2"/>
-<text class="t2" x="38" y="66" font-size="12">ok</text>
-<rect class="fwarn" x="72.44" y="57" width="10" height="10" rx="2"/>
-<text class="t2" x="91.44" y="66" font-size="12">reissued</text>
-<rect class="fn" x="160.44" y="57" width="10" height="10" rx="2"/>
-<text class="t2" x="179.44" y="66" font-size="12">duplicate</text>
-<rect class="fcrit" x="252.28" y="57" width="10" height="10" rx="2"/>
-<text class="t2" x="271.28" y="66" font-size="12">lost</text>
-<line class="grid" x1="203.36" y1="114" x2="203.36" y2="224" stroke-width="1"/>
-<line class="grid" x1="302.35" y1="114" x2="302.35" y2="224" stroke-width="1"/>
-<line class="grid" x1="401.35" y1="114" x2="401.35" y2="224" stroke-width="1"/>
-<line class="grid" x1="500.34" y1="114" x2="500.34" y2="224" stroke-width="1"/>
-<line class="grid" x1="599.33" y1="114" x2="599.33" y2="224" stroke-width="1"/>
+<text class="t2" x="38" y="66" font-size="12">accepted</text>
+<rect class="fwarn" x="109.88" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="128.88" y="66" font-size="12">reissued</text>
+<line class="grid" x1="234.83" y1="114" x2="234.83" y2="224" stroke-width="1"/>
+<line class="grid" x1="372.85" y1="114" x2="372.85" y2="224" stroke-width="1"/>
+<line class="grid" x1="510.87" y1="114" x2="510.87" y2="224" stroke-width="1"/>
+<line class="grid" x1="648.89" y1="114" x2="648.89" y2="224" stroke-width="1"/>
 <text class="t2" x="96.96" y="129" font-size="12" text-anchor="end">s0a  stage 0</text>
 <text class="t2" x="96.96" y="151" font-size="12" text-anchor="end">s0b  stage 0</text>
 <text class="t2" x="96.96" y="173" font-size="12" text-anchor="end">spare  stage 0</text>
 <text class="t2" x="96.96" y="195" font-size="12" text-anchor="end">s1a  stage 1</text>
 <text class="t2" x="96.96" y="217" font-size="12" text-anchor="end">s1b  stage 1</text>
-<rect class="fgood" x="104.96" y="118" width="37.52" height="14" rx="3"><title>s0a stage 0, step 0, unit 6a67d4f5f60c: ok, 38.92 ms</title></rect>
-<rect class="fn" x="189.33" y="118" width="8.48" height="14" rx="3"><title>s0a stage 0, step 1, unit 6901d47abcbb: duplicate, 9.58 ms</title></rect>
-<rect class="fn" x="210.86" y="118" width="8.94" height="14" rx="3"><title>s0a stage 0, step 2, unit 58ae3f55d3ee: duplicate, 10.05 ms</title></rect>
-<rect class="fn" x="233" y="118" width="7.74" height="14" rx="3"><title>s0a stage 0, step 3, unit 5bf0c1a42b60: duplicate, 8.83 ms</title></rect>
-<rect class="fgood" x="254.49" y="118" width="8.13" height="14" rx="3"><title>s0a stage 0, step 4, unit c5d767b58f1c: ok, 9.22 ms</title></rect>
-<rect class="fn" x="276.28" y="118" width="8.05" height="14" rx="3"><title>s0a stage 0, step 5, unit 4a7c90fb6b65: duplicate, 9.15 ms</title></rect>
-<rect class="fn" x="298.04" y="118" width="8.99" height="14" rx="3"><title>s0a stage 0, step 6, unit c62ca4218d13: duplicate, 10.09 ms</title></rect>
-<rect class="fn" x="319.98" y="118" width="8.22" height="14" rx="3"><title>s0a stage 0, step 7, unit afb568efa853: duplicate, 9.32 ms</title></rect>
-<rect class="fn" x="342.18" y="118" width="7.89" height="14" rx="3"><title>s0a stage 0, step 8, unit 15eefda117e8: duplicate, 8.99 ms</title></rect>
-<rect class="fn" x="104.96" y="140" width="41.78" height="14" rx="3"><title>s0b stage 0, step 0, unit 6a67d4f5f60c: duplicate, 43.21 ms</title></rect>
-<rect class="fgood" x="189.33" y="140" width="7.47" height="14" rx="3"><title>s0b stage 0, step 1, unit 6901d47abcbb: ok, 8.56 ms</title></rect>
-<rect class="fgood" x="210.86" y="140" width="8.19" height="14" rx="3"><title>s0b stage 0, step 2, unit 58ae3f55d3ee: ok, 9.28 ms</title></rect>
-<rect class="fgood" x="233" y="140" width="6.85" height="14" rx="3"><title>s0b stage 0, step 3, unit 5bf0c1a42b60: ok, 7.93 ms</title></rect>
-<rect class="fn" x="254.49" y="140" width="8.29" height="14" rx="3"><title>s0b stage 0, step 4, unit c5d767b58f1c: duplicate, 9.38 ms</title></rect>
-<rect class="fgood" x="276.28" y="140" width="7.1" height="14" rx="3"><title>s0b stage 0, step 5, unit 4a7c90fb6b65: ok, 8.19 ms</title></rect>
-<rect class="fgood" x="298.04" y="140" width="7.69" height="14" rx="3"><title>s0b stage 0, step 6, unit c62ca4218d13: ok, 8.78 ms</title></rect>
-<rect class="fgood" x="319.98" y="140" width="7.86" height="14" rx="3"><title>s0b stage 0, step 7, unit afb568efa853: ok, 8.95 ms</title></rect>
-<rect class="fgood" x="342.18" y="140" width="7.16" height="14" rx="3"><title>s0b stage 0, step 8, unit 15eefda117e8: ok, 8.24 ms</title></rect>
-<rect class="fgood" x="364.47" y="140" width="7.58" height="14" rx="3"><title>s0b stage 0, step 9, unit 7db4c2db05c7: ok, 8.67 ms</title></rect>
-<rect class="fgood" x="387.81" y="140" width="7.39" height="14" rx="3"><title>s0b stage 0, step 10, unit 7c986e4d3de1: ok, 8.47 ms</title></rect>
-<rect class="fgood" x="408.67" y="140" width="8.75" height="14" rx="3"><title>s0b stage 0, step 11, unit 0d1c4e1f3133: ok, 9.85 ms</title></rect>
-<rect class="fgood" x="431.59" y="140" width="7.77" height="14" rx="3"><title>s0b stage 0, step 12, unit 68df8f5265b7: ok, 8.86 ms</title></rect>
-<rect class="fgood" x="453.6" y="140" width="7.48" height="14" rx="3"><title>s0b stage 0, step 13, unit 16015d390b85: ok, 8.56 ms</title></rect>
-<rect class="fn" x="475.37" y="140" width="8.49" height="14" rx="3"><title>s0b stage 0, step 14, unit d51195ad8b57: duplicate, 9.58 ms</title></rect>
-<rect class="fgood" x="497.7" y="140" width="7.31" height="14" rx="3"><title>s0b stage 0, step 15, unit f9898675c547: ok, 8.39 ms</title></rect>
-<rect class="fn" x="518.57" y="140" width="8.31" height="14" rx="3"><title>s0b stage 0, step 16, unit 26459796239b: duplicate, 9.41 ms</title></rect>
-<rect class="fgood" x="540.52" y="140" width="8.18" height="14" rx="3"><title>s0b stage 0, step 17, unit c7b00d983fc9: ok, 9.27 ms</title></rect>
-<rect class="fgood" x="562.34" y="140" width="8.49" height="14" rx="3"><title>s0b stage 0, step 18, unit 28ed1a02c4ec: ok, 9.59 ms</title></rect>
-<rect class="fn" x="585.88" y="140" width="7.73" height="14" rx="3"><title>s0b stage 0, step 19, unit d2f651d1b671: duplicate, 8.82 ms</title></rect>
-<rect class="fgood" x="607.28" y="140" width="7.58" height="14" rx="3"><title>s0b stage 0, step 20, unit 2d0b6ceccafc: ok, 8.66 ms</title></rect>
-<rect class="fgood" x="628.56" y="140" width="8.66" height="14" rx="3"><title>s0b stage 0, step 21, unit 503d4658920c: ok, 9.75 ms</title></rect>
-<rect class="fgood" x="651.46" y="140" width="8.61" height="14" rx="3"><title>s0b stage 0, step 22, unit 25bcda0f3004: ok, 9.71 ms</title></rect>
-<rect class="fn" x="674.29" y="140" width="9.22" height="14" rx="3"><title>s0b stage 0, step 23, unit 43cc2e37e3b9: duplicate, 10.33 ms</title></rect>
-<rect class="fgood" x="144.57" y="184" width="42.17" height="14" rx="3"><title>s1a stage 1, step 0, unit 8a2d2fb4a494: ok, 43.61 ms</title></rect>
-<rect class="fn" x="198.89" y="184" width="10.26" height="14" rx="3"><title>s1a stage 1, step 1, unit 6bdc32302909: duplicate, 11.37 ms</title></rect>
-<rect class="fn" x="221.13" y="184" width="9.43" height="14" rx="3"><title>s1a stage 1, step 2, unit d6657182b160: duplicate, 10.54 ms</title></rect>
-<rect class="fgood" x="241.94" y="184" width="9.97" height="14" rx="3"><title>s1a stage 1, step 3, unit dc6ef8b4f429: ok, 11.08 ms</title></rect>
-<rect class="fn" x="264.71" y="184" width="10.17" height="14" rx="3"><title>s1a stage 1, step 4, unit 92898906ed47: duplicate, 11.28 ms</title></rect>
-<rect class="fn" x="285.47" y="184" width="10.05" height="14" rx="3"><title>s1a stage 1, step 5, unit 3c3b9ff879fd: duplicate, 11.16 ms</title></rect>
-<rect class="fgood" x="307.82" y="184" width="9.57" height="14" rx="3"><title>s1a stage 1, step 6, unit 05a0cca4bd5f: ok, 10.67 ms</title></rect>
-<rect class="fn" x="329.93" y="184" width="10.67" height="14" rx="3"><title>s1a stage 1, step 7, unit 178f842be475: duplicate, 11.79 ms</title></rect>
-<rect class="fn" x="351.43" y="184" width="10.64" height="14" rx="3"><title>s1a stage 1, step 8, unit bd3f77791ece: duplicate, 11.75 ms</title></rect>
-<rect class="fgood" x="374.14" y="184" width="9.62" height="14" rx="3"><title>s1a stage 1, step 9, unit 44a8da50a6e1: ok, 10.73 ms</title></rect>
-<rect class="fn" x="397.28" y="184" width="8.94" height="14" rx="3"><title>s1a stage 1, step 10, unit 72ccaf00a23b: duplicate, 10.04 ms</title></rect>
-<rect class="fn" x="419.51" y="184" width="10.32" height="14" rx="3"><title>s1a stage 1, step 11, unit 8af5c1877c7d: duplicate, 11.43 ms</title></rect>
-<rect class="fgood" x="441.46" y="184" width="9.56" height="14" rx="3"><title>s1a stage 1, step 12, unit 58f9320eb721: ok, 10.67 ms</title></rect>
-<rect class="fn" x="463.17" y="184" width="10.37" height="14" rx="3"><title>s1a stage 1, step 13, unit 087a4da2b4c4: duplicate, 11.48 ms</title></rect>
-<rect class="fgood" x="485.41" y="184" width="9.71" height="14" rx="3"><title>s1a stage 1, step 14, unit ddbd6217ef9e: ok, 10.82 ms</title></rect>
-<rect class="fgood" x="507.1" y="184" width="8.88" height="14" rx="3"><title>s1a stage 1, step 15, unit 595bae32aa45: ok, 9.98 ms</title></rect>
-<rect class="fgood" x="528.2" y="184" width="9.73" height="14" rx="3"><title>s1a stage 1, step 16, unit ecd020481434: ok, 10.84 ms</title></rect>
-<rect class="fgood" x="550.78" y="184" width="8.97" height="14" rx="3"><title>s1a stage 1, step 17, unit 2976851fe02a: ok, 10.07 ms</title></rect>
-<rect class="fn" x="572.91" y="184" width="10.48" height="14" rx="3"><title>s1a stage 1, step 18, unit 9c6d63dcedec: duplicate, 11.59 ms</title></rect>
-<rect class="fn" x="595.54" y="184" width="9.95" height="14" rx="3"><title>s1a stage 1, step 19, unit 5bb3377adfde: duplicate, 11.06 ms</title></rect>
-<rect class="fn" x="616.95" y="184" width="10.42" height="14" rx="3"><title>s1a stage 1, step 20, unit 7a2fa984d109: duplicate, 11.54 ms</title></rect>
-<rect class="fn" x="639.31" y="184" width="9.93" height="14" rx="3"><title>s1a stage 1, step 21, unit c21981a48332: duplicate, 11.04 ms</title></rect>
-<rect class="fgood" x="662.16" y="184" width="9.55" height="14" rx="3"><title>s1a stage 1, step 22, unit 799c022022cd: ok, 10.66 ms</title></rect>
-<rect class="fgood" x="684.26" y="184" width="9.56" height="14" rx="3"><title>s1a stage 1, step 23, unit 6fbba11529a7: ok, 10.67 ms</title></rect>
-<rect class="fn" x="144.57" y="206" width="45.24" height="14" rx="3"><title>s1b stage 1, step 0, unit 8a2d2fb4a494: duplicate, 46.71 ms</title></rect>
-<rect class="fgood" x="198.89" y="206" width="9.38" height="14" rx="3"><title>s1b stage 1, step 1, unit 6bdc32302909: ok, 10.49 ms</title></rect>
-<rect class="fgood" x="221.13" y="206" width="9.28" height="14" rx="3"><title>s1b stage 1, step 2, unit d6657182b160: ok, 10.38 ms</title></rect>
-<rect class="fn" x="241.94" y="206" width="10.88" height="14" rx="3"><title>s1b stage 1, step 3, unit dc6ef8b4f429: duplicate, 12.00 ms</title></rect>
-<rect class="fgood" x="264.71" y="206" width="8.98" height="14" rx="3"><title>s1b stage 1, step 4, unit 92898906ed47: ok, 10.09 ms</title></rect>
-<rect class="fgood" x="285.47" y="206" width="9.99" height="14" rx="3"><title>s1b stage 1, step 5, unit 3c3b9ff879fd: ok, 11.10 ms</title></rect>
-<rect class="fn" x="307.82" y="206" width="9.62" height="14" rx="3"><title>s1b stage 1, step 6, unit 05a0cca4bd5f: duplicate, 10.73 ms</title></rect>
-<rect class="fgood" x="329.93" y="206" width="9.67" height="14" rx="3"><title>s1b stage 1, step 7, unit 178f842be475: ok, 10.78 ms</title></rect>
-<rect class="fgood" x="351.43" y="206" width="10.46" height="14" rx="3"><title>s1b stage 1, step 8, unit bd3f77791ece: ok, 11.57 ms</title></rect>
-<rect class="fn" x="374.14" y="206" width="10.79" height="14" rx="3"><title>s1b stage 1, step 9, unit 44a8da50a6e1: duplicate, 11.91 ms</title></rect>
-<rect class="fgood" x="397.28" y="206" width="8.8" height="14" rx="3"><title>s1b stage 1, step 10, unit 72ccaf00a23b: ok, 9.90 ms</title></rect>
-<rect class="fgood" x="419.51" y="206" width="9.5" height="14" rx="3"><title>s1b stage 1, step 11, unit 8af5c1877c7d: ok, 10.61 ms</title></rect>
-<rect class="fn" x="441.46" y="206" width="9.65" height="14" rx="3"><title>s1b stage 1, step 12, unit 58f9320eb721: duplicate, 10.76 ms</title></rect>
-<rect class="fgood" x="463.17" y="206" width="9.62" height="14" rx="3"><title>s1b stage 1, step 13, unit 087a4da2b4c4: ok, 10.73 ms</title></rect>
-<rect class="fn" x="485.41" y="206" width="10.17" height="14" rx="3"><title>s1b stage 1, step 14, unit ddbd6217ef9e: duplicate, 11.28 ms</title></rect>
-<rect class="fn" x="507.1" y="206" width="9.53" height="14" rx="3"><title>s1b stage 1, step 15, unit 595bae32aa45: duplicate, 10.63 ms</title></rect>
-<rect class="fn" x="528.2" y="206" width="10.6" height="14" rx="3"><title>s1b stage 1, step 16, unit ecd020481434: duplicate, 11.72 ms</title></rect>
-<rect class="fn" x="550.78" y="206" width="10.18" height="14" rx="3"><title>s1b stage 1, step 17, unit 2976851fe02a: duplicate, 11.30 ms</title></rect>
-<rect class="fgood" x="572.91" y="206" width="10.38" height="14" rx="3"><title>s1b stage 1, step 18, unit 9c6d63dcedec: ok, 11.50 ms</title></rect>
-<rect class="fgood" x="595.54" y="206" width="9.16" height="14" rx="3"><title>s1b stage 1, step 19, unit 5bb3377adfde: ok, 10.26 ms</title></rect>
-<rect class="fgood" x="616.95" y="206" width="9.03" height="14" rx="3"><title>s1b stage 1, step 20, unit 7a2fa984d109: ok, 10.13 ms</title></rect>
-<rect class="fgood" x="639.31" y="206" width="9.57" height="14" rx="3"><title>s1b stage 1, step 21, unit c21981a48332: ok, 10.68 ms</title></rect>
-<rect class="fn" x="662.16" y="206" width="10.83" height="14" rx="3"><title>s1b stage 1, step 22, unit 799c022022cd: duplicate, 11.95 ms</title></rect>
-<rect class="fn" x="684.26" y="206" width="10.74" height="14" rx="3"><title>s1b stage 1, step 23, unit 6fbba11529a7: duplicate, 11.86 ms</title></rect>
-<rect class="fn" x="453.6" y="162" width="8.16" height="14" rx="3"><title>spare stage 0, step 13, unit 16015d390b85: duplicate, 9.26 ms</title></rect>
-<rect class="fgood" x="475.37" y="162" width="7.95" height="14" rx="3"><title>spare stage 0, step 14, unit d51195ad8b57: ok, 9.04 ms</title></rect>
-<rect class="fn" x="497.7" y="162" width="8.34" height="14" rx="3"><title>spare stage 0, step 15, unit f9898675c547: duplicate, 9.43 ms</title></rect>
-<rect class="fgood" x="518.57" y="162" width="7.55" height="14" rx="3"><title>spare stage 0, step 16, unit 26459796239b: ok, 8.64 ms</title></rect>
-<rect class="fn" x="540.52" y="162" width="8.85" height="14" rx="3"><title>spare stage 0, step 17, unit c7b00d983fc9: duplicate, 9.95 ms</title></rect>
-<rect class="fn" x="562.34" y="162" width="8.83" height="14" rx="3"><title>spare stage 0, step 18, unit 28ed1a02c4ec: duplicate, 9.93 ms</title></rect>
-<rect class="fgood" x="585.88" y="162" width="7.57" height="14" rx="3"><title>spare stage 0, step 19, unit d2f651d1b671: ok, 8.66 ms</title></rect>
-<rect class="fn" x="607.28" y="162" width="9.41" height="14" rx="3"><title>spare stage 0, step 20, unit 2d0b6ceccafc: duplicate, 10.52 ms</title></rect>
-<rect class="fn" x="628.56" y="162" width="8.82" height="14" rx="3"><title>spare stage 0, step 21, unit 503d4658920c: duplicate, 9.92 ms</title></rect>
-<rect class="fn" x="651.46" y="162" width="8.62" height="14" rx="3"><title>spare stage 0, step 22, unit 25bcda0f3004: duplicate, 9.71 ms</title></rect>
-<rect class="fgood" x="674.29" y="162" width="7.88" height="14" rx="3"><title>spare stage 0, step 23, unit 43cc2e37e3b9: ok, 8.97 ms</title></rect>
-<line class="scrit" x1="397.2" y1="108" x2="397.2" y2="224" stroke-width="2"><title>s0a lost</title></line>
-<path class="fcrit" d="M392.2 102h10l-5 7Z"/>
-<rect class="fcrit emph" x="364.47" y="118" width="4" height="14" rx="2" stroke-width="1"><title>s0a stage 0, step 9, unit 7db4c2db05c7: lost, 3.30 ms</title></rect>
-<rect class="fwarn emph" x="397.2" y="162" width="46.52" height="14" rx="3" stroke-width="1"><title>spare stage 0, step 9, unit 7db4c2db05c7: reissued, 48.00 ms</title></rect>
-<text class="t2" x="405.2" y="108" font-size="10" text-anchor="start">s0a lost</text>
-<text class="t3" x="203.36" y="241" font-size="11" text-anchor="middle">100 ms</text>
-<text class="t3" x="302.35" y="241" font-size="11" text-anchor="middle">200 ms</text>
-<text class="t3" x="401.35" y="241" font-size="11" text-anchor="middle">300 ms</text>
-<text class="t3" x="500.34" y="241" font-size="11" text-anchor="middle">400 ms</text>
-<text class="t3" x="599.33" y="241" font-size="11" text-anchor="middle">500 ms</text>
+<rect class="fgood" x="104.96" y="118" width="25.86" height="14" rx="3"><title>s0a stage 0, lane 0 step 0: accepted after 38.92 ms</title></rect>
+<rect class="fgood" x="132.57" y="184" width="29.09" height="14" rx="3"><title>s1a stage 1, lane 0 step 0: accepted after 43.61 ms</title></rect>
+<rect class="fgood" x="162.88" y="140" width="4.91" height="14" rx="2.45"><title>s0b stage 0, lane 0 step 1: accepted after 8.56 ms</title></rect>
+<rect class="fgood" x="169.54" y="206" width="6.24" height="14" rx="3"><title>s1b stage 1, lane 0 step 1: accepted after 10.49 ms</title></rect>
+<rect class="fgood" x="176.99" y="140" width="5.4" height="14" rx="2.7"><title>s0b stage 0, lane 0 step 2: accepted after 9.28 ms</title></rect>
+<rect class="fgood" x="184.15" y="206" width="6.17" height="14" rx="3"><title>s1b stage 1, lane 0 step 2: accepted after 10.38 ms</title></rect>
+<rect class="fgood" x="191.52" y="140" width="4.47" height="14" rx="2.24"><title>s0b stage 0, lane 0 step 3: accepted after 7.93 ms</title></rect>
+<rect class="fgood" x="197.76" y="184" width="6.65" height="14" rx="3"><title>s1a stage 1, lane 0 step 3: accepted after 11.08 ms</title></rect>
+<rect class="fgood" x="205.61" y="118" width="5.37" height="14" rx="2.68"><title>s0a stage 0, lane 0 step 4: accepted after 9.22 ms</title></rect>
+<rect class="fgood" x="212.73" y="206" width="5.96" height="14" rx="2.98"><title>s1b stage 1, lane 0 step 4: accepted after 10.09 ms</title></rect>
+<rect class="fgood" x="219.9" y="140" width="4.65" height="14" rx="2.32"><title>s0b stage 0, lane 0 step 5: accepted after 8.19 ms</title></rect>
+<rect class="fgood" x="226.31" y="206" width="6.66" height="14" rx="3"><title>s1b stage 1, lane 0 step 5: accepted after 11.10 ms</title></rect>
+<rect class="fgood" x="234.18" y="140" width="5.06" height="14" rx="2.53"><title>s0b stage 0, lane 0 step 6: accepted after 8.78 ms</title></rect>
+<rect class="fgood" x="241" y="184" width="6.37" height="14" rx="3"><title>s1a stage 1, lane 0 step 6: accepted after 10.67 ms</title></rect>
+<rect class="fgood" x="248.57" y="140" width="5.18" height="14" rx="2.59"><title>s0b stage 0, lane 0 step 7: accepted after 8.95 ms</title></rect>
+<rect class="fgood" x="255.51" y="206" width="6.44" height="14" rx="3"><title>s1b stage 1, lane 0 step 7: accepted after 10.78 ms</title></rect>
+<rect class="fgood" x="263.15" y="140" width="4.69" height="14" rx="2.34"><title>s0b stage 0, lane 0 step 8: accepted after 8.24 ms</title></rect>
+<rect class="fgood" x="269.6" y="206" width="6.99" height="14" rx="3"><title>s1b stage 1, lane 0 step 8: accepted after 11.57 ms</title></rect>
+<rect class="fgood" x="486.27" y="184" width="6.4" height="14" rx="3"><title>s1a stage 1, lane 0 step 9: accepted after 10.73 ms</title></rect>
+<rect class="fgood" x="493.88" y="162" width="4.74" height="14" rx="2.37"><title>spare stage 0, lane 0 step 10: accepted after 8.32 ms</title></rect>
+<rect class="fgood" x="500.38" y="184" width="5.83" height="14" rx="2.91"><title>s1a stage 1, lane 0 step 10: accepted after 9.90 ms</title></rect>
+<rect class="fgood" x="507.42" y="162" width="5.07" height="14" rx="2.53"><title>spare stage 0, lane 0 step 11: accepted after 8.79 ms</title></rect>
+<rect class="fgood" x="514.25" y="206" width="6.36" height="14" rx="3"><title>s1b stage 1, lane 0 step 11: accepted after 10.67 ms</title></rect>
+<rect class="fgood" x="521.81" y="162" width="4.91" height="14" rx="2.45"><title>spare stage 0, lane 0 step 12: accepted after 8.56 ms</title></rect>
+<rect class="fgood" x="528.48" y="184" width="6.71" height="14" rx="3"><title>s1a stage 1, lane 0 step 12: accepted after 11.17 ms</title></rect>
+<rect class="fgood" x="536.4" y="140" width="5.14" height="14" rx="2.57"><title>s0b stage 0, lane 0 step 13: accepted after 8.89 ms</title></rect>
+<rect class="fgood" x="543.29" y="206" width="6.46" height="14" rx="3"><title>s1b stage 1, lane 0 step 13: accepted after 10.82 ms</title></rect>
+<rect class="fgood" x="550.96" y="162" width="4.79" height="14" rx="2.4"><title>spare stage 0, lane 0 step 14: accepted after 8.39 ms</title></rect>
+<rect class="fgood" x="557.52" y="206" width="5.89" height="14" rx="2.95"><title>s1b stage 1, lane 0 step 14: accepted after 9.98 ms</title></rect>
+<rect class="fgood" x="564.61" y="140" width="5.08" height="14" rx="2.54"><title>s0b stage 0, lane 0 step 15: accepted after 8.81 ms</title></rect>
+<rect class="fgood" x="571.45" y="184" width="6.19" height="14" rx="3"><title>s1a stage 1, lane 0 step 15: accepted after 10.42 ms</title></rect>
+<rect class="fgood" x="578.85" y="162" width="5.4" height="14" rx="2.7"><title>spare stage 0, lane 0 step 16: accepted after 9.27 ms</title></rect>
+<rect class="fgood" x="586.01" y="206" width="5.95" height="14" rx="2.97"><title>s1b stage 1, lane 0 step 16: accepted after 10.07 ms</title></rect>
+<rect class="fgood" x="593.16" y="140" width="5.46" height="14" rx="2.73"><title>s0b stage 0, lane 0 step 17: accepted after 9.36 ms</title></rect>
+<rect class="fgood" x="600.38" y="206" width="7" height="14" rx="3"><title>s1b stage 1, lane 0 step 17: accepted after 11.59 ms</title></rect>
+<rect class="fgood" x="608.59" y="162" width="5.08" height="14" rx="2.54"><title>spare stage 0, lane 0 step 18: accepted after 8.82 ms</title></rect>
+<rect class="fgood" x="615.43" y="184" width="6.21" height="14" rx="3"><title>s1a stage 1, lane 0 step 18: accepted after 10.44 ms</title></rect>
+<rect class="fgood" x="622.85" y="140" width="4.87" height="14" rx="2.44"><title>s0b stage 0, lane 0 step 19: accepted after 8.51 ms</title></rect>
+<rect class="fgood" x="629.48" y="206" width="6.96" height="14" rx="3"><title>s1b stage 1, lane 0 step 19: accepted after 11.54 ms</title></rect>
+<rect class="fgood" x="637.65" y="140" width="4.79" height="14" rx="2.4"><title>s0b stage 0, lane 0 step 20: accepted after 8.40 ms</title></rect>
+<rect class="fgood" x="644.2" y="206" width="6.62" height="14" rx="3"><title>s1b stage 1, lane 0 step 20: accepted after 11.04 ms</title></rect>
+<rect class="fgood" x="652.03" y="140" width="5.11" height="14" rx="2.55"><title>s0b stage 0, lane 0 step 21: accepted after 8.85 ms</title></rect>
+<rect class="fgood" x="658.89" y="206" width="6.35" height="14" rx="3"><title>s1b stage 1, lane 0 step 21: accepted after 10.66 ms</title></rect>
+<rect class="fgood" x="666.46" y="140" width="5.83" height="14" rx="2.92"><title>s0b stage 0, lane 0 step 22: accepted after 9.90 ms</title></rect>
+<rect class="fgood" x="674.05" y="206" width="6.36" height="14" rx="3"><title>s1b stage 1, lane 0 step 22: accepted after 10.67 ms</title></rect>
+<rect class="fgood" x="681.62" y="162" width="5.32" height="14" rx="2.66"><title>spare stage 0, lane 0 step 23: accepted after 9.16 ms</title></rect>
+<rect class="fgood" x="688.7" y="206" width="6.3" height="14" rx="3"><title>s1b stage 1, lane 0 step 23: accepted after 10.58 ms</title></rect>
+<line class="scrit" x1="279.86" y1="108" x2="279.86" y2="224" stroke-width="2"><title>s0a killed</title></line>
+<path class="fcrit" d="M274.86 102h10l-5 7Z"/>
+<line class="swarn" x1="450.31" y1="108" x2="450.31" y2="224" stroke-width="2"><title>s0a demoted from stage 0</title></line>
+<path class="fwarn" d="M445.31 102h10l-5 7Z"/>
+<line class="scrit" x1="622.83" y1="108" x2="622.83" y2="224" stroke-width="2"><title>s0a left (lease)</title></line>
+<path class="fcrit" d="M617.83 102h10l-5 7Z"/>
+<rect class="fwarn emph" x="277.79" y="162" width="206.72" height="14" rx="3" stroke-width="1"><title>spare stage 0, lane 0 step 9: reissued after 301.01 ms</title></rect>
+<text class="t2" x="287.86" y="108" font-size="10" text-anchor="start">s0a killed</text>
+<text class="t2" x="458.31" y="108" font-size="10" text-anchor="start">s0a demoted from stage 0</text>
+<text class="t2" x="630.83" y="108" font-size="10" text-anchor="start">s0a left (lease)</text>
+<text class="t3" x="234.83" y="241" font-size="11" text-anchor="middle">200 ms</text>
+<text class="t3" x="372.85" y="241" font-size="11" text-anchor="middle">400 ms</text>
+<text class="t3" x="510.87" y="241" font-size="11" text-anchor="middle">600 ms</text>
+<text class="t3" x="648.89" y="241" font-size="11" text-anchor="middle">800 ms</text>
 <line class="axis" x1="104.96" y1="224" x2="696" y2="224" stroke-width="1"/>
-<text class="t3" x="400.48" y="260" font-size="11" text-anchor="middle">time since the run started</text>
+<text class="t3" x="400.48" y="260" font-size="11" text-anchor="middle">time since the first cluster record</text>
 </svg>

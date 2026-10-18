@@ -96,6 +96,7 @@
   </ItemGroup>
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Cluster.Tests'">
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Cluster/Lrm.Cluster.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Telemetry/Lrm.Telemetry.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)tests/Lrm.Testing/Lrm.Testing.fsproj" LrmGraph="true" />
   </ItemGroup>
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Core.Tests'">
@@ -148,6 +149,9 @@
   </ItemGroup>
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Gpu.D3D12.Interop.Tests'">
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Gpu.D3D12.Interop/Lrm.Gpu.D3D12.Interop.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Gpu.Core/Lrm.Gpu.Core.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Shaders/Lrm.Shaders.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Telemetry/Lrm.Telemetry.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)tests/Lrm.Testing/Lrm.Testing.fsproj" LrmGraph="true" />
   </ItemGroup>
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Gpu.D3D12.Tests'">
@@ -208,6 +212,7 @@
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Tensor.Tests'">
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Tensor/Lrm.Tensor.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Tensor.CpuReference/Lrm.Tensor.CpuReference.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Telemetry/Lrm.Telemetry.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)tests/Lrm.Testing/Lrm.Testing.fsproj" LrmGraph="true" />
   </ItemGroup>
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Testing'">

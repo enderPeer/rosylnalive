@@ -26,10 +26,17 @@
       "!docs/contracts/CHANGELOG.md",
       "src/Lrm.Core/**",
       "src/Lrm.Gpu.Core/**",
-      "src/Lrm.Shaders/hlsl/**/*.hlsli",
+      "src/Lrm.Shaders/include/**",
+      "src/Lrm.Shaders/rootsig/**",
       "src/Lrm.Shaders/Lrm.Shaders.lrm.targets",
       "src/Lrm.Shaders.Build/**",
-      "src/Lrm.Tensor/**",
+      "src/Lrm.Tensor/Shape.fs",
+      "src/Lrm.Tensor/HostTensor.fs",
+      "src/Lrm.Tensor/Safetensors.fs",
+      "src/Lrm.Tensor/Compare.fs",
+      "src/Lrm.Tensor/Goldens.fs",
+      "src/Lrm.Tensor/ToleranceSpec.fs",
+      "src/Lrm.Tensor/KernelBounds.fs",
       "src/Lrm.Cluster/Protocol*.fs",
       "**/*.schema.json",
       "goldens/**/tolerances.json"
@@ -80,6 +87,7 @@
         "docs/contracts/agent-permissions.md",
         "docs/contracts/ownership-and-contract-change.md",
         "docs/decisions/S0-*.md",
+        "docs/decisions/int-*.md",
         "docs/reports/README.md",
         "docs/reports/waves/**"
       ]
@@ -187,7 +195,8 @@
         "docs/contracts/comparators.md",
         "docs/contracts/kernel-bounds.md",
         "docs/decisions/O2-*.md",
-        "docs/contracts/tolerance-spec.md"
+        "docs/contracts/tolerance-spec.md",
+        "docs/reports/cpuref/**"
       ]
     },
     "T1": {

@@ -1,62 +1,81 @@
 # Status
 
-Last updated: 2026-10-18. Waves 0 and 1 are built, reviewed and combined on the integration branch `int/wave1` (draft PR #13, green locally on CPU and GPU). Nothing is merged to `main`; merging is waiting on the user. Wave 2 is running on the integration branch.
+Last updated: 2026-10-18.
 
-## Done
+Waves 0 and 1 of Phase 1 are merged into `main` (PRs #1–#12), and the wave 1 integration fixes are PR #21. Wave 2 is built on branches (PRs #15–#20) and is finishing its last two workstreams; its PRs are rebased onto `main` and merged in order as their reviews and CI pass. The plan is in `docs/dev-plan.md`.
 
-| Item | Where | Verified |
-| --- | --- | --- |
-| Design document, with an independent review applied | `docs/LRM-design.md` | Reviewed by a first-principles reviewer agent |
-| F# Vulkan binding (query only) and device check | `src/Lrm.Gpu.Vulkan.Interop`, `apps/VkDeviceCheck` | Builds with no warnings; RTX 4080 accepted; 17 struct layouts match vk.xml |
-| Qwen3-0.6B weights and tokenizer | `C:\Users\end\dev\lrm-data\models\Qwen3-0.6B` | SHA-256 of `model.safetensors` and `tokenizer.json` match Hugging Face |
-| Public GitHub repo | https://github.com/enderPeer/rosylnalive | `main` pushed |
-| Shader compiler: DXC 1.9.2609.5 from NuGet, pinned in `tools/bootstrap/toolchain.json` | `lrm-data\toolchain\dxc\1.9.2609.5` | SHA-512 matches nuget.org; Microsoft signature valid; a bindless test kernel compiles to DXIL and SPIR-V |
-| Golden-tool venv: torch 2.14.1+cpu, transformers 5.20.1, tokenizers 0.23.3 (lock file `tools/goldens/requirements.lock`) | `lrm-data\venv-golden` | Qwen3 fp32 forward runs in 2.3 s; `lm_head` is bitwise equal to `embed_tokens` |
-| Multi-agent Phase 1 plan | `docs/dev-plan.md` | Run `wf_320f4061-04c`: 3 research agents, 3 competing plans, 2 judges, synthesis, red-team (1 critical and 13 major issues, all fixed), final pass |
-| Planning probes staged | `lrm-data\spikes-staging` | Step 0 of the plan; S0b commits them to `spikes/probes/` after review |
-
-## Built, reviewed, not merged
+## On main
 
 | Workstream | PR | Verified |
 | --- | --- | --- |
-| S0a: scaffold, build, test runner, minimal CI | [#2](https://github.com/enderPeer/rosylnalive/pull/2) | Fresh-clone Release build with 0 warnings; 43 projects come from `docs/project-graph.json`, with layering enforced; VkDeviceCheck ACCEPTED from `apps/`; the cpu tier passes; GitHub CI green after a bootstrap fix (a closure-scope bug that only showed on the download path) |
-| S1: Lrm.Core (hashing, canonical encoding, bf16/f16, Philox, telemetry facade, ExecutionClass) | [#3](https://github.com/enderPeer/rosylnalive/pull/3), stacked on #2 | Known-answer tests pass; bf16 and f16 checked exhaustively over every bit pattern; identical under de-DE; the NFC canary passes; two reviews approved |
-| O1: oracles (torch32 spec, torch64p truth), tiny model and tokenizer goldens | [#4](https://github.com/enderPeer/rosylnalive/pull/4) | Byte-identical regeneration; oracle self-tests; two reviews approved |
-| R1: Vulkan descriptor-heap spike on the RTX 4080 | [#5](https://github.com/enderPeer/rosylnalive/pull/5) | Heap mapping proven bit-exact against CPU and D3D12; ADR and VulkanHeapRecipe contract |
-| R3: D3D12 COM interop and device check | [#6](https://github.com/enderPeer/rosylnalive/pull/6) | cl.exe ABI oracle; vtable generator from the SDK headers; RTX 4080 ACCEPTED; found a tail-call use-after-return hazard (ADR R3-0001) |
-| C1: cluster core (frames, transports, coordinator, chaos) | [#7](https://github.com/enderPeer/rosylnalive/pull/7) | 200 chaos seeds bit-identical; replica-loss replay; 3-process kill test |
-| T1: telemetry runtime, run logs, Markdown and SVG reports | [#8](https://github.com/enderPeer/rosylnalive/pull/8) | Byte-deterministic charts; sample reports (training, routing, thinking, inference, kernels, cluster, parity, gate1) in `docs/reports/samples/` |
-| S0b: governance and hygiene checks, contracts index, probes | [#9](https://github.com/enderPeer/rosylnalive/pull/9) | 124 fixtures behave as designed; hygiene job green on GitHub |
-| R4a: GPU contracts (heap, tensor table, ArgBlock, backend seam), kernel catalog, shader build | [#10](https://github.com/enderPeer/rosylnalive/pull/10) | Reproducible ShaderSetHash; DXIL and SPIR-V from the pinned DXC only; known-answer vectors |
-| O2: tensors, safetensors, CPU reference F32 and F64, comparators, kernel bounds | [#11](https://github.com/enderPeer/rosylnalive/pull/11), stacked on #4 | Tiny model: F64 vs torch64p about 1.5e-15, F32 vs torch32 below 1e-6; bit-equal at 1 and 32 threads |
-| R4b: final SPIR-V binding and inspector | [#12](https://github.com/enderPeer/rosylnalive/pull/12), stacked on #10 | Inspector passes all kernels; 18 bad-shader fixtures each fail exactly as expected; contracts-v1.1 waits on a wording fix in R1's contract (wave 2 integration fixes) |
-| Integration preview of waves 0 and 1 | [#13](https://github.com/enderPeer/rosylnalive/pull/13) (draft, not a merge unit) | No merge conflicts; local CI sequence green; cpu tier 543 tests; gpu tier green on D3D12 |
+| Phase 1 multi-agent plan | #1 | Planning run `wf_320f4061-04c`: research, 3 competing plans, 2 judges, synthesis, red-team, final pass; corrected through wave 1 |
+| S0a: scaffold, build, test runner, minimal CI | #2 | 43 projects generated from `docs/project-graph.json` with layering enforced; deterministic Release build with 0 warnings; tiers cpu, gpu, model and bench with per-backend GPU mutexes |
+| S1: Lrm.Core | #3 | Known-answer tests; bf16 and f16 checked exhaustively; identical under de-DE; NFC canary |
+| R1: Vulkan descriptor-heap spike | #5 | `VK_EXT_descriptor_heap` mapping path proven on the RTX 4080, bit-exact against CPU and D3D12 |
+| O1: oracles and goldens | #4 | torch32 (spec) and torch64p (truth) with self-tests; tiny model and tokenizer corpus; byte-identical regeneration |
+| O2: tensors, safetensors, CPU reference | #11 | Tiny model: CpuRef F64 vs torch64p about 1.5e-15; F32 vs torch32 below 1e-6; bit-equal at 1 and 32 threads |
+| R4a: GPU contracts, kernel catalog, shader build | #10 | Reproducible ShaderSetHash; DXIL and SPIR-V from the pinned DXC only; known-answer vectors |
+| C1: cluster core | #7 | 200 chaos seeds bit-identical; replica-loss replay; 3-process kill test |
+| T1: telemetry, run logs, reports | #8 | Byte-deterministic Markdown and SVG; samples in `docs/reports/samples/` |
+| R3: D3D12 COM interop | #6 | cl.exe ABI oracle against the SDK headers; RTX 4080 ACCEPTED |
+| S0b: governance and hygiene | #9 | 124 checker fixtures behave as designed; hygiene job green |
+| R4b: SPIR-V binding and inspector | #12 | Inspector passes every kernel; 18 bad-shader fixtures fail exactly as expected |
 
-## In progress
+The merged tree was verified before merging: the local CI sequence, 527 cpu-tier tests and the D3D12 gpu tier, byte-identical to `main` afterwards.
 
-- **Wave 2** (workflow `wf_d63d9762-c8a`), on `int/wave1`:
-  - First, integration fixes: Tailcalls off for GPU and interop code, the R1 contract wording that unblocks contracts-v1.1, the contract registry, the CI steps, a real parity report, and the denormal question. The 127 wave 1 requests are also routed to later workstreams.
-  - Then G2 (full-model goldens and tolerances), M1 (tokenizer), M2a (Qwen forward on the CPU), E1 (CpuDevice and conformance harness) and D1 (the D3D12 backend).
-  - Then M2b (full-model CPU parity, which earns gate1-cpu) and R5 (the WARP spike).
-- R2a, R2b and V1 (the Vulkan side) are waiting on approval to download vk.xml and Vulkan-Headers.
+## Ready to merge
+
+- **#21, wave 1 integration fixes** (rebased onto `main`):
+  - `Tailcalls=false` for GPU code;
+  - VulkanHeapRecipe v1.1 (completes R4b);
+  - every contract registered;
+  - `run.*` reserved for the run log;
+  - new CI steps for the D3D12 codegen diff, the cl.exe ABI oracle and the golden sets;
+  - O1's tools write T1's run-log format;
+  - real parity, goldens and cluster reports;
+  - ADR int-0001: fp32 denormals are preserved on D3D12;
+  - KernelBounds compares in the class's denormal mode.
+
+  Local verification: 548 cpu tests and 9 gpu tests, shader checks, hygiene and golden sets all green.
+
+## Wave 2 (workflow `wf_d63d9762-c8a`)
+
+| Workstream | PR | State |
+| --- | --- | --- |
+| M2a: Qwen forward pass on the CPU (tiny model) | #15 | Reviewed, fixed and verified |
+| D1: D3D12 runtime backend | #16 | Reviewed, fixed and verified |
+| E1: CpuDevice and conformance harness | #17 | Reviewed, fixed and verified |
+| M1: byte-level BPE tokenizer | #18 | Reviewed, fixed and verified |
+| R5: WARP spike | #20 | Reviewed, fixed and verified |
+| G2: full-model goldens and tolerances | #19 | Final fix-and-verify running |
+| M2b: full-model CPU parity (gate1-cpu) | — | Starts after G2 |
+
+These PRs are stacked on `int/wave1-fixes` (PR #14). Each one is rebased onto `main` before its merge.
 
 ## Next
 
-1. Merge waves 0 to 2 in order, once merging is decided.
-2. **Waves 3–5:** kernels, executor, two-node pipeline, dashboard, then Gate 1.
-3. Phase 2 (backward pass, fault-tolerant training), then the Phase 3 LRM core.
+1. Merge #21, then wave 2 in dependency order. Tag `contracts-v1`, `contracts-v1.1`, `wave-1-done`, then `hello-d3d12` and `gate1-cpu` when their gates pass.
+2. **Wave 3:** K1–K3 (kernels), X1a and X1b (the GPU executor), C2a and C2b (the two-stage pipeline), T2 (the dashboard).
+3. **Waves 4–5:** Gate 1 per backend, the two-node run, the single-command harness.
+4. Phase 2 (backward pass, fault-tolerant training), then the Phase 3 LRM core.
+
+## Findings worth knowing
+
+- HF's "fp64" Qwen still runs its norms, softmax and RoPE in fp32. The patched oracle torch64p fixes this.
+- `GenerationConfig(eos_token_id=None)` does not stop EOS in transformers 5.20.1 (ADR O1-0001).
+- An `&&local` passed to native code in tail position is a use-after-return bug in F#, so tail calls are off for GPU code (ADR R3-0001).
+- fp32 denormals are preserved on D3D12 with `-denorm preserve`, but the Vulkan mode is not measured yet (ADR int-0001).
 
 ## Waiting on the user
 
-- **Merging (blocking):** auto mode does not let the integrator merge its own PRs. Either add an allow rule for `gh pr merge`, or merge the PRs yourself.
-- **Mono.Cecil 0.11.6:** a required dependency of the approved Expecto. It was already fetched during restore; please confirm.
-
-- **AP-1 (rest):** downloading vk.xml v1.4.365 and Vulkan-Headers v1.4.365, needed by R2a in wave 1. Also approval for CI runners to fetch `tokenizer.json`.
-- **AP-2:** branch protection on `main` (non-blocking; the integrator enforces the rules by hand until then).
+- **AP-1:** downloading vk.xml v1.4.365 and Vulkan-Headers v1.4.365, which R2a, R2b and V1 (the Vulkan backend) need. Also fetching `tokenizer.json` on CI runners, for M1's corpus test in CI.
+- **Mono.Cecil 0.11.6:** a required dependency of the approved Expecto, already restored. Please confirm.
+- **Repo labels** `contract-change` and `ownership-exception`: hygiene's label check needs them once contracts-v1 is tagged.
+- **AP-2 (optional):** branch protection with required checks. The integrator enforces the rules by hand until then.
+- **AP-3 (optional, for V1):** a copy-only install of the LunarG Vulkan SDK into `LRM_DATA`, for one validation-layer run.
 
 ## Known gaps
 
-- The Vulkan binding detects `VK_EXT_descriptor_heap` but cannot use it yet. It has no logical device, memory, buffers, heap writes, push data, pipelines or dispatch.
-- No D3D12 binding exists yet.
-- No Vulkan validation layers or D3D12 debug layer are installed.
-- Golden reference outputs have not been generated yet; the tool environment is ready.
+- There is no Vulkan runtime backend yet; it is blocked on AP-1.
+- No validation layers are installed, and the D3D12 debug layer is not installed.
+- GitHub CI has no GPU, so GPU tiers run locally and are pasted into PRs.

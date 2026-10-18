@@ -1,4 +1,4 @@
-{{! parity: filled by Lrm.Reports.Builders.Parity from golden.compare checks (ReportTemplates contract). }}
+{{! parity: filled by Lrm.Reports.Builders.Parity from golden.compare checks, oracle self-tests and greedy margins (ReportTemplates contract). }}
 # Parity: {{value run.title}}
 
 {{value run.banner}}
@@ -30,6 +30,24 @@ Every per-layer tap's rel_l2 against the golden, summarized per layer over all c
 
 {{table cases}}
 
+{{#each selftests}}
+## Oracle self-tests
+
+{{value summary}}
+
+{{table selftests}}
+
+{{/each}}
+{{#each greedy}}
+## Greedy margins
+
+{{value summary}}
+
+{{chart margins}}
+
+{{table margins}}
+
+{{/each}}
 ## {{value closest.title}}
 
 {{table closest}}

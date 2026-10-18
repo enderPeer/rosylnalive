@@ -96,9 +96,9 @@ Contract files are the paths matched by `contract.files` in `docs/ownership.json
 | `docs/contracts/*.md`, except `README.md` and `CHANGELOG.md` | every contract text |
 | `src/Lrm.Core/**` | LrmCore, TelemetryFacade, ExecutionClass |
 | `src/Lrm.Gpu.Core/**` | HeapLayoutAndTensorTable, KernelAbiAndCatalog, GpuBackendInterface, including the generated `Kernels.g.fs` |
-| `src/Lrm.Shaders/hlsl/**/*.hlsli` | the shader include files, `lrm.hlsli` and the generated `lrm_args.g.hlsli` |
+| `src/Lrm.Shaders/include/**` and `src/Lrm.Shaders/rootsig/**` | the shared shader headers, `lrm.hlsli` and the generated `lrm_args.g.hlsli`, and the canonical root signature (`rootsig.hlsl`) |
 | `src/Lrm.Shaders/Lrm.Shaders.lrm.targets` and `src/Lrm.Shaders.Build/**` | the shader build (ShaderBuildAndSourceConvention) |
-| `src/Lrm.Tensor/**` | the Lrm.Tensor API: HostTensorAndSafetensors, ComparatorsAndGoldenReader, the ToleranceSpec types and `KernelBounds.fs` |
+| `src/Lrm.Tensor/{Shape,HostTensor,Safetensors,Compare,Goldens,ToleranceSpec,KernelBounds}.fs` (seven globs) | the Lrm.Tensor API, the files the contract texts name: HostTensorAndSafetensors (`Shape.fs`, `HostTensor.fs`, `Safetensors.fs`), ComparatorsAndGoldenReader (`Compare.fs`, `Goldens.fs`), the ToleranceSpec types and KernelBounds. A file added to Lrm.Tensor later, and the fsproj, are not contract files unless a contract text names them |
 | `src/Lrm.Cluster/Protocol*.fs` | ClusterProtocol |
 | `**/*.schema.json` | manifest schemas |
 | `goldens/**/tolerances.json` | ToleranceSpec numbers |
@@ -157,7 +157,7 @@ These known answers hold for `docs/ownership.json` at v1. `tools/ci/fixtures/own
 | `apps/Lrm.Cli/Program.fs` | S0 |
 | `apps/Lrm.Cli/Commands/DevicesVulkan.fs` | R2 |
 | `apps/Lrm.Cli/Commands/Report.fs` | T1 |
-| `src/Lrm.Shaders/hlsl/lrm.hlsli` | R4 |
+| `src/Lrm.Shaders/include/lrm.hlsli` | R4 |
 | `src/Lrm.Shaders/hlsl/kernels/basic/add.hlsl` | K1 |
 | `tests/Lrm.Kernels.Conformance/Harness.fs` | E1 |
 | `tests/Lrm.Kernels.Conformance/Cases/attention/Gqa.fs` | K3 |
@@ -167,6 +167,8 @@ These known answers hold for `docs/ownership.json` at v1. `tools/ci/fixtures/own
 | `docs/reports/gate1/backends/vulkan.md` | I1 |
 | `docs/reports/gate1/summary/report.md` | I3 |
 | `docs/reports/waves/wave-1.md` | S0 |
+| `docs/decisions/int-0001-denormals.md` | S0 |
+| `docs/reports/cpuref/tiny/parity.md` | O2 |
 
 **Branches.**
 
@@ -185,9 +187,12 @@ These known answers hold for `docs/ownership.json` at v1. `tools/ci/fixtures/own
 | Path | Contract file |
 | --- | --- |
 | `src/Lrm.Gpu.Core/Kernels.g.fs` | yes |
-| `src/Lrm.Shaders/hlsl/lrm.hlsli` | yes |
+| `src/Lrm.Shaders/include/lrm.hlsli`, `src/Lrm.Shaders/include/lrm_args.g.hlsli` | yes |
+| `src/Lrm.Shaders/rootsig/rootsig.hlsl` | yes |
+| `src/Lrm.Shaders/hlsl/selftest/scale_f32.hlsl` | no |
 | `src/Lrm.Shaders/hlsl/kernels/basic/add.hlsl` | no |
-| `src/Lrm.Tensor/KernelBounds.fs` | yes |
+| `src/Lrm.Tensor/KernelBounds.fs`, `src/Lrm.Tensor/Compare.fs` | yes |
+| `src/Lrm.Tensor/Lrm.Tensor.fsproj`, a new `src/Lrm.Tensor/Internal.fs` | no |
 | `src/Lrm.Tensor.CpuReference/Ops.fs` | no |
 | `src/Lrm.Cluster/ProtocolFrames.fs` | yes |
 | `src/Lrm.Cluster/Coordinator.fs` | no |

@@ -29,6 +29,27 @@ Passing cases out of all cases, per kernel and backend.
 | --- | --- | --- | ---: | ---: | --- |
 | attention_gqa_causal | T=1024 past=3072 | d3d12 | 3.10e-06 | 2.40e-06 |  |
 
+## fp32 denormals
+
+The mode each shader backend measured with the `scale_f32` denormal probe right after loading its kernels (GpuBackendInterface). It is fixed within an execution class, and it decides what bit-exact means for a kernel that does fp32 arithmetic (KernelAbiAndCatalog, kernel rules).
+
+| Backend | Node | Blob | fp32 denormals | Bit-exact fp32 arithmetic means |
+| --- | --- | --- | --- | --- |
+| vulkan | n0 |  | flush | equal to CpuRef with every fp32 denormal input and result set to zero of the same sign |
+| d3d12 | n1 |  | preserve | equal to CpuRef as it is |
+
+The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush give, and what each measurement returned.
+
+| Input | Preserve | Flush | vulkan n0 | d3d12 n1 |
+| --- | --- | --- | --- | --- |
+| `3f800000` | 3f000000 | 3f000000 | 3f000000 | 3f000000 |
+| `01000000` | 00800000 | 00800000 | 00800000 | 00800000 |
+| `00800000` | 00400000 | 00000000 | 00000000 | 00400000 |
+| `80800000` | 80400000 | 80000000 | 80000000 | 80400000 |
+| `00000002` | 00000001 | 00000000 | 00000000 | 00000001 |
+| `807ffffe` | 803fffff | 80000000 | 80000000 | 803fffff |
+| `00400000` | 00200000 | 00000000 | 00000000 | 00200000 |
+
 ## GPU time
 
 ![GPU time by kernel](charts/kernels-gpu_by_kernel.svg)
@@ -73,7 +94,7 @@ Passing cases out of all cases, per kernel and backend.
 | Driver | 616.92 |
 | Commit | not recorded |
 | Nodes | 2 |
-| Records | 1,972 |
+| Records | 1,974 |
 | Synthetic | yes |
 
 | Parameter | Value |
@@ -86,8 +107,8 @@ Passing cases out of all cases, per kernel and backend.
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| n0 | creator | vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 986 | failed | 0 |
-| n1 | joined | d3d12 pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 986 | failed | 0 |
+| n0 | creator | vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 987 | failed | 0 |
+| n1 | joined | d3d12 pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 987 | failed | 0 |
 
 ### Log problems
 

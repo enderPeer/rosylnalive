@@ -507,6 +507,35 @@ let tests =
                         "attrs"
                 | rs -> failtestf "expected one record, got %A" rs
 
+                // recordProbe classifies and records the words of the bit table.
+                let mutable mode = Fp32DenormalMode.Mixed
+
+                let probed =
+                    withSink (fun () ->
+                        mode <-
+                            Fp32Denormals.recordProbe
+                                ExecutionBackend.D3D12
+                                (Fp32Denormals.expected Fp32DenormalMode.Preserve))
+
+                Expect.equal mode Fp32DenormalMode.Preserve "recordProbe returns the mode"
+
+                match probed with
+                | [ r ] ->
+                    Expect.equal
+                        (r.Attrs |> List.map (fun a -> a.Key, a.Value))
+                        [
+                            "backend", AttrValue.Str "d3d12"
+                            "mode", AttrValue.Str "preserve"
+                            "inputs", AttrValue.Str "3f800000 01000000 00800000 80800000 00000002 807ffffe 00400000"
+                            "results", AttrValue.Str "3f000000 00800000 00400000 80400000 00000001 803fffff 00200000"
+                            "expected_preserve",
+                            AttrValue.Str "3f000000 00800000 00400000 80400000 00000001 803fffff 00200000"
+                            "expected_flush",
+                            AttrValue.Str "3f000000 00800000 00000000 80000000 00000000 80000000 00000000"
+                        ]
+                        "attrs with the words"
+                | rs -> failtestf "expected one record, got %A" rs
+
             testCase "the registry enumerates providers and creates accepted devices"
             <| fun () ->
                 let reg = BackendRegistry()

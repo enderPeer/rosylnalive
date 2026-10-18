@@ -21,4 +21,8 @@ let tiers: TestTiers =
     }
 
 [<EntryPoint>]
-let main argv = Runner.main argv tiers
+let main argv =
+    let code = Runner.main argv tiers
+    // The parity run log, if a tiny-model acceptance test created one (ParityRun).
+    ParityRun.finish code
+    code

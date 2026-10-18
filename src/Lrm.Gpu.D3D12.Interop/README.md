@@ -11,7 +11,6 @@ D3D12 and DXGI COM interop for the D3D12 backend, plus the device check. Owner: 
 | `Native.fs` | `D3D12CreateDevice`, `D3D12GetDebugInterface`, `CreateDXGIFactory2`, and their typed forms |
 | `Desc.fs` | Description builders: buffers, heaps, raw UAVs, barriers, pipelines, query heaps |
 | `DeviceCheck.fs` | Adapter discovery and the SM 6.6 / binding tier 3 verdict |
-| `TailCalls.fs` | `TailCalls.scan`: every IL `tail.` call site of an assembly, for projects that check their own build (ADR R3-0001) |
 
 ```fsharp
 open Lrm.Gpu.D3D12.Interop
@@ -29,4 +28,4 @@ list.SetComputeRoot32BitConstants(0u, ReadOnlySpan args, 0u)
 queue.ExecuteCommandLists list
 ```
 
-No wrapper call is ever a tail call, because every wrapper takes `this` by reference. So passing a stack address to a wrapper is safe whatever the caller's `Tailcalls` setting. That covers a span over a local and `NativePtr.toNativeInt &&local`. Direct `Vtbl.get` and `Fn` delegate calls are not protected. A project that passes `&&local` between its own functions should set `<Tailcalls>false</Tailcalls>` and check its assembly with `TailCalls.scan` (ADR R3-0001).
+No wrapper call is ever a tail call, because every wrapper takes `this` by reference. So passing a stack address to a wrapper is safe whatever the caller's `Tailcalls` setting. That covers a span over a local and `NativePtr.toNativeInt &&local`. Direct `Vtbl.get` and `Fn` delegate calls are not protected by that. `Directory.Build.props` therefore builds every GPU, interop and backend project, and every test exe and app that reaches one, with `Tailcalls=false`; tests check their assemblies with `TailCalls.scan` from `Lrm.Testing` (ADR R3-0001).

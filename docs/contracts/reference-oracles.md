@@ -74,7 +74,7 @@ The table has shape `[maxPos, head_dim/2]`. HF's full row is the half row repeat
 - no entry needed mpmath;
 - torch's f64, numpy's f64 and the C runtime's `cos`/`sin` all round to T_spec in every entry. The C runtime is Python's `math.cos`, the same UCRT function that .NET's `Math.Cos` calls on Windows.
 
-So CpuRef is expected to match bit for bit on this machine. If it does not, O2 writes an ADR and loads the dumped table, as the plan says.
+So CpuRef is expected to match bit for bit on this machine. If it does not, O2 writes an ADR and loads the dumped table, as the plan says. In practice CpuRef never calls libm for this table: it computes T_spec in exact integer arithmetic with certified rounding, so it equals the dump on every platform and the fallback is not needed ([ADR O2-0001](../decisions/O2-0001-exact-rope-table.md)).
 
 **What torch32 does instead.** Unpatched torch32 computes cos and sin in float32. Its table differs from T_spec in these entries:
 
@@ -203,10 +203,13 @@ Regeneration in a fresh process (`--check`) must reproduce every committed byte.
 
 ## Telemetry
 
-The tools emit TelemetryFacade records to `LRM_DATA/runs/<runId>/events.n0.jsonl`, with the natural RunLog mapping and keys `v, t, k, n, d, x, u, node, seq, a`. T1's RunLog contract is authoritative once merged. The records are:
-- one `golden.compare` Check per self-test, with `metric`, `measured`, `bound` and `check`;
+The tools write T1's RunLog format (`common.RunLog`, schema `lrm.run/1`): `LRM_DATA/runs/<runId>/manifest.json` and `events.n0.jsonl` with its `run.node` header and `run.end` trailer, so `lrm report <runId>` renders them. The run kind is `parity` (`goldens` for the tokenizer tool), and `close(status)` finishes the run as `ok` or `failed`; a run that stops early is finished as `aborted`. `lrm report` renders a `parity` run with the parity template and, with `--template goldens`, with the goldens template; a `goldens` run with the goldens template (ReportTemplates). The records are:
+- one `golden.compare` Check per self-test with a value, with `metric`, `measured`, `bound`, `direction` and `check`, and one `goldens.selftest` Check (`check`) per exact self-test;
 - one `golden.compare` per torch32-vs-torch64p e_ref measurement, with `pair`, `tap`, `prompt`, `layer` and `kind: measurement`, or `tensor` and `kind: gradient` for gradients;
-- `goldens.*` spans and gauges for phases, sizes, margins and case counts.
+- per greedy prompt and oracle, the gauges `goldens.greedy.min_margin` and `goldens.greedy.min_margin_f32_ulps` (unit `ulp`) and the check `goldens.greedy.f32_argmax_agrees`, each with `prompt` and `oracle`;
+- `goldens.file_bytes` gauges (`file`), one `goldens.set_bytes` gauge (`set`, and `budget`: the set's committed-size budget in bytes, from `verify_goldens.py`), the check `goldens.double_run_identical` (`set`, `threads`) and, with `--check`, the check `goldens.regen_identical` (`set`);
+- for the tokenizer set, `goldens.tokenizer.cases` gauges (`category`), `goldens.tokenizer.case_kinds` gauges (`kind`) and the check `goldens.tokenizer.transformers` (`agree`, `differ`, `tokenizer_class`): whether transformers' tokenizer agrees with tokenizers on every encode case;
+- `goldens.*` spans for phases.
 
 Timestamps go only to the run log, never into goldens.
 

@@ -9,6 +9,5 @@
     <Compile Include="Native.fs" />
     <Compile Include="Desc.fs" />
     <Compile Include="DeviceCheck.fs" />
-    <Compile Include="TailCalls.fs" />
   </ItemGroup>
 </Project>

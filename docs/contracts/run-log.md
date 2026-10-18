@@ -245,6 +245,8 @@ Rows are sorted by node, component, stage and layer (ordinal; no layer first). `
 
 ## Names this contract adds
 
+The `run.*` prefix is reserved for this contract in the TelemetryFacade contract (`TelemetryNames.RunPrefix`, owner T1), so no component can emit a record that the reader would take for a structural one.
+
 | Name | Kind | Emitted by |
 | --- | --- | --- |
 | `run.node`, `run.end` | event | `RunContext` only: the header and trailer of every events file |

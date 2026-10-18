@@ -114,11 +114,11 @@ The normative text, with known-answer vectors, is the contract [`docs/contracts/
    - Around copies: after the uploads and before the first dispatch, COPY / TRANSFER_WRITE to COMPUTE_SHADER / SHADER_STORAGE_READ | SHADER_STORAGE_WRITE. After the readback copies, COPY / TRANSFER_WRITE to HOST / HOST_READ. In V1 these belong to `ICommandList.Copy`.
 9. **Completion.** `vkQueueSubmit2` signals one timeline semaphore at ALL_COMMANDS. The host waits with `vkWaitSemaphores` and a timeout, so a hung dispatch fails the run instead of blocking it. Timestamps come from `vkCmdWriteTimestamp2(ALL_COMMANDS)` around each dispatch.
 10. **Shaders.**
-    - The ArgBlock is `struct { uint4 d[8]; }` in a `ConstantBuffer` at `register(b0)`. It carries `[[vk::push_constant]]` only under `__spirv__`, and dword *k* is `d[k >> 2][k & 3]`.
+    - The ArgBlock is each kernel's generated block `lrm_args_<kernel>` in a `ConstantBuffer` at `register(b0)`, with `[[vk::push_constant]]` only under `__spirv__`; dword *k* is member *k*, at byte 4·*k*. The spike's own sources use `struct { uint4 d[8]; }`, read as `d[k >> 2][k & 3]`, which puts the same dwords at the same bytes.
     - With heap pipelines, the shader's PushConstant block reads push data at the same offsets.
     - The SPIR-V must have:
       - exactly one resource variable: StorageBuffer, set 0, binding 0, not NonWritable;
-      - a push block with one member at Offset 0, ArrayStride 16 and 128 bytes;
+      - the push block `lrm_args_<kernel>`, member *i* at Offset 4·*i*, at most 128 bytes;
       - LocalSize equal to the catalog value;
       - the `RuntimeDescriptorArray` capability.
 
@@ -195,7 +195,7 @@ GPU time per job, in microseconds, as the minimum of two runs (run `20261018-001
 - **R4b.**
   - Make the explicit array the final SPIR-V `LRM_BUF`, with no `NonUniformResourceIndex`.
   - The inspector asserts the SPIR-V facts in recipe step 10.
-  - The ArgBlock HLSL type is `uint4 d[8]`, which R4a's generated `lrm_args.g.hlsli` must keep.
+  - The ArgBlock HLSL type is R4a's generated per-kernel block `lrm_args_<kernel>` (dword *k* at byte 4·*k*), as ShaderBuildAndSourceConvention v1.1 describes. `src/Lrm.Shaders.Build/typed-args-spike.ps1` runs it through this spike (run `20261018-021142-c850f044`, 124 of 124). This bullet first said `uint4 d[8]` must be kept; R4b's on-device run showed the typed blocks read the same bytes, and VulkanHeapRecipe v1.1 records the change.
 - **V1.** Implement the recipe exactly, and assert at device creation:
   - every feature in recipe step 1, `shaderStorageBufferArrayDynamicIndexing` included;
   - `bufferDescriptorSize` equals `vkGetPhysicalDeviceDescriptorSizeEXT(STORAGE_BUFFER)`;

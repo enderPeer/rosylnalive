@@ -1,6 +1,6 @@
 # ADR 0001: Shader toolchain and bindless source convention
 
-- **Status:** accepted, 2026-10-18. The SPIR-V binding form (decision 4) is provisional until R1's ADR (`docs/decisions/R1-*.md`) and R4b, which together close contracts-v1.1.
+- **Status:** accepted, 2026-10-18. The SPIR-V binding form (decision 4) was provisional until R1's ADR and R4b. Both confirmed it unchanged: R1's spike ran the explicit `g_buf[]` at set 0 binding 0 through the descriptor-heap mapping on the RTX 4080 ([R1-heap-recipe.md](R1-heap-recipe.md)), and R4b made it final in ShaderBuildAndSourceConvention v1.1, whose SPIR-V inspector enforces it. Decision 4 is final; nothing supersedes this ADR.
 - **Owner:** S0.
 - **Scope:** every GPU kernel, the shader build (R4a, R4b) and the backends (D1, V1).
 - **Related:**

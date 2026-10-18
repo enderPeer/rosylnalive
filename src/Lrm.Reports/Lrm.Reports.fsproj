@@ -15,6 +15,7 @@
     <Compile Include="Builders/Training.fs" />
     <Compile Include="Builders/Routing.fs" />
     <Compile Include="Builders/Thinking.fs" />
+    <Compile Include="Builders/Goldens.fs" />
     <Compile Include="Synthetic.fs" />
     <Compile Include="Reports.fs" />
   </ItemGroup>

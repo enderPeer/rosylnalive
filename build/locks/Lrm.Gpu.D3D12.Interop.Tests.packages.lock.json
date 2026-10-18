@@ -19,7 +19,28 @@
           "FSharp.Core": "[10.1.402, )"
         }
       },
+      "lrm.gpu.core": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )"
+        }
+      },
       "lrm.gpu.d3d12.interop": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )"
+        }
+      },
+      "lrm.shaders": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Gpu.Core": "[1.0.0, )"
+        }
+      },
+      "lrm.telemetry": {
         "type": "Project",
         "dependencies": {
           "FSharp.Core": "[10.1.402, )",
