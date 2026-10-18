@@ -141,6 +141,7 @@ let tests =
                         // (1 + 2^-12)^2 = 1 + 2^-11 + 2^-24 needs 25 bits; fused, the 2^-24 survives the add of -1.
                         let d = Rows.dot (ro [| 1.0f; 1.0f + e |]) (ro [| -1.0f; 1.0f + e |])
                         Expect.equal (bits32 d) (bits32 (MathF.ScaleB(1.0f, -11) + MathF.ScaleB(1.0f, -24))) "fused"
+                        Expect.equal (bits32 d) 0x3a000400u "contract vector"
 
                     testCase "reductions run in increasing index order"
                     <| fun () ->
@@ -160,6 +161,7 @@ let tests =
                         let r = 1.0f / MathF.Sqrt 12.5f
                         Expect.equal (bits32 y[0]) (bits32 (1.0f * (3.0f * r))) "w = 1"
                         Expect.equal (bits32 y[1]) (bits32 (2.0f * (4.0f * r))) "w = 2"
+                        Expect.equal (bits32 y[0], bits32 y[1]) (0x3f593924u, 0x4010d0c3u) "contract vector"
                         Rows.rmsNorm (ro [| 3.0f; 4.0f |]) (ro [| 0us; 0us |]) 0.0f (Span y)
                         Expect.sequenceEqual y [| 0.0f; 0.0f |] "w = 0 gives 0"
 
@@ -280,6 +282,7 @@ let tests =
                     <| fun () ->
                         Expect.equal (CpuRef.attentionScale<float> 32) (Math.Pow(32.0, -0.5)) "f64"
                         Expect.equal (CpuRef.attentionScale<float32> 128) (float32 (Math.Pow(128.0, -0.5))) "f32"
+                        Expect.equal (bits32 (CpuRef.attentionScale<float32> 128)) 0x3db504f3u "contract vector"
 
                     testCase "only float32 and float are CpuRef modes"
                     <| fun () ->

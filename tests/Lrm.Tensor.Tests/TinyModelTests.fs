@@ -214,6 +214,9 @@ let tests =
 
                             Expect.equal compares.Length checks.Length "one golden.compare per op check"
 
+                            for r in compares do
+                                Expect.equal (r.Attrs |> List.distinctBy _.Key).Length r.Attrs.Length "unique keys"
+
                         testCase (Invariant.format $"CpuRef F32 vs torch32 <= 1e-6 ({prompt})")
                         <| fun () ->
                             perOp<float32> CpuExec.Machine "fwd_f32" TolerancePair.Cpu32VsTorch32 F32OpBound prompt

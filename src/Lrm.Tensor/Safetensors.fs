@@ -215,7 +215,7 @@ module Safetensors =
     /// the target only when complete.
     let writeFile (path: string) (metadata: (string * string) seq) (tensors: SafetensorsTensor seq) =
         let full = Path.GetFullPath path
-        let temp = full + ".tmp-" + string Environment.ProcessId
+        let temp = full + ".tmp-" + Guid.NewGuid().ToString("N")
 
         try
             do
