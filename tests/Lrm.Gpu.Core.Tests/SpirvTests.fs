@@ -54,6 +54,9 @@ let private typeId (m: SpirvModule) (opcode: int) (tail: uint32 list) =
 let private f32 m = typeId m Spirv.Op.TypeFloat [ 32u ]
 let private u32 m = typeId m Spirv.Op.TypeInt [ 32u; 0u ]
 
+let private uvec3 m =
+    typeId m Spirv.Op.TypeVector [ u32 m; 3u ]
+
 /// The type of a module-scope variable.
 let private varType (m: SpirvModule) (id: uint32) =
     m.Instructions
@@ -266,6 +269,13 @@ let private mutations: Mutation list =
                 |> mapWhere (fun i -> i.Opcode = Spirv.Op.Variable && i.Operands[1] = gbuf x) (set 0 p)))
         m "no resource variable" [ "resource" ] (fun x ->
             removeWhere (fun i -> i.Opcode = Spirv.Op.Variable && i.Operands[1] = gbuf x) x)
+        // A later conflicting decoration must not hide behind the first one.
+        m "g_buf Binding 0 and Binding 7" [ "module"; "resource" ] (fun x ->
+            addGlobal [ ins Spirv.Op.Decorate [ gbuf x; Spirv.Decoration.Binding; 7u ] ] x)
+        m "g_buf DescriptorSet 0 and DescriptorSet 3" [ "module"; "resource" ] (fun x ->
+            addGlobal [ ins Spirv.Op.Decorate [ gbuf x; Spirv.Decoration.DescriptorSet; 3u ] ] x)
+        m "g_buf Binding 0 twice" [ "module"; "resource" ] (fun x ->
+            addGlobal [ ins Spirv.Op.Decorate [ gbuf x; Spirv.Decoration.Binding; 0u ] ] x)
         // push block
         m "push offset of word 2" [ "push-block" ] (fun x ->
             mapWhere (isMemberDecoration (push x) 2u Spirv.Decoration.Offset) (set 3 12u) x)
@@ -278,6 +288,10 @@ let private mutations: Mutation list =
                 x)
         m "push block not Block" [ "push-block" ] (fun x ->
             removeWhere (isDecoration (push x) Spirv.Decoration.Block) x)
+        m "push member 1 with a second Offset 8" [ "module"; "push-block" ] (fun x ->
+            addGlobal [ ins Spirv.Op.MemberDecorate [ push x; 1u; Spirv.Decoration.Offset; 8u ] ] x)
+        m "push block decorated Block twice" [ "module" ] (fun x ->
+            addGlobal [ ins Spirv.Op.Decorate [ push x; Spirv.Decoration.Block ] ] x)
         m "no push block" [ "push-block" ] (fun x ->
             removeWhere (fun i -> i.Opcode = Spirv.Op.Variable && i.Operands[1] = pushVar x) x)
         m
@@ -307,6 +321,27 @@ let private mutations: Mutation list =
                         else
                             i)
             })
+        m
+            "a WorkgroupSize constant (16, 1, 1)"
+            [ "execution-mode" ]
+            (withFresh 3 (fun ids x ->
+                match ids with
+                | [ c16; c1; size ] ->
+                    addGlobal
+                        [
+                            ins Spirv.Op.Constant [ u32 x; c16; 16u ]
+                            ins Spirv.Op.Constant [ u32 x; c1; 1u ]
+                            ins Spirv.Op.ConstantComposite [ uvec3 x; size; c16; c1; c1 ]
+                            ins Spirv.Op.Decorate [ size; Spirv.Decoration.BuiltIn; Spirv.BuiltIn.WorkgroupSize ]
+                        ]
+                        x
+                | _ -> failwith "ids"))
+        m "LocalSize on another id" [ "execution-mode" ] (fun x ->
+            mapWhere (fun i -> i.Opcode = Spirv.Op.ExecutionMode) (set 0 (gbuf x)) x)
+        m "LocalSize on id 9999" [ "module"; "execution-mode" ] (fun x ->
+            mapWhere (fun i -> i.Opcode = Spirv.Op.ExecutionMode) (set 0 9999u) x)
+        m "the entry point names a variable" [ "entry-point"; "execution-mode" ] (fun x ->
+            mapWhere (fun i -> i.Opcode = Spirv.Op.EntryPoint) (set 1 (gbuf x)) x)
         m "two entry points" [ "entry-point" ] (fun x ->
             addGlobal [ x.Instructions |> List.find (fun i -> i.Opcode = Spirv.Op.EntryPoint) ] x)
         m "entry point named kernel_main" [ "entry-point" ] (fun x ->
@@ -337,6 +372,10 @@ let private mutations: Mutation list =
                     ]
                     x))
         m "SPIR-V 1.5" [ "module" ] (fun x -> { x with Version = 0x00010500u })
+        m "schema 7" [ "module" ] (fun x -> { x with Schema = 7u })
+        m "id bound 3" [ "module" ] (fun x -> { x with Bound = 3u })
+        m "the f32 type defined twice" [ "module" ] (fun x ->
+            addGlobal [ x.Instructions |> List.find (fun i -> i.Opcode = Spirv.Op.TypeFloat) ] x)
         m "Vulkan memory model" [ "module" ] (fun x -> mapWhere (fun i -> i.Opcode = Spirv.Op.MemoryModel) (set 1 3u) x)
         m "a string without its terminator" [ "module" ] (fun x ->
             addGlobal [ ins Spirv.Op.Name [ gbuf x; 0x41414141u ] ] x)
@@ -370,6 +409,23 @@ let private mutations: Mutation list =
             "32 KiB + 4 in two Workgroup variables"
             [ "workgroup-size" ]
             (workgroupArray 8192u f32 >> workgroupArray 1u u32)
+        m
+            "a Workgroup u32[2^31][2^31] (2^64 bytes, no wrap-around)"
+            [ "workgroup-size" ]
+            (withFresh 5 (fun ids x ->
+                match ids with
+                | [ c; inner; outer; ptr; v ] ->
+                    addGlobal
+                        [
+                            ins Spirv.Op.Constant [ u32 x; c; 0x80000000u ]
+                            ins Spirv.Op.TypeArray [ inner; u32 x; c ]
+                            ins Spirv.Op.TypeArray [ outer; inner; c ]
+                            ins Spirv.Op.TypePointer [ ptr; Spirv.StorageClass.Workgroup; outer ]
+                            ins Spirv.Op.Variable [ ptr; v; Spirv.StorageClass.Workgroup ]
+                        ]
+                        x
+                | _ -> failwith "ids"))
+        m "a Workgroup array of length 0" [ "workgroup-size" ] (workgroupArray 0u f32)
         m
             "a Workgroup array with a spec-constant length"
             [ "workgroup-size" ]
@@ -405,6 +461,20 @@ let private mutations: Mutation list =
             mapWhere (isDecoration (builtInVar x Spirv.BuiltIn.WorkgroupId) Spirv.Decoration.BuiltIn) (set 2 36u) x)
         m "an Input variable without a built-in" [ "built-ins" ] (fun x ->
             removeWhere (isDecoration (builtInVar x Spirv.BuiltIn.WorkgroupId) Spirv.Decoration.BuiltIn) x)
+        m
+            "a built-in on a Private variable"
+            [ "built-ins" ]
+            (withFresh 2 (fun ids x ->
+                match ids with
+                | [ p; v ] ->
+                    addGlobal
+                        [
+                            ins Spirv.Op.TypePointer [ p; Spirv.StorageClass.Private; uvec3 x ]
+                            ins Spirv.Op.Variable [ p; v; Spirv.StorageClass.Private ]
+                            ins Spirv.Op.Decorate [ v; Spirv.Decoration.BuiltIn; Spirv.BuiltIn.LocalInvocationId ]
+                        ]
+                        x
+                | _ -> failwith "ids"))
     ]
 
 /// Facts of the contracts-v1.1 selftests: LocalSize, push-block words and bytes, built-ins.
