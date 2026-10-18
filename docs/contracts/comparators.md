@@ -19,14 +19,16 @@ After contracts-v1, this text and its vectors change only through a `contract-ch
 | `maxUlp32`, `maxUlp64` | The largest ulp distance | |
 | `cosine a b` | `Σ ab / (sqrt(Σ a²) · sqrt(Σ b²))` | 1 when both are all zero; 0 when exactly one is |
 | `logSoftmax row` | `x − (m + log Σ exp(x − m))`, with `m` the row maximum | A NaN makes the whole row NaN |
-| `klRow cand ref` | `KL(P_ref ‖ P_cand) = Σ p_i (log p_i − log q_i)` over the softmaxes of two logit rows; terms with `p_i = 0` are skipped | NaN when either row holds a NaN |
+| `klRow cand ref` | `KL(P_ref ‖ P_cand) = Σ p_i (log p_i − log q_i)` over the softmaxes of two logit rows; terms with `p_i = 0` are skipped | NaN when either row holds a NaN, a +∞ or only −∞. A logit masked to −∞ in both rows adds nothing, so the result stays finite; mass of P where Q has none gives +∞. `CpuRef.kl` follows the same rule |
 | `topK row k` | The indices of the k largest values, largest first, equal values in index order | A NaN raises |
 | `topKAgreementRow cand ref k` | `|topK(cand) ∩ topK(ref)| / k` | |
 | `top2MarginRow row` | top-1 value minus top-2 value | Needs 2 or more elements; a NaN raises |
 
 ## Checks
 
-`Compare.*` runs one metric over two tensors of equal shape and returns a `CheckResult`. A shape mismatch raises `ArgumentException`. Row metrics treat a tensor as `[Rows, Cols]`.
+`Compare.*` runs one metric over two tensors of equal shape and returns a `CheckResult`. A shape mismatch raises `ArgumentException`.
+
+**Row metrics** (`kl`, `topKAgreement` and `top2Margin`) treat a tensor as `[Rows, Cols]` and need rank 2 or more. Rank 0 and rank 1 raise `ArgumentException` before any work. A vector `[n]` has `Rows = n` and `Cols = 1` (HostTensorAndSafetensors), so a logits vector would otherwise be n one-element rows, and its KL would pass trivially at 0. Reshape a single row of logits to `[1, n]`. The value metrics take any rank.
 
 ```fsharp
 type CheckResult =
@@ -76,6 +78,7 @@ The same record shape is what O1's golden tools emit for their self-tests and e_
 3. `files` is an array of objects, each with `path`, `location`, `bytes` (a non-negative integer), `sha256` (64 lowercase hex digits) and `role`.
 4. **Paths stay inside the set.** A `repo` path is `goldens/<set>/<version>/<name>`, and a `data` path is `<set>/<version>/<name>` under `LRM_DATA/golden`. The name has no empty, `.` or `..` segment, no `\` and no `:`, and it is never `manifest.json`.
 5. Paths are unique and sorted in code point order, and no repo file shares a name with a data file.
+6. Every string the reader uses is valid Unicode: a lone surrogate escape such as `\ud800` is refused.
 
 Fields the reader does not know are ignored, so G2 can add its own. `GoldenSet.Manifest` exposes the whole manifest as JSON.
 
@@ -119,10 +122,10 @@ Each value below was computed independently with Python floats or math, and the 
 The cpu tier of `Lrm.Tensor.Tests` covers:
 - **The metric vectors** above, including the NaN and zero cases.
 - **Every Compare function:** its pass and fail sides, the CheckResult fields, and one `golden.compare` record per check with metric, measured, bound and the caller's attributes, checked with the strict InMemorySink.
-- **Edge cases:** NaN measurements fail in both directions; maxUlp refuses mixed dtypes.
+- **Edge cases:** NaN measurements fail in both directions; maxUlp refuses mixed dtypes; the row metrics refuse vectors and scalars, while the same data as `[1, n]` is measured; `klRow` stays finite for logits masked to −∞ in both rows.
 - **A property:** relL2 is 0 for identical inputs and unchanged under power-of-two scaling.
 - **`Goldens.Open`:**
   - the tiny set and `VerifyAll`, with 15 passing `goldens.verify` records;
   - one flipped byte and one appended byte, each caught with `IntegrityException` and a failing `goldens.verify`;
   - data-file resolution under a given data root;
-  - ten malformed manifests: schema, set, version, order, an escaping path, another set's path, the manifest itself, an unknown location, an uppercase hash and a negative size.
+  - eleven malformed manifests: schema, set, version, order, an escaping path, another set's path, the manifest itself, an unknown location, an uppercase hash, a negative size and a lone surrogate escape.
