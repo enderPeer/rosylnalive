@@ -6,7 +6,7 @@
   - V1 (`src/Lrm.Gpu.Vulkan`) implements this exactly;
   - R4b finalizes the SPIR-V `LRM_BUF` and its inspector from it;
   - R4a's HeapLayoutAndTensorTable and KernelAbiAndCatalog contracts refer to it.
-- **Evidence and rationale:** [`docs/decisions/R1-vulkan-heap-recipe.md`](../decisions/R1-vulkan-heap-recipe.md), with the spike in [`spikes/vk-heap`](../../spikes/vk-heap).
+- **Evidence and rationale:** [`docs/decisions/R1-heap-recipe.md`](../decisions/R1-heap-recipe.md), with the spike in [`spikes/vk-heap`](../../spikes/vk-heap).
 
 This contract fixes how the Vulkan backend binds LRM's one resource heap, using `VK_EXT_descriptor_heap` through the set/binding → heap mapping path (not direct heap indexing). Kernels see the same binding model on both backends:
 - `LRM_BUF(slot)` is heap slot `slot`;
@@ -20,10 +20,21 @@ The numbers in brackets are the values measured on the RTX 4080 with driver 616.
 | --- | --- |
 | API | Vulkan 1.4 |
 | Extensions enabled | `VK_EXT_descriptor_heap` only. `VK_KHR_shader_untyped_pointers` must be supported (an extension dependency) but is not enabled; the binding interface does not need it |
-| Features enabled | `VkPhysicalDeviceDescriptorHeapFeaturesEXT.descriptorHeap`; Vulkan 1.2 `bufferDeviceAddress`, `timelineSemaphore` and `runtimeDescriptorArray`; Vulkan 1.3 `synchronization2`; `maintenance5` |
+| Features enabled | Exactly the five listed below the table |
 | Not required | `nullDescriptor` / `robustness2`, `shaderStorageBufferArrayNonUniformIndexing`, `vulkanMemoryModel`, untyped pointers |
 | Limits asserted at device creation | `maxPushDataSize` ≥ 128 [256]. `vkGetPhysicalDeviceDescriptorSizeEXT(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)` equals `bufferDescriptorSize` [16]. The heap (section 3) fits `maxResourceHeapSize` [33,554,432]. A 1 GiB page fits `maxStorageBufferRange` [4,294,967,295] |
 | Queue | The first family with COMPUTE, without GRAPHICS, and with `timestampValidBits` > 0 [family 2: COMPUTE \| TRANSFER \| SPARSE, 64 bits, `timestampPeriod` 1 ns] |
+
+**Features.** The device check queries each feature with `vkGetPhysicalDeviceFeatures2` over the same chain it enables, and rejects a device that lacks any of them:
+1. `VkPhysicalDeviceFeatures.shaderStorageBufferArrayDynamicIndexing`. `g_buf[slot]` indexes an array of storage buffers with a dynamically uniform, non-constant index, which needs this core feature. Driver 616.92 also ran the spike correctly before it was enabled, so leaving it out does not show up on this device.
+2. `VkPhysicalDeviceVulkan12Features`: `bufferDeviceAddress`, `timelineSemaphore` and `runtimeDescriptorArray`.
+3. `VkPhysicalDeviceVulkan13Features.synchronization2`.
+4. `VkPhysicalDeviceMaintenance5Features.maintenance5` (sType 1000470000), for `VkPipelineCreateFlags2CreateInfo`.
+5. `VkPhysicalDeviceDescriptorHeapFeaturesEXT.descriptorHeap`.
+
+**Feature chain.** `VkDeviceCreateInfo.pNext` → `VkPhysicalDeviceFeatures2` (which carries feature 1) → Vulkan12Features → Vulkan13Features → Maintenance5Features → DescriptorHeapFeaturesEXT:
+- `pEnabledFeatures` is NULL, because the chain holds a `VkPhysicalDeviceFeatures2` (VUID-VkDeviceCreateInfo-pNext-00373).
+- `VkPhysicalDeviceVulkan14Features` is not chained. It must not appear together with `VkPhysicalDeviceMaintenance5Features` (VUID-VkDeviceCreateInfo-pNext-10360). A backend that prefers the 1.4 struct sets its `maintenance5` member and drops the Maintenance5 struct; it never chains both.
 
 ## 2. Memory and buffers
 
@@ -64,6 +75,7 @@ Slot 0 is the tensor table. Slots 1 to 63 are arena pages (HeapLayoutAndTensorTa
   - `pDescriptors[i]` is the `VkHostAddressRangeEXT` {mapped heap + *i* × `bufferDescriptorSize`, `bufferDescriptorSize`}.
 - **Visibility.** Host writes to the coherent heap made before the submit need no barrier.
 - **The reserved range is never accessed after the first bind.** The application does not read or write it while any command buffer that bound it is pending or unreset.
+- **A new heap waits for the old one's bindings.** A heap buffer created after another was freed can get the same device address; the spike saw this every time. So before the host writes into a new heap's reserved range, or destroys a heap, every command buffer that bound a heap is complete and reset. V1 creates its heap once, so this matters only on device teardown and recreation.
 - **No hashing.** Descriptor bytes are opaque and depend on page addresses, so they never enter a content hash.
 
 ## 5. Pipelines
@@ -96,11 +108,18 @@ mapping = VkDescriptorSetAndBindingMappingEXT {
    - `vkCmdDispatch`.
 
    Push data is pushed after every pipeline bind. `vkCmdPushConstants` is never used, since it is incompatible with heap pipelines.
-3. **Between dependent dispatches:** `vkCmdPipelineBarrier2` with one `VkMemoryBarrier2`:
+3. **After each dispatch:** `vkCmdPipelineBarrier2` with one `VkMemoryBarrier2`:
    - src COMPUTE_SHADER / SHADER_STORAGE_WRITE;
    - dst COMPUTE_SHADER | COPY / SHADER_STORAGE_READ | SHADER_STORAGE_WRITE | TRANSFER_READ.
-4. **Submit.** `vkQueueSubmit2` signals one timeline semaphore at ALL_COMMANDS with a new value. The host waits with `vkWaitSemaphores` and a finite timeout.
-5. **Timing.** `vkCmdWriteTimestamp2(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)` before and after each dispatch, masked to `timestampValidBits` and scaled by `timestampPeriod`. The results go out as `gpu.dispatch` GpuIntervals.
+
+   It orders the dispatch before a dependent dispatch and before a readback copy of its output.
+4. **Copies.** Each needs one `VkMemoryBarrier2` that the dispatch barrier does not cover. In V1 these belong to `ICommandList.Copy`, which GpuBackendInterface requires to be state-correct:
+   - **Upload, then dispatch.** After the `vkCmdCopyBuffer` calls into pages and before the first dispatch that touches them: src COPY / TRANSFER_WRITE, dst COMPUTE_SHADER / SHADER_STORAGE_READ | SHADER_STORAGE_WRITE. The write access is there because a shader may overwrite bytes the copy wrote.
+   - **Readback, then host.** After the `vkCmdCopyBuffer` calls into the readback staging buffer: src COPY / TRANSFER_WRITE, dst HOST / HOST_READ. The host reads after the timeline wait.
+
+   The spike records them in this order: the timestamp-pool reset, uploads, the upload barrier, the heap bind, the dispatches with their barriers, the readback copies, then the host barrier.
+5. **Submit.** `vkQueueSubmit2` signals one timeline semaphore at ALL_COMMANDS with a new value. The host waits with `vkWaitSemaphores` and a finite timeout.
+6. **Timing.** `vkCmdWriteTimestamp2(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)` before and after each dispatch, masked to `timestampValidBits` and scaled by `timestampPeriod`. The results go out as `gpu.dispatch` GpuIntervals.
 
 ## 7. Shader side (for R4b)
 
@@ -113,7 +132,15 @@ mapping = VkDescriptorSetAndBindingMappingEXT {
   3. LocalSize equals the catalog's thread count;
   4. the module declares `RuntimeDescriptorArray`.
 
-## 8. Known-answer vectors
+## 8. Verification: poisoned outputs
+
+A run that writes nothing leaves the previous bytes in place, and those bytes may already be right: an earlier run, or another configuration on the same pages, wrote them. So every check that a run's output is right, or that two runs agree, poisons the outputs first. This covers bit-exactness against the CPU, run-twice determinism and cross-backend digests, in V1's selftests as in the spike.
+1. Before each run, fill every region the job writes, intermediates of a multi-dispatch job included, with a poison pattern.
+2. The poison differs per run and per configuration, and never equals the expected word. The spike uses signalling-NaN bit patterns, which no arithmetic produces, from a stream seeded with SHA-256 of `configuration|case|run`.
+3. After the run, a word that still equals its poison fails the case, gating or not.
+4. A negative control runs each job with its dispatches removed (and, for a chain, each dispatch removed in turn). It must fail every case on every configuration.
+
+## 9. Known-answer vectors
 
 The spike's cpu and gpu tiers check each of these.
 
@@ -159,7 +186,7 @@ The output's SHA-256 is `74f5e898a05c7e2063639a11cbdaed2cd75d077e98c5c27296542f5
 
 **KAT-5, the bf16 widening of every pattern.** `bf16_unpack` over the bf16 bit patterns 0 to 65,535 gives the u32 words `bits << 16`. Their little-endian bytes have SHA-256 `9207d7eb28680a098c73dbe536d1ff7b94311dc417b9a385e0af6660683e93ca`. Vulkan, D3D12 and the CPU agree.
 
-## 9. Change rules
+## 10. Change rules
 
 - This contract changes only through a `contract-change` PR, with a CHANGELOG entry and updated KATs.
 - A new device or driver whose limits differ (section 3) does not change the contract: the rules are written in terms of the queried limits.
