@@ -12,6 +12,7 @@
     <Compile Include="GoldenCheckTests.fs" />
     <Compile Include="TelemetryTests.fs" />
     <Compile Include="ModelTests.fs" />
+    <Compile Include="GateCpuTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 </Project>

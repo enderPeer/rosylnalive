@@ -10,5 +10,6 @@
     <Compile Include="CpuOps.fs" />
     <Compile Include="Runner.fs" />
     <Compile Include="GoldenCheck.fs" />
+    <Compile Include="QwenParity.fs" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,129 @@
+{
+  "about": "ChatML wrappers for the qwen3-0.6b/g1 prompt pool (tools/goldens/qwen/qwen_corpus.py). Each wrapper is a list of turns; {content} in a user turn is replaced by a seeded draw from the corpus category named in 'content' ('none' for a wrapper without a slot). 'think' adds Qwen3's empty thinking block after the assistant header, as the chat template does with enable_thinking=False.",
+  "format": {
+    "turn": "<|im_start|>{role}\n{text}<|im_end|>\n",
+    "assistant_open": "<|im_start|>assistant\n",
+    "think_empty": "<think>\n\n</think>\n\n"
+  },
+  "wrappers": [
+    {
+      "id": "explain-csharp",
+      "content": "csharp",
+      "think": true,
+      "turns": [
+        {"role": "system", "text": "You are a careful C# reviewer. Answer briefly."},
+        {"role": "user", "text": "Explain what this C# code does.\n\n```csharp\n{content}\n```"}
+      ]
+    },
+    {
+      "id": "review-csharp",
+      "content": "csharp",
+      "think": false,
+      "turns": [
+        {"role": "user", "text": "Review the following code and list any bugs you see.\n\n{content}"}
+      ]
+    },
+    {
+      "id": "name-method",
+      "content": "csharp",
+      "think": true,
+      "turns": [
+        {"role": "user", "text": "Suggest a better name for the main method in this snippet:\n\n```csharp\n{content}\n```"}
+      ]
+    },
+    {
+      "id": "summarize-license",
+      "content": "license",
+      "think": true,
+      "turns": [
+        {"role": "system", "text": "You summarize legal text in plain English."},
+        {"role": "user", "text": "Summarize this license clause in one sentence:\n\n{content}"}
+      ]
+    },
+    {
+      "id": "license-question",
+      "content": "license",
+      "think": false,
+      "turns": [
+        {"role": "user", "text": "{content}\n\nDoes this paragraph allow me to sell modified copies?"}
+      ]
+    },
+    {
+      "id": "design-critique",
+      "content": "design",
+      "think": true,
+      "turns": [
+        {"role": "system", "text": "You are a senior engineer reviewing a design document."},
+        {"role": "user", "text": "What is the weakest point of this paragraph?\n\n{content}"}
+      ]
+    },
+    {
+      "id": "design-summary",
+      "content": "design",
+      "think": false,
+      "turns": [
+        {"role": "user", "text": "Summarize:\n\n{content}"}
+      ]
+    },
+    {
+      "id": "translate",
+      "content": "multilingual",
+      "think": true,
+      "turns": [
+        {"role": "user", "text": "Translate into English:\n\n{content}"}
+      ]
+    },
+    {
+      "id": "which-language",
+      "content": "multilingual",
+      "think": false,
+      "turns": [
+        {"role": "system", "text": "You are a helpful assistant."},
+        {"role": "user", "text": "Which languages are these lines written in?\n\n{content}"}
+      ]
+    },
+    {
+      "id": "write-method",
+      "content": "none",
+      "think": true,
+      "turns": [
+        {"role": "user", "text": "Write a C# method that returns the largest element of an int array, or throws if the array is empty."}
+      ]
+    },
+    {
+      "id": "explain-rmsnorm",
+      "content": "none",
+      "think": true,
+      "turns": [
+        {"role": "system", "text": "You are a concise tutor for machine learning engineers."},
+        {"role": "user", "text": "What does RMSNorm compute, and how does it differ from LayerNorm?"}
+      ]
+    },
+    {
+      "id": "two-turns",
+      "content": "csharp",
+      "think": true,
+      "turns": [
+        {"role": "user", "text": "Here is some code:\n\n```csharp\n{content}\n```"},
+        {"role": "assistant", "text": "Thanks. What would you like to know about it?"},
+        {"role": "user", "text": "Rewrite it to be shorter without changing its behaviour."}
+      ]
+    },
+    {
+      "id": "capital",
+      "content": "none",
+      "think": false,
+      "turns": [
+        {"role": "user", "text": "What is the capital of France? Answer in one word."}
+      ]
+    },
+    {
+      "id": "count-to-ten",
+      "content": "none",
+      "think": true,
+      "turns": [
+        {"role": "user", "text": "Count from one to ten in words, separated by commas."}
+      ]
+    }
+  ]
+}

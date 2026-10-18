@@ -16,12 +16,12 @@ let tiers: TestTiers =
                 GoldenCheckTests.tests
                 TelemetryTests.tests
             ]
-        Model = [ None, [ ModelTests.tests ] ]
+        Model = [ None, [ ModelTests.tests; GateCpuTests.tests ] ]
     }
 
 [<EntryPoint>]
 let main argv =
     let code = Runner.main argv tiers
-    // The parity run log, if a tiny-model acceptance test created one (ParityRun).
+    // The parity run logs the acceptance tests created: the tiny model's (cpu tier), the full model's (model tier).
     ParityRun.finish code
     code

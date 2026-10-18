@@ -1,0 +1,59 @@
+en	The compiler reports every error it finds, but it cannot tell you what the program was meant to do.
+en	On Sunday morning the market opens early, and the bakery sells out of bread before nine.
+en	A good test fails for exactly one reason and says clearly what that reason is.
+de	Der Compiler meldet jeden Fehler, den er findet, aber er weiß nicht, was das Programm tun soll.
+de	Am Wochenende fahren wir mit dem Zug an den See und nehmen das Fahrrad mit.
+de	Bitte speichern Sie die Datei, bevor Sie das Fenster schließen.
+fr	Le compilateur signale chaque erreur, mais il ne comprend pas l'intention du programmeur.
+fr	Nous avons pris le petit-déjeuner sur la terrasse avant que la pluie ne commence.
+fr	Chaque fonction doit faire une seule chose et la faire bien.
+es	El compilador encuentra los errores, pero no sabe lo que el programa debería hacer.
+es	Mañana vamos a visitar a mis abuelos en el pueblo, si no llueve.
+es	La biblioteca abre a las diez y cierra a las ocho de la tarde.
+it	Il compilatore segnala ogni errore, ma non conosce l'intenzione di chi scrive il codice.
+it	Stasera cuciniamo la pasta con i pomodori dell'orto.
+it	Il treno per Milano parte dal binario tre tra dieci minuti.
+pt	O compilador encontra todos os erros, mas não entende a intenção do programa.
+pt	No verão, a cidade fica cheia de turistas e as praias ficam lotadas.
+pt	Por favor, feche a porta quando sair da sala.
+nl	De compiler vindt elke fout, maar hij weet niet wat het programma moet doen.
+nl	We fietsen elke ochtend langs het kanaal naar ons werk.
+sv	Kompilatorn hittar varje fel, men den förstår inte vad programmet ska göra.
+sv	I morgon ska vi plocka svamp i skogen bakom huset.
+pl	Kompilator zgłasza każdy błąd, ale nie wie, co program miał robić.
+pl	W sobotę idziemy z dziećmi do zoo, jeśli będzie ładna pogoda.
+cs	Překladač najde každou chybu, ale neví, co měl program dělat.
+cs	Ráno jsem si koupil čerstvé rohlíky v pekárně na rohu.
+tr	Derleyici her hatayı bulur, ancak programın ne yapması gerektiğini bilmez.
+tr	Akşam yemeğinden sonra sahilde uzun bir yürüyüş yaptık.
+ru	Компилятор находит каждую ошибку, но не знает, что должна делать программа.
+ru	Зимой мы катаемся на лыжах в горах недалеко от города.
+ru	Пожалуйста, сохраните изменения перед тем, как закрыть файл.
+uk	Компілятор знаходить кожну помилку, але не знає, що має робити програма.
+uk	Влітку ми їздимо до бабусі в село біля річки.
+el	Ο μεταγλωττιστής βρίσκει κάθε λάθος, αλλά δεν ξέρει τι πρέπει να κάνει το πρόγραμμα.
+el	Το καλοκαίρι κολυμπάμε κάθε μέρα στη θάλασσα.
+ar	يجد المترجم كل خطأ، لكنه لا يعرف ما يجب أن يفعله البرنامج.
+ar	نذهب إلى السوق صباح كل جمعة لشراء الخضار والفواكه.
+he	המהדר מוצא כל שגיאה, אבל הוא לא יודע מה התוכנית אמורה לעשות.
+he	בערב ישבנו במרפסת ושתינו תה עם נענע.
+hi	कंपाइलर हर त्रुटि ढूंढ लेता है, लेकिन वह नहीं जानता कि प्रोग्राम को क्या करना चाहिए।
+hi	हम रविवार को बाज़ार जाते हैं और ताज़ी सब्ज़ियाँ खरीदते हैं।
+zh	编译器能找到每一个错误，但它不知道程序应该做什么。
+zh	周末我们一起去公园散步，然后在湖边吃午饭。
+zh	请在关闭窗口之前保存文件。
+ja	コンパイラはすべてのエラーを見つけますが、プログラムが何をすべきかは分かりません。
+ja	週末は友達と山に登って、頂上でお弁当を食べました。
+ja	ファイルを閉じる前に、必ず保存してください。
+ko	컴파일러는 모든 오류를 찾지만 프로그램이 무엇을 해야 하는지는 모릅니다.
+ko	주말에 가족과 함께 바닷가에 가서 산책을 했습니다.
+vi	Trình biên dịch tìm ra mọi lỗi, nhưng nó không biết chương trình phải làm gì.
+vi	Sáng nay tôi uống cà phê sữa đá ở quán gần nhà.
+th	คอมไพเลอร์พบข้อผิดพลาดทุกจุด แต่ไม่รู้ว่าโปรแกรมควรทำอะไร
+th	วันหยุดนี้เราจะไปเที่ยวทะเลกับครอบครัว
+id	Kompiler menemukan setiap kesalahan, tetapi tidak tahu apa yang seharusnya dilakukan program.
+id	Setiap pagi saya naik sepeda ke kantor melewati sawah.
+fi	Kääntäjä löytää jokaisen virheen, mutta se ei tiedä, mitä ohjelman pitäisi tehdä.
+fi	Talvella järvi jäätyy, ja lapset luistelevat jäällä koko päivän.
+hu	A fordító minden hibát megtalál, de nem tudja, mit kellene a programnak csinálnia.
+hu	Vasárnap a nagymamánál ebédelünk, aki mindig túrós palacsintát süt.

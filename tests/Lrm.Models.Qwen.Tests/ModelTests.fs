@@ -1,6 +1,6 @@
 /// Model tier (local only): the real Qwen3-0.6B under LRM_DATA opens through Qwen3Weights.Open (pinned revision, every
 /// SHA256SUMS file, lm_head equal to the embedding by hash) and runs a short forward on both CPU classes, where prefill
-/// equals decode. The full-model parity against G2's goldens is M2b's.
+/// equals decode. The full-model parity against G2's goldens is M2b's (GateCpuTests).
 module Lrm.Models.Qwen.Tests.ModelTests
 
 open System
@@ -11,10 +11,8 @@ open Lrm.Tensor
 open Lrm.Models.Qwen
 open Lrm.Models.Qwen.Tests.Common
 
-let private dir () = LrmPaths.model "Qwen3-0.6B"
-
-/// Opened once for the tier (the open hashes 1.5 GB).
-let private weights = lazy (Qwen3Weights.Open(dir ()))
+/// Opened once for the tier and shared with GateCpuTests (Common.qwenWeights).
+let private weights = qwenWeights
 
 /// Prompt ids of the real vocabulary (no tokenizer needed): arbitrary ids below 151,643.
 let private prompt = [| 785; 3974; 13876; 38835 |]
