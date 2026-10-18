@@ -1,8 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: R2. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
-    <Compile Include="VkXmlLayout.fs" />
-    <Compile Include="LayoutCheck.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 </Project>

@@ -1,30 +1,25 @@
-# Lrm.Gpu.Vulkan.Interop — F# Vulkan binding foundation + device check
+# Lrm.Gpu.Vulkan.Interop
 
-No third-party bindings. `vulkan-1.dll` is opened with `NativeLibrary`; only `vkGetInstanceProcAddr`
-is bound by symbol, everything else is fetched through it (`vkGetDeviceProcAddr` is loaded for later use).
+The F# binding to the Vulkan C API (namespace `Lrm.Gpu.Vulkan.Interop`), generated from vk.xml 1.4.365 by `tools/vkgen`, checked by the cl.exe ABI oracle in `tools/abi-oracle/vulkan`, and the shared Vulkan device check. No third-party bindings. Owner: R2. Contract: [VulkanInteropApi](../../docs/contracts/vulkan-interop.md).
 
-- `src/Lrm.Gpu.Vulkan.Interop` — library (namespace `Lrm.Gpu.Vulkan` for now)
-  - `VkTypes.fs` — constants, versions, enums, handles, fixed-array stand-ins, instance structs
-  - `VkCore.Generated.fs` — VkPhysicalDeviceLimits / SparseProperties / Features, transcribed from vk.xml
-  - `VkStructs.fs` — Properties2/Features2, Driver props, Vulkan12/13 features, VK_EXT_descriptor_heap,
-    VK_KHR_shader_untyped_pointers, VK_KHR_cooperative_matrix query structs
-  - `VkCommands.fs` — PFN delegates, `VulkanLoader`, `Instance`
-  - `DeviceCheck.fs` — `DeviceVerdict = Accepted of Capabilities | Rejected of reasons: string list`
-- `apps/VkDeviceCheck` — prints each device + verdict; first verifies every struct's size, member order
-  and offsets against `VkXmlLayout.fs` (C-ABI layout computed from vk.xml).
-- `tools/vkgen/legacy/vkxml_layout.py` — generator for both generated files (reads vk.xml as data), until vkgen v2 replaces it.
+| File | Contents |
+| --- | --- |
+| `Vk.g.fs` | Generated: constants, basetypes, handles, enums, bitmasks, inline arrays, structs and unions, funcpointer and command delegates |
+| `VkCommands.g.fs` | Generated: `VkGlobalCommands`, `VkInstanceCommands`, `VkDeviceCommands` (raw delegates and wrappers) |
+| `VkMeta.g.fs` | Generated: what is bound, with the generator's C layout of every struct |
+| `AbiAttributes.fs` | The markers on generated items that the oracle reads |
+| `Support.fs` | `VulkanException`, `VulkanMissingCommandException`, the loading helper and the metadata types |
+| `Text.fs` | UTF-8 strings at the boundary, `Array256_byte.AsString`, `VkVersion` |
+| `Chain.fs` | pNext chains: `VkChain.prepend`, `walk` and `problems` |
+| `LayoutCheck.fs` | Runtime layout against VkMeta, run before any device is touched |
+| `Loader.fs` | `VulkanLoader` (only `vkGetInstanceProcAddr` by symbol) and `Instance` |
+| `Device.fs` | `FeatureChain` and `PropertiesChain` (byref-like), `DeviceOptions`, `QueueFamily.recipe`, `Device.create` |
+| `DeviceCheck.fs` | The VulkanHeapRecipe acceptance rules, the report, text and JSON |
+| `Diagnostics.fs` | `DebugMessenger`, `DebugUtils` names and labels, `DeviceFault.query` |
 
-```
-dotnet run --project apps/VkDeviceCheck -c Release
-```
-
-Exit code: 0 = at least one device accepted, 3 = none accepted, 2 = layout mismatch, 1 = no loader.
-
-Regenerate (vk.xml from Khronos Vulkan-Docs `xml/vk.xml`, currently VK_HEADER_VERSION 365):
-
-```
-python -I tools/vkgen/legacy/vkxml_layout.py <vk.xml> --fsharp VkPhysicalDeviceLimits,VkPhysicalDeviceSparseProperties,VkPhysicalDeviceFeatures
-python -I tools/vkgen/legacy/vkxml_layout.py <vk.xml> --layout <comma-separated struct list, see VkXmlLayout.fs>
+```bash
+dotnet artifacts/bin/VkDeviceCheck/release/VkDeviceCheck.dll [--json]      # layouts, then the device check
+dotnet artifacts/bin/Lrm.Cli/release/Lrm.Cli.dll devices-vulkan [--json]   # the same from the lrm CLI
 ```
 
-Assumes a 64-bit process (`PlatformTarget` x64, set for every project in `Directory.Build.props`); the layout table is 64-bit only.
+VkDeviceCheck exits 0 when a device is accepted, 1 without a loader, 2 on a layout mismatch and 3 when no device is accepted. The binding assumes a 64-bit process (`PlatformTarget` x64 for every project).
