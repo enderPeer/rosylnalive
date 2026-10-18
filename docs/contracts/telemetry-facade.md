@@ -105,6 +105,7 @@ Reserved names have fixed meanings that reports and the dashboard depend on. Onl
 | `gpu.*` | GPU backends and the GPU executor (D1, V1, X1, kernels) | `gpu.dispatch` GpuIntervals, `gpu.bytes_moved` meters, device faults |
 | `model.*` | The Qwen model and forward pass (M2) | `model.layer` spans, `model.flops` and `model.tokens` meters |
 | `cluster.*` | The cluster core and serving (C1, C2) | `cluster.divergence` events, reissues, leases, latencies |
+| `run.*` | The run log itself (T1's RunContext; RunLog contract) | the `run.node` header, the `run.end` trailer and `run.clock_offset` records. No component emits them through the facade |
 | `conformance.case` | The conformance harness (E1) | One Check per kernel case, with its bound and measured error as attributes |
 | `tokenizer.case` | The tokenizer (M1) | One Check per corpus case |
 | `golden.compare` | The comparators (O2) and their callers | One Check per golden comparison, with the metric and tolerance as attributes |

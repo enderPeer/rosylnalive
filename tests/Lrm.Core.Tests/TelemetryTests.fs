@@ -242,6 +242,8 @@ let tests =
                         "gpu.dispatch"
                         "model.layer"
                         "cluster.divergence"
+                        "run.node"
+                        "run.clock_offset"
                         "conformance.case"
                         "tokenizer.case"
                         "golden.compare"
@@ -249,7 +251,7 @@ let tests =
                     ] do
                     Expect.isTrue (TelemetryNames.isReserved r) r
 
-                for r in [ "gpux.dispatch"; "mem.arena2"; "report.chart" ] do
+                for r in [ "gpux.dispatch"; "mem.arena2"; "report.chart"; "runs.count" ] do
                     Expect.isFalse (TelemetryNames.isReserved r) r
 
             testCase "the in-memory sink rejects malformed records"
