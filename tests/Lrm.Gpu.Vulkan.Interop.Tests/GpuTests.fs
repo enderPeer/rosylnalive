@@ -129,6 +129,45 @@ let tests =
 
                 Expect.isEmpty missing "every instance command whose provider is enabled is loaded"
 
+            gpuTest "recording 3,000 wrapper calls into a real command buffer allocates no managed memory"
+            <| fun () ->
+                withDevice false DeviceOptions.recipe (fun _ _ device ->
+                    let d = device.Commands
+                    let args = Hello.kat4
+                    use p = fixed args
+                    let mutable info = VkPushDataInfoEXT.Create()
+                    info.data.address <- NativePtr.toNativeInt p
+                    info.data.size <- unativeint 128
+                    let mutable mb = VkMemoryBarrier2.Create()
+                    let mutable dep = VkDependencyInfo.Create()
+                    dep.memoryBarrierCount <- 1u
+                    dep.pMemoryBarriers <- NativePtr.toNativeInt &&mb
+
+                    // No dispatch: recording one without a bound pipeline and heap is invalid usage, which the
+                    // driver need not survive. Push data and barriers are valid on their own.
+                    let record (cmd: VkCommandBuffer) =
+                        for _ in 1..1500 do
+                            d.CmdPushDataEXT(cmd, &info)
+                            d.CmdPipelineBarrier2(cmd, &dep)
+
+                    let allocated =
+                        Hello.withRecording device (fun cmd ->
+                            record cmd // stubs are generated on first use
+                            let before = GC.GetAllocatedBytesForCurrentThread()
+                            record cmd
+                            GC.GetAllocatedBytesForCurrentThread() - before)
+
+                    Telemetry.check
+                        "gpu.interop.allocations"
+                        (allocated = 0L)
+                        [
+                            Attr.str TelemetryKeys.Backend "vulkan"
+                            Attr.int64 "bytes" allocated
+                            Attr.int "calls" 3000
+                        ]
+
+                    Expect.equal allocated 0L "the push-data and barrier wrappers allocate nothing")
+
             gpuTest "hello-compute: args_echo (KAT-4) twice bit-identically, no poison left"
             <| fun () ->
                 let runIndex = ref 0

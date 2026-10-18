@@ -525,7 +525,9 @@ let private abi =
                     skiptest "spikes/vk-heap/src/Layout.fs is gone; nothing to cross-check"
 
                 let script = Path.Combine(AbiOracle.oracleDir repo, "spike-crosscheck.fsx")
-                let code, out, err = exec (dotnet ()) [ "fsi"; "--quiet"; script; interop.Location ]
+
+                let code, out, err =
+                    exec (dotnet ()) [ "fsi"; "--quiet"; "--nowarn:3886"; script; interop.Location ]
 
                 let summary =
                     out.Split('\n') |> Array.tryFind (fun l -> l.StartsWith "spike cross-check:")
@@ -652,6 +654,8 @@ let private wrappers =
                     | VulkanMissingCommandException "vkCmdDispatch" -> ()
                     | e -> raise e)
 
+            // On a fake, GetDelegateForFunctionPointer hands back the managed delegate itself, so this checks the
+            // wrapper's own code (null check, pins, spans, result check); the gpu tier repeats it into the driver.
             testCase "a wrapper call allocates nothing"
             <| fun () ->
                 let fake = FakeLoader()
@@ -987,6 +991,24 @@ let private rules =
 
                 for (c, reason) in cases do
                     Expect.equal (DeviceCheck.reasons c) [ reason ] reason
+
+            testCase "maxStorageBufferRange: a 1 GiB page needs 2^30 bytes, not one less"
+            <| fun () ->
+                let b = rtx4080 ()
+
+                Expect.isEmpty
+                    (DeviceCheck.reasons
+                        { b with
+                            MaxStorageBufferRange = 1073741824u
+                        })
+                    "2^30"
+
+                Expect.isNonEmpty
+                    (DeviceCheck.reasons
+                        { b with
+                            MaxStorageBufferRange = 1073741823u
+                        })
+                    "2^30 - 1"
 
             testCase "maxPushDataSize: 256 passes the floor, 255 does not; the recipe itself needs 128"
             <| fun () ->

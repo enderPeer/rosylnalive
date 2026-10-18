@@ -200,6 +200,31 @@ let private barrier (d: Device) (cmd: VkCommandBuffer) (b: VkMemoryBarrier2) =
     dep.pMemoryBarriers <- NativePtr.toNativeInt &&mb
     d.Commands.CmdPipelineBarrier2(cmd, &dep)
 
+/// Runs `f` with a primary command buffer in the recording state on the device's queue family; the pool is destroyed
+/// afterwards, so nothing recorded is ever submitted.
+let withRecording (d: Device) (f: VkCommandBuffer -> 'a) : 'a =
+    let c = d.Commands
+    let mutable poolInfo = VkCommandPoolCreateInfo.Create()
+    poolInfo.queueFamilyIndex <- d.QueueFamily
+    let mutable pool = VkCommandPool.Null
+    c.CreateCommandPool(d.Handle, &poolInfo, &pool)
+
+    try
+        let mutable cbai = VkCommandBufferAllocateInfo.Create()
+        cbai.commandPool <- pool
+        cbai.level <- VkCommandBufferLevel.VK_COMMAND_BUFFER_LEVEL_PRIMARY
+        cbai.commandBufferCount <- 1u
+        let mutable cmd = VkCommandBuffer.Null
+        c.AllocateCommandBuffers(d.Handle, &cbai, NativePtr.toNativeInt &&cmd)
+        let mutable begin' = VkCommandBufferBeginInfo.Create()
+        begin'.flags <- VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+        c.BeginCommandBuffer(cmd, &begin')
+        let r = f cmd
+        c.EndCommandBuffer(cmd)
+        r
+    finally
+        c.DestroyCommandPool(d.Handle, pool)
+
 /// One run on `d`: creates every object, records, submits, waits, reads back and destroys everything. `dispatch`
 /// false is the negative control (recipe section 8): the same job without its dispatch.
 let run

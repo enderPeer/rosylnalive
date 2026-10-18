@@ -254,7 +254,7 @@ let reasons (c: Capabilities) : string list =
             "synchronization2 not supported"
         if not f.Maintenance5 then
             "maintenance5 not supported"
-        if uint64 c.MaxStorageBufferRange < PageBytes - 1UL then
+        if uint64 c.MaxStorageBufferRange < PageBytes then
             sprintf "maxStorageBufferRange %d is below a 1 GiB page" c.MaxStorageBufferRange
         if c.QueueFamily.IsNone then
             "no queue family with COMPUTE, without GRAPHICS and with timestamps"
