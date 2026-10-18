@@ -23,6 +23,10 @@ The mode each shader backend measured with the `scale_f32` denormal probe right 
 
 {{table denormals}}
 
+The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush give, and what each measurement returned.
+
+{{table denormal_words}}
+
 ## GPU time
 
 {{chart gpu_by_kernel}}

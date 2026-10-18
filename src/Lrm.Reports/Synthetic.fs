@@ -355,11 +355,19 @@ let private kernels (root: string) =
     for node, (ctx: RunContext), speed in [ "vulkan", vk, 1.0; "d3d12", dx, 1.08 ] do
         // The denormal probe each backend runs after LoadKernels (GpuBackendInterface): the two modes differ here so
         // the review sees both rows.
+        // The words are GpuBackendInterface's probe table (Fp32Denormals.recordProbe).
+        let preserve = "3f000000 00800000 00400000 80400000 00000001 803fffff 00200000"
+        let flush = "3f000000 00800000 00000000 80000000 00000000 80000000 00000000"
+
         ctx.Telemetry.Event(
             "gpu.fp32_denormals",
             [
                 Attr.str TelemetryKeys.Backend node
                 Attr.str "mode" (if node = "vulkan" then "flush" else "preserve")
+                Attr.str "inputs" "3f800000 01000000 00800000 80800000 00000002 807ffffe 00400000"
+                Attr.str "results" (if node = "vulkan" then flush else preserve)
+                Attr.str "expected_preserve" preserve
+                Attr.str "expected_flush" flush
             ]
         )
 

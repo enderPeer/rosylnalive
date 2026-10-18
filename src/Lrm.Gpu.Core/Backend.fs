@@ -435,7 +435,8 @@ module GpuTelemetry =
         for r in results do
             Telemetry.gpuInterval r.Name r.GpuStartNs r.DurationNs (backendAttr backend :: r.Attrs)
 
-    /// Event, once per backend after LoadKernels: the measured fp32 denormal mode; attrs backend, mode.
+    /// Event, once per backend after LoadKernels: the measured fp32 denormal mode; attrs backend, mode, and from
+    /// Fp32Denormals.recordProbe the probe's words (inputs, results, expected_preserve, expected_flush).
     [<Literal>]
     let Fp32Denormals = "gpu.fp32_denormals"
 
@@ -519,3 +520,28 @@ module Fp32Denormals =
                 Attr.str TelemetryKeys.Backend (ExecutionBackend.name backend)
                 Attr.str "mode" (name mode)
             ]
+
+    /// Words as 8-digit lowercase hex, space-separated: the form gpu.fp32_denormals carries them in.
+    let wordsText (words: uint32[]) =
+        words
+        |> Array.map (fun w -> w.ToString("x8", Invariant.culture))
+        |> String.concat " "
+
+    /// Classifies the probe's result bits and emits gpu.fp32_denormals with the mode and the words, so a report can
+    /// show the bit table: attrs backend, mode, inputs, results, expected_preserve and expected_flush (each 7 words,
+    /// wordsText). Raises like classify. Returns the mode.
+    let recordProbe (backend: ExecutionBackend) (results: uint32[]) : Fp32DenormalMode =
+        let mode = classify results
+
+        Telemetry.event
+            GpuTelemetry.Fp32Denormals
+            [
+                Attr.str TelemetryKeys.Backend (ExecutionBackend.name backend)
+                Attr.str "mode" (name mode)
+                Attr.str "inputs" (wordsText probeInputs)
+                Attr.str "results" (wordsText results)
+                Attr.str "expected_preserve" (wordsText (expected Fp32DenormalMode.Preserve))
+                Attr.str "expected_flush" (wordsText (expected Fp32DenormalMode.Flush))
+            ]
+
+        mode

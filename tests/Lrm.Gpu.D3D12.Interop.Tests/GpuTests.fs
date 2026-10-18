@@ -441,8 +441,10 @@ let private dred () =
 // built with -denorm preserve (fp32-denorm-mode=preserve). This runs the probe the contract defines, through this
 // interop and the embedded shader set, before D1 exists: scale_f32 with a = 0.5 over Fp32Denormals.probeInputs, with
 // LRM's heap layout (slot 0 the tensor table, slot 1 a page) and the canonical root signature. Integrator ADR
-// int-0001 records the result. The measurement goes to a run log (kind kernels) as gpu.fp32_denormals and a
-// gpu.dispatch interval, so `lrm report` renders it.
+// int-0001 records the result. The measurement goes to a run log (kind kernels) as gpu.fp32_denormals with the probe's
+// words and a gpu.dispatch interval, so `lrm report` renders the bit table. A control runs the same probe on scale_f32
+// compiled with the pinned DXC and the same flags without -denorm preserve, as R1's spike compiled its sources, so the
+// run shows what the flag decides on this device and driver.
 
 /// The probe's run log, created on first use; Main finishes it (finishRun).
 let private probeRun =
@@ -501,15 +503,69 @@ let private poisonWord (run: int) (i: int) = 0x7FA00000u + uint32 (run * 16 + i)
 
 let mutable private probeRuns = 0
 
-let private denormalProbe () : byte[] =
-    let run = Interlocked.Increment &probeRuns
-    use _ = probeRun.Value.Install()
-    let shaders = Lrm.Shaders.Shaders.embedded ()
+/// The DXIL flags of the embedded shader set.
+let private dxilFlags () =
+    Lrm.Gpu.Core.ShaderSet.flagsFor Lrm.Gpu.Core.ShaderTarget.Dxil (Lrm.Shaders.Shaders.embedded ())
 
-    let blob =
-        match Lrm.Gpu.Core.ShaderSet.tryBlob "scale_f32" Lrm.Gpu.Core.ShaderTarget.Dxil shaders with
-        | Some b -> b.Bytes
-        | None -> failtest "the embedded shader set has no dxil/scale_f32"
+/// The control blob: hlsl/selftest/scale_f32.hlsl compiled now with the pinned DXC (tools/bootstrap/toolchain.json under
+/// LRM_DATA) and the shader set's DXIL flags without "-denorm preserve". Error with the reason when DXC is missing or
+/// fails, and the test then skips.
+let private controlBlob =
+    lazy
+        (let rec strip =
+            function
+            | "-denorm" :: _ :: rest -> strip rest
+            | x :: rest -> x :: strip rest
+            | [] -> []
+
+         let flags = strip (dxilFlags ())
+         let repo = Env.repoRoot ()
+
+         use toolchain =
+             JsonDocument.Parse(File.ReadAllText(Path.Combine(repo, "tools", "bootstrap", "toolchain.json")))
+
+         let exe =
+             Path.Combine(Env.dataRoot (), toolchain.RootElement.GetProperty("dxc").GetProperty("exe").GetString())
+
+         if not (File.Exists exe) then
+             Error("the pinned DXC is missing: " + exe)
+         else
+             let out =
+                 Path.Combine(Path.GetTempPath(), "lrm-denorm-control-" + string Environment.ProcessId + ".dxil")
+
+             let psi =
+                 ProcessStartInfo(
+                     exe,
+                     WorkingDirectory = Path.Combine(repo, "src", "Lrm.Shaders"),
+                     RedirectStandardOutput = true,
+                     RedirectStandardError = true,
+                     UseShellExecute = false
+                 )
+
+             for a in flags @ [ "-I"; "include"; "-Fo"; out; "hlsl/selftest/scale_f32.hlsl" ] do
+                 psi.ArgumentList.Add a
+
+             use p = Process.Start psi
+             let stdout = p.StandardOutput.ReadToEndAsync()
+             let stderr = p.StandardError.ReadToEnd()
+             p.WaitForExit()
+             stdout.Wait()
+
+             if p.ExitCode <> 0 then
+                 Error(sprintf "dxc failed with %d: %s" p.ExitCode stderr)
+             else
+                 let bytes = File.ReadAllBytes out
+                 File.Delete out
+                 Ok(String.concat " " flags, bytes))
+
+/// Runs the probe on one scale_f32 DXIL blob; its records carry `blob` (which blob) and `dxil_flags`.
+let private probeWith (variant: string) (flags: string) (blob: byte[]) : byte[] =
+    let run = Interlocked.Increment &probeRuns
+
+    use _ =
+        Telemetry.install (probeRun.Value.Telemetry.Child [ Attr.str "blob" variant; Attr.str "dxil_flags" flags ])
+
+    let shaders = Lrm.Shaders.Shaders.embedded ()
 
     let inputs = Lrm.Gpu.Core.Fp32Denormals.probeInputs
     let n = inputs.Length
@@ -622,15 +678,16 @@ let private denormalProbe () : byte[] =
         if results[i] = poisonWord run i then
             failtestf "probe word %d still holds its poison: scale_f32 wrote nothing" i
 
-    // Raises GpuContractException when the normal controls are wrong (scale_f32 itself failed).
-    let mode = Lrm.Gpu.Core.Fp32Denormals.classify results
-    Lrm.Gpu.Core.Fp32Denormals.record ExecutionBackend.D3D12 mode
+    // Raises GpuContractException when the normal controls are wrong (scale_f32 itself failed). The record carries the
+    // words, so the report shows the bit table.
+    let mode = Lrm.Gpu.Core.Fp32Denormals.recordProbe ExecutionBackend.D3D12 results
 
     let hex (xs: uint32[]) =
         xs |> Array.map (sprintf "%08x") |> String.concat " "
 
     printfn
-        "fp32 denormal probe (d3d12, scale_f32, -denorm preserve): %s\n  inputs   %s\n  results  %s\n  preserve %s\n  flush    %s"
+        "fp32 denormal probe (d3d12, scale_f32, %s): %s\n  inputs   %s\n  results  %s\n  preserve %s\n  flush    %s"
+        variant
         (Lrm.Gpu.Core.Fp32Denormals.name mode)
         (hex inputs)
         (hex results)
@@ -653,6 +710,23 @@ let private denormalProbe () : byte[] =
         ]
 
     out
+
+/// The probe on the embedded shader set's scale_f32 (built with -denorm preserve).
+let private denormalProbe () : byte[] =
+    let blob =
+        match
+            Lrm.Gpu.Core.ShaderSet.tryBlob "scale_f32" Lrm.Gpu.Core.ShaderTarget.Dxil (Lrm.Shaders.Shaders.embedded ())
+        with
+        | Some b -> b.Bytes
+        | None -> failtest "the embedded shader set has no dxil/scale_f32"
+
+    probeWith "shader set" (String.concat " " (dxilFlags ())) blob
+
+/// The control: the same probe on scale_f32 built without -denorm preserve.
+let private denormalControl () : byte[] =
+    match controlBlob.Value with
+    | Error why -> skiptest why
+    | Ok(flags, blob) -> probeWith "control, no -denorm" flags blob
 
 /// Sequenced: one GPU workload at a time, and the leak test compares the process-wide live-reference count.
 let tests =
@@ -693,6 +767,9 @@ let tests =
             Determinism.testTwice
                 "the fp32 denormal probe on the real scale_f32 blob is bit-identical twice"
                 denormalProbe
+            Determinism.testTwice
+                "control: the same probe on scale_f32 built without -denorm is bit-identical twice"
+                denormalControl
         ]
 
 /// bench tier: the cost of one COM call through Vtbl.get and a cached delegate (AddRef and Release on a DXGI factory,
