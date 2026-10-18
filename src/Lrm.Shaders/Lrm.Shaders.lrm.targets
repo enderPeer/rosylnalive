@@ -38,12 +38,21 @@
       <LrmShadersOut>$([System.IO.Path]::GetFullPath('$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'shaders'))'))</LrmShadersOut>
       <LrmDotnet>$(DOTNET_HOST_PATH)</LrmDotnet>
       <LrmDotnet Condition="'$(LrmDotnet)' == ''">dotnet</LrmDotnet>
+      <LrmDxcStamp>$(LrmShadersOut)/dxc.stamp</LrmDxcStamp>
     </PropertyGroup>
+    <!--
+      The DXC identity as an input: the stamp changes whenever the DXC path, its pinned version line or the file's
+      write time changes, so pointing the build at another dxc reruns the compile step, which then refuses it.
+    -->
+    <MakeDir Directories="$(LrmShadersOut)" />
+    <WriteLinesToFile File="$(LrmDxcStamp)"
+                      Lines="$(LrmDxcExe);$(LrmDxcVersionOutput);$([System.IO.File]::GetLastWriteTime('$(LrmDxcExe)').Ticks)"
+                      Overwrite="true" WriteOnlyWhenDifferent="true" />
   </Target>
 
   <Target Name="LrmCompileShadersCore"
           DependsOnTargets="LrmCheckDxc;LrmResolveShaderTool"
-          Inputs="@(LrmShaderInput);$(LrmShadersBuildDll);$(LrmDxcExe)"
+          Inputs="@(LrmShaderInput);$(LrmShadersBuildDll);$(LrmDxcExe);$(LrmDxcStamp)"
           Outputs="$(LrmShadersOut)/shaders.manifest.json">
     <Exec Command="&quot;$(LrmDotnet)&quot; &quot;$(LrmShadersBuildDll)&quot; compile --repo &quot;$(LrmRepoRoot).&quot; --out &quot;$(LrmShadersOut)&quot; --dxc &quot;$(LrmDxcExe)&quot; --dxc-version &quot;$(LrmDxcVersionOutput)&quot; --toolchain &quot;$(LrmRepoRoot)tools/bootstrap/toolchain.json&quot;" />
     <Touch Files="$(LrmShadersOut)/shaders.manifest.json" />

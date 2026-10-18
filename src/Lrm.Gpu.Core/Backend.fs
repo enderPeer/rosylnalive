@@ -167,6 +167,14 @@ module Requirements =
     [<Literal>]
     let VulkanDescriptorHeap = "requires VK_EXT_descriptor_heap"
 
+    /// Vulkan: every SPIR-V blob declares DenormPreserve 32 (shaderDenormPreserveFloat32).
+    [<Literal>]
+    let VulkanDenormPreserve = "requires shaderDenormPreserveFloat32"
+
+    /// Vulkan: the 64 descriptors sit at stride 16, so a buffer descriptor must fit in 16 bytes.
+    [<Literal>]
+    let VulkanDescriptorSize = "requires buffer descriptors of at most 16 bytes"
+
     /// D3D12: shader model 6.6 (ResourceDescriptorHeap indexing).
     [<Literal>]
     let D3D12ShaderModel66 = "requires shader model 6.6"
@@ -357,9 +365,9 @@ module GpuTelemetry =
     [<Literal>]
     let BytesMoved = "gpu.bytes_moved"
 
-    /// Span on the host around Submit through Wait; attrs backend.
+    /// Span: host time blocked in Wait; attrs backend.
     [<Literal>]
-    let Submit = "gpu.submit"
+    let Wait = "gpu.wait"
 
     /// Gauge in bytes per arena at CreateHeap; attrs backend, arena.
     [<Literal>]
