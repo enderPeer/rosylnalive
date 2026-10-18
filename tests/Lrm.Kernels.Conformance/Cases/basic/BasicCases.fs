@@ -1052,12 +1052,13 @@ let private argmaxCases =
         plain "rows65537_cols3" 65537 3 "65,537 rows: a folded grid (32769 x 2) with one extra group"
     ]
 
-/// The GPU-only cases, which need from 1 MB to 311 MB of host memory each. CpuDevice never plans them
+/// The GPU-only cases, which take tens to hundreds of MB of host memory each once planned. CpuDevice never plans them
 /// (Suites.casesFor), but HarnessTests' arithmetic-model tests plan every discovered case on three CpuDevices at once,
-/// and with these that takes more than 8 GB, more than a CI runner has. So the cpu tier (LRM_TEST_TIER=cpu, which
-/// tools/test.ps1 and CI set) does not build them; every other run, the gpu tier included, does. The gate goes once
-/// those tests leave GPU-only cases out as Suites.casesFor does (request to E1 in the K1 pull request).
-let large () =
+/// and with these the conformance exe's cpu tier ran out of memory under an 8 GB GC heap limit (a GitHub runner has
+/// 16 GB, shared with the build). So the cpu tier (LRM_TEST_TIER=cpu, which tools/test.ps1 and CI set) does not build
+/// them; every other run, the gpu tier included, does. The gate goes once those tests leave GPU-only cases out as
+/// Suites.casesFor does (ADR K1-0001, decision 10; request to E1 in the K1 pull request).
+let private large () =
     if Env.tryGet "LRM_TEST_TIER" = Some "cpu" then
         []
     else

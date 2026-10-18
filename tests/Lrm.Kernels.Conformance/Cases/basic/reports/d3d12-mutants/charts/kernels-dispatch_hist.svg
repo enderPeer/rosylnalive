@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="kernels-dispatch_hist-title kernels-dispatch_hist-desc">
+<title id="kernels-dispatch_hist-title">Dispatch durations</title>
+<desc id="kernels-dispatch_hist-desc">Histogram of duration: 547 samples, 547 in 24 bins.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="320" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="319" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Dispatch durations</text>
+<text class="t2" x="16" y="45" font-size="12">547 dispatches on a log scale; the longest is 24.86 ms (budget 100 ms)</text>
+<line class="grid" x1="44.48" y1="274" x2="696" y2="274" stroke-width="1"/>
+<text class="t3" x="36.48" y="278" font-size="11" text-anchor="end">0</text>
+<line class="grid" x1="44.48" y1="208.67" x2="696" y2="208.67" stroke-width="1"/>
+<text class="t3" x="36.48" y="212.67" font-size="11" text-anchor="end">50</text>
+<line class="grid" x1="44.48" y1="143.33" x2="696" y2="143.33" stroke-width="1"/>
+<text class="t3" x="36.48" y="147.33" font-size="11" text-anchor="end">100</text>
+<line class="grid" x1="44.48" y1="78" x2="696" y2="78" stroke-width="1"/>
+<text class="t3" x="36.48" y="82" font-size="11" text-anchor="end">150</text>
+<text class="t3" x="158.03" y="291" font-size="11" text-anchor="middle">10 µs</text>
+<text class="t3" x="316.47" y="291" font-size="11" text-anchor="middle">100 µs</text>
+<text class="t3" x="474.9" y="291" font-size="11" text-anchor="middle">1 ms</text>
+<text class="t3" x="633.34" y="291" font-size="11" text-anchor="middle">10 ms</text>
+<text class="t3" x="44.48" y="68" font-size="11" text-anchor="start">count</text>
+<text class="t3" x="370.24" y="310" font-size="11" text-anchor="middle">duration</text>
+<path class="f0" d="M45.48 274V194.37Q45.48 190.37 49.48 190.37H66.63Q70.63 190.37 70.63 194.37V274Z"><title>[1.92 µs, 2.85 µs): 64</title></path>
+<path class="f0" d="M72.63 274V129.04Q72.63 125.04 76.63 125.04H93.77Q97.77 125.04 97.77 129.04V274Z"><title>[2.85 µs, 4.23 µs): 114</title></path>
+<path class="f0" d="M99.77 274V88.53Q99.77 84.53 103.77 84.53H120.92Q124.92 84.53 124.92 88.53V274Z"><title>[4.23 µs, 6.27 µs): 145</title></path>
+<path class="f0" d="M126.92 274V180Q126.92 176 130.92 176H148.07Q152.07 176 152.07 180V274Z"><title>[6.27 µs, 9.30 µs): 75</title></path>
+<path class="f0" d="M154.07 274V220.51Q154.07 216.51 158.07 216.51H175.21Q179.21 216.51 179.21 220.51V274Z"><title>[9.30 µs, 13.80 µs): 44</title></path>
+<path class="f0" d="M181.21 274V244.03Q181.21 240.03 185.21 240.03H202.36Q206.36 240.03 206.36 244.03V274Z"><title>[13.80 µs, 20.48 µs): 26</title></path>
+<path class="f0" d="M208.36 274V254.48Q208.36 250.48 212.36 250.48H229.51Q233.51 250.48 233.51 254.48V274Z"><title>[20.48 µs, 30.39 µs): 18</title></path>
+<path class="f0" d="M235.51 274V270.08Q235.51 266.16 239.43 266.16H256.73Q260.65 266.16 260.65 270.08V274Z"><title>[30.39 µs, 45.09 µs): 6</title></path>
+<path class="f0" d="M262.65 274V270.08Q262.65 266.16 266.57 266.16H283.88Q287.8 266.16 287.8 270.08V274Z"><title>[45.09 µs, 66.89 µs): 6</title></path>
+<path class="f0" d="M289.8 274V273.35Q289.8 272.69 290.45 272.69H314.29Q314.95 272.69 314.95 273.35V274Z"><title>[66.89 µs, 99.25 µs): 1</title></path>
+<path class="f0" d="M316.95 274V251.87Q316.95 247.87 320.95 247.87H338.09Q342.09 247.87 342.09 251.87V274Z"><title>[99.25 µs, 147.25 µs): 20</title></path>
+<path class="f0" d="M344.09 274V271.39Q344.09 268.77 346.71 268.77H366.63Q369.24 268.77 369.24 271.39V274Z"><title>[147.25 µs, 218.47 µs): 4</title></path>
+<path class="f0" d="M371.24 274V270.08Q371.24 266.16 375.16 266.16H392.47Q396.39 266.16 396.39 270.08V274Z"><title>[218.47 µs, 324.15 µs): 6</title></path>
+<path class="f0" d="M425.53 274V270.73Q425.53 267.47 428.8 267.47H447.41Q450.68 267.47 450.68 270.73V274Z"><title>[480.93 µs, 713.55 µs): 5</title></path>
+<path class="f0" d="M452.68 274V271.39Q452.68 268.77 455.29 268.77H475.21Q477.83 268.77 477.83 271.39V274Z"><title>[713.55 µs, 1.06 ms): 4</title></path>
+<path class="f0" d="M479.83 274V272.69Q479.83 271.39 481.13 271.39H503.67Q504.97 271.39 504.97 272.69V274Z"><title>[1.06 ms, 1.57 ms): 2</title></path>
+<path class="f0" d="M506.97 274V273.35Q506.97 272.69 507.63 272.69H531.47Q532.12 272.69 532.12 273.35V274Z"><title>[1.57 ms, 2.33 ms): 1</title></path>
+<path class="f0" d="M534.12 274V273.35Q534.12 272.69 534.77 272.69H558.61Q559.27 272.69 559.27 273.35V274Z"><title>[2.33 ms, 3.46 ms): 1</title></path>
+<path class="f0" d="M588.41 274V272.69Q588.41 271.39 589.72 271.39H612.25Q613.56 271.39 613.56 272.69V274Z"><title>[5.13 ms, 7.61 ms): 2</title></path>
+<path class="f0" d="M669.85 274V272.04Q669.85 270.08 671.81 270.08H693.04Q695 270.08 695 272.04V274Z"><title>[16.76 ms, 24.86 ms): 3</title></path>
+<line class="axis" x1="44.48" y1="274" x2="696" y2="274" stroke-width="1"/>
+</svg>

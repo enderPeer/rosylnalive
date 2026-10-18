@@ -52,7 +52,7 @@ Every relative bound here is the floor, 1e-6: no case's reference error exceeds 
 
 **Conformance on CpuDevice** (cpu tier, run `20261018-130019-da5f259d`, [`reports/cpu-device/kernels.md`](../../tests/Lrm.Kernels.Conformance/Cases/basic/reports/cpu-device/kernels.md)): K1's 72 CI cases pass bit-exact to CpuRef F32, and every case fails its negative control. The arithmetic-model tests also pass every K1 case against flushed and NaN-canonical references; before decision 10 they ran the six GPU-only cases too, and those passed as well.
 
-**Mutation check on D3D12.** One build with one bug in each kernel (run `20261018-125623-babc5f61`), then the clean sources again:
+**Mutation check on D3D12.** One build with one bug in each kernel (run `20261018-125623-babc5f61`, DXIL ShaderSetHash `9c10642e…`, rendered with every failure's measured value, bound and detail in [`reports/d3d12-mutants/kernels.md`](../../tests/Lrm.Kernels.Conformance/Cases/basic/reports/d3d12-mutants/kernels.md)), then the clean sources again (`9a7fe626…`):
 
 | Kernel | Bug | Cases that failed |
 | --- | --- | --- |
