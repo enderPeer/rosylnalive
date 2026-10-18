@@ -209,4 +209,17 @@ These known answers hold for `docs/ownership.json` at v1. `tools/ci/fixtures/own
   - a branch outside S0 that edits `tools/ci/Hygiene.psm1` fails;
   - contract changes behave as specified before and after a `contracts-v1` tag, with and without the label and the CHANGELOG entry, and a branch's own map cannot thaw the freeze.
 
-A mutation run, which disabled the out-of-path rule and the CRLF rule, made 16 fixtures fail the self-test, so the fixtures do detect broken rules.
+Mutation runs show that the fixtures detect broken rules:
+- The first run disabled the out-of-path rule and the CRLF rule, and 16 cases failed the self-test.
+- After review, a second run broke eight rules one at a time. Each mutation made at least one case fail:
+
+| Mutation | Cases that fail |
+| --- | ---: |
+| the branch's own map judges it | 4 |
+| no governance paths | 6 |
+| no MSBuild extension scan | 12 |
+| CHANGELOG lines may be inserted anywhere | 2 |
+| everyone counts as an integrator | 3 |
+| forbidden-file rules are case-sensitive | 1 |
+| the branch's own contract section applies | 1 |
+| a merge base without a map is accepted | 1 |
