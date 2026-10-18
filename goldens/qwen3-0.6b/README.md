@@ -144,7 +144,7 @@ pwsh tools/goldens/run.ps1 qwen/make_qwen.py --check                        # re
 
 A plain `make_qwen.py` run never rewrites `LRM_DATA/golden/qwen3-0.6b/g1`, which every worktree shares. If the folder already holds files, the run only hashes the data files it produces and writes the committed files only when all 45 are byte-identical to the folder's; `--force` is for smoke folders and new versions ([tools README](../../tools/goldens/qwen/README.md)). The committed bytes at this head come from such a run: run `20261018-120457-85a6c443` (2 h 0 min) regenerated the set after the tool and text fixes of PR #19's review. Every stage's double run was identical at 8 threads with the same digests as before, all 45 data files equalled the folder's (`goldens.data_unchanged`), and only `tolerances.json` (its `calibration` text) and the manifest (that file's hash and the two changed generator files' hashes) changed.
 
-`--check` passes only on the generation machine with the same `LRM_DATA` (GoldenSet, Verification): the manifest records the machine, and torch's kernels depend on its code path. On the generation machine it passed for g1 (run `20261018-095500-e277b974`, 1 h 48 min): every committed byte and every data file's SHA-256 regenerated identically ([`reports/make-qwen-check/goldens.md`](reports/make-qwen-check/goldens.md)).
+`--check` passes only on the generation machine with the same `LRM_DATA` (GoldenSet, Verification): the manifest records the machine, and torch's kernels depend on its code path. On the generation machine it passed for g1 twice. First came run `20261018-095500-e277b974` (1 h 48 min) in the G2 worktree. Then, at this head, run `20261018-141126-1f7f3592` (1 h 40 min) ran from a fresh clone of `ws/G2-qwen-goldens` at `10f814a`. Both times every committed byte and every data file's SHA-256 regenerated identically ([`reports/make-qwen-check/goldens.md`](reports/make-qwen-check/goldens.md), the second run).
 
 ## Vectors
 
@@ -162,4 +162,8 @@ The manifest lists the size and SHA-256 of every other file.
 
 ## Reports
 
-In [`reports/`](reports/): the canonical run with the parity and goldens templates (`make-qwen/`), its `--check` regeneration with the goldens template (`make-qwen-check/`), and the CpuRef probe with the parity template (`cpuref-probe/`).
+In [`reports/`](reports/):
+
+- `make-qwen/`: the run that wrote this head's committed bytes (`20261018-120457-85a6c443`), with the parity and goldens templates;
+- `make-qwen-check/`: its `--check` from a fresh clone (`20261018-141126-1f7f3592`), with the goldens template;
+- `cpuref-probe/`: the CpuRef probe (`20261018-091611-7cb55719`), with the parity template.

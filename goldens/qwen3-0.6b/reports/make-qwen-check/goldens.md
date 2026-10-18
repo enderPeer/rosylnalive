@@ -25,7 +25,7 @@
 | goldens/qwen3-0.6b/g1/manifest.json | 188.55 KiB | 193,077 |
 | goldens/qwen3-0.6b/g1/pool.json | 91.32 KiB | 93,514 |
 | goldens/qwen3-0.6b/g1/pool.safetensors | 201.91 KiB | 206,752 |
-| goldens/qwen3-0.6b/g1/tolerances.json | 23.70 KiB | 24,269 |
+| goldens/qwen3-0.6b/g1/tolerances.json | 24.23 KiB | 24,807 |
 
 ## Checks
 
@@ -131,29 +131,29 @@ Every `goldens.*` check of the run, and the oracle self-tests that carry a measu
 
 | Phase | Set | Duration |
 | --- | --- | ---: |
-| goldens.check_model | qwen3-0.6b | 2.08 s |
-| goldens.rope | qwen3-0.6b | 11.01 s |
-| goldens.selftests | qwen3-0.6b | 4.17 s |
-| goldens.pool | qwen3-0.6b | 2367.05 s |
-| goldens.calibrate | qwen3-0.6b | 596.05 s |
-| goldens.select | qwen3-0.6b | 118.33 s |
-| goldens.gate | qwen3-0.6b | 3128.47 s |
-| goldens.long | qwen3-0.6b | 233.24 s |
+| goldens.check_model | qwen3-0.6b | 2.31 s |
+| goldens.rope | qwen3-0.6b | 13.41 s |
+| goldens.selftests | qwen3-0.6b | 4.31 s |
+| goldens.pool | qwen3-0.6b | 2407.47 s |
+| goldens.calibrate | qwen3-0.6b | 534.32 s |
+| goldens.select | qwen3-0.6b | 95.55 s |
+| goldens.gate | qwen3-0.6b | 2726.64 s |
+| goldens.long | qwen3-0.6b | 196.56 s |
 
 ## Run
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-095500-e277b974` |
+| Run | `20261018-141126-1f7f3592` |
 | Title | make_qwen (tools/goldens/qwen): Qwen3-0.6B goldens and tolerances |
 | Kind | parity |
 | Status | ok |
-| Started | 2026-10-18T09:55:00.851Z |
-| Ended | 2026-10-18T11:42:47.929Z |
+| Started | 2026-10-18T14:11:26.758Z |
+| Ended | 2026-10-18T15:51:14.711Z |
 | Execution class | not recorded |
 | Class id | n/a |
 | Driver | n/a |
-| Commit | `beee67fd567807fba6444b454346a5d263d4ce26` |
+| Commit | `10f814a1f9211a3af8bc06f75bcf6271af246729` |
 | Nodes | 1 |
 | Records | 13,723 |
 | Synthetic | no |
@@ -161,6 +161,8 @@ Every `goldens.*` check of the run, and the oracle self-tests that carry a measu
 | Parameter | Value |
 | --- | --- |
 | check | True |
+| force | False |
+| keep_data | False |
 | quick | False |
 | set | qwen3-0.6b/g1 |
 | tool | make_qwen |
