@@ -1,4 +1,4 @@
-{{! matmul: K2's matmul_bf16w bench report, filled by report.fsx from gpu.matmul.throughput and gpu.matmul.bandwidth gauges, gpu.matmul.batch_invariance, gpu.matmul.cpuref_exact and gpu.matmul.probe checks and gpu.fp32_denormals events (MatmulBench.fs). Rendered with T1's template engine and charts until the kernels template charts these records. }}
+{{! matmul: K2's matmul_bf16w bench report, filled by report.fsx from gpu.matmul.throughput and gpu.matmul.bandwidth gauges (warm time_ns, cold_ns, idle_ms, x1_dispatch), gpu.matmul.batch_invariance, gpu.matmul.cpuref_exact and gpu.matmul.probe checks and gpu.fp32_denormals events (MatmulBench.fs). Rendered with T1's template engine and charts until the kernels template charts these records. }}
 # matmul_bf16w: {{value run.title}}
 
 {{value run.banner}}
@@ -6,18 +6,31 @@
 
 - Throughput points: {{value points}}, the fastest {{value peak}} ({{value peak_at}})
 - lm_head decode (m = 1): {{value lm_head_decode}}
-- Slowest dispatch: {{value slowest}}, {{value slowest_budget}} of the 100 ms budget
+- Slowest dispatch X1 makes: {{value slowest}}, {{value slowest_budget}} of the 100 ms budget
+- lm_head at X1's row cap: {{value lm_head_cap}}
 - fp32 denormals: {{value denormals}}
 
 ## Throughput
 
-Each point is the faster of {{value reps}} back-to-back dispatches after one warm-up, from the backend's `gpu.dispatch` timers. FLOPs are the FLOP registry's 2mnk; traffic is its minimum (x and y in fp32, w in bf16, each element once).
+Each point is the faster of {{value reps}} back-to-back dispatches after one warm-up, from the backend's `gpu.dispatch` timers: the GPU is warm. FLOPs and traffic are the FLOP registry's cost of the matmul (`OpCost.ofOp`): 2mnk, and every element of x and y in fp32 and of w in bf16 once.
 
 {{chart throughput}}
 
 {{chart bandwidth}}
 
 {{chart time}}
+
+## Cold dispatches
+
+A conformance case, or X1's first dispatch after host work, starts while the GPU idles at low clocks. So the points nearest the budget (lm_head at every m, the projections at m = 4,000) are also timed as one dispatch alone after {{value idle}} idle. The budget is judged on the slower of warm and cold, and only for what X1 dispatches: the projections up to 4,000 rows and lm_head up to its row cap. lm_head is measured past the cap to show why the cap is there.
+
+{{chart lm_head_cold}}
+
+{{chart cold}}
+
+## All points
+
+Warm is the faster of the back-to-back dispatches, cold the dispatch after the idle gap; "Of budget" is the slower of the two.
 
 {{table points}}
 

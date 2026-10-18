@@ -32,10 +32,20 @@ type Point =
         M: int64
         N: int64
         K: int64
+        /// The fastest warm dispatch.
         TimeNs: int64
+        /// One dispatch alone after the GPU idled, when the bench timed it (cold_ns).
+        ColdNs: int64 option
+        IdleMs: int64 option
+        /// Whether X1 dispatches this many rows (x1_dispatch); only those are held to the budget.
+        X1: bool
         Flops: float
         Bytes: float
     }
+
+    /// The time the budget is judged on: the slower of warm and cold.
+    member p.BudgetNs = max p.TimeNs (defaultArg p.ColdNs 0L)
+    member p.Label = Invariant.format $"{p.Shape}, m = {p.M}"
 
 let i64 (e: RunEvent) (key: string) = defaultArg (e.TryInt key) 0L
 let str (e: RunEvent) (key: string) = defaultArg (e.TryStr key) ""
@@ -59,6 +69,9 @@ let build (log: RunLog) : Scope =
                 N = i64 e "n"
                 K = i64 e "k"
                 TimeNs = i64 e "time_ns"
+                ColdNs = e.TryInt "cold_ns"
+                IdleMs = e.TryInt "idle_ms"
+                X1 = defaultArg (e.TryBool "x1_dispatch") true
                 Flops = e.Value
                 Bytes = bandwidth.TryFind((shape, m)) |> Option.defaultValue nan
             })
@@ -108,24 +121,54 @@ let build (log: RunLog) : Scope =
         | Some e -> str e "mode"
         | None -> "not measured"
 
-    let slowest = points |> List.sortByDescending _.TimeNs |> List.tryHead
+    let x1Points = points |> List.filter _.X1
+    let slowest = x1Points |> List.sortByDescending _.BudgetNs |> List.tryHead
     let fastest = points |> List.sortByDescending _.Flops |> List.tryHead
 
     let lmDecode = points |> List.tryFind (fun p -> p.Shape = "lm_head" && p.M = 1L)
+    let cold = points |> List.filter _.ColdNs.IsSome
+
+    let idle =
+        cold
+        |> List.tryPick _.IdleMs
+        |> Option.map (fun ms -> Fmt.duration (float ms * 1e6))
+        |> Option.defaultValue "an idle gap"
+
+    let lmCap =
+        points
+        |> List.filter (fun p -> p.Shape = "lm_head" && p.X1)
+        |> List.sortBy _.M
+        |> List.tryLast
+
+    // Measured points X1 does not dispatch whose time is over the budget: the reason for X1's lm_head row cap.
+    let pastCap =
+        points
+        |> List.filter (fun p -> not p.X1 && float p.BudgetNs >= budgetNs)
+        |> List.map _.Label
 
     let ok =
         not invariance.IsEmpty
         && invariance |> List.forall passedOf
-        && points |> List.forall (fun p -> float p.TimeNs < budgetNs)
+        && x1Points |> List.forall (fun p -> float p.BudgetNs < budgetNs)
+
+    let capNote =
+        match lmCap, pastCap with
+        | Some c, [] -> Invariant.format $" X1 gives lm_head at most {c.M} rows per dispatch."
+        | Some c, over ->
+            let overText = String.Join("; ", over)
+
+            Invariant.format
+                $" X1 gives lm_head at most {c.M} rows per dispatch; from idle clocks the budget is exceeded past that cap ({overText})."
+        | None, _ -> ""
 
     let verdict =
         if invariance.IsEmpty then
             "**INCOMPLETE.** The run has no batch-invariance checks."
         elif ok then
             Invariant.format
-                $"**PASS.** Every row alone equals its rows in the batched calls on all {invariance.Length} shapes, and every dispatch is under the 100 ms budget."
+                $"**PASS.** Every row alone equals its rows in the batched calls on all {invariance.Length} shapes, and every dispatch X1 makes is under the 100 ms budget, warm and from idle clocks.{capNote}"
         else
-            "**FAIL.** A row alone differs from a batched call, or a dispatch is over the 100 ms budget."
+            "**FAIL.** A row alone differs from a batched call, or a dispatch X1 makes is over the 100 ms budget (warm or from idle clocks)."
 
     let reps =
         log.Manifest.Params
@@ -194,13 +237,32 @@ let build (log: RunLog) : Scope =
     |> Scope.value
         "slowest"
         (match slowest with
-         | Some p -> Invariant.format $"{Fmt.duration (float p.TimeNs)} ({p.Shape}, m = {p.M})"
+         | Some p ->
+             let how =
+                 if p.ColdNs.IsSome && p.BudgetNs > p.TimeNs then
+                     "cold"
+                 else
+                     "warm"
+
+             Invariant.format $"{Fmt.duration (float p.BudgetNs)} {how} ({p.Shape}, m = {p.M})"
          | None -> "n/a")
     |> Scope.value
         "slowest_budget"
         (match slowest with
-         | Some p -> Fmt.pct (float p.TimeNs / budgetNs)
+         | Some p -> Fmt.pct (float p.BudgetNs / budgetNs)
          | None -> "n/a")
+    |> Scope.value "idle" idle
+    |> Scope.value
+        "lm_head_cap"
+        (match lmCap with
+         | Some c ->
+             let coldText =
+                 match c.ColdNs with
+                 | Some t -> Fmt.duration (float t) + " cold, "
+                 | None -> ""
+
+             Invariant.format $"{c.M} rows: {coldText}{Fmt.duration (float c.TimeNs)} warm"
+         | None -> "not measured")
     |> Scope.value "denormals" denormals
     |> Scope.chart
         "throughput"
@@ -237,6 +299,93 @@ let build (log: RunLog) : Scope =
                     Label = "100 ms budget"
                 }
             ])
+    |> Scope.chart
+        "lm_head_cold"
+        (let lm = points |> List.filter (fun p -> p.Shape = "lm_head") |> List.sortBy _.M
+
+         if lm |> List.exists _.ColdNs.IsSome |> not then
+             Chart.Empty("lm_head from idle clocks", "no cold lm_head dispatches in this run")
+         else
+             let at (p: Point) = Math.Log10(float p.M)
+
+             Chart.Line
+                 {
+                     Title = "lm_head from idle clocks"
+                     Subtitle =
+                         Invariant.format
+                             $"One dispatch alone after {idle} idle, against the fastest warm one; X1 dispatches only the rows left of the band"
+                     XLabel = "m, rows of x (log)"
+                     YLabel = "time (log)"
+                     XFormat = NumFormat.Pow10
+                     YFormat = NumFormat.Duration
+                     YLog = true
+                     YFromZero = false
+                     IntegerX = false
+                     Series =
+                         [
+                             {
+                                 Name = "cold"
+                                 Color = Color.Warning
+                                 Points = lm |> List.choose (fun p -> p.ColdNs |> Option.map (fun c -> at p, float c))
+                             }
+                             {
+                                 Name = "warm"
+                                 Color = Common.colorIn shapeOrder "lm_head"
+                                 Points = lm |> List.map (fun p -> at p, float p.TimeNs)
+                             }
+                         ]
+                     RefLines =
+                         [
+                             {
+                                 Value = budgetNs
+                                 Label = "100 ms budget"
+                             }
+                         ]
+                     Bands =
+                         match lmCap, lm |> List.tryLast with
+                         | Some c, Some last when last.M > c.M ->
+                             [
+                                 {
+                                     From = at c
+                                     To = at last
+                                     Label = Invariant.format $"past X1's {c.M}-row cap"
+                                 }
+                             ]
+                         | _ -> []
+                 })
+    |> Scope.chart
+        "cold"
+        (let xs = x1Points |> List.filter _.ColdNs.IsSome
+
+         if xs.IsEmpty then
+             Chart.Empty("Cold dispatches X1 makes", "no cold dispatches in this run")
+         else
+             Chart.Bar
+                 {
+                     Title = "Cold dispatches X1 makes"
+                     Subtitle =
+                         Invariant.format
+                             $"The points nearest the budget that X1 dispatches: one dispatch after {idle} idle, and the fastest warm one (budget 100 ms)"
+                     CategoryLabel = "shape and m"
+                     ValueLabel = "time"
+                     ValueFormat = NumFormat.Duration
+                     Categories = xs |> List.map _.Label
+                     Series =
+                         [
+                             {
+                                 Name = "cold"
+                                 Color = Color.Warning
+                                 Values = xs |> List.map (fun p -> float (defaultArg p.ColdNs 0L))
+                             }
+                             {
+                                 Name = "warm"
+                                 Color = Color.Neutral
+                                 Values = xs |> List.map (fun p -> float p.TimeNs)
+                             }
+                         ]
+                     Stacked = false
+                     Horizontal = true
+                 })
     |> Scope.table
         "points"
         (Common.table
@@ -245,10 +394,12 @@ let build (log: RunLog) : Scope =
                 "m", Common.R
                 "n", Common.R
                 "k", Common.R
-                "Time", Common.R
+                "Warm", Common.R
+                "Cold", Common.R
                 "FLOP/s", Common.R
                 "Traffic", Common.R
                 "Of budget", Common.R
+                "X1", Common.L
             ]
             (points
              |> List.map (fun p ->
@@ -258,9 +409,13 @@ let build (log: RunLog) : Scope =
                      Fmt.int p.N
                      Fmt.int p.K
                      Fmt.duration (float p.TimeNs)
+                     (match p.ColdNs with
+                      | Some c -> Fmt.duration (float c)
+                      | None -> "")
                      Fmt.siWith "FLOP/s" p.Flops
                      Fmt.siWith "B/s" p.Bytes
-                     Fmt.pct (float p.TimeNs / budgetNs)
+                     Fmt.pct (float p.BudgetNs / budgetNs)
+                     (if p.X1 then "dispatched" else "past the cap")
                  ])))
     |> Scope.table
         "invariance"

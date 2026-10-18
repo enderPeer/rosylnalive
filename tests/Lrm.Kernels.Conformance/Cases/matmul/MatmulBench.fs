@@ -1,10 +1,17 @@
 /// K2's matmul_bf16w measurements on a GPU backend, outside the per-case harness:
 ///
 /// - **Throughput** (bench tier): every Qwen3-0.6B weight shape at m from 1 (decode) to 4,000 (the longest prefill
-///   chunk), lm_head up to 1,024 rows. Each point is one warm-up dispatch and `Reps` timed ones in one command list;
-///   the fastest decides. Records: the backend's `gpu.dispatch` intervals, and one `gpu.matmul.throughput` gauge
-///   (flop/s, the FLOP registry's 2mnk) and one `gpu.matmul.bandwidth` gauge (B/s, the registry's minimum traffic) per
-///   point, with `kernel`, `shape`, `m`, `n`, `k`, `time_ns` and `budget_ns`.
+///   chunk), lm_head up to 1,024 rows. The sweep starts after `WarmUpMs` of load and runs back to back; each point is
+///   one warm-up dispatch and `Reps` timed ones in one command list, and the fastest decides (warm). Records: the
+///   backend's `gpu.dispatch` intervals, and one `gpu.matmul.throughput` gauge (flop/s) and one `gpu.matmul.bandwidth`
+///   gauge (B/s) per point, from the FLOP registry's cost of the matmul (OpCost.ofOp, Op.MatMul: 2mnk and the minimum
+///   traffic), with `kernel`, `shape`, `m`, `n`, `k`, `time_ns` (warm), `budget_ns` and `x1_dispatch` (whether X1
+///   dispatches this many rows, ADR K2-0001).
+/// - **Cold dispatches** (bench tier): the points closest to the budget (lm_head at every m, the projections at
+///   m = 4,000) are also timed, after the whole warm sweep, as one dispatch alone after the GPU has idled `IdleMs`,
+///   so it starts from idle clocks, as a conformance case or X1's first dispatch after host work does. The gauges
+///   carry it as `cold_ns` and `idle_ms`. The budget is judged on the slower of warm and cold, for the points X1
+///   dispatches (`dispatched`: lm_head only up to `LmHeadMaxRows`).
 /// - **Batch invariance across calls** (gpu tier): per shape, one activation matrix and one weight; rows computed by
 ///   an m = 512 call, an m = 37 call and m = 1 calls (views of the same rows) must be bit-identical, and equal to
 ///   CpuRef F32 (Rows.dotBf16) bit for bit as measured on the class. Records: `gpu.matmul.batch_invariance` and
@@ -58,13 +65,43 @@ let shapes =
         }
     ]
 
+[<Literal>]
+let private MaxM = 4000
+
+[<Literal>]
+let private Budget = 100_000_000L
+
+/// The most rows X1 gives one lm_head dispatch (ADR K2-0001). From idle clocks a dispatch can take about 18 times its
+/// warm time on the RTX 4080: 64 rows about 23 ms, a quarter of the budget, as the projections' 4,000-row chunks; 128
+/// rows up to 50 ms; 256 rows nearly all of it. The bench measures past this cap but judges the budget only up to it.
+[<Literal>]
+let LmHeadMaxRows = 64
+
+/// How long the warm sweep's warm-up keeps the GPU busy first, so its clocks are up.
+[<Literal>]
+let WarmUpMs = 1000
+
+/// How long the GPU idles before a cold dispatch. On the RTX 4080 a dispatch after 1 s idle still ran at full clocks
+/// and one after 3 s did not (ADR K2-0001).
+[<Literal>]
+let IdleMs = 3000
+
 /// The m values measured per shape: decode, small batches, prefill chunks up to 4,000; lm_head up to 1,024 rows
-/// (its 1,024 x 151,936 output is 622 MB).
+/// (its 1,024 x 151,936 output is 622 MB), past X1's cap of LmHeadMaxRows.
 let rowsOf (s: Shape) =
     if s.Name = "lm_head" then
-        [ 1; 4; 16; 64; 256; 512; 1024 ]
+        [ 1; 4; 16; LmHeadMaxRows; 128; 256; 512; 1024 ]
     else
-        [ 1; 4; 16; 37; 64; 128; 256; 512; 1024; 2048; 4000 ]
+        [ 1; 4; 16; 37; 64; 128; 256; 512; 1024; 2048; MaxM ]
+
+/// The m values also timed cold: lm_head at every m, the projections at the longest prefill chunk.
+let coldRowsOf (s: Shape) =
+    if s.Name = "lm_head" then rowsOf s else [ MaxM ]
+
+/// Whether X1 dispatches m rows of this shape (ADR K2-0001): the projections up to 4,000 rows, lm_head up to
+/// LmHeadMaxRows. Only these points are held to the budget.
+let dispatched (s: Shape) (m: int) =
+    if s.Name = "lm_head" then m <= LmHeadMaxRows else m <= MaxM
 
 /// Timed dispatches per point (after one warm-up).
 [<Literal>]
@@ -72,12 +109,6 @@ let Reps = 5
 
 /// The rows of the cross-call check, alone (m = 1); those below 37 are also compared with the m = 37 call.
 let invarianceRows = [ 0; 1; 15; 16; 36; 63; 64; 100; 511 ]
-
-[<Literal>]
-let private MaxM = 4000
-
-[<Literal>]
-let private Budget = 100_000_000L
 
 /// Deterministic data by element index (SplitMix64 of seed and index), as the case data of Cases/matmul.
 module private Data =
@@ -127,11 +158,17 @@ type Point =
     {
         Shape: Shape
         M: int
+        /// The fastest of the warm dispatches.
         BestNs: int64
         MedianNs: int64
+        /// One dispatch alone after the GPU idled IdleMs, for the points of coldRowsOf.
+        ColdNs: int64 option
         Flops: int64
         Bytes: int64
     }
+
+    /// The time the budget is judged on: the slower of warm and cold.
+    member p.BudgetNs = max p.BestNs (defaultArg p.ColdNs 0L)
 
     member p.FlopsPerSecond = float p.Flops / (float p.BestNs / 1e9)
     member p.BytesPerSecond = float p.Bytes / (float p.BestNs / 1e9)
@@ -366,6 +403,34 @@ let private dispatchNs (c: Completion) =
     |> List.filter (fun t -> t.Name = GpuTelemetry.Dispatch)
     |> List.map _.DurationNs
 
+/// Keeps the GPU busy for WarmUpMs with q_proj at m = 4,000, so the warm sweep starts at full clocks.
+let private warmUp (backend: IGpuBackend) (p: Planned) =
+    let s = shapes.Head
+    let a = args p.X p.Weights[s.Name] p.Y MaxM s
+    let clock = Diagnostics.Stopwatch.StartNew()
+
+    while clock.ElapsedMilliseconds < int64 WarmUpMs do
+        let commands = backend.Begin()
+
+        for i in 0..19 do
+            if i > 0 then
+                commands.Barrier()
+
+            Kernels.MatmulBf16w.dispatch commands a
+
+        backend.Wait(backend.Submit commands) |> ignore
+
+/// One dispatch alone, submitted after the GPU has idled IdleMs (nothing of this process runs on it meanwhile).
+let private measureCold (backend: IGpuBackend) (p: Planned) (s: Shape) (m: int) : int64 =
+    Threading.Thread.Sleep IdleMs
+    let commands = backend.Begin()
+    Kernels.MatmulBf16w.dispatch commands (args p.X p.Weights[s.Name] p.Y m s)
+
+    match dispatchNs (backend.Wait(backend.Submit commands)) with
+    | [ t ] -> t
+    | ts -> failwithf "a cold dispatch gave %d dispatch timers (TimeDispatches is off?)" ts.Length
+
+/// One point of the warm sweep: one warm-up dispatch and Reps timed ones in one command list.
 let private measure (backend: IGpuBackend) (p: Planned) (s: Shape) (m: int) : Point =
     let commands = backend.Begin()
     let a = args p.X p.Weights[s.Name] p.Y m s
@@ -387,38 +452,47 @@ let private measure (backend: IGpuBackend) (p: Planned) (s: Shape) (m: int) : Po
             (Reps + 1)
 
     let timed = times |> List.tail |> List.sort
-    let cost = 2L * int64 m * int64 s.N * int64 s.K
 
-    let bytes =
-        4L * int64 m * int64 s.K + 2L * int64 s.N * int64 s.K + 4L * int64 m * int64 s.N
+    // The FLOP registry's cost (RunLog contract): 2mnk, and every element of x, w and y once.
+    let cost =
+        OpCost.ofOp (Op.MatMul(int64 m, int64 s.N, int64 s.K, DType.F32, DType.BF16, DType.F32))
 
-    let point =
-        {
-            Shape = s
-            M = m
-            BestNs = timed.Head
-            MedianNs = timed[timed.Length / 2]
-            Flops = cost
-            Bytes = bytes
-        }
+    {
+        Shape = s
+        M = m
+        BestNs = timed.Head
+        MedianNs = timed[timed.Length / 2]
+        ColdNs = None
+        Flops = cost.Flops
+        Bytes = cost.BytesMoved
+    }
+
+/// The point's gauges: throughput and traffic over the warm time, with the cold time when it was measured.
+let private record (backend: IGpuBackend) (point: Point) =
+    let s = point.Shape
 
     let attrs =
         [
             Attr.str TelemetryKeys.Kernel Kernels.MatmulBf16w.Name
             Attr.str TelemetryKeys.Backend (ExecutionBackend.name backend.ExecutionClass.Backend)
             Attr.str "shape" s.Name
-            Attr.int "m" m
+            Attr.int "m" point.M
             Attr.int "n" s.N
             Attr.int "k" s.K
             Attr.int64 "time_ns" point.BestNs
             Attr.int64 "median_ns" point.MedianNs
             Attr.int "reps" Reps
             Attr.int64 "budget_ns" Budget
+            Attr.bool "x1_dispatch" (dispatched s point.M)
+            match point.ColdNs with
+            | Some c ->
+                Attr.int64 "cold_ns" c
+                Attr.int "idle_ms" IdleMs
+            | None -> ()
         ]
 
     Telemetry.gauge "gpu.matmul.throughput" point.FlopsPerSecond "flop/s" attrs
     Telemetry.gauge "gpu.matmul.bandwidth" point.BytesPerSecond "B/s" attrs
-    point
 
 let private download (p: Planned) (token: TensorToken) (elements: int64) : uint32[] =
     let row = p.Table.Row token
@@ -683,27 +757,45 @@ let runOn (backend: IGpuBackend) (invarianceOnly: bool) (loaded: IGpuBackend -> 
     for pr, result in runProbes backend p do
         printfn "  probe %-6s %08x (CpuRef F32 %08x, the other choice %08x)" pr.Name result pr.Expected pr.Other
 
-    let points =
+    // The warm sweep runs first and back to back, after WarmUpMs of load; then the cold dispatches, each after an
+    // idle gap (interleaving them would leave the next warm points to start from idle clocks).
+    let warm =
         if invarianceOnly then
             []
         else
+            warmUp backend p
+
             [
                 for s in shapes do
-                    for m in rowsOf s do
-                        let pt = measure backend p s m
-
-                        printfn
-                            "  %-13s m=%5d n=%6d k=%5d  %9.3f ms  %8.1f GFLOP/s  %7.1f GB/s"
-                            s.Name
-                            m
-                            s.N
-                            s.K
-                            (float pt.BestNs / 1e6)
-                            (pt.FlopsPerSecond / 1e9)
-                            (pt.BytesPerSecond / 1e9)
-
-                        pt
+                    for m in rowsOf s -> measure backend p s m
             ]
+
+    let points =
+        [
+            for pt in warm ->
+                if List.contains pt.M (coldRowsOf pt.Shape) then
+                    { pt with
+                        ColdNs = Some(measureCold backend p pt.Shape pt.M)
+                    }
+                else
+                    pt
+        ]
+
+    for pt in points do
+        record backend pt
+
+        printfn
+            "  %-13s m=%5d n=%6d k=%5d  %9.3f ms  %8.1f GFLOP/s  %7.1f GB/s%s"
+            pt.Shape.Name
+            pt.M
+            pt.Shape.N
+            pt.Shape.K
+            (float pt.BestNs / 1e6)
+            (pt.FlopsPerSecond / 1e9)
+            (pt.BytesPerSecond / 1e9)
+            (match pt.ColdNs with
+             | Some c -> Invariant.format $"  cold {float c / 1e6:F3} ms"
+             | None -> "")
 
     let inv = shapes |> List.map (invariance backend p)
 
@@ -751,11 +843,13 @@ let private backendTests (backend: ExecutionBackend) (testing: Backend) (invaria
                     for i in r.Invariance do
                         Expect.equal i.Differences 0L (i.Shape.Name + ": " + i.Detail)
 
-                    for pt in r.Points do
+                    // The budget holds for what X1 dispatches, warm and cold; lm_head past its cap is only measured.
+                    for pt in r.Points |> List.filter (fun pt -> dispatched pt.Shape pt.M) do
                         Expect.isLessThan
-                            pt.BestNs
+                            pt.BudgetNs
                             Budget
-                            (Invariant.format $"{pt.Shape.Name} m = {pt.M} is over the 100 ms dispatch budget")
+                            (Invariant.format
+                                $"{pt.Shape.Name} m = {pt.M} is over the 100 ms dispatch budget (warm or cold)")
             ]
         ]
 
@@ -769,7 +863,8 @@ let private backends =
 let gpu () : (Backend * Test list) list =
     backends |> List.collect (fun (b, t) -> backendTests b t true)
 
-/// The bench-tier tests: the throughput sweep, then the same checks, on every GPU backend with a provider.
+/// The bench-tier tests: the throughput sweep with its cold dispatches, then the same checks, on every GPU backend
+/// with a provider.
 let bench () : Test list =
     backends
     |> List.collect (fun (b, t) -> backendTests b t false)
