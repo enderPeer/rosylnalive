@@ -1,7 +1,5 @@
 # Generated F# is checked by its codegen diff, not by fantomas.
 **/*.g.fs
-# The legacy Python layout script, kept for reference; vkgen v2 replaced the two files it generated.
-tools/vkgen/legacy/**
 # Spikes are throwaway and never built in CI.
 spikes/**
 artifacts/**
