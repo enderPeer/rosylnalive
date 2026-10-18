@@ -76,8 +76,12 @@ finally {
     Remove-Item -LiteralPath $fresh -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-# 3. A no-change rebuild skips the shader target.
-$log = & dotnet build (Join-Path $repo 'src/Lrm.Shaders/Lrm.Shaders.fsproj') -c $Configuration --no-restore --nologo -v:d 2>&1 | Out-String
+# 3. A no-change rebuild skips the shader target. The first build settles the tree (a new commit changes the source
+#    revision stamped into every assembly, so the tool is rebuilt once); the second changes nothing and must skip.
+$project = Join-Path $repo 'src/Lrm.Shaders/Lrm.Shaders.fsproj'
+& dotnet build $project -c $Configuration --no-restore --nologo -v:q | Out-Null
+Check ($LASTEXITCODE -eq 0) 'the settling build succeeds'
+$log = & dotnet build $project -c $Configuration --no-restore --nologo -v:d 2>&1 | Out-String -Width 4096
 Check ($LASTEXITCODE -eq 0) 'the no-change rebuild succeeds'
 Check ($log -match 'Skipping target "LrmCompileShadersCore" because all output files are up-to-date') 'a no-change rebuild skips LrmCompileShadersCore (dxc never starts)'
 
