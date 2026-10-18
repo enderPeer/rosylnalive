@@ -88,7 +88,7 @@
     { "name": "Lrm.Tensor", "path": "src/Lrm.Tensor/Lrm.Tensor.fsproj", "kind": "lib", "owner": "O2", "refs": [ "Lrm.Core" ] },
     { "name": "Lrm.Tensor.CpuReference", "path": "src/Lrm.Tensor.CpuReference/Lrm.Tensor.CpuReference.fsproj", "kind": "lib", "owner": "O2", "refs": [ "Lrm.Core", "Lrm.Tensor" ] },
     { "name": "Lrm.Tokenizer", "path": "src/Lrm.Tokenizer/Lrm.Tokenizer.fsproj", "kind": "lib", "owner": "M1", "refs": [ "Lrm.Core" ] },
-    { "name": "Lrm.Models.Qwen", "path": "src/Lrm.Models.Qwen/Lrm.Models.Qwen.fsproj", "kind": "lib", "owner": "M2", "refs": [ "Lrm.Core", "Lrm.Tensor", "Lrm.Tensor.CpuReference", "Lrm.Tokenizer" ] },
+    { "name": "Lrm.Models.Qwen", "path": "src/Lrm.Models.Qwen/Lrm.Models.Qwen.fsproj", "kind": "lib", "owner": "M2", "refs": [ "Lrm.Core", "Lrm.Telemetry", "Lrm.Tensor", "Lrm.Tensor.CpuReference", "Lrm.Tokenizer" ] },
     { "name": "Lrm.Gpu.Core", "path": "src/Lrm.Gpu.Core/Lrm.Gpu.Core.fsproj", "kind": "lib", "owner": "R4", "refs": [ "Lrm.Core" ] },
     { "name": "Lrm.Shaders.Build", "path": "src/Lrm.Shaders.Build/Lrm.Shaders.Build.fsproj", "kind": "tool", "owner": "R4", "refs": [ "Lrm.Core", "Lrm.Gpu.Core" ] },
     { "name": "Lrm.Shaders", "path": "src/Lrm.Shaders/Lrm.Shaders.fsproj", "kind": "lib", "owner": "R4", "refs": [ "Lrm.Gpu.Core" ], "buildRefs": [ "Lrm.Shaders.Build" ] },

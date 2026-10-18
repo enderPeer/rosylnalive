@@ -1,6 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: M2. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
-    <Compile Include="Placeholder.fs" />
+    <Compile Include="Qwen3Config.fs" />
+    <Compile Include="RopeConstants.fs" />
+    <Compile Include="Qwen3Weights.fs" />
+    <Compile Include="ForwardOps.fs" />
+    <Compile Include="Forward.fs" />
+    <Compile Include="Greedy.fs" />
+    <Compile Include="CpuOps.fs" />
+    <Compile Include="Runner.fs" />
+    <Compile Include="GoldenCheck.fs" />
   </ItemGroup>
 </Project>

@@ -60,6 +60,7 @@
   </ItemGroup>
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Models.Qwen'">
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Core/Lrm.Core.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Telemetry/Lrm.Telemetry.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Tensor/Lrm.Tensor.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Tensor.CpuReference/Lrm.Tensor.CpuReference.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Tokenizer/Lrm.Tokenizer.fsproj" LrmGraph="true" />

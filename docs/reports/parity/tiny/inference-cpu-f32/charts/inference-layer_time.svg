@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="inference-layer_time-title inference-layer_time-desc">
+<title id="inference-layer_time-title">Layer time per token</title>
+<desc id="inference-layer_time-desc">Line chart of time per token against layer: 2 series, 4 points.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="379" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Layer time per token</text>
+<text class="t2" x="16" y="45" font-size="12">Mean host time of model.layer spans divided by the tokens of their step</text>
+<rect class="f0" x="16" y="61" width="16" height="2.5" rx="1"/>
+<text class="t2" x="38" y="66" font-size="12">prefill</text>
+<rect class="f1" x="88.64" y="61" width="16" height="2.5" rx="1"/>
+<text class="t2" x="110.64" y="66" font-size="12">decode</text>
+<line class="grid" x1="66.26" y1="334" x2="657.04" y2="334" stroke-width="1"/>
+<text class="t3" x="58.26" y="338" font-size="11" text-anchor="end">0</text>
+<line class="grid" x1="66.26" y1="286.8" x2="657.04" y2="286.8" stroke-width="1"/>
+<text class="t3" x="58.26" y="290.8" font-size="11" text-anchor="end">200 µs</text>
+<line class="grid" x1="66.26" y1="239.6" x2="657.04" y2="239.6" stroke-width="1"/>
+<text class="t3" x="58.26" y="243.6" font-size="11" text-anchor="end">400 µs</text>
+<line class="grid" x1="66.26" y1="192.4" x2="657.04" y2="192.4" stroke-width="1"/>
+<text class="t3" x="58.26" y="196.4" font-size="11" text-anchor="end">600 µs</text>
+<line class="grid" x1="66.26" y1="145.2" x2="657.04" y2="145.2" stroke-width="1"/>
+<text class="t3" x="58.26" y="149.2" font-size="11" text-anchor="end">800 µs</text>
+<line class="grid" x1="66.26" y1="98" x2="657.04" y2="98" stroke-width="1"/>
+<text class="t3" x="58.26" y="102" font-size="11" text-anchor="end">1000 µs</text>
+<text class="t3" x="66.26" y="351" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="657.04" y="351" font-size="11" text-anchor="middle">1</text>
+<line class="axis" x1="66.26" y1="334" x2="657.04" y2="334" stroke-width="1"/>
+<text class="t3" x="66.26" y="88" font-size="11" text-anchor="start">time per token</text>
+<text class="t3" x="361.65" y="370" font-size="11" text-anchor="middle">layer</text>
+<path class="line s0" d="M66.26 274.39 L657.04 296.35"><title>prefill</title></path>
+<path class="line s1" d="M66.26 130.06 L657.04 141.6"><title>decode</title></path>
+<circle class="f0 ring" cx="66.26" cy="274.39" r="4" stroke-width="2"><title>prefill, layer 0: 252.59 µs</title></circle>
+<circle class="f0 ring" cx="657.04" cy="296.35" r="4" stroke-width="2"><title>prefill, layer 1: 159.53 µs</title></circle>
+<circle class="f1 ring" cx="66.26" cy="130.06" r="4" stroke-width="2"><title>decode, layer 0: 864.16 µs</title></circle>
+<circle class="f1 ring" cx="657.04" cy="141.6" r="4" stroke-width="2"><title>decode, layer 1: 815.26 µs</title></circle>
+<text class="t2" x="665.04" y="300.35" font-size="11">prefill</text>
+<text class="t2" x="665.04" y="145.6" font-size="11">decode</text>
+</svg>

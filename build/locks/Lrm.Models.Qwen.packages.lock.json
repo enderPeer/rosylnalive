@@ -14,6 +14,13 @@
           "FSharp.Core": "[10.1.402, )"
         }
       },
+      "lrm.telemetry": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )"
+        }
+      },
       "lrm.tensor": {
         "type": "Project",
         "dependencies": {
