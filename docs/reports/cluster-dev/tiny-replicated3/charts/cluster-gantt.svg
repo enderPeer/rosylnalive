@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="270" viewBox="0 0 720 270" role="img" aria-labelledby="cluster-gantt-title cluster-gantt-desc">
+<title id="cluster-gantt-title">Stage Gantt chart</title>
+<desc id="cluster-gantt-desc">Timeline of 96 intervals on 5 lanes, 2 event marks.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="270" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="269" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Stage Gantt chart</text>
+<text class="t2" x="16" y="45" font-size="12">Each accepted work unit on the node whose result was taken, from assignment to acceptance; markers are node losses, …</text>
+<rect class="fgood" x="19" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="38" y="66" font-size="12">accepted</text>
+<rect class="fwarn" x="109.88" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="128.88" y="66" font-size="12">reissued</text>
+<line class="grid" x1="252.82" y1="114" x2="252.82" y2="224" stroke-width="1"/>
+<line class="grid" x1="423.17" y1="114" x2="423.17" y2="224" stroke-width="1"/>
+<line class="grid" x1="593.52" y1="114" x2="593.52" y2="224" stroke-width="1"/>
+<text class="t2" x="79.68" y="129" font-size="12" text-anchor="end">n1  stage 0</text>
+<text class="t2" x="79.68" y="151" font-size="12" text-anchor="end">n2  stage 0</text>
+<text class="t2" x="79.68" y="173" font-size="12" text-anchor="end">n3  stage 0</text>
+<text class="t2" x="79.68" y="195" font-size="12" text-anchor="end">n1  stage 1</text>
+<text class="t2" x="79.68" y="217" font-size="12" text-anchor="end">n3  stage 1</text>
+<rect class="fgood" x="87.68" y="118" width="26.05" height="14" rx="3"><title>n1 stage 0, lane 1 step 0: accepted after 79.41 ms</title></rect>
+<rect class="fgood" x="87.68" y="118" width="31.51" height="14" rx="3"><title>n1 stage 0, lane 0 step 0: accepted after 95.42 ms</title></rect>
+<rect class="fgood" x="87.68" y="118" width="42.12" height="14" rx="3"><title>n1 stage 0, lane 2 step 0: accepted after 126.57 ms</title></rect>
+<rect class="fgood" x="114.73" y="184" width="16.78" height="14" rx="3"><title>n1 stage 1, lane 1 step 0: accepted after 52.20 ms</title></rect>
+<rect class="fgood" x="132.52" y="140" width="8.32" height="14" rx="3"><title>n2 stage 0, lane 1 step 1: accepted after 27.36 ms</title></rect>
+<rect class="fgood" x="120.19" y="184" width="20.84" height="14" rx="3"><title>n1 stage 1, lane 0 step 0: accepted after 64.10 ms</title></rect>
+<rect class="fgood" x="130.8" y="184" width="16.04" height="14" rx="3"><title>n1 stage 1, lane 2 step 0: accepted after 50.03 ms</title></rect>
+<rect class="fgood" x="142.03" y="140" width="14.94" height="14" rx="3"><title>n2 stage 0, lane 0 step 1: accepted after 46.80 ms</title></rect>
+<rect class="fgood" x="141.84" y="206" width="20.48" height="14" rx="3"><title>n3 stage 1, lane 1 step 1: accepted after 63.04 ms</title></rect>
+<rect class="fgood" x="147.85" y="140" width="14.55" height="14" rx="3"><title>n2 stage 0, lane 2 step 1: accepted after 45.63 ms</title></rect>
+<rect class="fgood" x="157.97" y="206" width="9.81" height="14" rx="3"><title>n3 stage 1, lane 0 step 1: accepted after 31.72 ms</title></rect>
+<rect class="fgood" x="163.32" y="140" width="9.86" height="14" rx="3"><title>n2 stage 0, lane 1 step 2: accepted after 31.86 ms</title></rect>
+<rect class="fgood" x="163.39" y="206" width="15" height="14" rx="3"><title>n3 stage 1, lane 2 step 1: accepted after 46.96 ms</title></rect>
+<rect class="fgood" x="174.17" y="206" width="9.69" height="14" rx="3"><title>n3 stage 1, lane 1 step 2: accepted after 31.38 ms</title></rect>
+<rect class="fgood" x="168.78" y="140" width="15.21" height="14" rx="3"><title>n2 stage 0, lane 0 step 2: accepted after 47.58 ms</title></rect>
+<rect class="fgood" x="179.39" y="140" width="10.37" height="14" rx="3"><title>n2 stage 0, lane 2 step 2: accepted after 33.36 ms</title></rect>
+<rect class="fgood" x="184.99" y="206" width="9.21" height="14" rx="3"><title>n3 stage 1, lane 0 step 2: accepted after 29.97 ms</title></rect>
+<rect class="fgood" x="184.87" y="140" width="14.52" height="14" rx="3"><title>n2 stage 0, lane 1 step 3: accepted after 45.56 ms</title></rect>
+<rect class="fgood" x="195.2" y="140" width="9.82" height="14" rx="3"><title>n2 stage 0, lane 0 step 3: accepted after 31.77 ms</title></rect>
+<rect class="fgood" x="190.76" y="206" width="14.75" height="14" rx="3"><title>n3 stage 1, lane 2 step 2: accepted after 46.24 ms</title></rect>
+<rect class="fgood" x="200.39" y="206" width="10.74" height="14" rx="3"><title>n3 stage 1, lane 1 step 3: accepted after 34.45 ms</title></rect>
+<rect class="fgood" x="206.51" y="140" width="10.05" height="14" rx="3"><title>n2 stage 0, lane 2 step 3: accepted after 32.42 ms</title></rect>
+<rect class="fgood" x="206.02" y="206" width="10.59" height="14" rx="3"><title>n3 stage 1, lane 0 step 3: accepted after 34.02 ms</title></rect>
+<rect class="fgood" x="217.56" y="206" width="4.26" height="14" rx="2.13"><title>n3 stage 1, lane 2 step 3: accepted after 15.43 ms</title></rect>
+<rect class="fgood" x="212.13" y="140" width="14.54" height="14" rx="3"><title>n2 stage 0, lane 1 step 4: accepted after 45.61 ms</title></rect>
+<rect class="fgood" x="217.62" y="140" width="14.49" height="14" rx="3"><title>n2 stage 0, lane 0 step 4: accepted after 45.47 ms</title></rect>
+<rect class="fgood" x="222.82" y="140" width="9.82" height="14" rx="3"><title>n2 stage 0, lane 2 step 4: accepted after 31.74 ms</title></rect>
+<rect class="fgood" x="227.66" y="206" width="10.49" height="14" rx="3"><title>n3 stage 1, lane 1 step 4: accepted after 33.72 ms</title></rect>
+<rect class="fgood" x="233.63" y="206" width="9.64" height="14" rx="3"><title>n3 stage 1, lane 2 step 4: accepted after 31.23 ms</title></rect>
+<rect class="fgood" x="239.15" y="140" width="9.33" height="14" rx="3"><title>n2 stage 0, lane 1 step 5: accepted after 30.33 ms</title></rect>
+<rect class="fgood" x="233.11" y="206" width="20.58" height="14" rx="3"><title>n3 stage 1, lane 0 step 4: accepted after 63.33 ms</title></rect>
+<rect class="fgood" x="244.27" y="140" width="9.82" height="14" rx="3"><title>n2 stage 0, lane 2 step 5: accepted after 31.77 ms</title></rect>
+<rect class="fgood" x="249.48" y="206" width="14.76" height="14" rx="3"><title>n3 stage 1, lane 1 step 5: accepted after 46.25 ms</title></rect>
+<rect class="fgood" x="254.68" y="140" width="10.01" height="14" rx="3"><title>n2 stage 0, lane 0 step 5: accepted after 32.32 ms</title></rect>
+<rect class="fgood" x="255.1" y="206" width="14.64" height="14" rx="3"><title>n3 stage 1, lane 2 step 5: accepted after 45.91 ms</title></rect>
+<rect class="fgood" x="265.69" y="206" width="9.36" height="14" rx="3"><title>n3 stage 1, lane 0 step 5: accepted after 30.40 ms</title></rect>
+<rect class="fgood" x="265.24" y="140" width="14.84" height="14" rx="3"><title>n2 stage 0, lane 1 step 6: accepted after 46.49 ms</title></rect>
+<rect class="fgood" x="270.74" y="140" width="14.44" height="14" rx="3"><title>n2 stage 0, lane 2 step 6: accepted after 45.31 ms</title></rect>
+<rect class="fgood" x="281.08" y="206" width="9.36" height="14" rx="3"><title>n3 stage 1, lane 1 step 6: accepted after 30.41 ms</title></rect>
+<rect class="fgood" x="276.05" y="140" width="14.46" height="14" rx="3"><title>n2 stage 0, lane 0 step 6: accepted after 45.38 ms</title></rect>
+<rect class="fgood" x="286.17" y="206" width="10.13" height="14" rx="3"><title>n3 stage 1, lane 2 step 6: accepted after 32.66 ms</title></rect>
+<rect class="fgood" x="291.51" y="206" width="14.79" height="14" rx="3"><title>n3 stage 1, lane 0 step 6: accepted after 46.34 ms</title></rect>
+<rect class="fgood" x="291.44" y="140" width="14.95" height="14" rx="3"><title>n2 stage 0, lane 1 step 7: accepted after 46.81 ms</title></rect>
+<rect class="fgood" x="297.3" y="140" width="14.23" height="14" rx="3"><title>n2 stage 0, lane 2 step 7: accepted after 44.70 ms</title></rect>
+<rect class="fgood" x="307.39" y="206" width="14.4" height="14" rx="3"><title>n3 stage 1, lane 1 step 7: accepted after 45.21 ms</title></rect>
+<rect class="fgood" x="307.3" y="140" width="14.56" height="14" rx="3"><title>n2 stage 0, lane 0 step 7: accepted after 45.67 ms</title></rect>
+<rect class="fgood" x="312.53" y="206" width="14.42" height="14" rx="3"><title>n3 stage 1, lane 2 step 7: accepted after 45.25 ms</title></rect>
+<rect class="fgood" x="322.79" y="140" width="15.2" height="14" rx="3"><title>n2 stage 0, lane 1 step 8: accepted after 47.56 ms</title></rect>
+<rect class="fgood" x="322.86" y="206" width="15.24" height="14" rx="3"><title>n3 stage 1, lane 0 step 7: accepted after 47.66 ms</title></rect>
+<rect class="fgood" x="327.95" y="140" width="15.22" height="14" rx="3"><title>n2 stage 0, lane 2 step 8: accepted after 47.59 ms</title></rect>
+<rect class="fgood" x="339" y="206" width="9.45" height="14" rx="3"><title>n3 stage 1, lane 1 step 8: accepted after 30.68 ms</title></rect>
+<rect class="fgood" x="339.09" y="140" width="14.48" height="14" rx="3"><title>n2 stage 0, lane 0 step 8: accepted after 45.44 ms</title></rect>
+<rect class="fgood" x="344.17" y="206" width="14.75" height="14" rx="3"><title>n3 stage 1, lane 2 step 8: accepted after 46.21 ms</title></rect>
+<rect class="fgood" x="349.45" y="140" width="9.63" height="14" rx="3"><title>n2 stage 0, lane 1 step 9: accepted after 31.20 ms</title></rect>
+<rect class="fgood" x="354.58" y="206" width="15.15" height="14" rx="3"><title>n3 stage 1, lane 0 step 8: accepted after 47.41 ms</title></rect>
+<rect class="fgood" x="359.91" y="140" width="15.17" height="14" rx="3"><title>n2 stage 0, lane 2 step 9: accepted after 47.47 ms</title></rect>
+<rect class="fgood" x="360.08" y="206" width="15.07" height="14" rx="3"><title>n3 stage 1, lane 1 step 9: accepted after 47.17 ms</title></rect>
+<rect class="fgood" x="370.73" y="140" width="10.02" height="14" rx="3"><title>n2 stage 0, lane 0 step 9: accepted after 32.36 ms</title></rect>
+<rect class="fgood" x="376.15" y="140" width="14.8" height="14" rx="3"><title>n2 stage 0, lane 1 step 10: accepted after 46.39 ms</title></rect>
+<rect class="fgood" x="376.09" y="206" width="14.93" height="14" rx="3"><title>n3 stage 1, lane 2 step 9: accepted after 46.76 ms</title></rect>
+<rect class="fgood" x="381.75" y="206" width="14.53" height="14" rx="3"><title>n3 stage 1, lane 0 step 9: accepted after 45.57 ms</title></rect>
+<rect class="fgood" x="391.95" y="206" width="9.99" height="14" rx="3"><title>n3 stage 1, lane 1 step 10: accepted after 32.27 ms</title></rect>
+<rect class="fgood" x="392.02" y="140" width="10.14" height="14" rx="3"><title>n2 stage 0, lane 2 step 10: accepted after 32.70 ms</title></rect>
+<rect class="fgood" x="397.28" y="140" width="14.93" height="14" rx="3"><title>n2 stage 0, lane 0 step 10: accepted after 46.75 ms</title></rect>
+<rect class="fgood" x="402.95" y="140" width="9.45" height="14" rx="3"><title>n2 stage 0, lane 1 step 11: accepted after 30.67 ms</title></rect>
+<rect class="fgood" x="403.16" y="206" width="9.54" height="14" rx="3"><title>n3 stage 1, lane 2 step 10: accepted after 30.94 ms</title></rect>
+<rect class="fgood" x="413.7" y="140" width="8.87" height="14" rx="3"><title>n2 stage 0, lane 2 step 11: accepted after 28.97 ms</title></rect>
+<rect class="fgood" x="413.2" y="206" width="9.52" height="14" rx="3"><title>n3 stage 1, lane 0 step 10: accepted after 30.88 ms</title></rect>
+<rect class="fgood" x="413.4" y="206" width="20.25" height="14" rx="3"><title>n3 stage 1, lane 1 step 11: accepted after 62.37 ms</title></rect>
+<rect class="fgood" x="423.57" y="206" width="15.15" height="14" rx="3"><title>n3 stage 1, lane 2 step 11: accepted after 47.40 ms</title></rect>
+<rect class="fgood" x="423.73" y="140" width="15.06" height="14" rx="3"><title>n2 stage 0, lane 0 step 11: accepted after 47.14 ms</title></rect>
+<rect class="fgood" x="439.79" y="206" width="9.76" height="14" rx="3"><title>n3 stage 1, lane 0 step 11: accepted after 31.59 ms</title></rect>
+<rect class="fgood" x="434.64" y="140" width="14.96" height="14" rx="3"><title>n2 stage 0, lane 1 step 12: accepted after 46.86 ms</title></rect>
+<rect class="fgood" x="439.71" y="140" width="15.16" height="14" rx="3"><title>n2 stage 0, lane 2 step 12: accepted after 47.43 ms</title></rect>
+<rect class="fgood" x="450.55" y="140" width="4.86" height="14" rx="2.43"><title>n2 stage 0, lane 0 step 12: accepted after 17.20 ms</title></rect>
+<rect class="fgood" x="450.61" y="206" width="14.84" height="14" rx="3"><title>n3 stage 1, lane 1 step 12: accepted after 46.50 ms</title></rect>
+<rect class="fgood" x="455.87" y="206" width="9.9" height="14" rx="3"><title>n3 stage 1, lane 2 step 12: accepted after 31.99 ms</title></rect>
+<rect class="fgood" x="456.41" y="206" width="14.38" height="14" rx="3"><title>n3 stage 1, lane 0 step 12: accepted after 45.13 ms</title></rect>
+<rect class="fgood" x="466.45" y="140" width="9.94" height="14" rx="3"><title>n2 stage 0, lane 1 step 13: accepted after 32.10 ms</title></rect>
+<rect class="fgood" x="466.77" y="140" width="14.98" height="14" rx="3"><title>n2 stage 0, lane 2 step 13: accepted after 46.91 ms</title></rect>
+<rect class="fgood" x="477.39" y="206" width="4.49" height="14" rx="2.25"><title>n3 stage 1, lane 1 step 13: accepted after 16.12 ms</title></rect>
+<rect class="fgood" x="471.78" y="140" width="20.66" height="14" rx="3"><title>n2 stage 0, lane 0 step 13: accepted after 63.57 ms</title></rect>
+<rect class="fgood" x="482.76" y="206" width="14.85" height="14" rx="3"><title>n3 stage 1, lane 2 step 13: accepted after 46.51 ms</title></rect>
+<rect class="fgood" x="493.44" y="206" width="9.84" height="14" rx="3"><title>n3 stage 1, lane 0 step 13: accepted after 31.83 ms</title></rect>
+<rect class="fgood" x="498.6" y="140" width="15.22" height="14" rx="3"><title>n2 stage 0, lane 2 step 14: accepted after 47.60 ms</title></rect>
+<rect class="fgood" x="504.29" y="140" width="9.82" height="14" rx="3"><title>n2 stage 0, lane 0 step 14: accepted after 31.74 ms</title></rect>
+<rect class="fgood" x="514.82" y="206" width="4.47" height="14" rx="2.24"><title>n3 stage 1, lane 2 step 14: accepted after 16.06 ms</title></rect>
+<rect class="fgood" x="515.1" y="206" width="14.63" height="14" rx="3"><title>n3 stage 1, lane 0 step 14: accepted after 45.88 ms</title></rect>
+<rect class="fgood" x="520.29" y="140" width="9.8" height="14" rx="3"><title>n2 stage 0, lane 2 step 15: accepted after 31.70 ms</title></rect>
+<rect class="fgood" x="530.73" y="140" width="4.74" height="14" rx="2.37"><title>n2 stage 0, lane 0 step 15: accepted after 16.84 ms</title></rect>
+<rect class="fgood" x="531.09" y="206" width="9.79" height="14" rx="3"><title>n3 stage 1, lane 2 step 15: accepted after 31.67 ms</title></rect>
+<rect class="fgood" x="536.47" y="206" width="9.41" height="14" rx="3"><title>n3 stage 1, lane 0 step 15: accepted after 30.56 ms</title></rect>
+<rect class="fgood" x="625.26" y="206" width="42.29" height="14" rx="3"><title>n3 stage 1, lane 1 step 14: accepted after 127.06 ms</title></rect>
+<rect class="fgood" x="668.55" y="162" width="14.85" height="14" rx="3"><title>n3 stage 0, lane 1 step 15: accepted after 46.51 ms</title></rect>
+<rect class="fgood" x="684.4" y="206" width="10.6" height="14" rx="3"><title>n3 stage 1, lane 1 step 15: accepted after 34.05 ms</title></rect>
+<line class="scrit" x1="300.51" y1="108" x2="300.51" y2="224" stroke-width="2"><title>n1 killed</title></line>
+<path class="fcrit" d="M295.51 102h10l-5 7Z"/>
+<line class="scrit" x1="612.12" y1="108" x2="612.12" y2="224" stroke-width="2"><title>n1 left (lease)</title></line>
+<path class="fcrit" d="M607.12 102h10l-5 7Z"/>
+<rect class="fwarn emph" x="482.88" y="140" width="141.38" height="14" rx="3" stroke-width="1"><title>n2 stage 0, lane 1 step 14: reissued after 417.92 ms</title></rect>
+<text class="t2" x="308.51" y="108" font-size="10" text-anchor="start">n1 killed</text>
+<text class="t2" x="620.12" y="108" font-size="10" text-anchor="start">n1 left (lease)</text>
+<text class="t3" x="252.82" y="241" font-size="11" text-anchor="middle">0.5 s</text>
+<text class="t3" x="423.17" y="241" font-size="11" text-anchor="middle">1.0 s</text>
+<text class="t3" x="593.52" y="241" font-size="11" text-anchor="middle">1.5 s</text>
+<line class="axis" x1="87.68" y1="224" x2="696" y2="224" stroke-width="1"/>
+<text class="t3" x="391.84" y="260" font-size="11" text-anchor="middle">time since the first cluster record</text>
+</svg>
