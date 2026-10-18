@@ -40,8 +40,8 @@ Status as of 2026-10-18. "v1" or "v1.1" means written in full and in review or m
 | VulkanInteropApi | R2 | `vulkan-interop.md` | planned |
 | D3D12ComIdiom | R3 | `d3d12-com-idiom.md` | v1 (PR #6) |
 | ClusterProtocol | C1 | `cluster.md` | v1 (PR #7) |
-| ConformanceHarness | E1 | `conformance-harness.md` | planned (wave 2) |
-| TokenizerApi | M1 | `tokenizer.md` | planned (wave 2) |
+| ConformanceHarness | E1 | `conformance-harness.md` | v1 draft (E1, wave 2, PR #17) |
+| TokenizerApi | M1 | `tokenizer.md` | v1 (PR #18; ADR M1-0001) |
 | ForwardOpsAndQwenModel | M2 | `qwen-model.md` | planned (wave 2) |
 | GpuExecutor | X1 | `gpu-executor.md` | planned (wave 3) |
 | StagePipeline | C2 | `stage-pipeline.md` | planned (wave 3) |
