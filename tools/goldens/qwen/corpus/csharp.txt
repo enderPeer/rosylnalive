@@ -1,0 +1,717 @@
+//// snippet: add-numbers
+namespace Demo;
+
+public static class Calculator
+{
+    public static int Add(int a, int b) => a + b;
+
+    public static int Sum(params int[] values)
+    {
+        var total = 0;
+        foreach (var v in values)
+        {
+            total += v;
+        }
+        return total;
+    }
+}
+//// snippet: record-point
+public readonly record struct Point(double X, double Y)
+{
+    public double Length => Math.Sqrt(X * X + Y * Y);
+
+    public Point Scale(double factor) => new(X * factor, Y * factor);
+
+    public static Point operator +(Point a, Point b) => new(a.X + b.X, a.Y + b.Y);
+}
+//// snippet: linq-orders
+var lateOrders =
+    from order in orders
+    where order.Shipped is null && order.Due < DateTime.UtcNow
+    orderby order.Due
+    select new { order.Id, order.Customer.Name, DaysLate = (DateTime.UtcNow - order.Due).Days };
+
+foreach (var o in lateOrders)
+{
+    Console.WriteLine($"{o.Id}: {o.Name} is {o.DaysLate} days late");
+}
+//// snippet: async-download
+public async Task<string> DownloadAsync(HttpClient client, Uri uri, CancellationToken ct)
+{
+    using var response = await client.GetAsync(uri, ct).ConfigureAwait(false);
+    response.EnsureSuccessStatusCode();
+    return await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+}
+//// snippet: pattern-shapes
+public static double Area(Shape shape) => shape switch
+{
+    Circle { Radius: var r } => Math.PI * r * r,
+    Rectangle { Width: var w, Height: var h } => w * h,
+    Triangle t when t.IsDegenerate => 0.0,
+    Triangle t => 0.5 * t.Base * t.Height,
+    null => throw new ArgumentNullException(nameof(shape)),
+    _ => throw new NotSupportedException($"Unknown shape {shape.GetType().Name}")
+};
+//// snippet: generic-cache
+public sealed class LruCache<TKey, TValue> where TKey : notnull
+{
+    private readonly int _capacity;
+    private readonly Dictionary<TKey, LinkedListNode<(TKey Key, TValue Value)>> _map = new();
+    private readonly LinkedList<(TKey Key, TValue Value)> _order = new();
+
+    public LruCache(int capacity)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(capacity);
+        _capacity = capacity;
+    }
+
+    public bool TryGet(TKey key, out TValue value)
+    {
+        if (_map.TryGetValue(key, out var node))
+        {
+            _order.Remove(node);
+            _order.AddFirst(node);
+            value = node.Value.Value;
+            return true;
+        }
+        value = default!;
+        return false;
+    }
+
+    public void Put(TKey key, TValue value)
+    {
+        if (_map.TryGetValue(key, out var existing))
+        {
+            _order.Remove(existing);
+        }
+        else if (_map.Count == _capacity)
+        {
+            var last = _order.Last!;
+            _order.RemoveLast();
+            _map.Remove(last.Value.Key);
+        }
+        _map[key] = _order.AddFirst((key, value));
+    }
+}
+//// snippet: span-parse
+public static bool TryParseVersion(ReadOnlySpan<char> text, out int major, out int minor)
+{
+    major = minor = 0;
+    var dot = text.IndexOf('.');
+    if (dot <= 0 || dot == text.Length - 1)
+    {
+        return false;
+    }
+    return int.TryParse(text[..dot], out major) && int.TryParse(text[(dot + 1)..], out minor);
+}
+//// snippet: iterator-fibonacci
+public static IEnumerable<long> Fibonacci()
+{
+    long a = 0, b = 1;
+    while (true)
+    {
+        yield return a;
+        (a, b) = (b, a + b);
+    }
+}
+
+// The first ten Fibonacci numbers.
+foreach (var n in Fibonacci().Take(10))
+{
+    Console.Write($"{n} ");
+}
+//// snippet: interface-repository
+public interface IRepository<T> where T : class, IEntity
+{
+    Task<T?> FindAsync(Guid id, CancellationToken ct = default);
+    Task<IReadOnlyList<T>> ListAsync(Expression<Func<T, bool>> filter, CancellationToken ct = default);
+    Task AddAsync(T entity, CancellationToken ct = default);
+    Task RemoveAsync(Guid id, CancellationToken ct = default);
+}
+
+public interface IEntity
+{
+    Guid Id { get; }
+}
+//// snippet: events-thermostat
+public sealed class Thermostat
+{
+    private double _current;
+
+    public event EventHandler<double>? TemperatureChanged;
+
+    public double Target { get; set; } = 21.0;
+
+    public void Report(double measured)
+    {
+        if (Math.Abs(measured - _current) < 0.05)
+        {
+            return;
+        }
+        _current = measured;
+        TemperatureChanged?.Invoke(this, measured);
+    }
+
+    public bool NeedsHeating => _current < Target - 0.5;
+}
+//// snippet: exception-filter
+try
+{
+    await ProcessBatchAsync(batch, cancellationToken);
+}
+catch (HttpRequestException ex) when (ex.StatusCode is HttpStatusCode.TooManyRequests)
+{
+    logger.LogWarning("Rate limited; retrying batch {BatchId} later", batch.Id);
+    retryQueue.Enqueue(batch);
+}
+catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+{
+    logger.LogInformation("Batch {BatchId} cancelled", batch.Id);
+    throw;
+}
+finally
+{
+    metrics.BatchesProcessed.Add(1);
+}
+//// snippet: stringbuilder-table
+public static string FormatTable(IReadOnlyList<string[]> rows)
+{
+    var widths = new int[rows[0].Length];
+    foreach (var row in rows)
+    {
+        for (var i = 0; i < row.Length; i++)
+        {
+            widths[i] = Math.Max(widths[i], row[i].Length);
+        }
+    }
+
+    var sb = new StringBuilder();
+    foreach (var row in rows)
+    {
+        for (var i = 0; i < row.Length; i++)
+        {
+            sb.Append(row[i].PadRight(widths[i] + 2));
+        }
+        sb.AppendLine();
+    }
+    return sb.ToString();
+}
+//// snippet: primary-constructor
+public class OrderService(IRepository<Order> orders, IClock clock, ILogger<OrderService> logger)
+{
+    public async Task<Order> PlaceAsync(Customer customer, IEnumerable<OrderLine> lines)
+    {
+        var order = new Order(Guid.NewGuid(), customer, lines.ToList(), clock.UtcNow);
+        await orders.AddAsync(order);
+        logger.LogInformation("Placed order {OrderId} for {Customer}", order.Id, customer.Name);
+        return order;
+    }
+}
+//// snippet: binary-search
+public static int BinarySearch(int[] sorted, int target)
+{
+    int lo = 0, hi = sorted.Length - 1;
+    while (lo <= hi)
+    {
+        var mid = lo + (hi - lo) / 2;
+        if (sorted[mid] == target)
+        {
+            return mid;
+        }
+        if (sorted[mid] < target)
+        {
+            lo = mid + 1;
+        }
+        else
+        {
+            hi = mid - 1;
+        }
+    }
+    return ~lo;
+}
+//// snippet: unsafe-sum
+public static unsafe float SumUnsafe(float[] values)
+{
+    float total = 0f;
+    fixed (float* p = values)
+    {
+        for (var i = 0; i < values.Length; i++)
+        {
+            total += p[i];
+        }
+    }
+    return total;
+}
+//// snippet: attributes-validation
+public sealed class CreateUserRequest
+{
+    [Required]
+    [StringLength(64, MinimumLength = 3)]
+    public string UserName { get; init; } = "";
+
+    [Required]
+    [EmailAddress]
+    public string Email { get; init; } = "";
+
+    [Range(13, 130)]
+    public int Age { get; init; }
+}
+//// snippet: dependency-injection
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton<IClock, SystemClock>();
+builder.Services.AddScoped<IRepository<Order>, SqlOrderRepository>();
+builder.Services.AddScoped<OrderService>();
+
+var app = builder.Build();
+
+app.MapPost("/orders", async (PlaceOrder request, OrderService service) =>
+{
+    var order = await service.PlaceAsync(request.Customer, request.Lines);
+    return Results.Created($"/orders/{order.Id}", order);
+});
+
+app.Run();
+//// snippet: channel-pipeline
+var channel = Channel.CreateBounded<int>(new BoundedChannelOptions(100)
+{
+    FullMode = BoundedChannelFullMode.Wait,
+    SingleReader = true,
+});
+
+var producer = Task.Run(async () =>
+{
+    for (var i = 0; i < 1_000; i++)
+    {
+        await channel.Writer.WriteAsync(i);
+    }
+    channel.Writer.Complete();
+});
+
+var sum = 0L;
+await foreach (var item in channel.Reader.ReadAllAsync())
+{
+    sum += item;
+}
+await producer;
+Console.WriteLine(sum);
+//// snippet: expression-tree
+Expression<Func<int, int, int>> add = (a, b) => a + b;
+var body = (BinaryExpression)add.Body;
+Console.WriteLine($"{body.NodeType}: {body.Left} and {body.Right}");
+
+var compiled = add.Compile();
+Console.WriteLine(compiled(2, 3));
+//// snippet: roslyn-syntax-walk
+var tree = CSharpSyntaxTree.ParseText("""
+    class C
+    {
+        int Add(int a, int b) => a + b;
+    }
+    """);
+
+var root = tree.GetCompilationUnitRoot();
+foreach (var method in root.DescendantNodes().OfType<MethodDeclarationSyntax>())
+{
+    Console.WriteLine($"{method.Identifier.Text} has {method.ParameterList.Parameters.Count} parameters");
+}
+//// snippet: roslyn-compile
+var compilation = CSharpCompilation.Create(
+    "Demo",
+    new[] { tree },
+    new[] { MetadataReference.CreateFromFile(typeof(object).Assembly.Location) },
+    new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+using var stream = new MemoryStream();
+var result = compilation.Emit(stream);
+if (!result.Success)
+{
+    foreach (var diagnostic in result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error))
+    {
+        Console.WriteLine($"{diagnostic.Id}: {diagnostic.GetMessage()}");
+    }
+}
+//// snippet: semantic-model
+var model = compilation.GetSemanticModel(tree);
+var invocation = root.DescendantNodes().OfType<InvocationExpressionSyntax>().First();
+var symbol = model.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
+if (symbol is not null)
+{
+    Console.WriteLine($"Calls {symbol.ContainingType.Name}.{symbol.Name} returning {symbol.ReturnType}");
+}
+//// snippet: switch-statement
+switch (command)
+{
+    case "start":
+        service.Start();
+        break;
+    case "stop" or "halt":
+        service.Stop();
+        break;
+    case var c when c.StartsWith("set "):
+        service.Configure(c["set ".Length..]);
+        break;
+    default:
+        Console.Error.WriteLine($"unknown command: {command}");
+        return 2;
+}
+return 0;
+//// snippet: matrix-multiply
+public static float[,] Multiply(float[,] a, float[,] b)
+{
+    int n = a.GetLength(0), k = a.GetLength(1), m = b.GetLength(1);
+    if (b.GetLength(0) != k)
+    {
+        throw new ArgumentException("inner dimensions differ");
+    }
+
+    var c = new float[n, m];
+    for (var i = 0; i < n; i++)
+    {
+        for (var j = 0; j < m; j++)
+        {
+            var acc = 0f;
+            for (var p = 0; p < k; p++)
+            {
+                acc = MathF.FusedMultiplyAdd(a[i, p], b[p, j], acc);
+            }
+            c[i, j] = acc;
+        }
+    }
+    return c;
+}
+//// snippet: rms-norm
+public static void RmsNorm(ReadOnlySpan<float> x, ReadOnlySpan<float> weight, Span<float> y, float eps)
+{
+    var sumSquares = 0.0f;
+    foreach (var v in x)
+    {
+        sumSquares = MathF.FusedMultiplyAdd(v, v, sumSquares);
+    }
+    var scale = 1.0f / MathF.Sqrt(sumSquares / x.Length + eps);
+    for (var i = 0; i < x.Length; i++)
+    {
+        y[i] = weight[i] * (x[i] * scale);
+    }
+}
+//// snippet: softmax
+public static void Softmax(Span<float> values)
+{
+    var max = float.NegativeInfinity;
+    foreach (var v in values)
+    {
+        max = MathF.Max(max, v);
+    }
+
+    var sum = 0f;
+    for (var i = 0; i < values.Length; i++)
+    {
+        values[i] = MathF.Exp(values[i] - max);
+        sum += values[i];
+    }
+
+    for (var i = 0; i < values.Length; i++)
+    {
+        values[i] /= sum;
+    }
+}
+//// snippet: disposable-lease
+public sealed class Lease : IAsyncDisposable
+{
+    private readonly SemaphoreSlim _gate;
+    private int _released;
+
+    private Lease(SemaphoreSlim gate) => _gate = gate;
+
+    public static async ValueTask<Lease> AcquireAsync(SemaphoreSlim gate, CancellationToken ct)
+    {
+        await gate.WaitAsync(ct);
+        return new Lease(gate);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        if (Interlocked.Exchange(ref _released, 1) == 0)
+        {
+            _gate.Release();
+        }
+        return ValueTask.CompletedTask;
+    }
+}
+//// snippet: tuple-deconstruct
+var (min, max, mean) = Stats(new[] { 4.0, 8.0, 15.0, 16.0, 23.0, 42.0 });
+Console.WriteLine($"min {min}, max {max}, mean {mean:F2}");
+
+static (double Min, double Max, double Mean) Stats(IReadOnlyCollection<double> xs)
+    => (xs.Min(), xs.Max(), xs.Average());
+//// snippet: string-interpolation-handler
+var name = "Ada";
+var items = 3;
+var total = 27.5m;
+var message = $"Hello {name}, you have {items} item{(items == 1 ? "" : "s")} totalling {total:C2}.";
+Console.WriteLine(message);
+
+var json = $$"""
+    {
+      "name": "{{name}}",
+      "items": {{items}}
+    }
+    """;
+//// snippet: nullable-flow
+public static string Describe(Person? person)
+{
+    if (person is null)
+    {
+        return "nobody";
+    }
+
+    var city = person.Address?.City ?? "an unknown city";
+    return $"{person.Name} lives in {city}";
+}
+//// snippet: enum-flags
+[Flags]
+public enum FilePermissions
+{
+    None = 0,
+    Read = 1,
+    Write = 2,
+    Execute = 4,
+    All = Read | Write | Execute,
+}
+
+var granted = FilePermissions.Read | FilePermissions.Write;
+Console.WriteLine(granted.HasFlag(FilePermissions.Write));
+Console.WriteLine(granted);
+//// snippet: struct-vector
+public struct Vector3 : IEquatable<Vector3>
+{
+    public float X, Y, Z;
+
+    public Vector3(float x, float y, float z) => (X, Y, Z) = (x, y, z);
+
+    public readonly float Dot(Vector3 other) => X * other.X + Y * other.Y + Z * other.Z;
+
+    public readonly Vector3 Cross(Vector3 o) => new(Y * o.Z - Z * o.Y, Z * o.X - X * o.Z, X * o.Y - Y * o.X);
+
+    public readonly bool Equals(Vector3 other) => X == other.X && Y == other.Y && Z == other.Z;
+
+    public override readonly bool Equals(object? obj) => obj is Vector3 v && Equals(v);
+
+    public override readonly int GetHashCode() => HashCode.Combine(X, Y, Z);
+}
+//// snippet: xunit-test
+public class CalculatorTests
+{
+    [Fact]
+    public void Add_returns_the_sum()
+    {
+        Assert.Equal(5, Calculator.Add(2, 3));
+    }
+
+    [Theory]
+    [InlineData(new int[0], 0)]
+    [InlineData(new[] { 1, 2, 3 }, 6)]
+    public void Sum_adds_every_value(int[] values, int expected)
+    {
+        Assert.Equal(expected, Calculator.Sum(values));
+    }
+}
+//// snippet: file-io
+public static async Task<int> CountLinesAsync(string path, CancellationToken ct)
+{
+    var count = 0;
+    await using var stream = File.OpenRead(path);
+    using var reader = new StreamReader(stream, Encoding.UTF8);
+    while (await reader.ReadLineAsync(ct) is not null)
+    {
+        count++;
+    }
+    return count;
+}
+//// snippet: json-serialize
+var options = new JsonSerializerOptions
+{
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    WriteIndented = true,
+};
+
+var person = new Person("Grace", 85, ["Navy", "COBOL"]);
+var text = JsonSerializer.Serialize(person, options);
+var back = JsonSerializer.Deserialize<Person>(text, options);
+Console.WriteLine(back == person);
+
+public sealed record Person(string Name, int Age, string[] Tags);
+//// snippet: lock-counter
+public sealed class Counter
+{
+    private readonly Lock _lock = new();
+    private long _value;
+
+    public long Increment()
+    {
+        lock (_lock)
+        {
+            return ++_value;
+        }
+    }
+
+    public long Value
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _value;
+            }
+        }
+    }
+}
+//// snippet: extension-methods
+public static class EnumerableExtensions
+{
+    public static IEnumerable<T[]> Chunked<T>(this IEnumerable<T> source, int size)
+    {
+        var chunk = new List<T>(size);
+        foreach (var item in source)
+        {
+            chunk.Add(item);
+            if (chunk.Count == size)
+            {
+                yield return chunk.ToArray();
+                chunk.Clear();
+            }
+        }
+        if (chunk.Count > 0)
+        {
+            yield return chunk.ToArray();
+        }
+    }
+}
+//// snippet: local-functions
+public static int CountPaths(int rows, int cols)
+{
+    var memo = new Dictionary<(int, int), int>();
+    return Walk(0, 0);
+
+    int Walk(int r, int c)
+    {
+        if (r == rows - 1 || c == cols - 1)
+        {
+            return 1;
+        }
+        if (memo.TryGetValue((r, c), out var known))
+        {
+            return known;
+        }
+        var paths = Walk(r + 1, c) + Walk(r, c + 1);
+        memo[(r, c)] = paths;
+        return paths;
+    }
+}
+//// snippet: il-emit
+var method = new DynamicMethod("Add", typeof(int), new[] { typeof(int), typeof(int) });
+var il = method.GetILGenerator();
+il.Emit(OpCodes.Ldarg_0);
+il.Emit(OpCodes.Ldarg_1);
+il.Emit(OpCodes.Add);
+il.Emit(OpCodes.Ret);
+
+var add = (Func<int, int, int>)method.CreateDelegate(typeof(Func<int, int, int>));
+Console.WriteLine(add(2, 3));
+//// snippet: reflection-props
+foreach (var property in typeof(Person).GetProperties(BindingFlags.Public | BindingFlags.Instance))
+{
+    var value = property.GetValue(person);
+    Console.WriteLine($"{property.Name} ({property.PropertyType.Name}) = {value}");
+}
+//// snippet: collection-expressions
+int[] primes = [2, 3, 5, 7, 11];
+List<int> more = [.. primes, 13, 17];
+Span<int> window = primes.AsSpan(1, 3);
+ReadOnlySpan<char> vowels = ['a', 'e', 'i', 'o', 'u'];
+
+Console.WriteLine(string.Join(", ", more));
+Console.WriteLine(window.Length);
+Console.WriteLine(vowels.Contains('e'));
+//// snippet: required-members
+public sealed class ConnectionSettings
+{
+    public required string Host { get; init; }
+    public required int Port { get; init; }
+    public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(30);
+    public bool UseTls { get; init; } = true;
+}
+
+var settings = new ConnectionSettings { Host = "localhost", Port = 5432 };
+//// snippet: static-abstract
+public interface IShape<TSelf> where TSelf : IShape<TSelf>
+{
+    static abstract string Name { get; }
+    static abstract TSelf Unit();
+    double Area();
+}
+
+public sealed record Square(double Side) : IShape<Square>
+{
+    public static string Name => "square";
+    public static Square Unit() => new(1.0);
+    public double Area() => Side * Side;
+}
+
+static void Print<T>() where T : IShape<T> =>
+    Console.WriteLine($"{T.Name}: {T.Unit().Area()}");
+//// snippet: generic-math
+public static T SumAll<T>(ReadOnlySpan<T> values) where T : INumber<T>
+{
+    var total = T.Zero;
+    foreach (var v in values)
+    {
+        total += v;
+    }
+    return total;
+}
+
+Console.WriteLine(SumAll<int>([1, 2, 3]));
+Console.WriteLine(SumAll<double>([0.5, 0.25]));
+//// snippet: state-machine
+public enum DoorState { Closed, Open, Locked }
+
+public static DoorState Next(DoorState state, string action) => (state, action) switch
+{
+    (DoorState.Closed, "open") => DoorState.Open,
+    (DoorState.Open, "close") => DoorState.Closed,
+    (DoorState.Closed, "lock") => DoorState.Locked,
+    (DoorState.Locked, "unlock") => DoorState.Closed,
+    _ => throw new InvalidOperationException($"cannot {action} a door that is {state}"),
+};
+//// snippet: parallel-for
+var results = new double[inputs.Length];
+Parallel.For(0, inputs.Length, new ParallelOptions { MaxDegreeOfParallelism = 8 }, i =>
+{
+    results[i] = Simulate(inputs[i], seed: 1234 + i);
+});
+Console.WriteLine($"mean {results.Average():F4}");
+//// snippet: regex-validate
+private static readonly Regex Identifier = new(@"^[\p{L}_][\p{L}\p{Nd}_]*$", RegexOptions.Compiled);
+
+public static bool IsValidIdentifier(string name) =>
+    !string.IsNullOrEmpty(name) && Identifier.IsMatch(name) && !SyntaxFacts.IsKeywordKind(SyntaxFacts.GetKeywordKind(name));
+//// snippet: hash-sha256
+public static string Sha256Hex(ReadOnlySpan<byte> data)
+{
+    Span<byte> digest = stackalloc byte[32];
+    SHA256.HashData(data, digest);
+    return Convert.ToHexStringLower(digest);
+}
+//// snippet: bf16-convert
+public static ushort ToBf16(float value)
+{
+    var bits = BitConverter.SingleToUInt32Bits(value);
+    if (float.IsNaN(value))
+    {
+        return (ushort)((bits >> 16) | 0x40);
+    }
+    var roundingBias = 0x7FFFu + ((bits >> 16) & 1u);
+    return (ushort)((bits + roundingBias) >> 16);
+}
+
+public static float FromBf16(ushort bits) => BitConverter.UInt32BitsToSingle((uint)bits << 16);
