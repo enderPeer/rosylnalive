@@ -109,8 +109,10 @@ type SpirvModule =
         /// The version word, for example 0x00010600 for SPIR-V 1.6.
         Version: uint32
         Generator: uint32
-        /// Every result id is below the bound.
+        /// The id bound from the header: every id in a valid module is below it. `parse` reads it as it is; the
+        /// inspector's `module` rule checks it against every id the inspector reads.
         Bound: uint32
+        /// The schema word from the header; 0 in a valid module (checked by the inspector's `module` rule).
         Schema: uint32
         Instructions: SpirvInstruction list
     }
@@ -134,6 +136,9 @@ module Spirv =
 
         [<Literal>]
         let MemberName = 6
+
+        [<Literal>]
+        let String = 7
 
         [<Literal>]
         let Extension = 10
@@ -192,11 +197,24 @@ module Spirv =
         [<Literal>]
         let TypePointer = 32
 
+        /// OpTypeForwardPointer names a pointer type defined later; it defines no result id.
+        [<Literal>]
+        let TypeForwardPointer = 39
+
+        [<Literal>]
+        let ConstantTrue = 41
+
         [<Literal>]
         let Constant = 43
 
         [<Literal>]
+        let ConstantComposite = 44
+
+        [<Literal>]
         let SpecConstant = 50
+
+        [<Literal>]
+        let SpecConstantOp = 52
 
         [<Literal>]
         let Function = 54
@@ -251,6 +269,9 @@ module Spirv =
 
         [<Literal>]
         let AtomicFlagClear = 319
+
+        [<Literal>]
+        let Label = 248
 
         [<Literal>]
         let GroupNonUniformElect = 333
@@ -345,6 +366,27 @@ module Spirv =
         [<Literal>]
         let Offset = 35u
 
+        let name (d: uint32) =
+            match d with
+            | 0u -> "RelaxedPrecision"
+            | 1u -> "SpecId"
+            | 2u -> "Block"
+            | 3u -> "BufferBlock"
+            | 6u -> "ArrayStride"
+            | 7u -> "MatrixStride"
+            | 11u -> "BuiltIn"
+            | 18u -> "Invariant"
+            | 19u -> "Restrict"
+            | 20u -> "Aliased"
+            | 23u -> "Coherent"
+            | 24u -> "NonWritable"
+            | 25u -> "NonReadable"
+            | 30u -> "Location"
+            | 33u -> "Binding"
+            | 34u -> "DescriptorSet"
+            | 35u -> "Offset"
+            | n -> sprintf "decoration %d" n
+
     /// Capabilities, with names for the ones the inspector reports.
     [<RequireQualifiedAccess>]
     module Capability =
@@ -417,6 +459,10 @@ module Spirv =
     /// Built-in variables.
     [<RequireQualifiedAccess>]
     module BuiltIn =
+        /// WorkgroupSize: an object decorated with it overrides the LocalSize execution mode.
+        [<Literal>]
+        let WorkgroupSize = 25u
+
         [<Literal>]
         let WorkgroupId = 26u
 

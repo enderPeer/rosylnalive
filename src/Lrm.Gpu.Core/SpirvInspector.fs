@@ -8,15 +8,17 @@ open Lrm.Core
 /// A rule of the SPIR-V inspector (ShaderBuildAndSourceConvention v1.1, "The SPIR-V inspector").
 [<RequireQualifiedAccess>]
 type SpirvRule =
-    /// A well-formed SPIR-V 1.6 module with the Logical GLSL450 memory model.
+    /// A well-formed SPIR-V 1.6 module with the Logical GLSL450 memory model and schema 0: every id the inspector
+    /// reads below the header's bound, each result id defined once, no decoration repeated on one target.
     | Module
     /// Only the capabilities the recipe's device features allow, Shader and RuntimeDescriptorArray among them.
     | Capabilities
     /// Only the SPV_EXT_descriptor_indexing extension and the GLSL.std.450 instruction set.
     | Extensions
-    /// Exactly one entry point: GLCompute "main".
+    /// Exactly one entry point: GLCompute "main", naming a function.
     | EntryPoint
-    /// Exactly one execution mode: LocalSize, equal to the catalog's thread counts.
+    /// Exactly one execution mode: LocalSize on the entry point, equal to the catalog's thread counts; and no
+    /// WorkgroupSize built-in, which would override it.
     | ExecutionMode
     /// Exactly one resource variable: the writable runtime array of raw buffers at set 0, binding 0.
     | Resource
@@ -24,7 +26,8 @@ type SpirvRule =
     | PushBlock
     /// Module-scope variables only in StorageBuffer, PushConstant, Input, Workgroup and Private storage.
     | StorageClass
-    /// Input variables are only the WorkgroupId, LocalInvocationId and LocalInvocationIndex built-ins.
+    /// Input variables are only the WorkgroupId, LocalInvocationId and LocalInvocationIndex built-ins, and every
+    /// other BuiltIn decoration is on an Input variable.
     | BuiltIns
     /// No atomic operation on a float.
     | FloatAtomics
@@ -223,6 +226,45 @@ module SpirvInspector =
 
     let private sixteenBitCapabilities = [ 8u; 9u; 22u; 4433u; 4434u; 4435u; 4436u ]
 
+    /// The result id defined by an instruction the inspector reads: strings, instruction-set imports, labels and
+    /// types (result id first); constants, functions, parameters, variables, loads, access chains and copies
+    /// (result type, then result id). Other instructions return None.
+    let private definedId (ins: SpirvInstruction) : uint32 option =
+        let o = ins.Operands
+
+        match ins.Opcode with
+        | Spirv.Op.String
+        | Spirv.Op.ExtInstImport
+        | Spirv.Op.Label when o.Length >= 1 -> Some o[0]
+        | op when op >= Spirv.Op.TypeVoid && op < Spirv.Op.TypeForwardPointer && o.Length >= 1 -> Some o[0]
+        | op when
+            ((op >= Spirv.Op.ConstantTrue && op <= Spirv.Op.SpecConstantOp && op <> 47)
+             || op = Spirv.Op.Function
+             || op = Spirv.Op.FunctionParameter
+             || op = Spirv.Op.Variable
+             || op = Spirv.Op.Load
+             || (op >= Spirv.Op.AccessChain && op <= Spirv.Op.PtrAccessChain)
+             || op = Spirv.Op.CopyObject)
+            && o.Length >= 2
+            ->
+            Some o[1]
+        | _ -> None
+
+    /// The id a debug, annotation or mode-setting instruction refers to: the target of OpName, OpMemberName,
+    /// OpDecorate, OpMemberDecorate and OpExecutionMode(Id), and the function of OpEntryPoint.
+    let private referencedId (ins: SpirvInstruction) : uint32 option =
+        let o = ins.Operands
+
+        match ins.Opcode with
+        | Spirv.Op.Name
+        | Spirv.Op.MemberName
+        | Spirv.Op.Decorate
+        | Spirv.Op.MemberDecorate
+        | Spirv.Op.ExecutionMode
+        | Spirv.Op.ExecutionModeId when o.Length >= 1 -> Some o[0]
+        | Spirv.Op.EntryPoint when o.Length >= 2 -> Some o[1]
+        | _ -> None
+
     let private hex (v: uint32) = sprintf "0x%08x" v
 
     /// Inspects one SPIR-V blob against its catalog entry.
@@ -262,8 +304,10 @@ module SpirvInspector =
             let extensions = ResizeArray<string>()
             let extInst = ResizeArray<string>()
             let memoryModels = ResizeArray<uint32 * uint32>()
-            let entryPoints = ResizeArray<uint32 * string>()
-            let modes = ResizeArray<int * uint32 * uint32[]>() // opcode, mode, operands after the mode
+            let entryPoints = ResizeArray<uint32 * uint32 * string>() // execution model, function id, name
+            // opcode, target id, mode, operands after the mode
+            let modes = ResizeArray<int * uint32 * uint32 * uint32[]>()
+            let functions = HashSet<uint32>()
             let atomics = ResizeArray<SpirvInstruction>()
             let waveOps = ResizeArray<int>()
             let mutable inFunction = false
@@ -307,18 +351,23 @@ module SpirvInspector =
                 | Spirv.Op.Extension when operandsOk ins 1 -> extensions.Add(str ins 0)
                 | Spirv.Op.ExtInstImport when operandsOk ins 2 -> extInst.Add(str ins 1)
                 | Spirv.Op.MemoryModel when operandsOk ins 2 -> memoryModels.Add(o[0], o[1])
-                | Spirv.Op.EntryPoint when operandsOk ins 3 -> entryPoints.Add(o[0], str ins 2)
+                | Spirv.Op.EntryPoint when operandsOk ins 3 -> entryPoints.Add(o[0], o[1], str ins 2)
                 | Spirv.Op.ExecutionMode
                 | Spirv.Op.ExecutionModeId when operandsOk ins 2 ->
-                    modes.Add(ins.Opcode, o[1], Array.sub o 2 (o.Length - 2))
+                    modes.Add(ins.Opcode, o[0], o[1], Array.sub o 2 (o.Length - 2))
                 | Spirv.Op.Decorate when operandsOk ins 2 ->
                     (listAt decorations o[0]).Add(o[1], Array.sub o 2 (o.Length - 2))
                 | Spirv.Op.MemberDecorate when operandsOk ins 3 ->
                     (listAt memberDecorations (struct (o[0], o[1]))).Add(o[2], Array.sub o 3 (o.Length - 3))
-                | op when op >= Spirv.Op.TypeVoid && op <= 39 && operandsOk ins 1 -> types[o[0]] <- ins
+                | op when op >= Spirv.Op.TypeVoid && op < Spirv.Op.TypeForwardPointer && operandsOk ins 1 ->
+                    types[o[0]] <- ins
                 | Spirv.Op.Constant
                 | Spirv.Op.SpecConstant when operandsOk ins 3 -> constants[o[1]] <- ins
-                | Spirv.Op.Function -> inFunction <- true
+                | Spirv.Op.Function ->
+                    inFunction <- true
+
+                    if o.Length >= 2 then
+                        functions.Add o[1] |> ignore
                 | Spirv.Op.FunctionEnd -> inFunction <- false
                 | Spirv.Op.Variable when operandsOk ins 3 ->
                     typeOf[o[1]] <- o[0]
@@ -341,15 +390,22 @@ module SpirvInspector =
                 | op when isWaveOp op -> waveOps.Add op
                 | _ -> ()
 
-            let decoration (id: uint32) (d: uint32) =
+            // Every decoration `d` of a target, in module order. The `module` rule refuses a decoration repeated on
+            // one target; the facts read the first one.
+            let decorationsOf (id: uint32) (d: uint32) =
                 match decorations.TryGetValue id with
-                | true, l -> l |> Seq.tryFind (fun (k, _) -> k = d) |> Option.map snd
-                | _ -> None
+                | true, l -> l |> Seq.filter (fun (k, _) -> k = d) |> Seq.map snd |> List.ofSeq
+                | _ -> []
+
+            let memberDecorationsOf (s: uint32) (i: uint32) (d: uint32) =
+                match memberDecorations.TryGetValue(struct (s, i)) with
+                | true, l -> l |> Seq.filter (fun (k, _) -> k = d) |> Seq.map snd |> List.ofSeq
+                | _ -> []
+
+            let decoration (id: uint32) (d: uint32) = decorationsOf id d |> List.tryHead
 
             let memberDecoration (s: uint32) (i: uint32) (d: uint32) =
-                match memberDecorations.TryGetValue(struct (s, i)) with
-                | true, l -> l |> Seq.tryFind (fun (k, _) -> k = d) |> Option.map snd
-                | _ -> None
+                memberDecorationsOf s i d |> List.tryHead
 
             let firstLiteral (v: uint32[] option) =
                 v |> Option.bind (fun a -> if a.Length > 0 then Some a[0] else None)
@@ -399,7 +455,18 @@ module SpirvInspector =
                     | op -> sprintf "type (opcode %d)" op
                 | None -> sprintf "%%%d" id
 
+            // Sizes are non-negative int64 values; a product or sum that would pass Int64.MaxValue is an error, so a
+            // huge nested array can never wrap around to a small size.
             let rec sizeOf (depth: int) (id: uint32) : Result<int64, string> =
+                let overflow () =
+                    Error(sprintf "the size of %s overflows 64 bits" (typeText 0 id))
+
+                let times (n: int64) (e: int64) =
+                    if n <> 0L && e > Int64.MaxValue / n then
+                        overflow ()
+                    else
+                        Ok(e * n)
+
                 match typeIns id with
                 | _ when depth > 16 -> Error "type nesting too deep"
                 | Some t ->
@@ -411,10 +478,11 @@ module SpirvInspector =
                     | Spirv.Op.TypeBool -> Ok 4L
                     | Spirv.Op.TypeVector
                     | Spirv.Op.TypeMatrix when o.Length >= 3 ->
-                        sizeOf (depth + 1) o[1] |> Result.map (fun e -> e * int64 o[2])
+                        sizeOf (depth + 1) o[1] |> Result.bind (times (int64 o[2]))
                     | Spirv.Op.TypeArray when o.Length >= 3 ->
                         match constantValue o[2] with
-                        | Some n -> sizeOf (depth + 1) o[1] |> Result.map (fun e -> e * n)
+                        | Some n when n >= 1L -> sizeOf (depth + 1) o[1] |> Result.bind (times n)
+                        | Some n -> Error(sprintf "the length of %s is %d, not positive" (typeText 0 id) n)
                         | None -> Error(sprintf "the length of %s is not a constant" (typeText 0 id))
                     | Spirv.Op.TypeStruct ->
                         o
@@ -422,6 +490,7 @@ module SpirvInspector =
                         |> Array.fold
                             (fun acc mt ->
                                 match acc, sizeOf (depth + 1) mt with
+                                | Ok a, Ok b when a > Int64.MaxValue - b -> overflow ()
                                 | Ok a, Ok b -> Ok(a + b)
                                 | (Error _ as e), _
                                 | _, (Error _ as e) -> e)
@@ -451,6 +520,62 @@ module SpirvInspector =
             | [ (a, mm) ] -> add SpirvRule.Module "memory model (%d, %d), expected Logical GLSL450 (0, 1)" a mm
             | l -> add SpirvRule.Module "%d OpMemoryModel instructions, expected 1" l.Length
 
+            if m.Schema <> 0u then
+                add SpirvRule.Module "schema word %d, expected 0" m.Schema
+
+            // Ids: every id the inspector reads is below the header's bound, and each result id is defined once.
+            let definedAt = Dictionary<uint32, int>()
+            let outOfBound = SortedSet<uint32>()
+
+            for ins in m.Instructions do
+                match definedId ins with
+                | Some id ->
+                    if id = 0u || id >= m.Bound then
+                        outOfBound.Add id |> ignore
+
+                    match definedAt.TryGetValue id with
+                    | true, w ->
+                        add SpirvRule.Module "word %d: result id %%%d is already defined at word %d" ins.Word id w
+                    | _ -> definedAt[id] <- ins.Word
+                | None -> ()
+
+                match referencedId ins with
+                | Some id when id = 0u || id >= m.Bound -> outOfBound.Add id |> ignore
+                | _ -> ()
+
+            if outOfBound.Count > 0 then
+                add
+                    SpirvRule.Module
+                    "%d id(s) are 0 or not below the id bound %d (the largest is %%%d)"
+                    outOfBound.Count
+                    m.Bound
+                    outOfBound.Max
+
+            // A decoration is applied at most once to a target (or a member); the rules below read the first one,
+            // so a later conflicting Binding, DescriptorSet or Offset must not pass unseen.
+            let label (id: uint32) =
+                nameOf id |> Option.defaultValue (sprintf "%%%d" id)
+
+            for KeyValue(id, l) in decorations |> Seq.sortBy _.Key do
+                for d, n in l |> Seq.countBy fst do
+                    if n > 1 then
+                        add SpirvRule.Module "%s carries %s %d times" (label id) (Spirv.Decoration.name d) n
+
+            for KeyValue(struct (s, i), l) in
+                memberDecorations
+                |> Seq.sortBy (fun kv ->
+                    let struct (s, i) = kv.Key
+                    s, i) do
+                for d, n in l |> Seq.countBy fst do
+                    if n > 1 then
+                        add
+                            SpirvRule.Module
+                            "member %d of %s carries %s %d times"
+                            i
+                            (label s)
+                            (Spirv.Decoration.name d)
+                            n
+
             // ---- capabilities and extensions ----
             for c in capabilities |> Seq.distinct do
                 if not (List.contains c allowedCapabilities) then
@@ -473,19 +598,32 @@ module SpirvInspector =
 
             // ---- entry point and execution mode ----
             match List.ofSeq entryPoints with
-            | [ (model, name) ] ->
+            | [ (model, fn, name) ] ->
                 if model <> Spirv.GLCompute then
                     add SpirvRule.EntryPoint "execution model %d, expected GLCompute (5)" model
 
                 if name <> "main" then
                     add SpirvRule.EntryPoint "entry point '%s', expected 'main'" name
+
+                if not (functions.Contains fn) then
+                    add SpirvRule.EntryPoint "the entry point names %%%d, which is not a function" fn
+
+                // An execution mode applies to the entry point it names: LocalSize on another id sizes nothing.
+                for _, target, mode, _ in modes do
+                    if target <> fn then
+                        add
+                            SpirvRule.ExecutionMode
+                            "%s applies to %%%d, not to the entry point %%%d"
+                            (Spirv.ExecutionMode.name mode)
+                            target
+                            fn
             | l -> add SpirvRule.EntryPoint "%d entry points, expected 1" l.Length
 
             let tx, ty, tz = kernel.Threads
 
             let localSize =
                 match List.ofSeq modes with
-                | [ (op, mode, lits) ] when
+                | [ (op, _, mode, lits) ] when
                     op = Spirv.Op.ExecutionMode
                     && mode = Spirv.ExecutionMode.LocalSize
                     && lits.Length = 3
@@ -508,7 +646,7 @@ module SpirvInspector =
             | None ->
                 let listed =
                     modes
-                    |> Seq.map (fun (_, mode, _) -> Spirv.ExecutionMode.name mode)
+                    |> Seq.map (fun (_, _, mode, _) -> Spirv.ExecutionMode.name mode)
                     |> String.concat ", "
 
                 add
@@ -598,6 +736,20 @@ module SpirvInspector =
                 if r.NonWritable then
                     add SpirvRule.Resource "%s is NonWritable; kernels write through LRM_BUF" label
 
+                for d in [ Spirv.Decoration.DescriptorSet; Spirv.Decoration.Binding ] do
+                    match decorationsOf id d with
+                    | _ :: _ :: _ as all ->
+                        add
+                            SpirvRule.Resource
+                            "%s carries %d %s decorations (%s), expected one"
+                            label
+                            all.Length
+                            (Spirv.Decoration.name d)
+                            (all
+                             |> List.map (fun v -> if v.Length > 0 then string v[0] else "?")
+                             |> String.concat ", ")
+                    | _ -> ()
+
                 // The type: a runtime array of Block structs whose one member is a runtime array of u32 with stride 4
                 // at offset 0 (RWByteAddressBuffer).
                 let raw =
@@ -683,17 +835,32 @@ module SpirvInspector =
                                 }
                         ]
 
+                    // The end of the furthest member, saturated so that a huge member cannot wrap around.
                     pushBytes <-
                         Array.zip (Array.ofList pushMembers) memberTypes
                         |> Array.fold
                             (fun acc (pm, t) ->
                                 match pm.Offset, sizeOf 0 t with
-                                | Some o, Ok size -> max acc (o + int size)
+                                | Some o, Ok size -> max acc (min (int64 o + size) (int64 Int32.MaxValue))
                                 | _ -> acc)
-                            0
+                            0L
+                        |> int
 
                     if (decoration s Spirv.Decoration.Block).IsNone then
                         add SpirvRule.PushBlock "the push block is not decorated Block"
+
+                    for i in 0 .. memberTypes.Length - 1 do
+                        match memberDecorationsOf s (uint32 i) Spirv.Decoration.Offset with
+                        | _ :: _ :: _ as all ->
+                            add
+                                SpirvRule.PushBlock
+                                "member %d carries %d Offset decorations (%s), expected one"
+                                i
+                                all.Length
+                                (all
+                                 |> List.map (fun v -> if v.Length > 0 then string v[0] else "?")
+                                 |> String.concat ", ")
+                        | _ -> ()
 
                     match pushName with
                     | Some n when n = pushBlockName kernel -> ()
@@ -792,6 +959,48 @@ module SpirvInspector =
                                 label
                                 (Spirv.BuiltIn.name b)
 
+            // Every BuiltIn decoration, whatever its target. WorkgroupSize takes precedence over LocalSize (a constant
+            // decorated with it sets the real workgroup size), so it is refused anywhere. Any other built-in belongs
+            // on an Input variable or a member of an Input block, which the loop above checks.
+            let inputVars = HashSet<uint32>()
+            let inputBlocks = HashSet<uint32>()
+
+            for ptr, id, sc in globals do
+                if sc = Spirv.StorageClass.Input then
+                    inputVars.Add id |> ignore
+
+                    match pointee ptr with
+                    | Some s -> inputBlocks.Add s |> ignore
+                    | None -> ()
+
+            let builtInDecoration (what: string) (isInput: bool) (values: uint32[]) =
+                if values.Length >= 1 then
+                    if values[0] = Spirv.BuiltIn.WorkgroupSize then
+                        add
+                            SpirvRule.ExecutionMode
+                            "%s is decorated BuiltIn WorkgroupSize, which overrides LocalSize"
+                            what
+                    elif not isInput then
+                        add
+                            SpirvRule.BuiltIns
+                            "%s carries BuiltIn %s but is not an Input variable"
+                            what
+                            (Spirv.BuiltIn.name values[0])
+
+            for KeyValue(id, l) in decorations |> Seq.sortBy _.Key do
+                for d, v in l do
+                    if d = Spirv.Decoration.BuiltIn then
+                        builtInDecoration (label id) (inputVars.Contains id) v
+
+            for KeyValue(struct (s, i), l) in
+                memberDecorations
+                |> Seq.sortBy (fun kv ->
+                    let struct (s, i) = kv.Key
+                    s, i) do
+                for d, v in l do
+                    if d = Spirv.Decoration.BuiltIn then
+                        builtInDecoration (sprintf "member %d of %s" i (label s)) (inputBlocks.Contains s) v
+
             // ---- atomics, wave ops, types ----
             let valueIsFloat (id: uint32) =
                 match typeOf.TryGetValue id with
@@ -852,7 +1061,13 @@ module SpirvInspector =
             for ptr, id, sc in globals do
                 if sc = Spirv.StorageClass.Workgroup && workgroupBytes >= 0L then
                     match pointee ptr |> Option.map (sizeOf 0) with
-                    | Some(Ok n) -> workgroupBytes <- workgroupBytes + n
+                    | Some(Ok n) ->
+                        // Saturates: the total only has to compare correctly against 32 KiB.
+                        workgroupBytes <-
+                            if n > Int64.MaxValue - workgroupBytes then
+                                Int64.MaxValue
+                            else
+                                workgroupBytes + n
                     | Some(Error e) ->
                         add
                             SpirvRule.WorkgroupSize
