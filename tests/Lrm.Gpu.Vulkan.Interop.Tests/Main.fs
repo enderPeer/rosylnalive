@@ -55,6 +55,13 @@ let private abiOracle (args: string list) =
             let out = Path.Combine(repo, "artifacts", "abi-oracle", "vulkan", "run")
             let r = AbiOracle.compileAndRunIn tc include' dir out
 
+            // The wrapper checks match parameters by name: the raw delegates' names must be vulkan_core.h's.
+            let names =
+                AbiOracle.parameterNameProblems (File.ReadAllText(Path.Combine(include', "vulkan", "vulkan_core.h")))
+
+            for p in names do
+                eprintfn "abi-oracle: %s" p
+
             if r.ExitCode <> 0 || not r.Failures.IsEmpty then
                 eprintfn "%s" r.Output
 
@@ -62,8 +69,15 @@ let private abiOracle (args: string list) =
                     eprintfn "abi-oracle: %s" f
 
                 1
+            elif not names.IsEmpty then
+                1
             else
                 printfn "%s" (defaultArg r.Summary "abi-oracle: passed")
+
+                printfn
+                    "abi-oracle: the parameter names of %d delegates match vulkan_core.h's PFN_* typedefs"
+                    (AbiOracle.delegateMethods ()).Length
+
                 0
 
 [<EntryPoint>]

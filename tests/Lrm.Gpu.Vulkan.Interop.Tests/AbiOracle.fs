@@ -7,6 +7,11 @@
 /// - Enum values (32-bit in C, 64-bit flag bits in C++), handle sizes, API and extension constants.
 /// - Signatures: each command and funcpointer delegate's Invoke against vulkan_core.h's PFN_* typedef (kind and size
 ///   of the return value and of every parameter).
+/// - Exact types (C++): every field, return value and parameter is exactly the C type its runtime type names (handle,
+///   struct, union, enum, scalar of that width and signedness; a nativeint is a pointer and no handle), and every
+///   wrapper's inref, byref or span parameter points to exactly its element type, const exactly for inref and
+///   ReadOnlySpan. Wrapper parameters are matched to C parameters by name, and the raw delegates' parameter names
+///   are checked against vulkan_core.h's PFN_* typedefs (parameterNameProblems).
 /// - pNext structure types: every struct's sType and every structextends relation of the runtime metadata, against
 ///   vulkan.hpp (vk::T::structureType, vk::T::NativeType and vk::StructExtends), which Khronos generates from the
 ///   same registry independently of vkgen.
@@ -79,14 +84,72 @@ let rec code (t: Type) : char * int =
     else
         failwithf "%s cannot appear in a blittable signature" t.FullName
 
+/// The C++ predicate (lrm_vk_sig.hpp) that the exact C type of a field, parameter or return value must meet for the
+/// runtime type `t`: lrm::is<C types> for a handle, struct, union, enum or scalar, lrm::pointer for a nativeint (a
+/// data or function pointer, never a handle). The names come from the runtime's own attributes; a FlagBits enum stands
+/// for itself and its Flags typedef, a byte for uint8_t and char.
+let rec cppType (t: Type) : string =
+    let named (n: string) = sprintf "lrm::is<%s>" n
+
+    if t = typeof<Void> then
+        named "void"
+    elif t = typeof<nativeint> || t.IsPointer then
+        "lrm::pointer"
+    elif t = typeof<unativeint> then
+        named "size_t"
+    elif t = typeof<byte> then
+        "lrm::is<uint8_t, char>"
+    elif t = typeof<sbyte> then
+        named "int8_t"
+    elif t = typeof<int16> then
+        named "int16_t"
+    elif t = typeof<uint16> then
+        named "uint16_t"
+    elif t = typeof<int32> then
+        named "int32_t"
+    elif t = typeof<uint32> then
+        named "uint32_t"
+    elif t = typeof<int64> then
+        named "int64_t"
+    elif t = typeof<uint64> then
+        named "uint64_t"
+    elif t = typeof<float32> then
+        named "float"
+    elif t = typeof<float> then
+        named "double"
+    elif t.IsEnum then
+        match attr<VkEnumAttribute> t with
+        | Some a when a.Name.Contains "FlagBits" ->
+            sprintf "lrm::is<%s, %s>" a.Name (a.Name.Replace("FlagBits", "Flags"))
+        | Some a -> named a.Name
+        | None -> failwithf "the enum %s has no VkEnum attribute" t.FullName
+    else
+        match attr<VkHandleAttribute> t, attr<VkStructAttribute> t, attr<VkUnionAttribute> t with
+        | Some h, _, _ -> named h.Name
+        | _, Some s, _ -> named s.Name
+        | _, _, Some u -> named u.Name
+        | _ -> failwithf "%s has no exact C type" t.FullName
+
+/// The predicate for the element behind a wrapper's inref, byref or span: a byte also stands for void (`const void*
+/// pData` is a ReadOnlySpan<byte>).
+let pointeeType (t: Type) : string =
+    if t = typeof<byte> then
+        "lrm::is<uint8_t, char, void>"
+    else
+        cppType t
+
 type FieldInfo =
     {
         Name: string
         Offset: int
         Size: int
         Kind: char
+        /// The field's .NET type.
+        FieldType: Type
         /// For an inline array: (element kind, element size, count).
         Array: (char * int * int) option
+        /// For an inline array: the element's .NET type.
+        Element: Type option
     }
 
 type StructInfo =
@@ -108,20 +171,24 @@ let private fieldsOf (t: Type) =
     |> Array.map (fun f ->
         let kind, _ = code f.FieldType
 
+        let element =
+            attr<VkArrayAttribute> f.FieldType
+            |> Option.map (fun a -> a, f.FieldType.GetField("e0").FieldType)
+
         let array =
-            match attr<VkArrayAttribute> f.FieldType with
-            | Some a ->
-                let e = f.FieldType.GetField("e0").FieldType
+            element
+            |> Option.map (fun (a, e) ->
                 let ek, es = code e
-                Some(ek, es, a.Count)
-            | None -> None
+                ek, es, a.Count)
 
         {
             Name = f.Name
             Offset = int (Marshal.OffsetOf(t, f.Name))
             Size = RuntimeHelpers.SizeOf f.FieldType.TypeHandle
             Kind = kind
+            FieldType = f.FieldType
             Array = array
+            Element = element |> Option.map snd
         })
     |> List.ofArray
 
@@ -212,8 +279,8 @@ let handles () : (string * int) list =
     |> Array.sortBy fst
     |> List.ofArray
 
-/// (C typedef name, return code, parameter codes) for every command and funcpointer delegate.
-let delegates () =
+/// (C typedef name, Invoke) of every command and funcpointer delegate, sorted by name.
+let delegateMethods () : (string * MethodInfo) list =
     interop.GetTypes()
     |> Array.choose (fun t ->
         let name =
@@ -222,12 +289,153 @@ let delegates () =
             | _, Some f -> Some f.Name
             | _ -> None
 
-        name
-        |> Option.map (fun n ->
-            let invoke = t.GetMethod "Invoke"
-            n, code invoke.ReturnType, invoke.GetParameters() |> Array.map (fun p -> code p.ParameterType)))
-    |> Array.sortBy (fun (n, _, _) -> n)
+        name |> Option.map (fun n -> n, t.GetMethod "Invoke"))
+    |> Array.sortBy fst
     |> List.ofArray
+
+/// (C typedef name, return code, parameter codes) for every command and funcpointer delegate.
+let delegates () =
+    delegateMethods ()
+    |> List.map (fun (n, invoke) ->
+        n, code invoke.ReturnType, invoke.GetParameters() |> Array.map (fun p -> code p.ParameterType))
+
+/// A wrapper parameter that passes a pointer: an inref<T> or ReadOnlySpan<T> (const T*), a byref<T> or Span<T> (T*).
+type PointerParameter =
+    {
+        Name: string
+        /// The index of the C parameter with this name in the raw delegate (the PFN_* typedef).
+        Index: int
+        Const: bool
+        Element: Type
+    }
+
+/// Every generated wrapper (the method X beside the raw delegate property vkX of a dispatch table) as (PFN_vkX, its
+/// pointer parameters), sorted by command. Each parameter is matched by name to the raw delegate's parameter, whose
+/// names the oracle checks against vulkan_core.h's PFN_* prototypes (parameterNameProblems).
+let wrappers () : (string * PointerParameter list) list =
+    let isReadOnly (p: ParameterInfo) =
+        p.GetCustomAttributesData()
+        |> Seq.exists (fun a -> a.AttributeType.FullName = "System.Runtime.CompilerServices.IsReadOnlyAttribute")
+
+    interop.GetTypes()
+    |> Array.collect (fun table ->
+        table.GetProperties(BindingFlags.Instance ||| BindingFlags.Public)
+        |> Array.choose (fun raw ->
+            match attr<VkCommandAttribute> raw.PropertyType with
+            | Some c when raw.Name = c.Name ->
+                let wrapper =
+                    table.GetMethod(
+                        c.Name.Substring 2,
+                        BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.DeclaredOnly
+                    )
+
+                if isNull wrapper then
+                    failwithf "%s.%s has no wrapper %s" table.Name c.Name (c.Name.Substring 2)
+
+                let cParams = raw.PropertyType.GetMethod("Invoke").GetParameters()
+
+                let pointers =
+                    wrapper.GetParameters()
+                    |> Array.choose (fun p ->
+                        let index () =
+                            match cParams |> Array.tryFindIndex (fun q -> q.Name = p.Name) with
+                            | Some i -> i
+                            | None ->
+                                failwithf
+                                    "the wrapper %s.%s has a parameter %s that %s does not have"
+                                    table.Name
+                                    wrapper.Name
+                                    p.Name
+                                    c.Name
+
+                        let t = p.ParameterType
+
+                        if t.IsByRef then
+                            Some
+                                {
+                                    Name = p.Name
+                                    Index = index ()
+                                    Const = isReadOnly p
+                                    Element = t.GetElementType()
+                                }
+                        elif
+                            t.IsGenericType
+                            && t.GetGenericTypeDefinition().FullName = "System.ReadOnlySpan`1"
+                        then
+                            Some
+                                {
+                                    Name = p.Name
+                                    Index = index ()
+                                    Const = true
+                                    Element = t.GetGenericArguments()[0]
+                                }
+                        elif t.IsGenericType && t.GetGenericTypeDefinition().FullName = "System.Span`1" then
+                            Some
+                                {
+                                    Name = p.Name
+                                    Index = index ()
+                                    Const = false
+                                    Element = t.GetGenericArguments()[0]
+                                }
+                        else
+                            // By value: the same type as the raw delegate's parameter (F# types the call), which
+                            // LRM_SIG_ARG_TYPE checks; the name must still match.
+                            index () |> ignore
+                            None)
+                    |> List.ofArray
+
+                Some("PFN_" + c.Name, pointers)
+            | _ -> None))
+    |> Array.sortBy fst
+    |> List.ofArray
+
+/// The parameter names of every PFN_* typedef in vulkan_core.h's text (commands and funcpointers), in order.
+let headerParameterNames (header: string) : Map<string, string list> =
+    let typedefs =
+        Text.RegularExpressions.Regex(
+            @"typedef\s+[^;()]*?\(\s*VKAPI_PTR\s*\*\s*(PFN_\w+)\s*\)\s*\(([^;]*?)\)\s*;",
+            Text.RegularExpressions.RegexOptions.Singleline
+        )
+
+    let nameOf (param: string) =
+        let p = Text.RegularExpressions.Regex.Replace(param, @"\[[^\]]*\]", "").Trim()
+        let m = Text.RegularExpressions.Regex.Match(p, @"(\w+)\s*$")
+        m.Groups[1].Value
+
+    [
+        for m in typedefs.Matches header do
+            let ps = m.Groups[2].Value.Trim()
+
+            let names =
+                if ps = "void" || ps = "" then
+                    []
+                else
+                    ps.Split(',') |> Array.map nameOf |> List.ofArray
+
+            m.Groups[1].Value, names
+    ]
+    |> Map.ofList
+
+/// Where a raw delegate's parameter names differ from its PFN_* typedef in vulkan_core.h (a missing typedef, another
+/// count, another name or order); empty when every one agrees. The wrapper checks match parameters by name, so this
+/// ties them to the header's own parameter order.
+let parameterNameProblems (header: string) : string list =
+    let names = headerParameterNames header
+
+    [
+        for (f, invoke) in delegateMethods () do
+            let runtime = invoke.GetParameters() |> Array.map _.Name |> List.ofArray
+
+            match names.TryFind f with
+            | None -> sprintf "%s: no typedef in vulkan_core.h" f
+            | Some c when c <> runtime ->
+                sprintf
+                    "%s: parameters (%s), vulkan_core.h has (%s)"
+                    f
+                    (String.concat ", " runtime)
+                    (String.concat ", " c)
+            | Some _ -> ()
+    ]
 
 /// (name, value) of every VkConst literal.
 let constants () : (string * obj) list =
@@ -246,8 +454,9 @@ let private header =
     + "   Do not edit; regenerate with: pwsh tools/abi-oracle/vulkan/run.ps1 -Update */\n"
 
 let private cppHeader =
-    "// <auto-generated> ABI oracle for Lrm.Gpu.Vulkan.Interop: signatures, field kinds, 64-bit flags, strings, sTypes\n"
-    + "// and pNext extensions, dumped by Lrm.Gpu.Vulkan.Interop.Tests (abi-oracle) and checked by cl.exe against\n"
+    "// <auto-generated> ABI oracle for Lrm.Gpu.Vulkan.Interop: signatures, field kinds, 64-bit flags, strings, sTypes,\n"
+    + "// pNext extensions and exact types (fields, signatures, wrapper pointees), dumped by Lrm.Gpu.Vulkan.Interop.Tests\n"
+    + "// (abi-oracle) and checked by cl.exe against\n"
     + "// Vulkan-Headers (vulkan_core.h and vulkan.hpp). Do not edit; regenerate with: pwsh tools/abi-oracle/vulkan/run.ps1 -Update\n"
 
 /// The C source: handles, layouts, 32-bit enum values and integer constants as C11 static assertions.
@@ -403,6 +612,52 @@ let cppSource () : string * int =
 
         ps
         |> Array.iteri (fun i (k, s) -> check (sprintf "LRM_SIG_ARG(%s, %d, '%c', %d);" f i k s))
+
+    line ""
+    let hs = handles ()
+    line (sprintf "// Exact types. Handles: the %d bound handles are handles in C, not mere pointers." hs.Length)
+
+    for (h, _) in hs do
+        check (sprintf "LRM_IS_HANDLE(%s);" h)
+
+    line ""
+    line "// Every field's exact C type (array fields: the element type)."
+
+    for s in ss do
+        for f in s.Fields do
+            match f.Element with
+            | Some e -> check (sprintf "LRM_FIELD_ELEMENT_TYPE(%s, %s, %s);" s.CName f.Name (cppType e))
+            | None -> check (sprintf "LRM_FIELD_TYPE(%s, %s, %s);" s.CName f.Name (cppType f.FieldType))
+
+    line ""
+    line "// Every delegate's exact return and parameter types."
+
+    for (f, invoke) in delegateMethods () do
+        check (sprintf "LRM_SIG_RET_TYPE(%s, %s);" f (cppType invoke.ReturnType))
+
+        invoke.GetParameters()
+        |> Array.iteri (fun i p -> check (sprintf "LRM_SIG_ARG_TYPE(%s, %d, %s);" f i (cppType p.ParameterType)))
+
+    line ""
+    let ws = wrappers ()
+
+    line (
+        sprintf
+            "// Wrappers: %d; each inref, byref or span parameter against the C parameter of the same name (pointee, const)."
+            ws.Length
+    )
+
+    for (f, ps) in ws do
+        for p in ps do
+            check (
+                sprintf
+                    "LRM_WRAP_%s(%s, %d, %s, %s);"
+                    (if p.Const then "CONST" else "MUT")
+                    f
+                    p.Index
+                    p.Name
+                    (pointeeType p.Element)
+            )
 
     line ""
     line (sprintf "extern \"C\" int lrm_static_checks_cpp(void) { return %d; }" checks)

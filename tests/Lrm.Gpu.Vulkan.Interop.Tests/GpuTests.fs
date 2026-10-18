@@ -27,6 +27,32 @@ let private withDevice
     use device = Device.create instance physical options
     f instance report device
 
+/// Creates a messenger for every severity and drops it without Dispose. Not inlined, so no local of the caller keeps
+/// the messenger reachable.
+[<System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)>]
+let private dropMessenger (instance: Instance) (sink: DebugMessage -> unit) : unit =
+    let all =
+        VkDebugUtilsMessageSeverityFlagBitsEXT.VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
+        ||| VkDebugUtilsMessageSeverityFlagBitsEXT.VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT
+        ||| VkDebugUtilsMessageSeverityFlagBitsEXT.VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
+        ||| VkDebugUtilsMessageSeverityFlagBitsEXT.VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
+
+    new DebugMessenger(instance, all, sink) |> ignore
+
+/// vkSubmitDebugUtilsMessageEXT: a WARNING/GENERAL message with `text`, which the loader hands to every messenger.
+let private submit (instance: Instance) (text: string) =
+    let bytes = VkText.utf8z text
+    use p = fixed bytes
+    let mutable data = VkDebugUtilsMessengerCallbackDataEXT.Create()
+    data.pMessage <- NativePtr.toNativeInt p
+
+    instance.Commands.SubmitDebugUtilsMessageEXT(
+        instance.Handle,
+        VkDebugUtilsMessageSeverityFlagBitsEXT.VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT,
+        VkDebugUtilsMessageTypeFlagBitsEXT.VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT,
+        &data
+    )
+
 let private heapOf (r: DeviceCheck.DeviceReport) =
     match r.Capabilities.DescriptorHeap with
     | Some h -> h
@@ -237,6 +263,60 @@ let tests =
                         "gpu.debug.utils"
                         true
                         [ Attr.str TelemetryKeys.Backend "vulkan"; Attr.int "messages" messages.Count ])
+
+            gpuTest "debug utils: a messenger dropped without Dispose stays rooted, and its instance destroys it first"
+            <| fun () ->
+                let instance = createInstance true
+
+                try
+                    if not (instance.HasExtension VkConst.VK_EXT_DEBUG_UTILS_EXTENSION_NAME) then
+                        skiptest "the loader does not offer VK_EXT_debug_utils"
+
+                    // A disposed messenger leaves nothing behind.
+                    do
+                        use m =
+                            new DebugMessenger(
+                                instance,
+                                VkDebugUtilsMessageSeverityFlagBitsEXT.VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+                                ignore
+                            )
+
+                        Expect.equal instance.LiveObjects 1 "one live messenger"
+
+                    Expect.equal instance.LiveObjects 0 "Dispose destroyed it"
+
+                    let messages = Collections.Concurrent.ConcurrentQueue<DebugMessage>()
+                    dropMessenger instance messages.Enqueue
+
+                    for _ in 1..3 do
+                        GC.Collect()
+                        GC.WaitForPendingFinalizers()
+
+                    // The loader calls each messenger's callback during the submit: the dropped messenger's delegate
+                    // must still be alive after full collections.
+                    submit instance "lrm: a dropped messenger still hears this"
+
+                    Expect.exists
+                        messages
+                        (fun m -> m.Message = "lrm: a dropped messenger still hears this")
+                        "the callback ran after three full collections"
+
+                    Expect.equal instance.LiveObjects 1 "the instance still holds the messenger nobody disposed"
+                    // Disposing the instance destroys the messenger, then the instance (no validation layer is
+                    // approved, so the order is the code's: children first).
+                    (instance :> IDisposable).Dispose()
+                    Expect.equal instance.LiveObjects 0 "the messenger was destroyed with its instance"
+
+                    Telemetry.check
+                        "gpu.debug.messenger_rooted"
+                        true
+                        [
+                            Attr.str TelemetryKeys.Backend "vulkan"
+                            Attr.int "messages" messages.Count
+                            Attr.int "collections" 3
+                        ]
+                finally
+                    (instance :> IDisposable).Dispose()
 
             gpuTest "diagnostics device: device fault and memory budget enabled; a healthy device reports no fault"
             <| fun () ->

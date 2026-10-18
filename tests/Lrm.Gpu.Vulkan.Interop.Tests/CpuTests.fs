@@ -309,6 +309,94 @@ let private layouts =
                 Expect.equal g.ReservedRangeSize 96768UL "reserved range size"
                 Expect.equal g.HeapRangeSize 97792UL "heapRange.size"
 
+            testCase
+                "DeviceCheck's heap rules and geometry agree with Heap.vulkanGeometry (Lrm.Gpu.Core) on KAT-2 and 14,400 limits"
+            <| fun () ->
+                let kat2: DeviceCheck.DescriptorHeapLimits =
+                    {
+                        SamplerHeapAlignment = 64UL
+                        ResourceHeapAlignment = 64UL
+                        MaxSamplerHeapSize = 0UL
+                        MaxResourceHeapSize = 33554432UL
+                        MinSamplerHeapReservedRange = 0UL
+                        MinSamplerHeapReservedRangeWithEmbedded = 0UL
+                        MinResourceHeapReservedRange = 96768UL
+                        SamplerDescriptorSize = 32UL
+                        ImageDescriptorSize = 32UL
+                        BufferDescriptorSize = 16UL
+                        SamplerDescriptorAlignment = 32UL
+                        ImageDescriptorAlignment = 32UL
+                        BufferDescriptorAlignment = 8UL
+                        MaxPushDataSize = 256UL
+                        ImageCaptureReplayOpaqueDataSize = 0UL
+                        MaxDescriptorHeapEmbeddedSamplers = 0u
+                        SamplerYcbcrConversionCount = 0u
+                        SparseDescriptorHeaps = false
+                        ProtectedDescriptorHeaps = false
+                    }
+
+                let core (h: DeviceCheck.DescriptorHeapLimits) : Lrm.Gpu.Core.VulkanHeapLimits =
+                    {
+                        BufferDescriptorSize = int64 h.BufferDescriptorSize
+                        BufferDescriptorAlignment = int64 h.BufferDescriptorAlignment
+                        ImageDescriptorAlignment = int64 h.ImageDescriptorAlignment
+                        MinResourceHeapReservedRange = int64 h.MinResourceHeapReservedRange
+                        MaxResourceHeapSize = int64 h.MaxResourceHeapSize
+                    }
+
+                Expect.equal (core kat2) Lrm.Gpu.Core.Heap.rtx4080VulkanLimits "KAT-2 is the RTX 4080's limits in both"
+
+                let accepted = ref 0
+                let rejected = ref 0
+
+                let agree (h: DeviceCheck.DescriptorHeapLimits) =
+                    let mine = DeviceCheck.heapReasons h
+
+                    let theirs =
+                        try
+                            Ok(Lrm.Gpu.Core.Heap.vulkanGeometry (core h))
+                        with :? Lrm.Gpu.Core.GpuContractException as e ->
+                            Error e.Message
+
+                    match mine, theirs with
+                    | [], Ok c ->
+                        accepted.Value <- accepted.Value + 1
+                        let g = DeviceCheck.geometry h
+
+                        Expect.equal
+                            (int64 g.SlotBytes,
+                             int64 g.SlotArea,
+                             int64 g.ReservedRangeOffset,
+                             int64 g.ReservedRangeSize,
+                             int64 g.HeapRangeSize)
+                            (c.SlotStride, c.SlotAreaBytes, c.ReservedRangeOffset, c.ReservedRangeBytes, c.HeapBytes)
+                            (sprintf "the same geometry for %A" (core h))
+                    | [], Error e ->
+                        failtestf "the device check accepts %A, which Heap.vulkanGeometry refuses: %s" (core h) e
+                    | rs, Ok _ ->
+                        failtestf "the device check refuses %A (%A), which Heap.vulkanGeometry lays out" (core h) rs
+                    | _, Error _ -> rejected.Value <- rejected.Value + 1
+
+                agree kat2
+
+                for size in [ 0UL; 8UL; 12UL; 16UL; 20UL; 24UL; 32UL; 64UL; 256UL ] do
+                    for bufferAlignment in [ 0UL; 1UL; 3UL; 4UL; 8UL; 12UL; 16UL; 32UL; 64UL; 128UL ] do
+                        for imageAlignment in [ 0UL; 1UL; 2UL; 6UL; 32UL; 64UL; 256UL; 2048UL ] do
+                            for reserved in [ 0UL; 1UL; 96768UL; 1048576UL ] do
+                                for maxHeap in [ 0UL; 97791UL; 97792UL; 33554432UL; 1UL <<< 40 ] do
+                                    agree
+                                        { kat2 with
+                                            BufferDescriptorSize = size
+                                            BufferDescriptorAlignment = bufferAlignment
+                                            ImageDescriptorAlignment = imageAlignment
+                                            MinResourceHeapReservedRange = reserved
+                                            MaxResourceHeapSize = maxHeap
+                                        }
+
+                Expect.equal (accepted.Value + rejected.Value) 14401 "KAT-2 and the grid"
+                Expect.isGreaterThan accepted.Value 1000 "many limits are laid out"
+                Expect.isGreaterThan rejected.Value 1000 "many are refused"
+
             testCase "the sType values and the recipe's flag values come from the registry"
             <| fun () ->
                 Expect.equal (int VkDescriptorSetAndBindingMappingEXT.StructureType) 1000135005 "mapping sType"
@@ -414,8 +502,116 @@ let private abi =
                     "LRM_STRING(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME, \"VK_EXT_descriptor_heap\");"
                     "a name"
 
+                Expect.stringContains cpp "LRM_IS_HANDLE(VkDevice);" "a handle in C"
+
+                Expect.stringContains
+                    cpp
+                    "LRM_FIELD_TYPE(VkBindHeapInfoEXT, heapRange, lrm::is<VkDeviceAddressRangeKHR>);"
+                    "a struct field's exact type"
+
+                Expect.stringContains
+                    cpp
+                    "LRM_FIELD_ELEMENT_TYPE(VkPhysicalDeviceProperties, deviceName, lrm::is<uint8_t, char>);"
+                    "an array's element type"
+
+                Expect.stringContains
+                    cpp
+                    "LRM_SIG_ARG_TYPE(PFN_vkCreateDevice, 0, lrm::is<VkPhysicalDevice>);"
+                    "a handle parameter"
+
+                Expect.stringContains cpp "LRM_SIG_ARG_TYPE(PFN_vkCreateDevice, 3, lrm::pointer);" "a pointer"
+
+                Expect.stringContains
+                    cpp
+                    "LRM_WRAP_CONST(PFN_vkCreateDevice, 1, pCreateInfo, lrm::is<VkDeviceCreateInfo>);"
+                    "an inref"
+
+                Expect.stringContains cpp "LRM_WRAP_MUT(PFN_vkCreateDevice, 3, pDevice, lrm::is<VkDevice>);" "a byref"
+
+                Expect.stringContains
+                    cpp
+                    "LRM_WRAP_CONST(PFN_vkCmdUpdateBuffer, 4, pData, lrm::is<uint8_t, char, void>);"
+                    "a span over void data"
+
+                // Every bound field, delegate parameter and wrapper pointer parameter has its exact-type check.
+                let ss = AbiOracle.structs ()
+                let fields = ss |> List.sumBy _.Fields.Length
+
+                let parameters =
+                    AbiOracle.delegateMethods ()
+                    |> List.sumBy (fun (_, i) -> i.GetParameters().Length + 1)
+
+                let pointers = AbiOracle.wrappers () |> List.sumBy (snd >> List.length)
+                let lines = cpp.Split('\n')
+
+                let count (prefix: string) =
+                    lines |> Array.filter _.StartsWith(prefix) |> Array.length
+
+                Expect.equal
+                    (count "LRM_FIELD_TYPE(" + count "LRM_FIELD_ELEMENT_TYPE(")
+                    fields
+                    "one exact type per field"
+
+                Expect.equal
+                    (count "LRM_SIG_ARG_TYPE(" + count "LRM_SIG_RET_TYPE(")
+                    parameters
+                    "one per parameter and return"
+
+                Expect.equal (count "LRM_WRAP_CONST(" + count "LRM_WRAP_MUT(") pointers "one per pointer parameter"
+                Expect.equal (AbiOracle.wrappers ()).Length VkMeta.Commands.Length "every command has a wrapper"
+                Expect.isGreaterThan pointers 50 "the wrappers pass pointers"
                 Expect.isGreaterThan n 2500 "C checks"
-                Expect.isGreaterThan m 1500 "C++ checks"
+                Expect.isGreaterThan m 2900 "C++ checks"
+
+            testCase
+                "every delegate's parameter names are vulkan_core.h's, in order, so wrappers match C parameters by name"
+            <| fun () ->
+                match AbiOracle.headers (Env.repoRoot ()) with
+                | Error e -> failtest e
+                | Ok include' ->
+                    let header = File.ReadAllText(Path.Combine(include', "vulkan", "vulkan_core.h"))
+                    let problems = AbiOracle.parameterNameProblems header
+
+                    Telemetry.check
+                        "gpu.abi.parameter_names"
+                        problems.IsEmpty
+                        [
+                            Attr.str TelemetryKeys.Backend "vulkan"
+                            Attr.int "delegates" (AbiOracle.delegateMethods ()).Length
+                            Attr.int "mismatches" problems.Length
+                        ]
+
+                    Expect.isEmpty problems "every raw delegate names its parameters as its PFN_* typedef"
+
+                    let names = AbiOracle.headerParameterNames header
+
+                    Expect.equal
+                        names["PFN_vkCreateDevice"]
+                        [ "physicalDevice"; "pCreateInfo"; "pAllocator"; "pDevice" ]
+                        "a command"
+
+                    Expect.equal
+                        names["PFN_vkDebugUtilsMessengerCallbackEXT"]
+                        [ "messageSeverity"; "messageTypes"; "pCallbackData"; "pUserData" ]
+                        "a multi-line funcpointer"
+
+                    Expect.equal names["PFN_vkCmdSetBlendConstants"] [ "commandBuffer"; "blendConstants" ] "an array"
+
+                    // A header whose prototype swaps two parameters is reported.
+                    let swapped =
+                        header.Replace(
+                            "(VKAPI_PTR *PFN_vkCreateDevice)(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDevice* pDevice);",
+                            "(VKAPI_PTR *PFN_vkCreateDevice)(VkPhysicalDevice physicalDevice, const VkAllocationCallbacks* pAllocator, const VkDeviceCreateInfo* pCreateInfo, VkDevice* pDevice);"
+                        )
+
+                    Expect.notEqual swapped header "the mutant applies"
+
+                    Expect.equal
+                        (AbiOracle.parameterNameProblems swapped)
+                        [
+                            "PFN_vkCreateDevice: parameters (physicalDevice, pCreateInfo, pAllocator, pDevice), vulkan_core.h has (physicalDevice, pAllocator, pCreateInfo, pDevice)"
+                        ]
+                        "the swap is reported"
 
             testCase "cl.exe compiles the oracle against Vulkan-Headers 1.4.365 with 0 failures"
             <| fun () ->
@@ -438,7 +634,7 @@ let private abi =
                 Expect.stringContains r.Summary.Value "Vulkan-Headers 1.4.365" "the pinned headers"
 
             testCase
-                "the oracle rejects a wrong size, alignment, offset, field, enum, flag, constant, sType, pNext or signature"
+                "the oracle rejects a wrong size, alignment, offset, field, enum, flag, constant, sType, pNext, signature or exact type"
             <| fun () ->
                 let repo = Env.repoRoot ()
                 let root = Path.Combine(repo, "artifacts", "abi-oracle", "vulkan", "mutants")
@@ -506,15 +702,121 @@ let private abi =
                         "LRM_STRING(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME, \"VK_EXT_descriptor_heaps\");",
                         "VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME == \"VK_EXT_descriptor_heaps\""
                     ]
+                    |> List.map (fun (f, o, n, needle) -> f, o, n, Some needle)
 
-                AbiOracle.mutant repo (Path.Combine(root, "src")) (edits |> List.map (fun (f, o, n, _) -> f, o, n))
+                // Exact-type mutants: mix-ups of the same kind and size, which only the exact types catch.
+                let exact =
+                    [
+                        // A handle parameter bound as a nativeint.
+                        cpp,
+                        "LRM_SIG_ARG_TYPE(PFN_vkCreateDevice, 0, lrm::is<VkPhysicalDevice>);",
+                        "LRM_SIG_ARG_TYPE(PFN_vkCreateDevice, 0, lrm::pointer);",
+                        Some "PFN_vkCreateDevice: parameter 0 is lrm::pointer"
+                        // A pointer to a handle (VkDevice* pDevice) bound as the handle itself.
+                        cpp,
+                        "LRM_SIG_ARG_TYPE(PFN_vkCreateDevice, 3, lrm::pointer);",
+                        "LRM_SIG_ARG_TYPE(PFN_vkCreateDevice, 3, lrm::is<VkDevice>);",
+                        Some "PFN_vkCreateDevice: parameter 3 is lrm::is<VkDevice>"
+                        // Two handles of one kind swapped.
+                        cpp,
+                        "LRM_SIG_ARG_TYPE(PFN_vkFreeCommandBuffers, 1, lrm::is<VkCommandPool>);",
+                        "LRM_SIG_ARG_TYPE(PFN_vkFreeCommandBuffers, 1, lrm::is<VkFence>);",
+                        Some "PFN_vkFreeCommandBuffers: parameter 1 is lrm::is<VkFence>"
+                        // An unsigned return bound as signed.
+                        cpp,
+                        "LRM_SIG_RET_TYPE(PFN_vkGetBufferDeviceAddress, lrm::is<uint64_t>);",
+                        "LRM_SIG_RET_TYPE(PFN_vkGetBufferDeviceAddress, lrm::is<int64_t>);",
+                        Some "PFN_vkGetBufferDeviceAddress: returns lrm::is<int64_t>"
+                        // A wrapper whose inref has the wrong pointee.
+                        cpp,
+                        "LRM_WRAP_CONST(PFN_vkCreateDevice, 1, pCreateInfo, lrm::is<VkDeviceCreateInfo>);",
+                        "LRM_WRAP_CONST(PFN_vkCreateDevice, 1, pCreateInfo, lrm::is<VkInstanceCreateInfo>);",
+                        Some
+                            "PFN_vkCreateDevice: wrapper parameter pCreateInfo (1) points to const lrm::is<VkInstanceCreateInfo>"
+                        // A wrapper's span over a struct of the same size but another type.
+                        cpp,
+                        "LRM_WRAP_CONST(PFN_vkWriteResourceDescriptorsEXT, 3, pDescriptors, lrm::is<VkHostAddressRangeEXT>);",
+                        "LRM_WRAP_CONST(PFN_vkWriteResourceDescriptorsEXT, 3, pDescriptors, lrm::is<VkDeviceAddressRangeKHR>);",
+                        Some
+                            "PFN_vkWriteResourceDescriptorsEXT: wrapper parameter pDescriptors (3) points to const lrm::is<VkDeviceAddressRangeKHR>"
+                        // A wrapper output (T*) declared as an inref (const T*).
+                        cpp,
+                        "LRM_WRAP_MUT(PFN_vkCreateDevice, 3, pDevice, lrm::is<VkDevice>);",
+                        "LRM_WRAP_CONST(PFN_vkCreateDevice, 3, pDevice, lrm::is<VkDevice>);",
+                        Some "PFN_vkCreateDevice: wrapper parameter pDevice (3) points to const lrm::is<VkDevice>"
+                        // A uint32_t field bound as int32.
+                        cpp,
+                        "LRM_FIELD_TYPE(VkPushDataInfoEXT, offset, lrm::is<uint32_t>);",
+                        "LRM_FIELD_TYPE(VkPushDataInfoEXT, offset, lrm::is<int32_t>);",
+                        Some "VkPushDataInfoEXT.offset is lrm::is<int32_t>"
+                        // Two 32-bit enums swapped.
+                        cpp,
+                        "LRM_FIELD_TYPE(VkDescriptorSetAndBindingMappingEXT, source, lrm::is<VkDescriptorMappingSourceEXT>);",
+                        "LRM_FIELD_TYPE(VkDescriptorSetAndBindingMappingEXT, source, lrm::is<VkResult>);",
+                        Some "VkDescriptorSetAndBindingMappingEXT.source is lrm::is<VkResult>"
+                        // Two 16-byte structs swapped.
+                        cpp,
+                        "LRM_FIELD_TYPE(VkBindHeapInfoEXT, heapRange, lrm::is<VkDeviceAddressRangeKHR>);",
+                        "LRM_FIELD_TYPE(VkBindHeapInfoEXT, heapRange, lrm::is<VkHostAddressRangeEXT>);",
+                        Some "VkBindHeapInfoEXT.heapRange is lrm::is<VkHostAddressRangeEXT>"
+                        // Two non-dispatchable handles swapped in a field.
+                        cpp,
+                        "LRM_FIELD_TYPE(VkBufferMemoryBarrier2, buffer, lrm::is<VkBuffer>);",
+                        "LRM_FIELD_TYPE(VkBufferMemoryBarrier2, buffer, lrm::is<VkDeviceMemory>);",
+                        Some "VkBufferMemoryBarrier2.buffer is lrm::is<VkDeviceMemory>"
+                        // A handle field bound as a nativeint.
+                        cpp,
+                        "LRM_FIELD_TYPE(VkCommandBufferSubmitInfo, commandBuffer, lrm::is<VkCommandBuffer>);",
+                        "LRM_FIELD_TYPE(VkCommandBufferSubmitInfo, commandBuffer, lrm::pointer);",
+                        Some "VkCommandBufferSubmitInfo.commandBuffer is lrm::pointer"
+                    ]
+
+                // Where such a generator bug would also change a kind line, that edit comes along; the kind check
+                // accepts a handle as any 8-byte pointer, so it must pass unreported.
+                let companions =
+                    [
+                        cpp,
+                        "LRM_SIG_ARG(PFN_vkCreateDevice, 0, 'h', 8);",
+                        "LRM_SIG_ARG(PFN_vkCreateDevice, 0, 'p', 8);",
+                        "PFN_vkCreateDevice: parameter 0 is 'p'8"
+                        cpp,
+                        "LRM_SIG_ARG(PFN_vkCreateDevice, 3, 'p', 8);",
+                        "LRM_SIG_ARG(PFN_vkCreateDevice, 3, 'h', 8);",
+                        "PFN_vkCreateDevice: parameter 3 is 'h'8"
+                        cpp,
+                        "LRM_FIELD_KIND(VkCommandBufferSubmitInfo, commandBuffer, 'h', 8);",
+                        "LRM_FIELD_KIND(VkCommandBufferSubmitInfo, commandBuffer, 'p', 8);",
+                        "VkCommandBufferSubmitInfo.commandBuffer is 'p'8"
+                    ]
+
+                let all =
+                    edits @ exact @ (companions |> List.map (fun (f, o, n, _) -> f, o, n, None))
+
+                AbiOracle.mutant repo (Path.Combine(root, "src")) (all |> List.map (fun (f, o, n, _) -> f, o, n))
                 let r = oracleRun (Some(Path.Combine(root, "src"))) "mutants-out"
                 Expect.notEqual r.ExitCode 0 "the mutants fail"
+                let needles = all |> List.choose (fun (_, _, _, n) -> n)
+                Expect.equal needles.Length 27 "27 mutants"
 
-                for (_, _, _, needle) in edits do
+                for needle in needles do
                     Expect.isTrue
                         (r.Failures |> List.exists (fun l -> l.Contains needle))
                         (sprintf "the oracle reports '%s'\n%s" needle (String.concat "\n" r.Failures))
+
+                // The kind lines that came along pass: only the exact types tell these mix-ups apart.
+                for (_, _, _, unreported) in companions do
+                    Expect.isFalse
+                        (r.Failures |> List.exists (fun l -> l.Contains unreported))
+                        (sprintf "the kind check alone accepts '%s'" unreported)
+
+                Telemetry.check
+                    "gpu.abi.mutants"
+                    true
+                    [
+                        Attr.str TelemetryKeys.Backend "vulkan"
+                        Attr.int "mutants" needles.Length
+                        Attr.int "reported" needles.Length
+                    ]
 
             testCase "R1's spike layouts (spikes/vk-heap/src/Layout.fs) agree with the binding"
             <| fun () ->
@@ -696,9 +998,21 @@ let private wrappers =
                             (p.ParameterType.IsValueType && not p.ParameterType.IsByRef)
                             (sprintf "%s.%s is a value type" m.Name p.Name)
 
-                Expect.equal VkGlobalCommands.Names.Length 5 "global commands"
-                Expect.equal VkInstanceCommands.Names.Length 20 "instance commands"
-                Expect.equal VkDeviceCommands.Names.Length 71 "device commands"
+                // Each table binds its level's list in bindings.json (the one list), however long it grows.
+                use doc =
+                    Text.Json.JsonDocument.Parse(
+                        File.ReadAllText(Path.Combine(Env.repoRoot (), "tools", "vkgen", "bindings.json"))
+                    )
+
+                let listed (level: string) =
+                    [
+                        for x in doc.RootElement.GetProperty("commands").GetProperty(level).EnumerateArray() ->
+                            x.GetString()
+                    ]
+
+                Expect.equal VkGlobalCommands.Names (listed "global") "global commands"
+                Expect.equal VkInstanceCommands.Names (listed "instance") "instance commands"
+                Expect.equal VkDeviceCommands.Names (listed "device") "device commands"
 
             testCase "runtime marshalling is disabled for the interop assembly"
             <| fun () ->
@@ -962,6 +1276,25 @@ let private rules =
                         "vkGetPhysicalDeviceDescriptorSizeEXT(STORAGE_BUFFER) = 32 differs from bufferDescriptorSize 16"
                         withHeap b (fun h -> { h with MaxResourceHeapSize = 65536UL }),
                         "the 64-slot heap needs 97792 bytes > maxResourceHeapSize 65536"
+                        // The limits Heap.vulkanGeometry (Lrm.Gpu.Core) refuses to lay a heap out with.
+                        { withHeap b (fun h -> { h with BufferDescriptorSize = 0UL }) with
+                            StorageBufferDescriptorSize = Some 0UL
+                        },
+                        "bufferDescriptorSize is 0"
+                        withHeap b (fun h ->
+                            { h with
+                                BufferDescriptorAlignment = 12UL
+                            }),
+                        "descriptor alignments 12 (buffer) and 32 (image) are not both powers of two"
+                        withHeap b (fun h ->
+                            { h with
+                                ImageDescriptorAlignment = 0UL
+                            }),
+                        "descriptor alignments 8 (buffer) and 0 (image) are not both powers of two"
+                        { withHeap b (fun h -> { h with BufferDescriptorSize = 20UL }) with
+                            StorageBufferDescriptorSize = Some 20UL
+                        },
+                        "bufferDescriptorSize 20 is not a multiple of bufferDescriptorAlignment 8"
                         { b with
                             Extensions = b.Extensions.Remove VkConst.VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME
                         },
