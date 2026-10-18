@@ -96,11 +96,12 @@ def test_selection() -> None:
     check(mk.prefix_len([0.2] * 64, 0.05) == 64 and mk.prefix_len([0.2] * 20 + [0.01] + [0.2] * 43, 0.05) == 20, "prefix length")
     params = mk.Params(False)
 
-    def cand(cat, k, length, low_at=None):
+    def cand(cat, k, length, low_at=None, repeats=False):
         m = [0.3] * 64
         if low_at is not None:
             m[low_at] = 0.001
-        return {"name": f"{cat}-{k:03d}", "category": cat, "k": k, "length": length, "margins": m}
+        ids = [198] * 64 if repeats else list(range(64))
+        return {"name": f"{cat}-{k:03d}", "category": cat, "k": k, "length": length, "margins": m, "greedy32": ids}
 
     pool = [cand("csharp", 0, 50), cand("csharp", 1, 400), cand("csharp", 2, 100), cand("license", 0, 60, 3),
             cand("license", 1, 950), cand("license", 2, 300), cand("design", 0, 200), cand("multilingual", 0, 40, 10),
@@ -113,6 +114,9 @@ def test_selection() -> None:
     fb = [p for p in gate if p["fallback"]]
     check([p["name"] for p in fb] == ["chatml-002", "design-001"] and [p["gated_steps"] for p in fb] == [30, 40],
           "fallback prompts gate on the prefix before their first low-margin step, longest first")
+    gate3, _ = mk.select_gate([cand("csharp", 9, 30, repeats=True)] + pool, 0.05, lambda p, s: True, params)
+    check("csharp-009" not in [p["name"] for p in gate3] and not mk.eligible(cand("csharp", 9, 30, repeats=True), 0.05),
+          f"a degenerate continuation (fewer than {mk.MIN_DISTINCT} distinct tokens) is never a gate prompt")
     gate2, _ = mk.select_gate(pool, 0.05, lambda p, s: p["name"] != "csharp-000", params)
     check([p["name"] for p in gate2 if p["category"] == "csharp"] == ["csharp-001", "csharp-002"],
           "a candidate torch64p does not confirm is replaced by the next by k")

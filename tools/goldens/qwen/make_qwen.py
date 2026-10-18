@@ -62,6 +62,9 @@ TAPS_PROMPTS = 2
 PER_CATEGORY = 2
 GATE_MIN = 8
 SELFTEST_TOKENS = 16
+# A gate prompt's 64 greedy ids hold at least this many distinct tokens, so no gate prompt is a degenerate repetition
+# (the first g1 run picked csharp-000, whose continuation is 64 newlines).
+MIN_DISTINCT = 8
 QWEN_F64_BOUND = 1e-13
 
 # ReferenceOracles vectors for Qwen3-0.6B (docs/contracts/reference-oracles.md, T_spec vectors).
@@ -279,6 +282,17 @@ def prefix_len(margins, theta: float) -> int:
     return next((s for s, m in enumerate(margins) if m < theta), len(margins))
 
 
+def distinct(p: dict) -> int:
+    """How many distinct tokens the candidate's 64 torch32 greedy ids hold."""
+    return len(set(p["greedy32"]))
+
+
+def eligible(p: dict, theta: float) -> bool:
+    """A full gate prompt: at most 900 tokens, a torch32 margin of at least theta at all 64 steps, and at least
+    MIN_DISTINCT distinct tokens among the 64 greedy ids."""
+    return p["length"] <= qc.MAX_TOKENS and prefix_len(p["margins"], theta) == STEPS and distinct(p) >= MIN_DISTINCT
+
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Calibration
 # ---------------------------------------------------------------------------------------------------------------------
@@ -331,7 +345,7 @@ def select_gate(cands: list[dict], theta: float, verify, params: Params) -> tupl
     the first such candidate and the longest one (then the next by k when torch64p does not confirm one), at most
     params.per_category each. If fewer than params.gate_min, or English, C# or ChatML is missing, the prefix fallback
     fills in: candidates whose first low-margin step comes at step 16 or later, by the longest prefix."""
-    full = [p for p in cands if p["length"] <= qc.MAX_TOKENS and prefix_len(p["margins"], theta) == STEPS]
+    full = [p for p in cands if eligible(p, theta)]
     chosen, tried = [], []
 
     def take(p, steps):
@@ -361,7 +375,7 @@ def select_gate(cands: list[dict], theta: float, verify, params: Params) -> tupl
     fallback_used = False
     if not satisfied():
         fallback_used = True
-        rest = [p for p in cands if p["length"] <= qc.MAX_TOKENS and p["name"] not in tried
+        rest = [p for p in cands if p["length"] <= qc.MAX_TOKENS and p["name"] not in tried and distinct(p) >= MIN_DISTINCT
                 and qt.PREFIX_MIN_STEPS <= prefix_len(p["margins"], theta) < STEPS]
         rest.sort(key=lambda p: (-prefix_len(p["margins"], theta), p["k"], p["category"]))
         for need in (qc.ENGLISH, ("csharp",), ("chatml",)):
@@ -379,7 +393,9 @@ def select_gate(cands: list[dict], theta: float, verify, params: Params) -> tupl
     position = {p["name"]: i for i, p in enumerate(cands)}
     chosen.sort(key=lambda p: position[p["name"]])
     rule = {
-        "eligible": f"at most {qc.MAX_TOKENS} tokens and a torch32 top-2 margin of at least the margin rule at all {STEPS} steps",
+        "eligible": f"at most {qc.MAX_TOKENS} tokens, a torch32 top-2 margin of at least the margin rule at all {STEPS} steps, "
+                    f"and at least {MIN_DISTINCT} distinct tokens among the {STEPS} greedy ids",
+        "min_distinct_tokens": MIN_DISTINCT,
         "per_category": f"in category order {list(qc.CATEGORIES)}: the first eligible candidate (lowest k) and the longest "
                         f"(ties: lowest k), then the next by k when torch64p does not confirm one; at most {params.per_category} each",
         "torch64p": "the torch64p manual loop must give the same ids over the gated steps, with the same minimum margin rule",
@@ -497,7 +513,7 @@ def gate_checks(p: dict, per: dict, tau: float, eos_ids: list[int]) -> dict:
     d32, d64 = per["torch32"]["det"], per["torch64p"]["det"]
     if d32["ids"] != p["greedy32"] or d32["margins"] != p["margins"]:
         raise c.GoldenError(f"{p['name']}: the torch32 greedy loop differs from the pool stage's")
-    out = {"gated_steps": steps, "fallback": p["fallback"]}
+    out = {"gated_steps": steps, "fallback": p["fallback"], "distinct_tokens": len(set(d32["ids"]))}
     for oracle in ("torch32", "torch64p"):
         r, det = per[oracle], per[oracle]["det"]
         f32 = f32_record(det)
@@ -763,7 +779,7 @@ def main() -> int:
         "candidates": [{"name": p["name"], "category": p["category"], "k": p["k"], "source": p["source"], "attempts": p["attempts"],
                         "tokens": p["length"], "text_sha256": p["text_sha256"], "min_margin": min(p["margins"]),
                         "min_margin_step": int(np.argmin(p["margins"])), "prefix_at_rule": prefix_len(p["margins"], theta),
-                        "eligible": p["length"] <= qc.MAX_TOKENS and prefix_len(p["margins"], theta) == STEPS,
+                        "distinct_tokens": distinct(p), "eligible": eligible(p, theta),
                         "calibration": p["name"] in calib_names, "gate": any(g["name"] == p["name"] for g in gate)}
                        for p in pool],
     }
