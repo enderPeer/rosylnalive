@@ -266,15 +266,19 @@ let build (log: RunLog) : Scope =
         if dispatches.IsEmpty then
             noData "Dispatch durations" "gpu.dispatch"
         else
+            let b = bin 24 true durations
+
             Chart.Histogram
                 {
                     Title = "Dispatch durations"
                     Subtitle =
                         Invariant.format
-                            $"{dispatches.Length} dispatches on a log scale; the longest is {Fmt.duration (maxOr 0.0 durations)} (budget 100 ms)"
-                    XLabel = "duration (ns)"
-                    XFormat = NumFormat.Pow10
-                    Bins = bins 24 true durations
+                            $"{Fmt.int (int64 dispatches.Length)} dispatches on a log scale; the longest is {Fmt.duration (maxOr 0.0 durations)} (budget 100 ms)"
+                    XLabel = "duration"
+                    XFormat = NumFormat.Decades NumFormat.Duration
+                    Bins = b.Bins
+                    Zeros = b.Zeros
+                    Invalid = b.Invalid
                     Color = Color.Cat 0
                     Marks = []
                 }
@@ -301,9 +305,10 @@ let build (log: RunLog) : Scope =
         (if cases.IsEmpty then
              "No conformance cases were recorded."
          elif failed.IsEmpty then
-             Invariant.format $"**PASS.** All {cases.Length} conformance cases pass."
+             Invariant.format $"**PASS.** All {Fmt.int (int64 cases.Length)} conformance cases pass."
          else
-             Invariant.format $"**FAIL.** {failed.Length} of {cases.Length} conformance cases fail.")
+             Invariant.format
+                 $"**FAIL.** {Fmt.int (int64 failed.Length)} of {Fmt.int (int64 cases.Length)} conformance cases fail.")
     |> Scope.value "cases" (Fmt.int (int64 cases.Length))
     |> Scope.value "failed" (Fmt.int (int64 failed.Length))
     |> Scope.value "dispatches" (Fmt.int (int64 dispatches.Length))
@@ -313,7 +318,8 @@ let build (log: RunLog) : Scope =
         (if overBudget.IsEmpty then
              "Every dispatch is under the 100 ms budget."
          else
-             Invariant.format $"**{overBudget.Length} dispatches exceed the 100 ms budget.**")
+             let over = plural overBudget.Length "dispatch exceeds" "dispatches exceed"
+             Invariant.format $"**{over} the 100 ms budget.**")
     |> Scope.table "matrix" matrix
     |> Scope.table
         "failures"

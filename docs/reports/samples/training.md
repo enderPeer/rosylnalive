@@ -2,7 +2,7 @@
 
 > **Synthetic data.** This report was rendered from a run log made by a synthetic generator (`lrm report --synthetic`), so the visuals can be reviewed before the real runs exist. None of its numbers are measurements.
 
-Final training loss 1.321 after 599 steps.
+Final training loss 1.321 at step 599, after 600 training steps.
 
 ## Loss
 
@@ -13,6 +13,8 @@ Final training loss 1.321 after 599 steps.
 | pretrain-csharp | 0 | 249 | 4.713 | 1.669 | 1.763 |
 | pretrain-il | 250 | 449 | 2.123 | 1.504 | 1.582 |
 | alignment | 450 | 599 | 1.935 | 1.321 | 1.392 |
+
+![Learning rate by step](charts/training-lr.svg)
 
 ## Gradients
 

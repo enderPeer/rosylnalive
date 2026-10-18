@@ -208,6 +208,8 @@ let build (log: RunLog) : Scope =
         if xs.IsEmpty then
             noData "Decode latency distribution" "model.forward decode span"
         else
+            let b = bin 20 false xs
+
             Chart.Histogram
                 {
                     Title = "Decode latency distribution"
@@ -216,7 +218,9 @@ let build (log: RunLog) : Scope =
                             $"{xs.Length} steps; median {Fmt.duration (median xs)}, p95 {Fmt.duration (quantile 0.95 xs)}"
                     XLabel = "step latency"
                     XFormat = NumFormat.Duration
-                    Bins = bins 20 false xs
+                    Bins = b.Bins
+                    Zeros = b.Zeros
+                    Invalid = b.Invalid
                     Color = Color.Cat 0
                     Marks = [ { At = median xs; Label = "median" } ]
                 }

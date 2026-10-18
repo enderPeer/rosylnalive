@@ -12,6 +12,7 @@ let tiers: TestTiers =
                 MeteringTests.tests
                 ValuesTests.tests
                 ReportTests.tests
+                ChartEdgeTests.tests
             ]
         Bench = [ Bench.tests ]
     }

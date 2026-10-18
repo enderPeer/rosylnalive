@@ -57,9 +57,20 @@ let build (log: RunLog) : Scope =
                     ColLabel = "layer"
                     Rows = experts
                     Cols = layers |> List.map Invariant.i64
-                    Values = [| for x in experts -> [| for l in layers -> share l x last |] |]
+                    ColValues = []
+                    Values =
+                        [|
+                            for x in experts ->
+                                [|
+                                    for l in layers ->
+                                        let v = share l x last
+                                        if Double.IsNaN v then None else Some v
+                                |]
+                        |]
                     Log = false
                     ValueFormat = NumFormat.Pct
+                    Ceiling = None
+                    Aggregate = HeatAggregate.Mean
                 }
 
     let stacked =
@@ -87,10 +98,10 @@ let build (log: RunLog) : Scope =
                 }
 
     let checkpoints =
-        // At most five checkpoints keep the per-layer chart readable: the first, the last and three between.
+        // Up to six checkpoints are all shown; past six, the first, the last and three between keep it readable.
         let s = Array.ofList steps
 
-        if s.Length <= 5 then
+        if s.Length <= 6 then
             steps
         else
             [ 0; s.Length / 4; s.Length / 2; 3 * s.Length / 4; s.Length - 1 ]

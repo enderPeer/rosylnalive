@@ -1,49 +1,48 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="inference-latency_hist-title inference-latency_hist-desc">
 <title id="inference-latency_hist-title">Decode latency distribution</title>
-<desc id="inference-latency_hist-desc">Histogram of step latency: 64 samples in 20 bins.</desc>
-<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#898781}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<desc id="inference-latency_hist-desc">Histogram of step latency: 64 samples, 64 in 20 bins.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
 <rect class="bg" x="0" y="0" width="720" height="320" rx="8"/>
 <rect class="frame" x="0.5" y="0.5" width="719" height="319" rx="8"/>
 <text class="t1" x="16" y="26" font-size="15" font-weight="600">Decode latency distribution</text>
-<text class="t2" x="16" y="45" font-size="12">64 steps; median 4.06 ms, p95 4.16 ms</text>
+<text class="t2" x="16" y="45" font-size="12">64 steps; median 4.08 ms, p95 4.17 ms</text>
 <line class="grid" x1="32.16" y1="274" x2="696" y2="274" stroke-width="1"/>
 <text class="t3" x="24.16" y="278" font-size="11" text-anchor="end">0</text>
-<line class="grid" x1="32.16" y1="225" x2="696" y2="225" stroke-width="1"/>
-<text class="t3" x="24.16" y="229" font-size="11" text-anchor="end">2</text>
-<line class="grid" x1="32.16" y1="176" x2="696" y2="176" stroke-width="1"/>
-<text class="t3" x="24.16" y="180" font-size="11" text-anchor="end">4</text>
-<line class="grid" x1="32.16" y1="127" x2="696" y2="127" stroke-width="1"/>
-<text class="t3" x="24.16" y="131" font-size="11" text-anchor="end">6</text>
-<line class="grid" x1="32.16" y1="78" x2="696" y2="78" stroke-width="1"/>
-<text class="t3" x="24.16" y="82" font-size="11" text-anchor="end">8</text>
-<text class="t3" x="39.77" y="291" font-size="11" text-anchor="middle">3.95 ms</text>
-<text class="t3" x="157.22" y="291" font-size="11" text-anchor="middle">4.00 ms</text>
-<text class="t3" x="274.66" y="291" font-size="11" text-anchor="middle">4.05 ms</text>
-<text class="t3" x="392.11" y="291" font-size="11" text-anchor="middle">4.10 ms</text>
-<text class="t3" x="509.56" y="291" font-size="11" text-anchor="middle">4.15 ms</text>
-<text class="t3" x="627.01" y="291" font-size="11" text-anchor="middle">4.20 ms</text>
+<line class="grid" x1="32.16" y1="228.5" x2="696" y2="228.5" stroke-width="1"/>
+<text class="t3" x="24.16" y="232.5" font-size="11" text-anchor="end">2</text>
+<line class="grid" x1="32.16" y1="183" x2="696" y2="183" stroke-width="1"/>
+<text class="t3" x="24.16" y="187" font-size="11" text-anchor="end">4</text>
+<line class="grid" x1="32.16" y1="137.5" x2="696" y2="137.5" stroke-width="1"/>
+<text class="t3" x="24.16" y="141.5" font-size="11" text-anchor="end">6</text>
+<line class="grid" x1="32.16" y1="92" x2="696" y2="92" stroke-width="1"/>
+<text class="t3" x="24.16" y="96" font-size="11" text-anchor="end">8</text>
+<text class="t3" x="150.35" y="291" font-size="11" text-anchor="middle">4.00 ms</text>
+<text class="t3" x="292.5" y="291" font-size="11" text-anchor="middle">4.05 ms</text>
+<text class="t3" x="434.66" y="291" font-size="11" text-anchor="middle">4.10 ms</text>
+<text class="t3" x="576.81" y="291" font-size="11" text-anchor="middle">4.15 ms</text>
 <text class="t3" x="32.16" y="68" font-size="11" text-anchor="start">count</text>
 <text class="t3" x="364.08" y="310" font-size="11" text-anchor="middle">step latency</text>
-<path class="f0" d="M33.16 274V229Q33.16 225 37.16 225H60.35Q64.35 225 64.35 229V274Z"><title>[3.95 ms, 3.96 ms): 2</title></path>
-<path class="f0" d="M66.35 274V229Q66.35 225 70.35 225H93.54Q97.54 225 97.54 229V274Z"><title>[3.96 ms, 3.98 ms): 2</title></path>
-<path class="f0" d="M99.54 274V229Q99.54 225 103.54 225H126.74Q130.74 225 130.74 229V274Z"><title>[3.98 ms, 3.99 ms): 2</title></path>
-<path class="f0" d="M132.74 274V229Q132.74 225 136.74 225H159.93Q163.93 225 163.93 229V274Z"><title>[3.99 ms, 4.00 ms): 2</title></path>
-<path class="f0" d="M165.93 274V204.5Q165.93 200.5 169.93 200.5H193.12Q197.12 200.5 197.12 204.5V274Z"><title>[4.00 ms, 4.02 ms): 3</title></path>
-<path class="f0" d="M199.12 274V131Q199.12 127 203.12 127H226.31Q230.31 127 230.31 131V274Z"><title>[4.02 ms, 4.03 ms): 6</title></path>
-<path class="f0" d="M232.31 274V180Q232.31 176 236.31 176H259.5Q263.5 176 263.5 180V274Z"><title>[4.03 ms, 4.05 ms): 4</title></path>
-<path class="f0" d="M265.5 274V106.5Q265.5 102.5 269.5 102.5H292.7Q296.7 102.5 296.7 106.5V274Z"><title>[4.05 ms, 4.06 ms): 7</title></path>
-<path class="f0" d="M298.7 274V82Q298.7 78 302.7 78H325.89Q329.89 78 329.89 82V274Z"><title>[4.06 ms, 4.07 ms): 8</title></path>
-<path class="f0" d="M331.89 274V131Q331.89 127 335.89 127H359.08Q363.08 127 363.08 131V274Z"><title>[4.07 ms, 4.09 ms): 6</title></path>
-<path class="f0" d="M365.08 274V204.5Q365.08 200.5 369.08 200.5H392.27Q396.27 200.5 396.27 204.5V274Z"><title>[4.09 ms, 4.10 ms): 3</title></path>
-<path class="f0" d="M398.27 274V204.5Q398.27 200.5 402.27 200.5H425.46Q429.46 200.5 429.46 204.5V274Z"><title>[4.10 ms, 4.12 ms): 3</title></path>
-<path class="f0" d="M431.46 274V131Q431.46 127 435.46 127H458.66Q462.66 127 462.66 131V274Z"><title>[4.12 ms, 4.13 ms): 6</title></path>
-<path class="f0" d="M464.66 274V204.5Q464.66 200.5 468.66 200.5H491.85Q495.85 200.5 495.85 204.5V274Z"><title>[4.13 ms, 4.14 ms): 3</title></path>
-<path class="f0" d="M497.85 274V204.5Q497.85 200.5 501.85 200.5H525.04Q529.04 200.5 529.04 204.5V274Z"><title>[4.14 ms, 4.16 ms): 3</title></path>
-<path class="f0" d="M531.04 274V253.5Q531.04 249.5 535.04 249.5H558.23Q562.23 249.5 562.23 253.5V274Z"><title>[4.16 ms, 4.17 ms): 1</title></path>
-<path class="f0" d="M564.23 274V253.5Q564.23 249.5 568.23 249.5H591.42Q595.42 249.5 595.42 253.5V274Z"><title>[4.17 ms, 4.19 ms): 1</title></path>
-<path class="f0" d="M597.42 274V253.5Q597.42 249.5 601.42 249.5H624.62Q628.62 249.5 628.62 253.5V274Z"><title>[4.19 ms, 4.20 ms): 1</title></path>
-<path class="f0" d="M663.81 274V253.5Q663.81 249.5 667.81 249.5H691Q695 249.5 695 253.5V274Z"><title>[4.22 ms, 4.23 ms): 1</title></path>
-<line class="ref" x1="307.17" y1="78" x2="307.17" y2="274" stroke-width="1"><title>median</title></line>
-<text class="t2" x="311.17" y="89" font-size="10">median</text>
+<path class="f0" d="M33.16 274V232.5Q33.16 228.5 37.16 228.5H60.35Q64.35 228.5 64.35 232.5V274Z"><title>[3.96 ms, 3.97 ms): 2</title></path>
+<path class="f0" d="M66.35 274V232.5Q66.35 228.5 70.35 228.5H93.54Q97.54 228.5 97.54 232.5V274Z"><title>[3.97 ms, 3.98 ms): 2</title></path>
+<path class="f0" d="M99.54 274V255.25Q99.54 251.25 103.54 251.25H126.74Q130.74 251.25 130.74 255.25V274Z"><title>[3.98 ms, 3.99 ms): 1</title></path>
+<path class="f0" d="M132.74 274V187Q132.74 183 136.74 183H159.93Q163.93 183 163.93 187V274Z"><title>[3.99 ms, 4.01 ms): 4</title></path>
+<path class="f0" d="M165.93 274V255.25Q165.93 251.25 169.93 251.25H193.12Q197.12 251.25 197.12 255.25V274Z"><title>[4.01 ms, 4.02 ms): 1</title></path>
+<path class="f0" d="M199.12 274V232.5Q199.12 228.5 203.12 228.5H226.31Q230.31 228.5 230.31 232.5V274Z"><title>[4.02 ms, 4.03 ms): 2</title></path>
+<path class="f0" d="M232.31 274V187Q232.31 183 236.31 183H259.5Q263.5 183 263.5 187V274Z"><title>[4.03 ms, 4.04 ms): 4</title></path>
+<path class="f0" d="M265.5 274V141.5Q265.5 137.5 269.5 137.5H292.7Q296.7 137.5 296.7 141.5V274Z"><title>[4.04 ms, 4.05 ms): 6</title></path>
+<path class="f0" d="M298.7 274V209.75Q298.7 205.75 302.7 205.75H325.89Q329.89 205.75 329.89 209.75V274Z"><title>[4.05 ms, 4.06 ms): 3</title></path>
+<path class="f0" d="M331.89 274V118.75Q331.89 114.75 335.89 114.75H359.08Q363.08 114.75 363.08 118.75V274Z"><title>[4.06 ms, 4.08 ms): 7</title></path>
+<path class="f0" d="M365.08 274V141.5Q365.08 137.5 369.08 137.5H392.27Q396.27 137.5 396.27 141.5V274Z"><title>[4.08 ms, 4.09 ms): 6</title></path>
+<path class="f0" d="M398.27 274V141.5Q398.27 137.5 402.27 137.5H425.46Q429.46 137.5 429.46 141.5V274Z"><title>[4.09 ms, 4.10 ms): 6</title></path>
+<path class="f0" d="M431.46 274V255.25Q431.46 251.25 435.46 251.25H458.66Q462.66 251.25 462.66 255.25V274Z"><title>[4.10 ms, 4.11 ms): 1</title></path>
+<path class="f0" d="M464.66 274V232.5Q464.66 228.5 468.66 228.5H491.85Q495.85 228.5 495.85 232.5V274Z"><title>[4.11 ms, 4.12 ms): 2</title></path>
+<path class="f0" d="M497.85 274V255.25Q497.85 251.25 501.85 251.25H525.04Q529.04 251.25 529.04 255.25V274Z"><title>[4.12 ms, 4.13 ms): 1</title></path>
+<path class="f0" d="M531.04 274V141.5Q531.04 137.5 535.04 137.5H558.23Q562.23 137.5 562.23 141.5V274Z"><title>[4.13 ms, 4.15 ms): 6</title></path>
+<path class="f0" d="M564.23 274V209.75Q564.23 205.75 568.23 205.75H591.42Q595.42 205.75 595.42 209.75V274Z"><title>[4.15 ms, 4.16 ms): 3</title></path>
+<path class="f0" d="M597.42 274V187Q597.42 183 601.42 183H624.62Q628.62 183 628.62 187V274Z"><title>[4.16 ms, 4.17 ms): 4</title></path>
+<path class="f0" d="M630.62 274V255.25Q630.62 251.25 634.62 251.25H657.81Q661.81 251.25 661.81 255.25V274Z"><title>[4.17 ms, 4.18 ms): 1</title></path>
+<path class="f0" d="M663.81 274V232.5Q663.81 228.5 667.81 228.5H691Q695 228.5 695 232.5V274Z"><title>[4.18 ms, 4.19 ms): 2</title></path>
+<line class="ref" x1="369.26" y1="88" x2="369.26" y2="274" stroke-width="1"><title>median</title></line>
+<text class="t2" x="373.26" y="86" font-size="10" text-anchor="start">median</text>
 <line class="axis" x1="32.16" y1="274" x2="696" y2="274" stroke-width="1"/>
 </svg>

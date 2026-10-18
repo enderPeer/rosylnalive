@@ -205,35 +205,82 @@ let runScope (log: RunLog) : Scope =
     |> Scope.table "run.nodes" nodes
     |> Scope.table "run.params" pars
 
-/// Equal-width histogram bins over the finite samples, in log10 space when `log` (non-positive samples dropped).
-let bins (count: int) (log10Space: bool) (samples: float seq) : HistBin list =
+/// Samples binned for a Histogram: the bins and the samples that have no place on the axis.
+type Binned =
+    {
+        Bins: HistBin list
+        /// Exact zeros, in log10 space (in linear space they are in the bins).
+        Zeros: int
+        /// NaN and infinite samples, and in log10 space negative ones.
+        Invalid: int
+    }
+
+/// Equal-width histogram bins. In log10 space the bins hold the positive samples, exact zeros are counted in Zeros
+/// and NaN, infinite and negative samples in Invalid; in linear space the bins hold every finite sample and Invalid
+/// counts the rest. Nothing is dropped silently: Histogram draws Zeros and Invalid as their own columns.
+let bin (count: int) (log10Space: bool) (samples: float seq) : Binned =
+    let all = Array.ofSeq samples
+
+    let usable (v: float) =
+        Double.IsFinite v && (not log10Space || v > 0.0)
+
     let xs =
-        samples
-        |> Seq.filter (fun v -> Double.IsFinite v && (not log10Space || v > 0.0))
-        |> Seq.map (fun v -> if log10Space then DetMath.log10 v else v)
-        |> Array.ofSeq
+        all
+        |> Array.filter usable
+        |> Array.map (fun v -> if log10Space then DetMath.log10 v else v)
 
-    if xs.Length = 0 then
-        []
-    else
-        let lo = Array.min xs
-        let hi = Array.max xs
-        let lo, hi = if hi > lo then lo, hi else lo - 0.5, hi + 0.5
-        let width = (hi - lo) / float count
-        let counts = Array.zeroCreate count
+    let zeros =
+        if log10Space then
+            all |> Array.filter (fun v -> v = 0.0) |> Array.length
+        else
+            0
 
-        for x in xs do
-            let i = min (count - 1) (int (Math.Floor((x - lo) / width)))
-            counts[i] <- counts[i] + 1
+    let invalid = all.Length - xs.Length - zeros
 
-        [
-            for i in 0 .. count - 1 ->
-                {
-                    Lo = lo + float i * width
-                    Hi = lo + float (i + 1) * width
-                    Count = counts[i]
-                }
-        ]
+    let bins =
+        if xs.Length = 0 then
+            []
+        else
+            let lo = Array.min xs
+            let hi = Array.max xs
+            let lo, hi = if hi > lo then lo, hi else lo - 0.5, hi + 0.5
+            let width = (hi - lo) / float count
+            let counts = Array.zeroCreate count
+
+            for x in xs do
+                let i = max 0 (min (count - 1) (int (Math.Floor((x - lo) / width))))
+                counts[i] <- counts[i] + 1
+
+            [
+                for i in 0 .. count - 1 ->
+                    {
+                        Lo = lo + float i * width
+                        Hi = lo + float (i + 1) * width
+                        Count = counts[i]
+                    }
+            ]
+
+    {
+        Bins = bins
+        Zeros = zeros
+        Invalid = invalid
+    }
+
+/// One category of an error-bar chart: min, `mid` and max of the finite values, and how many were NaN or infinite.
+let spread (index: int) (mid: float list -> float) (xs: float list) : ErrorPoint =
+    let finite = xs |> List.filter Double.IsFinite
+
+    {
+        Index = index
+        Low = minOr nan finite
+        Mid = (if finite.IsEmpty then nan else mid finite)
+        High = maxOr nan finite
+        Invalid = xs.Length - finite.Length
+    }
+
+/// A count and its noun: "1 node loss", "2 node losses".
+let plural (count: int) (one: string) (many: string) =
+    Fmt.int (int64 count) + " " + (if count = 1 then one else many)
 
 /// A placeholder chart that says which records were missing.
 let noData (title: string) (what: string) =

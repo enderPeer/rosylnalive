@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="routing-entropy_by_layer-title routing-entropy_by_layer-desc">
 <title id="routing-entropy_by_layer-title">Router entropy per layer</title>
-<desc id="routing-entropy_by_layer-desc">Line chart of entropy (nats) against layer: 5 series, 140 points.</desc>
-<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#898781}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<desc id="routing-entropy_by_layer-desc">Line chart of entropy (nats) against layer: 6 series, 168 points.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
 <rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
 <rect class="frame" x="0.5" y="0.5" width="719" height="379" rx="8"/>
 <text class="t1" x="16" y="26" font-size="15" font-weight="600">Router entropy per layer</text>
@@ -11,11 +11,13 @@
 <rect class="f1" x="90.32" y="61" width="16" height="2.5" rx="1"/>
 <text class="t2" x="112.32" y="66" font-size="12">step 500</text>
 <rect class="f2" x="178.08" y="61" width="16" height="2.5" rx="1"/>
-<text class="t2" x="200.08" y="66" font-size="12">step 1500</text>
+<text class="t2" x="200.08" y="66" font-size="12">step 1000</text>
 <rect class="f3" x="272.56" y="61" width="16" height="2.5" rx="1"/>
-<text class="t2" x="294.56" y="66" font-size="12">step 2000</text>
+<text class="t2" x="294.56" y="66" font-size="12">step 1500</text>
 <rect class="f4" x="367.04" y="61" width="16" height="2.5" rx="1"/>
-<text class="t2" x="389.04" y="66" font-size="12">step 2500</text>
+<text class="t2" x="389.04" y="66" font-size="12">step 2000</text>
+<rect class="f5" x="461.52" y="61" width="16" height="2.5" rx="1"/>
+<text class="t2" x="483.52" y="66" font-size="12">step 2500</text>
 <line class="grid" x1="41.84" y1="334" x2="696" y2="334" stroke-width="1"/>
 <text class="t3" x="33.84" y="338" font-size="11" text-anchor="end">0.0</text>
 <line class="grid" x1="41.84" y1="275" x2="696" y2="275" stroke-width="1"/>
@@ -39,9 +41,10 @@
 <text class="t3" x="368.92" y="370" font-size="11" text-anchor="middle">layer</text>
 <path class="line s0" d="M41.84 107.05 L66.07 107.33 L90.3 111.24 L114.52 108.44 L138.75 106.48 L162.98 107.5 L187.21 108.04 L211.44 108.95 L235.67 106.56 L259.89 106.48 L284.12 105.94 L308.35 105.73 L332.58 105.78 L356.81 105.33 L381.03 104.65 L405.26 105.12 L429.49 104.94 L453.72 106.29 L477.95 107.84 L502.17 106.16 L526.4 104.58 L550.63 107.76 L574.86 107.09 L599.09 105.75 L623.32 108.21 L647.54 108.34 L671.77 107.57 L696 108.95"><title>step 0</title></path>
 <path class="line s1" d="M41.84 125.33 L66.07 118.55 L90.3 123.95 L114.52 116.13 L138.75 116.31 L162.98 113.06 L187.21 119.53 L211.44 113.5 L235.67 110.97 L259.89 114.11 L284.12 108.94 L308.35 112.45 L332.58 108.38 L356.81 108.66 L381.03 105.49 L405.26 110.8 L429.49 108.62 L453.72 108.97 L477.95 111.33 L502.17 108.71 L526.4 111.86 L550.63 115.04 L574.86 110.9 L599.09 118.89 L623.32 121.65 L647.54 118.47 L671.77 119.49 L696 121.46"><title>step 500</title></path>
-<path class="line s2" d="M41.84 148.17 L66.07 145.97 L90.3 153.84 L114.52 147.95 L138.75 151.67 L162.98 150.18 L187.21 144.74 L211.44 143.75 L235.67 134.36 L259.89 126.11 L284.12 129.15 L308.35 117.77 L332.58 121.77 L356.81 119.06 L381.03 121.2 L405.26 118.21 L429.49 111.79 L453.72 119.4 L477.95 120.88 L502.17 119.92 L526.4 120.1 L550.63 124.02 L574.86 127.6 L599.09 140.86 L623.32 148.84 L647.54 148.65 L671.77 151.63 L696 154.58"><title>step 1500</title></path>
-<path class="line s3" d="M41.84 174.18 L66.07 164.64 L90.3 172.81 L114.52 162.23 L138.75 160.42 L162.98 163.13 L187.21 178.06 L211.44 155.35 L235.67 148.27 L259.89 136.05 L284.12 126.36 L308.35 127.46 L332.58 121.95 L356.81 125.12 L381.03 117.72 L405.26 121.74 L429.49 123.95 L453.72 124.62 L477.95 139.86 L502.17 130.33 L526.4 128.67 L550.63 138.29 L574.86 141.96 L599.09 142.72 L623.32 169.28 L647.54 171.52 L671.77 171.73 L696 167.52"><title>step 2000</title></path>
-<path class="line s4" d="M41.84 187.61 L66.07 192.92 L90.3 185.7 L114.52 181.46 L138.75 179.82 L162.98 190.43 L187.21 176.96 L211.44 171.19 L235.67 160.32 L259.89 145 L284.12 140.82 L308.35 140.89 L332.58 142.62 L356.81 129.28 L381.03 123.23 L405.26 131.43 L429.49 130.71 L453.72 133.02 L477.95 140.83 L502.17 133.81 L526.4 134.79 L550.63 135.68 L574.86 157.68 L599.09 155.9 L623.32 179.26 L647.54 173.34 L671.77 182.06 L696 196.33"><title>step 2500</title></path>
+<path class="line s2" d="M41.84 128.71 L66.07 134.87 L90.3 140.63 L114.52 131.62 L138.75 131.93 L162.98 131.26 L187.21 128.02 L211.44 127.94 L235.67 121.1 L259.89 119.27 L284.12 118.07 L308.35 114.5 L332.58 113.02 L356.81 113.34 L381.03 110.23 L405.26 112.72 L429.49 107.52 L453.72 121.61 L477.95 116.46 L502.17 115.33 L526.4 119.27 L550.63 119.38 L574.86 122.56 L599.09 129.83 L623.32 129.42 L647.54 129.16 L671.77 135.18 L696 131.93"><title>step 1000</title></path>
+<path class="line s3" d="M41.84 148.17 L66.07 145.97 L90.3 153.84 L114.52 147.95 L138.75 151.67 L162.98 150.18 L187.21 144.74 L211.44 143.75 L235.67 134.36 L259.89 126.11 L284.12 129.15 L308.35 117.77 L332.58 121.77 L356.81 119.06 L381.03 121.2 L405.26 118.21 L429.49 111.79 L453.72 119.4 L477.95 120.88 L502.17 119.92 L526.4 120.1 L550.63 124.02 L574.86 127.6 L599.09 140.86 L623.32 148.84 L647.54 148.65 L671.77 151.63 L696 154.58"><title>step 1500</title></path>
+<path class="line s4" d="M41.84 174.18 L66.07 164.64 L90.3 172.81 L114.52 162.23 L138.75 160.42 L162.98 163.13 L187.21 178.06 L211.44 155.35 L235.67 148.27 L259.89 136.05 L284.12 126.36 L308.35 127.46 L332.58 121.95 L356.81 125.12 L381.03 117.72 L405.26 121.74 L429.49 123.95 L453.72 124.62 L477.95 139.86 L502.17 130.33 L526.4 128.67 L550.63 138.29 L574.86 141.96 L599.09 142.72 L623.32 169.28 L647.54 171.52 L671.77 171.73 L696 167.52"><title>step 2000</title></path>
+<path class="line s5" d="M41.84 187.61 L66.07 192.92 L90.3 185.7 L114.52 181.46 L138.75 179.82 L162.98 190.43 L187.21 176.96 L211.44 171.19 L235.67 160.32 L259.89 145 L284.12 140.82 L308.35 140.89 L332.58 142.62 L356.81 129.28 L381.03 123.23 L405.26 131.43 L429.49 130.71 L453.72 133.02 L477.95 140.83 L502.17 133.81 L526.4 134.79 L550.63 135.68 L574.86 157.68 L599.09 155.9 L623.32 179.26 L647.54 173.34 L671.77 182.06 L696 196.33"><title>step 2500</title></path>
 <circle class="f0 ring" cx="41.84" cy="107.05" r="4" stroke-width="2"><title>step 0, layer 0: 1.923</title></circle>
 <circle class="f0 ring" cx="66.07" cy="107.33" r="4" stroke-width="2"><title>step 0, layer 1: 1.921</title></circle>
 <circle class="f0 ring" cx="90.3" cy="111.24" r="4" stroke-width="2"><title>step 0, layer 2: 1.888</title></circle>
@@ -98,88 +101,116 @@
 <circle class="f1 ring" cx="647.54" cy="118.47" r="4" stroke-width="2"><title>step 500, layer 25: 1.826</title></circle>
 <circle class="f1 ring" cx="671.77" cy="119.49" r="4" stroke-width="2"><title>step 500, layer 26: 1.818</title></circle>
 <circle class="f1 ring" cx="696" cy="121.46" r="4" stroke-width="2"><title>step 500, layer 27: 1.801</title></circle>
-<circle class="f2 ring" cx="41.84" cy="148.17" r="4" stroke-width="2"><title>step 1500, layer 0: 1.575</title></circle>
-<circle class="f2 ring" cx="66.07" cy="145.97" r="4" stroke-width="2"><title>step 1500, layer 1: 1.594</title></circle>
-<circle class="f2 ring" cx="90.3" cy="153.84" r="4" stroke-width="2"><title>step 1500, layer 2: 1.527</title></circle>
-<circle class="f2 ring" cx="114.52" cy="147.95" r="4" stroke-width="2"><title>step 1500, layer 3: 1.577</title></circle>
-<circle class="f2 ring" cx="138.75" cy="151.67" r="4" stroke-width="2"><title>step 1500, layer 4: 1.545</title></circle>
-<circle class="f2 ring" cx="162.98" cy="150.18" r="4" stroke-width="2"><title>step 1500, layer 5: 1.558</title></circle>
-<circle class="f2 ring" cx="187.21" cy="144.74" r="4" stroke-width="2"><title>step 1500, layer 6: 1.604</title></circle>
-<circle class="f2 ring" cx="211.44" cy="143.75" r="4" stroke-width="2"><title>step 1500, layer 7: 1.612</title></circle>
-<circle class="f2 ring" cx="235.67" cy="134.36" r="4" stroke-width="2"><title>step 1500, layer 8: 1.692</title></circle>
-<circle class="f2 ring" cx="259.89" cy="126.11" r="4" stroke-width="2"><title>step 1500, layer 9: 1.762</title></circle>
-<circle class="f2 ring" cx="284.12" cy="129.15" r="4" stroke-width="2"><title>step 1500, layer 10: 1.736</title></circle>
-<circle class="f2 ring" cx="308.35" cy="117.77" r="4" stroke-width="2"><title>step 1500, layer 11: 1.832</title></circle>
-<circle class="f2 ring" cx="332.58" cy="121.77" r="4" stroke-width="2"><title>step 1500, layer 12: 1.799</title></circle>
-<circle class="f2 ring" cx="356.81" cy="119.06" r="4" stroke-width="2"><title>step 1500, layer 13: 1.822</title></circle>
-<circle class="f2 ring" cx="381.03" cy="121.2" r="4" stroke-width="2"><title>step 1500, layer 14: 1.803</title></circle>
-<circle class="f2 ring" cx="405.26" cy="118.21" r="4" stroke-width="2"><title>step 1500, layer 15: 1.829</title></circle>
-<circle class="f2 ring" cx="429.49" cy="111.79" r="4" stroke-width="2"><title>step 1500, layer 16: 1.883</title></circle>
-<circle class="f2 ring" cx="453.72" cy="119.4" r="4" stroke-width="2"><title>step 1500, layer 17: 1.819</title></circle>
-<circle class="f2 ring" cx="477.95" cy="120.88" r="4" stroke-width="2"><title>step 1500, layer 18: 1.806</title></circle>
-<circle class="f2 ring" cx="502.17" cy="119.92" r="4" stroke-width="2"><title>step 1500, layer 19: 1.814</title></circle>
-<circle class="f2 ring" cx="526.4" cy="120.1" r="4" stroke-width="2"><title>step 1500, layer 20: 1.813</title></circle>
-<circle class="f2 ring" cx="550.63" cy="124.02" r="4" stroke-width="2"><title>step 1500, layer 21: 1.780</title></circle>
-<circle class="f2 ring" cx="574.86" cy="127.6" r="4" stroke-width="2"><title>step 1500, layer 22: 1.749</title></circle>
-<circle class="f2 ring" cx="599.09" cy="140.86" r="4" stroke-width="2"><title>step 1500, layer 23: 1.637</title></circle>
-<circle class="f2 ring" cx="623.32" cy="148.84" r="4" stroke-width="2"><title>step 1500, layer 24: 1.569</title></circle>
-<circle class="f2 ring" cx="647.54" cy="148.65" r="4" stroke-width="2"><title>step 1500, layer 25: 1.571</title></circle>
-<circle class="f2 ring" cx="671.77" cy="151.63" r="4" stroke-width="2"><title>step 1500, layer 26: 1.545</title></circle>
-<circle class="f2 ring" cx="696" cy="154.58" r="4" stroke-width="2"><title>step 1500, layer 27: 1.520</title></circle>
-<circle class="f3 ring" cx="41.84" cy="174.18" r="4" stroke-width="2"><title>step 2000, layer 0: 1.354</title></circle>
-<circle class="f3 ring" cx="66.07" cy="164.64" r="4" stroke-width="2"><title>step 2000, layer 1: 1.435</title></circle>
-<circle class="f3 ring" cx="90.3" cy="172.81" r="4" stroke-width="2"><title>step 2000, layer 2: 1.366</title></circle>
-<circle class="f3 ring" cx="114.52" cy="162.23" r="4" stroke-width="2"><title>step 2000, layer 3: 1.456</title></circle>
-<circle class="f3 ring" cx="138.75" cy="160.42" r="4" stroke-width="2"><title>step 2000, layer 4: 1.471</title></circle>
-<circle class="f3 ring" cx="162.98" cy="163.13" r="4" stroke-width="2"><title>step 2000, layer 5: 1.448</title></circle>
-<circle class="f3 ring" cx="187.21" cy="178.06" r="4" stroke-width="2"><title>step 2000, layer 6: 1.321</title></circle>
-<circle class="f3 ring" cx="211.44" cy="155.35" r="4" stroke-width="2"><title>step 2000, layer 7: 1.514</title></circle>
-<circle class="f3 ring" cx="235.67" cy="148.27" r="4" stroke-width="2"><title>step 2000, layer 8: 1.574</title></circle>
-<circle class="f3 ring" cx="259.89" cy="136.05" r="4" stroke-width="2"><title>step 2000, layer 9: 1.678</title></circle>
-<circle class="f3 ring" cx="284.12" cy="126.36" r="4" stroke-width="2"><title>step 2000, layer 10: 1.760</title></circle>
-<circle class="f3 ring" cx="308.35" cy="127.46" r="4" stroke-width="2"><title>step 2000, layer 11: 1.750</title></circle>
-<circle class="f3 ring" cx="332.58" cy="121.95" r="4" stroke-width="2"><title>step 2000, layer 12: 1.797</title></circle>
-<circle class="f3 ring" cx="356.81" cy="125.12" r="4" stroke-width="2"><title>step 2000, layer 13: 1.770</title></circle>
-<circle class="f3 ring" cx="381.03" cy="117.72" r="4" stroke-width="2"><title>step 2000, layer 14: 1.833</title></circle>
-<circle class="f3 ring" cx="405.26" cy="121.74" r="4" stroke-width="2"><title>step 2000, layer 15: 1.799</title></circle>
-<circle class="f3 ring" cx="429.49" cy="123.95" r="4" stroke-width="2"><title>step 2000, layer 16: 1.780</title></circle>
-<circle class="f3 ring" cx="453.72" cy="124.62" r="4" stroke-width="2"><title>step 2000, layer 17: 1.774</title></circle>
-<circle class="f3 ring" cx="477.95" cy="139.86" r="4" stroke-width="2"><title>step 2000, layer 18: 1.645</title></circle>
-<circle class="f3 ring" cx="502.17" cy="130.33" r="4" stroke-width="2"><title>step 2000, layer 19: 1.726</title></circle>
-<circle class="f3 ring" cx="526.4" cy="128.67" r="4" stroke-width="2"><title>step 2000, layer 20: 1.740</title></circle>
-<circle class="f3 ring" cx="550.63" cy="138.29" r="4" stroke-width="2"><title>step 2000, layer 21: 1.659</title></circle>
-<circle class="f3 ring" cx="574.86" cy="141.96" r="4" stroke-width="2"><title>step 2000, layer 22: 1.627</title></circle>
-<circle class="f3 ring" cx="599.09" cy="142.72" r="4" stroke-width="2"><title>step 2000, layer 23: 1.621</title></circle>
-<circle class="f3 ring" cx="623.32" cy="169.28" r="4" stroke-width="2"><title>step 2000, layer 24: 1.396</title></circle>
-<circle class="f3 ring" cx="647.54" cy="171.52" r="4" stroke-width="2"><title>step 2000, layer 25: 1.377</title></circle>
-<circle class="f3 ring" cx="671.77" cy="171.73" r="4" stroke-width="2"><title>step 2000, layer 26: 1.375</title></circle>
-<circle class="f3 ring" cx="696" cy="167.52" r="4" stroke-width="2"><title>step 2000, layer 27: 1.411</title></circle>
-<circle class="f4 ring" cx="41.84" cy="187.61" r="4" stroke-width="2"><title>step 2500, layer 0: 1.241</title></circle>
-<circle class="f4 ring" cx="66.07" cy="192.92" r="4" stroke-width="2"><title>step 2500, layer 1: 1.196</title></circle>
-<circle class="f4 ring" cx="90.3" cy="185.7" r="4" stroke-width="2"><title>step 2500, layer 2: 1.257</title></circle>
-<circle class="f4 ring" cx="114.52" cy="181.46" r="4" stroke-width="2"><title>step 2500, layer 3: 1.293</title></circle>
-<circle class="f4 ring" cx="138.75" cy="179.82" r="4" stroke-width="2"><title>step 2500, layer 4: 1.307</title></circle>
-<circle class="f4 ring" cx="162.98" cy="190.43" r="4" stroke-width="2"><title>step 2500, layer 5: 1.217</title></circle>
-<circle class="f4 ring" cx="187.21" cy="176.96" r="4" stroke-width="2"><title>step 2500, layer 6: 1.331</title></circle>
-<circle class="f4 ring" cx="211.44" cy="171.19" r="4" stroke-width="2"><title>step 2500, layer 7: 1.380</title></circle>
-<circle class="f4 ring" cx="235.67" cy="160.32" r="4" stroke-width="2"><title>step 2500, layer 8: 1.472</title></circle>
-<circle class="f4 ring" cx="259.89" cy="145" r="4" stroke-width="2"><title>step 2500, layer 9: 1.602</title></circle>
-<circle class="f4 ring" cx="284.12" cy="140.82" r="4" stroke-width="2"><title>step 2500, layer 10: 1.637</title></circle>
-<circle class="f4 ring" cx="308.35" cy="140.89" r="4" stroke-width="2"><title>step 2500, layer 11: 1.636</title></circle>
-<circle class="f4 ring" cx="332.58" cy="142.62" r="4" stroke-width="2"><title>step 2500, layer 12: 1.622</title></circle>
-<circle class="f4 ring" cx="356.81" cy="129.28" r="4" stroke-width="2"><title>step 2500, layer 13: 1.735</title></circle>
-<circle class="f4 ring" cx="381.03" cy="123.23" r="4" stroke-width="2"><title>step 2500, layer 14: 1.786</title></circle>
-<circle class="f4 ring" cx="405.26" cy="131.43" r="4" stroke-width="2"><title>step 2500, layer 15: 1.717</title></circle>
-<circle class="f4 ring" cx="429.49" cy="130.71" r="4" stroke-width="2"><title>step 2500, layer 16: 1.723</title></circle>
-<circle class="f4 ring" cx="453.72" cy="133.02" r="4" stroke-width="2"><title>step 2500, layer 17: 1.703</title></circle>
-<circle class="f4 ring" cx="477.95" cy="140.83" r="4" stroke-width="2"><title>step 2500, layer 18: 1.637</title></circle>
-<circle class="f4 ring" cx="502.17" cy="133.81" r="4" stroke-width="2"><title>step 2500, layer 19: 1.697</title></circle>
-<circle class="f4 ring" cx="526.4" cy="134.79" r="4" stroke-width="2"><title>step 2500, layer 20: 1.688</title></circle>
-<circle class="f4 ring" cx="550.63" cy="135.68" r="4" stroke-width="2"><title>step 2500, layer 21: 1.681</title></circle>
-<circle class="f4 ring" cx="574.86" cy="157.68" r="4" stroke-width="2"><title>step 2500, layer 22: 1.494</title></circle>
-<circle class="f4 ring" cx="599.09" cy="155.9" r="4" stroke-width="2"><title>step 2500, layer 23: 1.509</title></circle>
-<circle class="f4 ring" cx="623.32" cy="179.26" r="4" stroke-width="2"><title>step 2500, layer 24: 1.311</title></circle>
-<circle class="f4 ring" cx="647.54" cy="173.34" r="4" stroke-width="2"><title>step 2500, layer 25: 1.362</title></circle>
-<circle class="f4 ring" cx="671.77" cy="182.06" r="4" stroke-width="2"><title>step 2500, layer 26: 1.288</title></circle>
-<circle class="f4 ring" cx="696" cy="196.33" r="4" stroke-width="2"><title>step 2500, layer 27: 1.167</title></circle>
+<circle class="f2 ring" cx="41.84" cy="128.71" r="4" stroke-width="2"><title>step 1000, layer 0: 1.740</title></circle>
+<circle class="f2 ring" cx="66.07" cy="134.87" r="4" stroke-width="2"><title>step 1000, layer 1: 1.688</title></circle>
+<circle class="f2 ring" cx="90.3" cy="140.63" r="4" stroke-width="2"><title>step 1000, layer 2: 1.639</title></circle>
+<circle class="f2 ring" cx="114.52" cy="131.62" r="4" stroke-width="2"><title>step 1000, layer 3: 1.715</title></circle>
+<circle class="f2 ring" cx="138.75" cy="131.93" r="4" stroke-width="2"><title>step 1000, layer 4: 1.712</title></circle>
+<circle class="f2 ring" cx="162.98" cy="131.26" r="4" stroke-width="2"><title>step 1000, layer 5: 1.718</title></circle>
+<circle class="f2 ring" cx="187.21" cy="128.02" r="4" stroke-width="2"><title>step 1000, layer 6: 1.746</title></circle>
+<circle class="f2 ring" cx="211.44" cy="127.94" r="4" stroke-width="2"><title>step 1000, layer 7: 1.746</title></circle>
+<circle class="f2 ring" cx="235.67" cy="121.1" r="4" stroke-width="2"><title>step 1000, layer 8: 1.804</title></circle>
+<circle class="f2 ring" cx="259.89" cy="119.27" r="4" stroke-width="2"><title>step 1000, layer 9: 1.820</title></circle>
+<circle class="f2 ring" cx="284.12" cy="118.07" r="4" stroke-width="2"><title>step 1000, layer 10: 1.830</title></circle>
+<circle class="f2 ring" cx="308.35" cy="114.5" r="4" stroke-width="2"><title>step 1000, layer 11: 1.860</title></circle>
+<circle class="f2 ring" cx="332.58" cy="113.02" r="4" stroke-width="2"><title>step 1000, layer 12: 1.873</title></circle>
+<circle class="f2 ring" cx="356.81" cy="113.34" r="4" stroke-width="2"><title>step 1000, layer 13: 1.870</title></circle>
+<circle class="f2 ring" cx="381.03" cy="110.23" r="4" stroke-width="2"><title>step 1000, layer 14: 1.896</title></circle>
+<circle class="f2 ring" cx="405.26" cy="112.72" r="4" stroke-width="2"><title>step 1000, layer 15: 1.875</title></circle>
+<circle class="f2 ring" cx="429.49" cy="107.52" r="4" stroke-width="2"><title>step 1000, layer 16: 1.919</title></circle>
+<circle class="f2 ring" cx="453.72" cy="121.61" r="4" stroke-width="2"><title>step 1000, layer 17: 1.800</title></circle>
+<circle class="f2 ring" cx="477.95" cy="116.46" r="4" stroke-width="2"><title>step 1000, layer 18: 1.844</title></circle>
+<circle class="f2 ring" cx="502.17" cy="115.33" r="4" stroke-width="2"><title>step 1000, layer 19: 1.853</title></circle>
+<circle class="f2 ring" cx="526.4" cy="119.27" r="4" stroke-width="2"><title>step 1000, layer 20: 1.820</title></circle>
+<circle class="f2 ring" cx="550.63" cy="119.38" r="4" stroke-width="2"><title>step 1000, layer 21: 1.819</title></circle>
+<circle class="f2 ring" cx="574.86" cy="122.56" r="4" stroke-width="2"><title>step 1000, layer 22: 1.792</title></circle>
+<circle class="f2 ring" cx="599.09" cy="129.83" r="4" stroke-width="2"><title>step 1000, layer 23: 1.730</title></circle>
+<circle class="f2 ring" cx="623.32" cy="129.42" r="4" stroke-width="2"><title>step 1000, layer 24: 1.734</title></circle>
+<circle class="f2 ring" cx="647.54" cy="129.16" r="4" stroke-width="2"><title>step 1000, layer 25: 1.736</title></circle>
+<circle class="f2 ring" cx="671.77" cy="135.18" r="4" stroke-width="2"><title>step 1000, layer 26: 1.685</title></circle>
+<circle class="f2 ring" cx="696" cy="131.93" r="4" stroke-width="2"><title>step 1000, layer 27: 1.712</title></circle>
+<circle class="f3 ring" cx="41.84" cy="148.17" r="4" stroke-width="2"><title>step 1500, layer 0: 1.575</title></circle>
+<circle class="f3 ring" cx="66.07" cy="145.97" r="4" stroke-width="2"><title>step 1500, layer 1: 1.594</title></circle>
+<circle class="f3 ring" cx="90.3" cy="153.84" r="4" stroke-width="2"><title>step 1500, layer 2: 1.527</title></circle>
+<circle class="f3 ring" cx="114.52" cy="147.95" r="4" stroke-width="2"><title>step 1500, layer 3: 1.577</title></circle>
+<circle class="f3 ring" cx="138.75" cy="151.67" r="4" stroke-width="2"><title>step 1500, layer 4: 1.545</title></circle>
+<circle class="f3 ring" cx="162.98" cy="150.18" r="4" stroke-width="2"><title>step 1500, layer 5: 1.558</title></circle>
+<circle class="f3 ring" cx="187.21" cy="144.74" r="4" stroke-width="2"><title>step 1500, layer 6: 1.604</title></circle>
+<circle class="f3 ring" cx="211.44" cy="143.75" r="4" stroke-width="2"><title>step 1500, layer 7: 1.612</title></circle>
+<circle class="f3 ring" cx="235.67" cy="134.36" r="4" stroke-width="2"><title>step 1500, layer 8: 1.692</title></circle>
+<circle class="f3 ring" cx="259.89" cy="126.11" r="4" stroke-width="2"><title>step 1500, layer 9: 1.762</title></circle>
+<circle class="f3 ring" cx="284.12" cy="129.15" r="4" stroke-width="2"><title>step 1500, layer 10: 1.736</title></circle>
+<circle class="f3 ring" cx="308.35" cy="117.77" r="4" stroke-width="2"><title>step 1500, layer 11: 1.832</title></circle>
+<circle class="f3 ring" cx="332.58" cy="121.77" r="4" stroke-width="2"><title>step 1500, layer 12: 1.799</title></circle>
+<circle class="f3 ring" cx="356.81" cy="119.06" r="4" stroke-width="2"><title>step 1500, layer 13: 1.822</title></circle>
+<circle class="f3 ring" cx="381.03" cy="121.2" r="4" stroke-width="2"><title>step 1500, layer 14: 1.803</title></circle>
+<circle class="f3 ring" cx="405.26" cy="118.21" r="4" stroke-width="2"><title>step 1500, layer 15: 1.829</title></circle>
+<circle class="f3 ring" cx="429.49" cy="111.79" r="4" stroke-width="2"><title>step 1500, layer 16: 1.883</title></circle>
+<circle class="f3 ring" cx="453.72" cy="119.4" r="4" stroke-width="2"><title>step 1500, layer 17: 1.819</title></circle>
+<circle class="f3 ring" cx="477.95" cy="120.88" r="4" stroke-width="2"><title>step 1500, layer 18: 1.806</title></circle>
+<circle class="f3 ring" cx="502.17" cy="119.92" r="4" stroke-width="2"><title>step 1500, layer 19: 1.814</title></circle>
+<circle class="f3 ring" cx="526.4" cy="120.1" r="4" stroke-width="2"><title>step 1500, layer 20: 1.813</title></circle>
+<circle class="f3 ring" cx="550.63" cy="124.02" r="4" stroke-width="2"><title>step 1500, layer 21: 1.780</title></circle>
+<circle class="f3 ring" cx="574.86" cy="127.6" r="4" stroke-width="2"><title>step 1500, layer 22: 1.749</title></circle>
+<circle class="f3 ring" cx="599.09" cy="140.86" r="4" stroke-width="2"><title>step 1500, layer 23: 1.637</title></circle>
+<circle class="f3 ring" cx="623.32" cy="148.84" r="4" stroke-width="2"><title>step 1500, layer 24: 1.569</title></circle>
+<circle class="f3 ring" cx="647.54" cy="148.65" r="4" stroke-width="2"><title>step 1500, layer 25: 1.571</title></circle>
+<circle class="f3 ring" cx="671.77" cy="151.63" r="4" stroke-width="2"><title>step 1500, layer 26: 1.545</title></circle>
+<circle class="f3 ring" cx="696" cy="154.58" r="4" stroke-width="2"><title>step 1500, layer 27: 1.520</title></circle>
+<circle class="f4 ring" cx="41.84" cy="174.18" r="4" stroke-width="2"><title>step 2000, layer 0: 1.354</title></circle>
+<circle class="f4 ring" cx="66.07" cy="164.64" r="4" stroke-width="2"><title>step 2000, layer 1: 1.435</title></circle>
+<circle class="f4 ring" cx="90.3" cy="172.81" r="4" stroke-width="2"><title>step 2000, layer 2: 1.366</title></circle>
+<circle class="f4 ring" cx="114.52" cy="162.23" r="4" stroke-width="2"><title>step 2000, layer 3: 1.456</title></circle>
+<circle class="f4 ring" cx="138.75" cy="160.42" r="4" stroke-width="2"><title>step 2000, layer 4: 1.471</title></circle>
+<circle class="f4 ring" cx="162.98" cy="163.13" r="4" stroke-width="2"><title>step 2000, layer 5: 1.448</title></circle>
+<circle class="f4 ring" cx="187.21" cy="178.06" r="4" stroke-width="2"><title>step 2000, layer 6: 1.321</title></circle>
+<circle class="f4 ring" cx="211.44" cy="155.35" r="4" stroke-width="2"><title>step 2000, layer 7: 1.514</title></circle>
+<circle class="f4 ring" cx="235.67" cy="148.27" r="4" stroke-width="2"><title>step 2000, layer 8: 1.574</title></circle>
+<circle class="f4 ring" cx="259.89" cy="136.05" r="4" stroke-width="2"><title>step 2000, layer 9: 1.678</title></circle>
+<circle class="f4 ring" cx="284.12" cy="126.36" r="4" stroke-width="2"><title>step 2000, layer 10: 1.760</title></circle>
+<circle class="f4 ring" cx="308.35" cy="127.46" r="4" stroke-width="2"><title>step 2000, layer 11: 1.750</title></circle>
+<circle class="f4 ring" cx="332.58" cy="121.95" r="4" stroke-width="2"><title>step 2000, layer 12: 1.797</title></circle>
+<circle class="f4 ring" cx="356.81" cy="125.12" r="4" stroke-width="2"><title>step 2000, layer 13: 1.770</title></circle>
+<circle class="f4 ring" cx="381.03" cy="117.72" r="4" stroke-width="2"><title>step 2000, layer 14: 1.833</title></circle>
+<circle class="f4 ring" cx="405.26" cy="121.74" r="4" stroke-width="2"><title>step 2000, layer 15: 1.799</title></circle>
+<circle class="f4 ring" cx="429.49" cy="123.95" r="4" stroke-width="2"><title>step 2000, layer 16: 1.780</title></circle>
+<circle class="f4 ring" cx="453.72" cy="124.62" r="4" stroke-width="2"><title>step 2000, layer 17: 1.774</title></circle>
+<circle class="f4 ring" cx="477.95" cy="139.86" r="4" stroke-width="2"><title>step 2000, layer 18: 1.645</title></circle>
+<circle class="f4 ring" cx="502.17" cy="130.33" r="4" stroke-width="2"><title>step 2000, layer 19: 1.726</title></circle>
+<circle class="f4 ring" cx="526.4" cy="128.67" r="4" stroke-width="2"><title>step 2000, layer 20: 1.740</title></circle>
+<circle class="f4 ring" cx="550.63" cy="138.29" r="4" stroke-width="2"><title>step 2000, layer 21: 1.659</title></circle>
+<circle class="f4 ring" cx="574.86" cy="141.96" r="4" stroke-width="2"><title>step 2000, layer 22: 1.627</title></circle>
+<circle class="f4 ring" cx="599.09" cy="142.72" r="4" stroke-width="2"><title>step 2000, layer 23: 1.621</title></circle>
+<circle class="f4 ring" cx="623.32" cy="169.28" r="4" stroke-width="2"><title>step 2000, layer 24: 1.396</title></circle>
+<circle class="f4 ring" cx="647.54" cy="171.52" r="4" stroke-width="2"><title>step 2000, layer 25: 1.377</title></circle>
+<circle class="f4 ring" cx="671.77" cy="171.73" r="4" stroke-width="2"><title>step 2000, layer 26: 1.375</title></circle>
+<circle class="f4 ring" cx="696" cy="167.52" r="4" stroke-width="2"><title>step 2000, layer 27: 1.411</title></circle>
+<circle class="f5 ring" cx="41.84" cy="187.61" r="4" stroke-width="2"><title>step 2500, layer 0: 1.241</title></circle>
+<circle class="f5 ring" cx="66.07" cy="192.92" r="4" stroke-width="2"><title>step 2500, layer 1: 1.196</title></circle>
+<circle class="f5 ring" cx="90.3" cy="185.7" r="4" stroke-width="2"><title>step 2500, layer 2: 1.257</title></circle>
+<circle class="f5 ring" cx="114.52" cy="181.46" r="4" stroke-width="2"><title>step 2500, layer 3: 1.293</title></circle>
+<circle class="f5 ring" cx="138.75" cy="179.82" r="4" stroke-width="2"><title>step 2500, layer 4: 1.307</title></circle>
+<circle class="f5 ring" cx="162.98" cy="190.43" r="4" stroke-width="2"><title>step 2500, layer 5: 1.217</title></circle>
+<circle class="f5 ring" cx="187.21" cy="176.96" r="4" stroke-width="2"><title>step 2500, layer 6: 1.331</title></circle>
+<circle class="f5 ring" cx="211.44" cy="171.19" r="4" stroke-width="2"><title>step 2500, layer 7: 1.380</title></circle>
+<circle class="f5 ring" cx="235.67" cy="160.32" r="4" stroke-width="2"><title>step 2500, layer 8: 1.472</title></circle>
+<circle class="f5 ring" cx="259.89" cy="145" r="4" stroke-width="2"><title>step 2500, layer 9: 1.602</title></circle>
+<circle class="f5 ring" cx="284.12" cy="140.82" r="4" stroke-width="2"><title>step 2500, layer 10: 1.637</title></circle>
+<circle class="f5 ring" cx="308.35" cy="140.89" r="4" stroke-width="2"><title>step 2500, layer 11: 1.636</title></circle>
+<circle class="f5 ring" cx="332.58" cy="142.62" r="4" stroke-width="2"><title>step 2500, layer 12: 1.622</title></circle>
+<circle class="f5 ring" cx="356.81" cy="129.28" r="4" stroke-width="2"><title>step 2500, layer 13: 1.735</title></circle>
+<circle class="f5 ring" cx="381.03" cy="123.23" r="4" stroke-width="2"><title>step 2500, layer 14: 1.786</title></circle>
+<circle class="f5 ring" cx="405.26" cy="131.43" r="4" stroke-width="2"><title>step 2500, layer 15: 1.717</title></circle>
+<circle class="f5 ring" cx="429.49" cy="130.71" r="4" stroke-width="2"><title>step 2500, layer 16: 1.723</title></circle>
+<circle class="f5 ring" cx="453.72" cy="133.02" r="4" stroke-width="2"><title>step 2500, layer 17: 1.703</title></circle>
+<circle class="f5 ring" cx="477.95" cy="140.83" r="4" stroke-width="2"><title>step 2500, layer 18: 1.637</title></circle>
+<circle class="f5 ring" cx="502.17" cy="133.81" r="4" stroke-width="2"><title>step 2500, layer 19: 1.697</title></circle>
+<circle class="f5 ring" cx="526.4" cy="134.79" r="4" stroke-width="2"><title>step 2500, layer 20: 1.688</title></circle>
+<circle class="f5 ring" cx="550.63" cy="135.68" r="4" stroke-width="2"><title>step 2500, layer 21: 1.681</title></circle>
+<circle class="f5 ring" cx="574.86" cy="157.68" r="4" stroke-width="2"><title>step 2500, layer 22: 1.494</title></circle>
+<circle class="f5 ring" cx="599.09" cy="155.9" r="4" stroke-width="2"><title>step 2500, layer 23: 1.509</title></circle>
+<circle class="f5 ring" cx="623.32" cy="179.26" r="4" stroke-width="2"><title>step 2500, layer 24: 1.311</title></circle>
+<circle class="f5 ring" cx="647.54" cy="173.34" r="4" stroke-width="2"><title>step 2500, layer 25: 1.362</title></circle>
+<circle class="f5 ring" cx="671.77" cy="182.06" r="4" stroke-width="2"><title>step 2500, layer 26: 1.288</title></circle>
+<circle class="f5 ring" cx="696" cy="196.33" r="4" stroke-width="2"><title>step 2500, layer 27: 1.167</title></circle>
 </svg>

@@ -2,7 +2,7 @@
 
 > **Synthetic data.** This report was rendered from a run log made by a synthetic generator (`lrm report --synthetic`), so the visuals can be reviewed before the real runs exist. None of its numbers are measurements.
 
-**PASS.** 94 work units, 1 reissued after 1 node losses; no divergence, and every replica digest matches.
+**PASS.** 94 work units, 1 reissued after 1 node loss; no divergence, and every replica digest matches.
 
 | Work units | Reissued | Nodes lost | Divergences | Replica digests equal |
 | ---: | ---: | ---: | ---: | ---: |
@@ -22,11 +22,11 @@ Green units were accepted, grey ones are matching duplicates from the other repl
 
 | Node | Stage | Backend | Units | Reissued | Lost | Busy | Bytes sent |
 | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |
-| s0a | 0 | vulkan | 10 | 0 | 1 | 117.44 ms | 0 B |
-| s0b | 0 | vulkan | 24 | 0 | 0 | 250.45 ms | 0 B |
-| spare | 0 | vulkan | 12 | 1 | 0 | 152.03 ms | 0 B |
-| s1a | 1 | d3d12 | 24 | 0 | 0 | 295.88 ms | 0 B |
-| s1b | 1 | d3d12 | 24 | 0 | 0 | 299.07 ms | 0 B |
+| s0a | 0 | vulkan | 10 | 0 | 1 | 117.44 ms | 2.03 MiB |
+| s0b | 0 | vulkan | 24 | 0 | 0 | 250.45 ms | 2.09 MiB |
+| spare | 0 | vulkan | 12 | 1 | 0 | 152.03 ms | 48.00 KiB |
+| s1a | 1 | d3d12 | 24 | 0 | 0 | 295.88 ms | 1.50 KiB |
+| s1b | 1 | d3d12 | 24 | 0 | 0 | 299.07 ms | 1.50 KiB |
 
 ### Cluster events
 
@@ -40,12 +40,12 @@ Green units were accepted, grey ones are matching duplicates from the other repl
 | Node | Component | Stage | Wall (self) | GPU | FLOPs | Bytes moved | Tokens | Records |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | coord | coordinator |  | 590.26 ms | 0 ns | 0 | 0 B | 0 | 24 |
-| coord | coordinator | 0 | 0 ns | 0 ns | 0 | 2.09 MiB | 0 | 24 |
-| s0a | stage | 0 | 117.44 ms | 0 ns | 0 | 0 B | 0 | 10 |
-| s0b | stage | 0 | 250.45 ms | 0 ns | 0 | 0 B | 0 | 24 |
-| s1a | stage | 1 | 295.88 ms | 0 ns | 0 | 0 B | 0 | 24 |
-| s1b | stage | 1 | 299.07 ms | 0 ns | 0 | 0 B | 0 | 24 |
-| spare | stage | 0 | 152.03 ms | 0 ns | 0 | 0 B | 0 | 12 |
+| coord | coordinator | 0 | 0 ns | 0 ns | 0 | 2.09 KiB | 0 | 24 |
+| s0a | stage | 0 | 117.44 ms | 0 ns | 0 | 2.03 MiB | 0 | 19 |
+| s0b | stage | 0 | 250.45 ms | 0 ns | 0 | 2.09 MiB | 0 | 48 |
+| s1a | stage | 1 | 295.88 ms | 0 ns | 0 | 1.50 KiB | 0 | 48 |
+| s1b | stage | 1 | 299.07 ms | 0 ns | 0 | 1.50 KiB | 0 | 48 |
+| spare | stage | 0 | 152.03 ms | 0 ns | 0 | 48.00 KiB | 0 | 24 |
 
 ## Run
 
@@ -62,7 +62,7 @@ Green units were accepted, grey ones are matching duplicates from the other repl
 | Driver | n/a |
 | Commit | not recorded |
 | Nodes | 6 |
-| Records | 146 |
+| Records | 239 |
 | Synthetic | yes |
 
 | Parameter | Value |
@@ -81,11 +81,11 @@ Green units were accepted, grey ones are matching duplicates from the other repl
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
 | coord | creator | not recorded | 52 | ok | 0 |
-| s0a | joined | vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 10 | no | 0 |
-| s0b | joined | vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 24 | ok | 0 |
-| s1a | joined | d3d12 pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 24 | ok | 0 |
-| s1b | joined | d3d12 pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 24 | ok | 0 |
-| spare | joined | vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 12 | ok | 0 |
+| s0a | joined | vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 19 | no | 0 |
+| s0b | joined | vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 48 | ok | 0 |
+| s1a | joined | d3d12 pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 48 | ok | 0 |
+| s1b | joined | d3d12 pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 48 | ok | 0 |
+| spare | joined | vulkan pci:10de:2704, 616.92, win-x64 shaders 87f057325043 | 24 | ok | 0 |
 
 ### Log problems
 

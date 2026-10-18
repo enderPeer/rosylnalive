@@ -130,10 +130,23 @@ module Reports =
 
     let private utf8 = UTF8Encoding(false)
 
-    /// Writes <outDir>/<template>.md and <outDir>/charts/<file>.svg; returns the paths written, Markdown first.
+    /// Writes <outDir>/<template>.md and <outDir>/charts/<file>.svg; returns the paths written, Markdown first. The
+    /// render replaces the previous render of the same template: its chart files (charts/<template>-*.svg) are deleted
+    /// first, so the folder holds what this run log renders to and nothing left over from an earlier render.
     let write (outDir: string) (o: Output) : string list =
         let charts = Path.Combine(outDir, "charts")
         Directory.CreateDirectory charts |> ignore
+        let prefix = o.Template + "-"
+
+        for stale in Directory.GetFiles charts do
+            let name = Path.GetFileName stale
+
+            if
+                name.StartsWith(prefix, StringComparison.Ordinal)
+                && name.EndsWith(".svg", StringComparison.Ordinal)
+            then
+                File.Delete stale
+
         let md = Path.Combine(outDir, o.Template + ".md")
         File.WriteAllText(md, o.Markdown, utf8)
 

@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="302" viewBox="0 0 720 302" role="img" aria-labelledby="thinking-trace-title thinking-trace-desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="314" viewBox="0 0 720 314" role="img" aria-labelledby="thinking-trace-title thinking-trace-desc">
 <title id="thinking-trace-title">Roslyn call trace</title>
 <desc id="thinking-trace-desc">Timeline of 72 intervals on 7 lanes, 4 event marks.</desc>
-<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#898781}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
-<rect class="bg" x="0" y="0" width="720" height="302" rx="8"/>
-<rect class="frame" x="0.5" y="0.5" width="719" height="301" rx="8"/>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="314" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="313" rx="8"/>
 <text class="t1" x="16" y="26" font-size="15" font-weight="600">Roslyn call trace</text>
 <text class="t2" x="16" y="45" font-size="12">Each call on its API's lane, coloured by outcome; markers are thinking steps</text>
 <rect class="fgood" x="19" y="57" width="10" height="10" rx="2"/>
@@ -14,104 +14,105 @@
 <text class="t2" x="190" y="66" font-size="12">timeout</text>
 <rect class="fcrit" x="253" y="57" width="10" height="10" rx="2"/>
 <text class="t2" x="272" y="66" font-size="12">error</text>
-<line class="grid" x1="216.32" y1="102" x2="216.32" y2="256" stroke-width="1"/>
-<line class="grid" x1="345.03" y1="102" x2="345.03" y2="256" stroke-width="1"/>
-<line class="grid" x1="473.74" y1="102" x2="473.74" y2="256" stroke-width="1"/>
-<line class="grid" x1="602.45" y1="102" x2="602.45" y2="256" stroke-width="1"/>
-<text class="t2" x="208.32" y="117" font-size="12" text-anchor="end">Compilation.GetDiagnostics</text>
-<text class="t2" x="208.32" y="139" font-size="12" text-anchor="end">SemanticModel.GetSymbolInfo</text>
-<text class="t2" x="208.32" y="161" font-size="12" text-anchor="end">Compilation.Emit</text>
-<text class="t2" x="208.32" y="183" font-size="12" text-anchor="end">SyntaxNode.ReplaceNode</text>
-<text class="t2" x="208.32" y="205" font-size="12" text-anchor="end">SemanticModel.GetTypeInfo</text>
-<text class="t2" x="208.32" y="227" font-size="12" text-anchor="end">SemanticModel.AnalyzeDataFlow</text>
-<text class="t2" x="208.32" y="249" font-size="12" text-anchor="end">SemanticModel.LookupSymbols</text>
-<rect class="fgood" x="217.32" y="128" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 20, token 4: ok, 526.83 µs </title></rect>
-<rect class="fgood" x="219.34" y="128" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 8, token 9: ok, 279.16 µs </title></rect>
-<rect class="fgood" x="221.68" y="172" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 16, token 14: ok, 913.20 µs </title></rect>
-<rect class="fgood" x="223.11" y="172" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 20, token 16: ok, 1.41 ms </title></rect>
-<rect class="fgood" x="224.61" y="106" width="2.25" height="14" rx="1.12"><title>Compilation.GetDiagnostics at layer 8, token 18: ok, 5.04 ms </title></rect>
-<rect class="fgood" x="229.73" y="106" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 20, token 23: ok, 2.86 ms </title></rect>
-<rect class="fgood" x="232.89" y="128" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 12, token 28: ok, 274.01 µs </title></rect>
-<rect class="fgood" x="234.16" y="172" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 20, token 32: ok, 1.17 ms </title></rect>
-<rect class="fgood" x="237.95" y="106" width="1.29" height="14" rx="0.65"><title>Compilation.GetDiagnostics at layer 16, token 34: ok, 3.56 ms </title></rect>
-<rect class="fgood" x="241.35" y="238" width="1" height="14" rx="0.5"><title>SemanticModel.LookupSymbols at layer 8, token 38: ok, 653.94 µs </title></rect>
-<rect class="fgood" x="243.27" y="238" width="1" height="14" rx="0.5"><title>SemanticModel.LookupSymbols at layer 8, token 43: ok, 991.39 µs </title></rect>
-<rect class="fgood" x="245.43" y="150" width="18.36" height="14" rx="3"><title>Compilation.Emit at layer 12, token 45: ok, 30.08 ms </title></rect>
-<rect class="fgood" x="265.91" y="172" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 8, token 47: ok, 713.08 µs </title></rect>
-<rect class="fgood" x="267.9" y="150" width="12.05" height="14" rx="3"><title>Compilation.Emit at layer 12, token 50: ok, 20.28 ms </title></rect>
-<rect class="fgood" x="281.95" y="106" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 20, token 55: ok, 2.41 ms </title></rect>
-<rect class="fgood" x="285" y="150" width="9.54" height="14" rx="3"><title>Compilation.Emit at layer 16, token 60: ok, 16.38 ms </title></rect>
-<rect class="fgood" x="297.88" y="216" width="1" height="14" rx="0.5"><title>SemanticModel.AnalyzeDataFlow at layer 8, token 64: ok, 1.65 ms </title></rect>
-<rect class="fgood" x="300.92" y="106" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 8, token 67: ok, 2.63 ms </title></rect>
-<rect class="fgood" x="303.89" y="106" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 12, token 71: ok, 2.66 ms </title></rect>
-<rect class="fgood" x="308.84" y="150" width="6.3" height="14" rx="3"><title>Compilation.Emit at layer 12, token 76: ok, 11.34 ms </title></rect>
-<rect class="fgood" x="318.6" y="194" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 8, token 81: ok, 418.85 µs </title></rect>
-<rect class="fgood" x="319.39" y="172" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 16, token 84: ok, 452.86 µs </title></rect>
-<rect class="fgood" x="321.83" y="194" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 8, token 86: ok, 686.72 µs </title></rect>
-<rect class="fgood" x="322.96" y="128" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 20, token 89: ok, 424.74 µs </title></rect>
-<rect class="fgood" x="324.93" y="194" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 12, token 94: ok, 477.34 µs </title></rect>
-<rect class="fgood" x="326.18" y="194" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 16, token 99: ok, 518.58 µs </title></rect>
-<rect class="fwarn" x="327.68" y="106" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 8, token 101: diagnostic, 2.90 ms CS0103: The name 'fields' does not exist</title></rect>
-<rect class="fgood" x="331.8" y="106" width="1.22" height="14" rx="0.61"><title>Compilation.GetDiagnostics at layer 16, token 106: ok, 3.44 ms </title></rect>
-<rect class="fgood" x="335.64" y="150" width="11.59" height="14" rx="3"><title>Compilation.Emit at layer 20, token 109: ok, 19.57 ms </title></rect>
-<rect class="fgood" x="349.72" y="128" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 20, token 111: ok, 487.80 µs </title></rect>
-<rect class="fgood" x="350.76" y="128" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 16, token 115: ok, 246.98 µs </title></rect>
-<rect class="fgood" x="352.25" y="128" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 12, token 120: ok, 337.54 µs </title></rect>
-<rect class="fgood" x="353.8" y="216" width="1" height="14" rx="0.5"><title>SemanticModel.AnalyzeDataFlow at layer 20, token 125: ok, 1.93 ms </title></rect>
-<rect class="fgood" x="357.83" y="238" width="1" height="14" rx="0.5"><title>SemanticModel.LookupSymbols at layer 8, token 128: ok, 800.32 µs </title></rect>
-<rect class="fgood" x="359.8" y="106" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 16, token 130: ok, 2.44 ms </title></rect>
-<rect class="fwarn" x="362.53" y="106" width="1.76" height="14" rx="0.88"><title>Compilation.GetDiagnostics at layer 8, token 135: diagnostic, 4.28 ms CS1503: cannot convert from 'string' to 'int'</title></rect>
-<rect class="fgood" x="365.85" y="194" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 20, token 137: ok, 245.21 µs </title></rect>
-<rect class="fgood" x="367.61" y="172" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 16, token 142: ok, 1.22 ms </title></rect>
-<rect class="fgood" x="371.22" y="128" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 20, token 145: ok, 338.68 µs </title></rect>
-<rect class="fgood" x="372.91" y="238" width="1" height="14" rx="0.5"><title>SemanticModel.LookupSymbols at layer 12, token 148: ok, 612.16 µs </title></rect>
-<rect class="fgood" x="375.13" y="238" width="1" height="14" rx="0.5"><title>SemanticModel.LookupSymbols at layer 8, token 153: ok, 422.82 µs </title></rect>
-<rect class="fgood" x="376.2" y="128" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 12, token 155: ok, 249.96 µs </title></rect>
-<rect class="fgood" x="377.17" y="150" width="10.98" height="14" rx="3"><title>Compilation.Emit at layer 16, token 158: ok, 18.62 ms </title></rect>
-<rect class="fgood" x="391.27" y="106" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 16, token 163: ok, 2.96 ms </title></rect>
-<rect class="fserious" x="394.07" y="150" width="200.02" height="14" rx="3"><title>Compilation.Emit at layer 16, token 165: timeout, 312.36 ms Emit over the 250 ms budget</title></rect>
-<rect class="fgood" x="596.4" y="194" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 8, token 168: ok, 403.21 µs </title></rect>
-<rect class="fgood" x="597.48" y="106" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 16, token 171: ok, 2.90 ms </title></rect>
-<rect class="fgood" x="601.23" y="128" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 20, token 174: ok, 225.80 µs </title></rect>
-<rect class="fgood" x="603.46" y="128" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 20, token 179: ok, 167.17 µs </title></rect>
-<rect class="fgood" x="605.27" y="172" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 20, token 182: ok, 955.47 µs </title></rect>
-<rect class="fgood" x="606.96" y="150" width="5.29" height="14" rx="2.64"><title>Compilation.Emit at layer 20, token 184: ok, 9.77 ms </title></rect>
-<rect class="fgood" x="615.46" y="128" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 20, token 187: ok, 193.09 µs </title></rect>
-<rect class="fgood" x="617.95" y="106" width="1.09" height="14" rx="0.55"><title>Compilation.GetDiagnostics at layer 16, token 192: ok, 3.25 ms </title></rect>
-<rect class="fgood" x="621.16" y="106" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 20, token 194: ok, 2.91 ms </title></rect>
-<rect class="fgood" x="624.11" y="172" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 16, token 197: ok, 743.90 µs </title></rect>
-<rect class="fgood" x="625.64" y="216" width="1" height="14" rx="0.5"><title>SemanticModel.AnalyzeDataFlow at layer 20, token 202: ok, 2.18 ms </title></rect>
-<rect class="fgood" x="628.57" y="106" width="1.15" height="14" rx="0.58"><title>Compilation.GetDiagnostics at layer 12, token 207: ok, 3.34 ms </title></rect>
-<rect class="fgood" x="634.18" y="150" width="12.92" height="14" rx="3"><title>Compilation.Emit at layer 16, token 209: ok, 21.64 ms </title></rect>
-<rect class="fcrit" x="648.73" y="216" width="1" height="14" rx="0.5"><title>SemanticModel.AnalyzeDataFlow at layer 8, token 213: error, 1.89 ms InvalidOperationException in AnalyzeDataFlow (node not in tree)</title></rect>
-<rect class="fgood" x="651.74" y="216" width="1" height="14" rx="0.5"><title>SemanticModel.AnalyzeDataFlow at layer 12, token 217: ok, 2.22 ms </title></rect>
-<rect class="fgood" x="654.39" y="150" width="10.25" height="14" rx="3"><title>Compilation.Emit at layer 16, token 221: ok, 17.49 ms </title></rect>
-<rect class="fgood" x="666.2" y="106" width="1.13" height="14" rx="0.56"><title>Compilation.GetDiagnostics at layer 16, token 225: ok, 3.31 ms </title></rect>
-<rect class="fgood" x="669.36" y="106" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 8, token 229: ok, 2.68 ms </title></rect>
-<rect class="fgood" x="672.3" y="194" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 12, token 234: ok, 333.03 µs </title></rect>
-<rect class="fgood" x="674.4" y="172" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 12, token 238: ok, 693.93 µs </title></rect>
-<rect class="fgood" x="678.68" y="216" width="1" height="14" rx="0.5"><title>SemanticModel.AnalyzeDataFlow at layer 8, token 242: ok, 1.10 ms </title></rect>
-<rect class="fgood" x="682" y="194" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 12, token 246: ok, 307.05 µs </title></rect>
-<rect class="fgood" x="684.32" y="172" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 20, token 251: ok, 852.16 µs </title></rect>
-<rect class="fgood" x="685.74" y="128" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 16, token 253: ok, 271.07 µs </title></rect>
-<rect class="fgood" x="686.62" y="194" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 8, token 257: ok, 268.10 µs </title></rect>
-<rect class="fgood" x="687.89" y="106" width="1.22" height="14" rx="0.61"><title>Compilation.GetDiagnostics at layer 12, token 259: ok, 3.44 ms </title></rect>
-<rect class="fgood" x="694.3" y="106" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 16, token 261: ok, 2.64 ms </title></rect>
-<line class="sn" x1="216.32" y1="96" x2="216.32" y2="256" stroke-width="2"><title>plan</title></line>
-<path class="fn" d="M211.32 90h10l-5 7Z"/>
-<line class="sn" x1="334.01" y1="96" x2="334.01" y2="256" stroke-width="2"><title>revise</title></line>
-<path class="fn" d="M329.01 90h10l-5 7Z"/>
-<line class="sn" x1="366.01" y1="96" x2="366.01" y2="256" stroke-width="2"><title>revise</title></line>
-<path class="fn" d="M361.01 90h10l-5 7Z"/>
-<line class="sn" x1="665.65" y1="96" x2="665.65" y2="256" stroke-width="2"><title>check</title></line>
-<path class="fn" d="M660.65 90h10l-5 7Z"/>
-<text class="t2" x="224.32" y="96" font-size="10" text-anchor="start">plan</text>
-<text class="t2" x="342.01" y="96" font-size="10" text-anchor="start">revise</text>
-<text class="t2" x="673.65" y="96" font-size="10" text-anchor="start">check</text>
-<text class="t3" x="216.32" y="273" font-size="11" text-anchor="middle">0</text>
-<text class="t3" x="345.03" y="273" font-size="11" text-anchor="middle">200 ms</text>
-<text class="t3" x="473.74" y="273" font-size="11" text-anchor="middle">400 ms</text>
-<text class="t3" x="602.45" y="273" font-size="11" text-anchor="middle">600 ms</text>
-<line class="axis" x1="216.32" y1="256" x2="696" y2="256" stroke-width="1"/>
-<text class="t3" x="456.16" y="292" font-size="11" text-anchor="middle">time since the run started</text>
+<line class="grid" x1="216.32" y1="114" x2="216.32" y2="268" stroke-width="1"/>
+<line class="grid" x1="345.03" y1="114" x2="345.03" y2="268" stroke-width="1"/>
+<line class="grid" x1="473.74" y1="114" x2="473.74" y2="268" stroke-width="1"/>
+<line class="grid" x1="602.45" y1="114" x2="602.45" y2="268" stroke-width="1"/>
+<text class="t2" x="208.32" y="129" font-size="12" text-anchor="end">Compilation.GetDiagnostics</text>
+<text class="t2" x="208.32" y="151" font-size="12" text-anchor="end">SemanticModel.GetSymbolInfo</text>
+<text class="t2" x="208.32" y="173" font-size="12" text-anchor="end">Compilation.Emit</text>
+<text class="t2" x="208.32" y="195" font-size="12" text-anchor="end">SyntaxNode.ReplaceNode</text>
+<text class="t2" x="208.32" y="217" font-size="12" text-anchor="end">SemanticModel.GetTypeInfo</text>
+<text class="t2" x="208.32" y="239" font-size="12" text-anchor="end">SemanticModel.AnalyzeDataFlow</text>
+<text class="t2" x="208.32" y="261" font-size="12" text-anchor="end">SemanticModel.LookupSymbols</text>
+<rect class="fgood" x="217.32" y="140" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 20, token 4: ok, 526.83 µs </title></rect>
+<rect class="fgood" x="219.34" y="140" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 8, token 9: ok, 279.16 µs </title></rect>
+<rect class="fgood" x="221.68" y="184" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 16, token 14: ok, 913.20 µs </title></rect>
+<rect class="fgood" x="223.11" y="184" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 20, token 16: ok, 1.41 ms </title></rect>
+<rect class="fgood" x="224.61" y="118" width="2.25" height="14" rx="1.12"><title>Compilation.GetDiagnostics at layer 8, token 18: ok, 5.04 ms </title></rect>
+<rect class="fgood" x="229.73" y="118" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 20, token 23: ok, 2.86 ms </title></rect>
+<rect class="fgood" x="232.89" y="140" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 12, token 28: ok, 274.01 µs </title></rect>
+<rect class="fgood" x="234.16" y="184" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 20, token 32: ok, 1.17 ms </title></rect>
+<rect class="fgood" x="237.95" y="118" width="1.29" height="14" rx="0.65"><title>Compilation.GetDiagnostics at layer 16, token 34: ok, 3.56 ms </title></rect>
+<rect class="fgood" x="241.35" y="250" width="1" height="14" rx="0.5"><title>SemanticModel.LookupSymbols at layer 8, token 38: ok, 653.94 µs </title></rect>
+<rect class="fgood" x="243.27" y="250" width="1" height="14" rx="0.5"><title>SemanticModel.LookupSymbols at layer 8, token 43: ok, 991.39 µs </title></rect>
+<rect class="fgood" x="245.43" y="162" width="18.36" height="14" rx="3"><title>Compilation.Emit at layer 12, token 45: ok, 30.08 ms </title></rect>
+<rect class="fgood" x="265.91" y="184" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 8, token 47: ok, 713.08 µs </title></rect>
+<rect class="fgood" x="267.9" y="162" width="12.05" height="14" rx="3"><title>Compilation.Emit at layer 12, token 50: ok, 20.28 ms </title></rect>
+<rect class="fgood" x="281.95" y="118" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 20, token 55: ok, 2.41 ms </title></rect>
+<rect class="fgood" x="285" y="162" width="9.54" height="14" rx="3"><title>Compilation.Emit at layer 16, token 60: ok, 16.38 ms </title></rect>
+<rect class="fgood" x="297.88" y="228" width="1" height="14" rx="0.5"><title>SemanticModel.AnalyzeDataFlow at layer 8, token 64: ok, 1.65 ms </title></rect>
+<rect class="fgood" x="300.92" y="118" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 8, token 67: ok, 2.63 ms </title></rect>
+<rect class="fgood" x="303.89" y="118" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 12, token 71: ok, 2.66 ms </title></rect>
+<rect class="fgood" x="308.84" y="162" width="6.3" height="14" rx="3"><title>Compilation.Emit at layer 12, token 76: ok, 11.34 ms </title></rect>
+<rect class="fgood" x="318.6" y="206" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 8, token 81: ok, 418.85 µs </title></rect>
+<rect class="fgood" x="319.39" y="184" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 16, token 84: ok, 452.86 µs </title></rect>
+<rect class="fgood" x="321.83" y="206" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 8, token 86: ok, 686.72 µs </title></rect>
+<rect class="fgood" x="322.96" y="140" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 20, token 89: ok, 424.74 µs </title></rect>
+<rect class="fgood" x="324.93" y="206" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 12, token 94: ok, 477.34 µs </title></rect>
+<rect class="fgood" x="326.18" y="206" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 16, token 99: ok, 518.58 µs </title></rect>
+<rect class="fgood" x="331.8" y="118" width="1.22" height="14" rx="0.61"><title>Compilation.GetDiagnostics at layer 16, token 106: ok, 3.44 ms </title></rect>
+<rect class="fgood" x="335.64" y="162" width="11.59" height="14" rx="3"><title>Compilation.Emit at layer 20, token 109: ok, 19.57 ms </title></rect>
+<rect class="fgood" x="349.72" y="140" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 20, token 111: ok, 487.80 µs </title></rect>
+<rect class="fgood" x="350.76" y="140" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 16, token 115: ok, 246.98 µs </title></rect>
+<rect class="fgood" x="352.25" y="140" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 12, token 120: ok, 337.54 µs </title></rect>
+<rect class="fgood" x="353.8" y="228" width="1" height="14" rx="0.5"><title>SemanticModel.AnalyzeDataFlow at layer 20, token 125: ok, 1.93 ms </title></rect>
+<rect class="fgood" x="357.83" y="250" width="1" height="14" rx="0.5"><title>SemanticModel.LookupSymbols at layer 8, token 128: ok, 800.32 µs </title></rect>
+<rect class="fgood" x="359.8" y="118" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 16, token 130: ok, 2.44 ms </title></rect>
+<rect class="fgood" x="365.85" y="206" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 20, token 137: ok, 245.21 µs </title></rect>
+<rect class="fgood" x="367.61" y="184" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 16, token 142: ok, 1.22 ms </title></rect>
+<rect class="fgood" x="371.22" y="140" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 20, token 145: ok, 338.68 µs </title></rect>
+<rect class="fgood" x="372.91" y="250" width="1" height="14" rx="0.5"><title>SemanticModel.LookupSymbols at layer 12, token 148: ok, 612.16 µs </title></rect>
+<rect class="fgood" x="375.13" y="250" width="1" height="14" rx="0.5"><title>SemanticModel.LookupSymbols at layer 8, token 153: ok, 422.82 µs </title></rect>
+<rect class="fgood" x="376.2" y="140" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 12, token 155: ok, 249.96 µs </title></rect>
+<rect class="fgood" x="377.17" y="162" width="10.98" height="14" rx="3"><title>Compilation.Emit at layer 16, token 158: ok, 18.62 ms </title></rect>
+<rect class="fgood" x="391.27" y="118" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 16, token 163: ok, 2.96 ms </title></rect>
+<rect class="fgood" x="596.4" y="206" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 8, token 168: ok, 403.21 µs </title></rect>
+<rect class="fgood" x="597.48" y="118" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 16, token 171: ok, 2.90 ms </title></rect>
+<rect class="fgood" x="601.23" y="140" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 20, token 174: ok, 225.80 µs </title></rect>
+<rect class="fgood" x="603.46" y="140" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 20, token 179: ok, 167.17 µs </title></rect>
+<rect class="fgood" x="605.27" y="184" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 20, token 182: ok, 955.47 µs </title></rect>
+<rect class="fgood" x="606.96" y="162" width="5.29" height="14" rx="2.64"><title>Compilation.Emit at layer 20, token 184: ok, 9.77 ms </title></rect>
+<rect class="fgood" x="615.46" y="140" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 20, token 187: ok, 193.09 µs </title></rect>
+<rect class="fgood" x="617.95" y="118" width="1.09" height="14" rx="0.55"><title>Compilation.GetDiagnostics at layer 16, token 192: ok, 3.25 ms </title></rect>
+<rect class="fgood" x="621.16" y="118" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 20, token 194: ok, 2.91 ms </title></rect>
+<rect class="fgood" x="624.11" y="184" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 16, token 197: ok, 743.90 µs </title></rect>
+<rect class="fgood" x="625.64" y="228" width="1" height="14" rx="0.5"><title>SemanticModel.AnalyzeDataFlow at layer 20, token 202: ok, 2.18 ms </title></rect>
+<rect class="fgood" x="628.57" y="118" width="1.15" height="14" rx="0.58"><title>Compilation.GetDiagnostics at layer 12, token 207: ok, 3.34 ms </title></rect>
+<rect class="fgood" x="634.18" y="162" width="12.92" height="14" rx="3"><title>Compilation.Emit at layer 16, token 209: ok, 21.64 ms </title></rect>
+<rect class="fgood" x="651.74" y="228" width="1" height="14" rx="0.5"><title>SemanticModel.AnalyzeDataFlow at layer 12, token 217: ok, 2.22 ms </title></rect>
+<rect class="fgood" x="654.39" y="162" width="10.25" height="14" rx="3"><title>Compilation.Emit at layer 16, token 221: ok, 17.49 ms </title></rect>
+<rect class="fgood" x="666.2" y="118" width="1.13" height="14" rx="0.56"><title>Compilation.GetDiagnostics at layer 16, token 225: ok, 3.31 ms </title></rect>
+<rect class="fgood" x="669.36" y="118" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 8, token 229: ok, 2.68 ms </title></rect>
+<rect class="fgood" x="672.3" y="206" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 12, token 234: ok, 333.03 µs </title></rect>
+<rect class="fgood" x="674.4" y="184" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 12, token 238: ok, 693.93 µs </title></rect>
+<rect class="fgood" x="678.68" y="228" width="1" height="14" rx="0.5"><title>SemanticModel.AnalyzeDataFlow at layer 8, token 242: ok, 1.10 ms </title></rect>
+<rect class="fgood" x="682" y="206" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 12, token 246: ok, 307.05 µs </title></rect>
+<rect class="fgood" x="684.32" y="184" width="1" height="14" rx="0.5"><title>SyntaxNode.ReplaceNode at layer 20, token 251: ok, 852.16 µs </title></rect>
+<rect class="fgood" x="685.74" y="140" width="1" height="14" rx="0.5"><title>SemanticModel.GetSymbolInfo at layer 16, token 253: ok, 271.07 µs </title></rect>
+<rect class="fgood" x="686.62" y="206" width="1" height="14" rx="0.5"><title>SemanticModel.GetTypeInfo at layer 8, token 257: ok, 268.10 µs </title></rect>
+<rect class="fgood" x="687.89" y="118" width="1.22" height="14" rx="0.61"><title>Compilation.GetDiagnostics at layer 12, token 259: ok, 3.44 ms </title></rect>
+<rect class="fgood" x="694.3" y="118" width="1" height="14" rx="0.5"><title>Compilation.GetDiagnostics at layer 16, token 261: ok, 2.64 ms </title></rect>
+<line class="sn" x1="216.32" y1="108" x2="216.32" y2="268" stroke-width="2"><title>plan</title></line>
+<path class="fn" d="M211.32 102h10l-5 7Z"/>
+<line class="sn" x1="334.01" y1="108" x2="334.01" y2="268" stroke-width="2"><title>revise</title></line>
+<path class="fn" d="M329.01 102h10l-5 7Z"/>
+<line class="sn" x1="366.01" y1="108" x2="366.01" y2="268" stroke-width="2"><title>revise</title></line>
+<path class="fn" d="M361.01 102h10l-5 7Z"/>
+<line class="sn" x1="665.65" y1="108" x2="665.65" y2="268" stroke-width="2"><title>check</title></line>
+<path class="fn" d="M660.65 102h10l-5 7Z"/>
+<rect class="fwarn emph" x="327.68" y="118" width="4" height="14" rx="2" stroke-width="1"><title>Compilation.GetDiagnostics at layer 8, token 101: diagnostic, 2.90 ms CS0103: The name 'fields' does not exist</title></rect>
+<rect class="fwarn emph" x="362.53" y="118" width="4" height="14" rx="2" stroke-width="1"><title>Compilation.GetDiagnostics at layer 8, token 135: diagnostic, 4.28 ms CS1503: cannot convert from 'string' to 'int'</title></rect>
+<rect class="fserious emph" x="394.07" y="162" width="200.02" height="14" rx="3" stroke-width="1"><title>Compilation.Emit at layer 16, token 165: timeout, 312.36 ms Emit over the 250 ms budget</title></rect>
+<rect class="fcrit emph" x="648.73" y="228" width="4" height="14" rx="2" stroke-width="1"><title>SemanticModel.AnalyzeDataFlow at layer 8, token 213: error, 1.89 ms InvalidOperationException in AnalyzeDataFlow (node not in tree)</title></rect>
+<text class="t2" x="224.32" y="108" font-size="10" text-anchor="start">plan</text>
+<text class="t2" x="342.01" y="108" font-size="10" text-anchor="start">revise</text>
+<text class="t2" x="374.01" y="96" font-size="10" text-anchor="start">revise</text>
+<text class="t2" x="673.65" y="108" font-size="10" text-anchor="start">check</text>
+<text class="t3" x="216.32" y="285" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="345.03" y="285" font-size="11" text-anchor="middle">200 ms</text>
+<text class="t3" x="473.74" y="285" font-size="11" text-anchor="middle">400 ms</text>
+<text class="t3" x="602.45" y="285" font-size="11" text-anchor="middle">600 ms</text>
+<line class="axis" x1="216.32" y1="268" x2="696" y2="268" stroke-width="1"/>
+<text class="t3" x="456.16" y="304" font-size="11" text-anchor="middle">time since the run started</text>
 </svg>

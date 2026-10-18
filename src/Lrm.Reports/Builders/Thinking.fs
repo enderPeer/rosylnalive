@@ -123,15 +123,19 @@ let build (log: RunLog) : Scope =
         if calls.IsEmpty then
             noData "Call latency" "roslyn.call span"
         else
+            let b = bin 20 true durations
+
             Chart.Histogram
                 {
                     Title = "Call latency"
                     Subtitle =
                         Invariant.format
                             $"Log scale; median {Fmt.duration (median durations)}, p95 {Fmt.duration (quantile 0.95 durations)}"
-                    XLabel = "duration (ns)"
-                    XFormat = NumFormat.Pow10
-                    Bins = bins 20 true durations
+                    XLabel = "duration"
+                    XFormat = NumFormat.Decades NumFormat.Duration
+                    Bins = b.Bins
+                    Zeros = b.Zeros
+                    Invalid = b.Invalid
                     Color = Color.Cat 0
                     Marks = []
                 }

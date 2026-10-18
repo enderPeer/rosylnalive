@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="inference-layer_time-title inference-layer_time-desc">
 <title id="inference-layer_time-title">Layer time per token</title>
 <desc id="inference-layer_time-desc">Line chart of time per token against layer: 2 series, 56 points.</desc>
-<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#898781}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
 <rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
 <rect class="frame" x="0.5" y="0.5" width="719" height="379" rx="8"/>
 <text class="t1" x="16" y="26" font-size="15" font-weight="600">Layer time per token</text>
@@ -31,64 +31,64 @@
 <line class="axis" x1="60.1" y1="334" x2="657.04" y2="334" stroke-width="1"/>
 <text class="t3" x="60.1" y="88" font-size="11" text-anchor="start">time per token</text>
 <text class="t3" x="358.57" y="370" font-size="11" text-anchor="middle">layer</text>
-<path class="line s0" d="M60.1 315.77 L82.21 320.3 L104.32 321.58 L126.43 321.82 L148.54 320.29 L170.64 320.9 L192.75 321.15 L214.86 321.28 L236.97 320.72 L259.08 319.95 L281.19 320.56 L303.3 320.21 L325.41 320.75 L347.52 320.54 L369.62 320.24 L391.73 320.75 L413.84 321.75 L435.95 321.05 L458.06 320.46 L480.17 320.67 L502.28 319.64 L524.39 320.46 L546.5 321.67 L568.6 320.18 L590.71 321.42 L612.82 321.31 L634.93 320.96 L657.04 320.69"><title>prefill</title></path>
-<path class="line s1" d="M60.1 133.58 L82.21 131.4 L104.32 130.88 L126.43 130.93 L148.54 129.66 L170.64 132.25 L192.75 132.94 L214.86 133.34 L236.97 130.05 L259.08 134.29 L281.19 131.12 L303.3 130.29 L325.41 132.49 L347.52 131.76 L369.62 131.82 L391.73 131.77 L413.84 130.88 L435.95 131.65 L458.06 133.54 L480.17 131.83 L502.28 130.4 L524.39 129.9 L546.5 132.34 L568.6 130.83 L590.71 131.36 L612.82 130.96 L634.93 131.45 L657.04 131.48"><title>decode</title></path>
+<path class="line s0" d="M60.1 315.77 L82.21 320.29 L104.32 320.72 L126.43 320.75 L148.54 321.75 L170.64 319.64 L192.75 321.42 L214.86 321.07 L236.97 320.58 L259.08 321.06 L281.19 320.68 L303.3 320.06 L325.41 320.07 L347.52 320.8 L369.62 319.63 L391.73 320.89 L413.84 320.1 L435.95 320.49 L458.06 320.98 L480.17 320.73 L502.28 320.77 L524.39 320.64 L546.5 320.05 L568.6 320.99 L590.71 321.11 L612.82 321.27 L634.93 321.13 L657.04 320.94"><title>prefill</title></path>
+<path class="line s1" d="M60.1 132.34 L82.21 130.79 L104.32 131.23 L126.43 131.23 L148.54 132.24 L170.64 130.8 L192.75 132.07 L214.86 132.36 L236.97 131.9 L259.08 132.82 L281.19 131.59 L303.3 131.58 L325.41 129.9 L347.52 130.81 L369.62 132.1 L391.73 130.91 L413.84 130.35 L435.95 131.74 L458.06 131.3 L480.17 130.73 L502.28 131.09 L524.39 131.67 L546.5 132.2 L568.6 131.03 L590.71 131.93 L612.82 131.29 L634.93 133.07 L657.04 131.25"><title>decode</title></path>
 <circle class="f0 ring" cx="60.1" cy="315.77" r="4" stroke-width="2"><title>prefill, layer 0: 9.65 µs</title></circle>
-<circle class="f0 ring" cx="82.21" cy="320.3" r="4" stroke-width="2"><title>prefill, layer 1: 7.25 µs</title></circle>
-<circle class="f0 ring" cx="104.32" cy="321.58" r="4" stroke-width="2"><title>prefill, layer 2: 6.58 µs</title></circle>
-<circle class="f0 ring" cx="126.43" cy="321.82" r="4" stroke-width="2"><title>prefill, layer 3: 6.45 µs</title></circle>
-<circle class="f0 ring" cx="148.54" cy="320.29" r="4" stroke-width="2"><title>prefill, layer 4: 7.26 µs</title></circle>
-<circle class="f0 ring" cx="170.64" cy="320.9" r="4" stroke-width="2"><title>prefill, layer 5: 6.94 µs</title></circle>
-<circle class="f0 ring" cx="192.75" cy="321.15" r="4" stroke-width="2"><title>prefill, layer 6: 6.81 µs</title></circle>
-<circle class="f0 ring" cx="214.86" cy="321.28" r="4" stroke-width="2"><title>prefill, layer 7: 6.74 µs</title></circle>
-<circle class="f0 ring" cx="236.97" cy="320.72" r="4" stroke-width="2"><title>prefill, layer 8: 7.04 µs</title></circle>
-<circle class="f0 ring" cx="259.08" cy="319.95" r="4" stroke-width="2"><title>prefill, layer 9: 7.44 µs</title></circle>
-<circle class="f0 ring" cx="281.19" cy="320.56" r="4" stroke-width="2"><title>prefill, layer 10: 7.12 µs</title></circle>
-<circle class="f0 ring" cx="303.3" cy="320.21" r="4" stroke-width="2"><title>prefill, layer 11: 7.30 µs</title></circle>
-<circle class="f0 ring" cx="325.41" cy="320.75" r="4" stroke-width="2"><title>prefill, layer 12: 7.02 µs</title></circle>
-<circle class="f0 ring" cx="347.52" cy="320.54" r="4" stroke-width="2"><title>prefill, layer 13: 7.13 µs</title></circle>
-<circle class="f0 ring" cx="369.62" cy="320.24" r="4" stroke-width="2"><title>prefill, layer 14: 7.29 µs</title></circle>
-<circle class="f0 ring" cx="391.73" cy="320.75" r="4" stroke-width="2"><title>prefill, layer 15: 7.02 µs</title></circle>
-<circle class="f0 ring" cx="413.84" cy="321.75" r="4" stroke-width="2"><title>prefill, layer 16: 6.49 µs</title></circle>
-<circle class="f0 ring" cx="435.95" cy="321.05" r="4" stroke-width="2"><title>prefill, layer 17: 6.86 µs</title></circle>
-<circle class="f0 ring" cx="458.06" cy="320.46" r="4" stroke-width="2"><title>prefill, layer 18: 7.17 µs</title></circle>
-<circle class="f0 ring" cx="480.17" cy="320.67" r="4" stroke-width="2"><title>prefill, layer 19: 7.06 µs</title></circle>
-<circle class="f0 ring" cx="502.28" cy="319.64" r="4" stroke-width="2"><title>prefill, layer 20: 7.61 µs</title></circle>
-<circle class="f0 ring" cx="524.39" cy="320.46" r="4" stroke-width="2"><title>prefill, layer 21: 7.17 µs</title></circle>
-<circle class="f0 ring" cx="546.5" cy="321.67" r="4" stroke-width="2"><title>prefill, layer 22: 6.53 µs</title></circle>
-<circle class="f0 ring" cx="568.6" cy="320.18" r="4" stroke-width="2"><title>prefill, layer 23: 7.32 µs</title></circle>
-<circle class="f0 ring" cx="590.71" cy="321.42" r="4" stroke-width="2"><title>prefill, layer 24: 6.66 µs</title></circle>
-<circle class="f0 ring" cx="612.82" cy="321.31" r="4" stroke-width="2"><title>prefill, layer 25: 6.72 µs</title></circle>
-<circle class="f0 ring" cx="634.93" cy="320.96" r="4" stroke-width="2"><title>prefill, layer 26: 6.91 µs</title></circle>
-<circle class="f0 ring" cx="657.04" cy="320.69" r="4" stroke-width="2"><title>prefill, layer 27: 7.05 µs</title></circle>
-<circle class="f1 ring" cx="60.1" cy="133.58" r="4" stroke-width="2"><title>decode, layer 0: 106.16 µs</title></circle>
-<circle class="f1 ring" cx="82.21" cy="131.4" r="4" stroke-width="2"><title>decode, layer 1: 107.31 µs</title></circle>
-<circle class="f1 ring" cx="104.32" cy="130.88" r="4" stroke-width="2"><title>decode, layer 2: 107.58 µs</title></circle>
-<circle class="f1 ring" cx="126.43" cy="130.93" r="4" stroke-width="2"><title>decode, layer 3: 107.56 µs</title></circle>
-<circle class="f1 ring" cx="148.54" cy="129.66" r="4" stroke-width="2"><title>decode, layer 4: 108.23 µs</title></circle>
-<circle class="f1 ring" cx="170.64" cy="132.25" r="4" stroke-width="2"><title>decode, layer 5: 106.86 µs</title></circle>
-<circle class="f1 ring" cx="192.75" cy="132.94" r="4" stroke-width="2"><title>decode, layer 6: 106.50 µs</title></circle>
-<circle class="f1 ring" cx="214.86" cy="133.34" r="4" stroke-width="2"><title>decode, layer 7: 106.28 µs</title></circle>
-<circle class="f1 ring" cx="236.97" cy="130.05" r="4" stroke-width="2"><title>decode, layer 8: 108.03 µs</title></circle>
-<circle class="f1 ring" cx="259.08" cy="134.29" r="4" stroke-width="2"><title>decode, layer 9: 105.78 µs</title></circle>
-<circle class="f1 ring" cx="281.19" cy="131.12" r="4" stroke-width="2"><title>decode, layer 10: 107.46 µs</title></circle>
-<circle class="f1 ring" cx="303.3" cy="130.29" r="4" stroke-width="2"><title>decode, layer 11: 107.90 µs</title></circle>
-<circle class="f1 ring" cx="325.41" cy="132.49" r="4" stroke-width="2"><title>decode, layer 12: 106.73 µs</title></circle>
-<circle class="f1 ring" cx="347.52" cy="131.76" r="4" stroke-width="2"><title>decode, layer 13: 107.12 µs</title></circle>
-<circle class="f1 ring" cx="369.62" cy="131.82" r="4" stroke-width="2"><title>decode, layer 14: 107.09 µs</title></circle>
-<circle class="f1 ring" cx="391.73" cy="131.77" r="4" stroke-width="2"><title>decode, layer 15: 107.11 µs</title></circle>
-<circle class="f1 ring" cx="413.84" cy="130.88" r="4" stroke-width="2"><title>decode, layer 16: 107.59 µs</title></circle>
-<circle class="f1 ring" cx="435.95" cy="131.65" r="4" stroke-width="2"><title>decode, layer 17: 107.17 µs</title></circle>
-<circle class="f1 ring" cx="458.06" cy="133.54" r="4" stroke-width="2"><title>decode, layer 18: 106.17 µs</title></circle>
-<circle class="f1 ring" cx="480.17" cy="131.83" r="4" stroke-width="2"><title>decode, layer 19: 107.08 µs</title></circle>
-<circle class="f1 ring" cx="502.28" cy="130.4" r="4" stroke-width="2"><title>decode, layer 20: 107.84 µs</title></circle>
-<circle class="f1 ring" cx="524.39" cy="129.9" r="4" stroke-width="2"><title>decode, layer 21: 108.10 µs</title></circle>
-<circle class="f1 ring" cx="546.5" cy="132.34" r="4" stroke-width="2"><title>decode, layer 22: 106.81 µs</title></circle>
-<circle class="f1 ring" cx="568.6" cy="130.83" r="4" stroke-width="2"><title>decode, layer 23: 107.61 µs</title></circle>
-<circle class="f1 ring" cx="590.71" cy="131.36" r="4" stroke-width="2"><title>decode, layer 24: 107.33 µs</title></circle>
-<circle class="f1 ring" cx="612.82" cy="130.96" r="4" stroke-width="2"><title>decode, layer 25: 107.54 µs</title></circle>
-<circle class="f1 ring" cx="634.93" cy="131.45" r="4" stroke-width="2"><title>decode, layer 26: 107.28 µs</title></circle>
-<circle class="f1 ring" cx="657.04" cy="131.48" r="4" stroke-width="2"><title>decode, layer 27: 107.27 µs</title></circle>
-<text class="t2" x="665.04" y="324.69" font-size="11">prefill</text>
-<text class="t2" x="665.04" y="135.48" font-size="11">decode</text>
+<circle class="f0 ring" cx="82.21" cy="320.29" r="4" stroke-width="2"><title>prefill, layer 1: 7.26 µs</title></circle>
+<circle class="f0 ring" cx="104.32" cy="320.72" r="4" stroke-width="2"><title>prefill, layer 2: 7.04 µs</title></circle>
+<circle class="f0 ring" cx="126.43" cy="320.75" r="4" stroke-width="2"><title>prefill, layer 3: 7.02 µs</title></circle>
+<circle class="f0 ring" cx="148.54" cy="321.75" r="4" stroke-width="2"><title>prefill, layer 4: 6.49 µs</title></circle>
+<circle class="f0 ring" cx="170.64" cy="319.64" r="4" stroke-width="2"><title>prefill, layer 5: 7.61 µs</title></circle>
+<circle class="f0 ring" cx="192.75" cy="321.42" r="4" stroke-width="2"><title>prefill, layer 6: 6.66 µs</title></circle>
+<circle class="f0 ring" cx="214.86" cy="321.07" r="4" stroke-width="2"><title>prefill, layer 7: 6.85 µs</title></circle>
+<circle class="f0 ring" cx="236.97" cy="320.58" r="4" stroke-width="2"><title>prefill, layer 8: 7.11 µs</title></circle>
+<circle class="f0 ring" cx="259.08" cy="321.06" r="4" stroke-width="2"><title>prefill, layer 9: 6.86 µs</title></circle>
+<circle class="f0 ring" cx="281.19" cy="320.68" r="4" stroke-width="2"><title>prefill, layer 10: 7.06 µs</title></circle>
+<circle class="f0 ring" cx="303.3" cy="320.06" r="4" stroke-width="2"><title>prefill, layer 11: 7.38 µs</title></circle>
+<circle class="f0 ring" cx="325.41" cy="320.07" r="4" stroke-width="2"><title>prefill, layer 12: 7.38 µs</title></circle>
+<circle class="f0 ring" cx="347.52" cy="320.8" r="4" stroke-width="2"><title>prefill, layer 13: 6.99 µs</title></circle>
+<circle class="f0 ring" cx="369.62" cy="319.63" r="4" stroke-width="2"><title>prefill, layer 14: 7.61 µs</title></circle>
+<circle class="f0 ring" cx="391.73" cy="320.89" r="4" stroke-width="2"><title>prefill, layer 15: 6.94 µs</title></circle>
+<circle class="f0 ring" cx="413.84" cy="320.1" r="4" stroke-width="2"><title>prefill, layer 16: 7.36 µs</title></circle>
+<circle class="f0 ring" cx="435.95" cy="320.49" r="4" stroke-width="2"><title>prefill, layer 17: 7.16 µs</title></circle>
+<circle class="f0 ring" cx="458.06" cy="320.98" r="4" stroke-width="2"><title>prefill, layer 18: 6.90 µs</title></circle>
+<circle class="f0 ring" cx="480.17" cy="320.73" r="4" stroke-width="2"><title>prefill, layer 19: 7.03 µs</title></circle>
+<circle class="f0 ring" cx="502.28" cy="320.77" r="4" stroke-width="2"><title>prefill, layer 20: 7.01 µs</title></circle>
+<circle class="f0 ring" cx="524.39" cy="320.64" r="4" stroke-width="2"><title>prefill, layer 21: 7.08 µs</title></circle>
+<circle class="f0 ring" cx="546.5" cy="320.05" r="4" stroke-width="2"><title>prefill, layer 22: 7.39 µs</title></circle>
+<circle class="f0 ring" cx="568.6" cy="320.99" r="4" stroke-width="2"><title>prefill, layer 23: 6.89 µs</title></circle>
+<circle class="f0 ring" cx="590.71" cy="321.11" r="4" stroke-width="2"><title>prefill, layer 24: 6.83 µs</title></circle>
+<circle class="f0 ring" cx="612.82" cy="321.27" r="4" stroke-width="2"><title>prefill, layer 25: 6.74 µs</title></circle>
+<circle class="f0 ring" cx="634.93" cy="321.13" r="4" stroke-width="2"><title>prefill, layer 26: 6.82 µs</title></circle>
+<circle class="f0 ring" cx="657.04" cy="320.94" r="4" stroke-width="2"><title>prefill, layer 27: 6.92 µs</title></circle>
+<circle class="f1 ring" cx="60.1" cy="132.34" r="4" stroke-width="2"><title>decode, layer 0: 106.81 µs</title></circle>
+<circle class="f1 ring" cx="82.21" cy="130.79" r="4" stroke-width="2"><title>decode, layer 1: 107.63 µs</title></circle>
+<circle class="f1 ring" cx="104.32" cy="131.23" r="4" stroke-width="2"><title>decode, layer 2: 107.40 µs</title></circle>
+<circle class="f1 ring" cx="126.43" cy="131.23" r="4" stroke-width="2"><title>decode, layer 3: 107.40 µs</title></circle>
+<circle class="f1 ring" cx="148.54" cy="132.24" r="4" stroke-width="2"><title>decode, layer 4: 106.86 µs</title></circle>
+<circle class="f1 ring" cx="170.64" cy="130.8" r="4" stroke-width="2"><title>decode, layer 5: 107.63 µs</title></circle>
+<circle class="f1 ring" cx="192.75" cy="132.07" r="4" stroke-width="2"><title>decode, layer 6: 106.96 µs</title></circle>
+<circle class="f1 ring" cx="214.86" cy="132.36" r="4" stroke-width="2"><title>decode, layer 7: 106.80 µs</title></circle>
+<circle class="f1 ring" cx="236.97" cy="131.9" r="4" stroke-width="2"><title>decode, layer 8: 107.05 µs</title></circle>
+<circle class="f1 ring" cx="259.08" cy="132.82" r="4" stroke-width="2"><title>decode, layer 9: 106.56 µs</title></circle>
+<circle class="f1 ring" cx="281.19" cy="131.59" r="4" stroke-width="2"><title>decode, layer 10: 107.21 µs</title></circle>
+<circle class="f1 ring" cx="303.3" cy="131.58" r="4" stroke-width="2"><title>decode, layer 11: 107.21 µs</title></circle>
+<circle class="f1 ring" cx="325.41" cy="129.9" r="4" stroke-width="2"><title>decode, layer 12: 108.10 µs</title></circle>
+<circle class="f1 ring" cx="347.52" cy="130.81" r="4" stroke-width="2"><title>decode, layer 13: 107.62 µs</title></circle>
+<circle class="f1 ring" cx="369.62" cy="132.1" r="4" stroke-width="2"><title>decode, layer 14: 106.94 µs</title></circle>
+<circle class="f1 ring" cx="391.73" cy="130.91" r="4" stroke-width="2"><title>decode, layer 15: 107.57 µs</title></circle>
+<circle class="f1 ring" cx="413.84" cy="130.35" r="4" stroke-width="2"><title>decode, layer 16: 107.86 µs</title></circle>
+<circle class="f1 ring" cx="435.95" cy="131.74" r="4" stroke-width="2"><title>decode, layer 17: 107.13 µs</title></circle>
+<circle class="f1 ring" cx="458.06" cy="131.3" r="4" stroke-width="2"><title>decode, layer 18: 107.36 µs</title></circle>
+<circle class="f1 ring" cx="480.17" cy="130.73" r="4" stroke-width="2"><title>decode, layer 19: 107.67 µs</title></circle>
+<circle class="f1 ring" cx="502.28" cy="131.09" r="4" stroke-width="2"><title>decode, layer 20: 107.47 µs</title></circle>
+<circle class="f1 ring" cx="524.39" cy="131.67" r="4" stroke-width="2"><title>decode, layer 21: 107.17 µs</title></circle>
+<circle class="f1 ring" cx="546.5" cy="132.2" r="4" stroke-width="2"><title>decode, layer 22: 106.89 µs</title></circle>
+<circle class="f1 ring" cx="568.6" cy="131.03" r="4" stroke-width="2"><title>decode, layer 23: 107.51 µs</title></circle>
+<circle class="f1 ring" cx="590.71" cy="131.93" r="4" stroke-width="2"><title>decode, layer 24: 107.03 µs</title></circle>
+<circle class="f1 ring" cx="612.82" cy="131.29" r="4" stroke-width="2"><title>decode, layer 25: 107.37 µs</title></circle>
+<circle class="f1 ring" cx="634.93" cy="133.07" r="4" stroke-width="2"><title>decode, layer 26: 106.42 µs</title></circle>
+<circle class="f1 ring" cx="657.04" cy="131.25" r="4" stroke-width="2"><title>decode, layer 27: 107.39 µs</title></circle>
+<text class="t2" x="665.04" y="324.94" font-size="11">prefill</text>
+<text class="t2" x="665.04" y="135.25" font-size="11">decode</text>
 </svg>

@@ -217,11 +217,16 @@ let build (log: RunLog) : Scope =
         (if units.IsEmpty then
              "No work units were recorded."
          elif healthy then
+             let unitText = plural units.Length "work unit" "work units"
+             let lostText = plural lost.Length "node loss" "node losses"
+
              Invariant.format
-                 $"**PASS.** {units.Length} work units, {reissues.Length} reissued after {lost.Length} node losses; no divergence, and every replica digest matches."
+                 $"**PASS.** {unitText}, {Fmt.int (int64 reissues.Length)} reissued after {lostText}; no divergence, and every replica digest matches."
          else
-             Invariant.format
-                 $"**FAIL.** {divergences.Length} divergences; {(digests |> List.filter (fun e -> e.Value <> 1.0)).Length} replica digests differ.")
+             let differ = (digests |> List.filter (fun e -> e.Value <> 1.0)).Length
+             let divergenceText = plural divergences.Length "divergence" "divergences"
+             let differText = plural differ "replica digest differs" "replica digests differ"
+             Invariant.format $"**FAIL.** {divergenceText}; {differText}.")
     |> Scope.value "units" (Fmt.int (int64 units.Length))
     |> Scope.value "reissued" (Fmt.int (int64 reissues.Length))
     |> Scope.value "lost" (Fmt.int (int64 lost.Length))

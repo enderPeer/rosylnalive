@@ -201,6 +201,25 @@ let private inference (root: string) =
     arena "logits" (float qwen.Vocab * 4.0)
 
     let kvPerToken = float (qwen.Layers * qwen.KvHeads * qwen.HeadDim * 2L * 4L)
+    let mutable gpu = 2_000_000_000L
+
+    // The GPU work of one layer: most of its host time, split over its kernels.
+    let gpuWork (step: int) (layer: int) (hostNs: int64) =
+        for kernel, share in [ "rmsnorm_rows", 0.06; "matmul_bf16w", 0.62; "attention_gqa_causal", 0.17 ] do
+            let d = ns (float hostNs * share * lognormal r 0.03)
+
+            t.GpuInterval(
+                "gpu.dispatch",
+                gpu,
+                d,
+                [
+                    Attr.str TelemetryKeys.Kernel kernel
+                    Attr.int TelemetryKeys.Layer layer
+                    Attr.int "step" step
+                ]
+            )
+
+            gpu <- gpu + d + 700L
 
     for step in 0..64 do
         let prefill = step = 0
@@ -220,7 +239,12 @@ let private inference (root: string) =
             let perToken = if prefill then 5_200.0 else 88_000.0
             let attention = if prefill then 1.8 * float rows else 0.035 * float past
             let warm = if layer = 0 && prefill then 1.35 else 1.0
-            clock.Advance(ns ((perToken * float rows + attention * 1_000.0) * warm * lognormal r 0.04))
+
+            let hostNs =
+                ns ((perToken * float rows + attention * 1_000.0) * warm * lognormal r 0.04)
+
+            gpuWork step layer hostNs
+            clock.Advance hostNs
 
         use _ = t.Span("model.lm_head", [ Attr.str "phase" phase ])
         clock.Advance(ns (920_000.0 * lognormal r 0.05))
@@ -390,6 +414,14 @@ let private cluster (root: string) =
     let worker (ctx: RunContext) =
         ctx.Telemetry.Child [ Attr.str TelemetryKeys.Component "stage" ]
 
+    // The frame a finished unit sends on: stage 0 its activations to stage 1, stage 1 its token and digest back to
+    // the coordinator.
+    let outputBytes stage step =
+        if stage = 0 then
+            (if step = 0 then 512 else 1) * int qwen.Hidden * 4
+        else
+            64
+
     let unitSpan (ctx: RunContext) (start: int64) (dur: int64) stage step status unitId =
         clock.Set start
         let w = worker ctx
@@ -406,6 +438,14 @@ let private cluster (root: string) =
             )
 
         clock.Set(start + dur)
+
+        if status <> "lost" then
+            w.Meter(
+                "cluster.frame_bytes",
+                float (outputBytes stage step),
+                TelemetryUnits.Bytes,
+                [ Attr.int TelemetryKeys.Stage stage; Attr.int "step" step ]
+            )
 
     let killStep = 9
     let mutable t = epochNs + 20_000_000L
@@ -472,11 +512,12 @@ let private cluster (root: string) =
 
         let s1Start = first0 + 1_100_000L
 
+        // The coordinator sends the step's token ids to stage 0.
         ct.Meter(
             "cluster.frame_bytes",
-            float (if prefill then 512 * 1024 * 4 else 1024 * 4),
+            float (if prefill then 512 * 4 else 4),
             TelemetryUnits.Bytes,
-            [ Attr.int TelemetryKeys.Stage 0 ]
+            [ Attr.int TelemetryKeys.Stage 0; Attr.int "step" step ]
         )
 
         let base1 = if prefill then 46e6 else 11.1e6
@@ -525,7 +566,7 @@ let private gate1 (root: string) =
         RunContext.Create(
             options
                 "gate1"
-                "Gate 1 on a fresh clone (synthetic)"
+                "Fresh clone of main (synthetic)"
                 root
                 clock
                 (Some(cpuClass ExecutionBackend.CpuF32))
