@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="326" viewBox="0 0 720 326" role="img" aria-labelledby="thinking-by_api-title thinking-by_api-desc">
+<title id="thinking-by_api-title">Calls per API by outcome</title>
+<desc id="thinking-by_api-desc">Bar chart of calls for 7 API values, 4 series.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="326" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="325" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Calls per API by outcome</text>
+<text class="t2" x="16" y="45" font-size="12">Count of roslyn.call spans</text>
+<rect class="fgood" x="19" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="38" y="66" font-size="12">ok</text>
+<rect class="fwarn" x="72.44" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="91.44" y="66" font-size="12">diagnostic</text>
+<rect class="fserious" x="171" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="190" y="66" font-size="12">timeout</text>
+<rect class="fcrit" x="253" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="272" y="66" font-size="12">error</text>
+<line class="grid" x1="216.32" y1="98" x2="216.32" y2="280" stroke-width="1"/>
+<line class="grid" x1="322.24" y1="98" x2="322.24" y2="280" stroke-width="1"/>
+<line class="grid" x1="428.16" y1="98" x2="428.16" y2="280" stroke-width="1"/>
+<line class="grid" x1="534.08" y1="98" x2="534.08" y2="280" stroke-width="1"/>
+<line class="grid" x1="640" y1="98" x2="640" y2="280" stroke-width="1"/>
+<text class="t3" x="216.32" y="297" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="322.24" y="297" font-size="11" text-anchor="middle">5</text>
+<text class="t3" x="428.16" y="297" font-size="11" text-anchor="middle">10</text>
+<text class="t3" x="534.08" y="297" font-size="11" text-anchor="middle">15</text>
+<text class="t3" x="640" y="297" font-size="11" text-anchor="middle">20</text>
+<text class="t3" x="216.32" y="88" font-size="11" text-anchor="start">API</text>
+<text class="t3" x="428.16" y="316" font-size="11" text-anchor="middle">calls</text>
+<text class="t2" x="208.32" y="115" font-size="12" text-anchor="end">Compilation.GetDiagnostics</text>
+<path class="fgood" d="M216.32 103h358.13v16h-358.13Z"><title>Compilation.GetDiagnostics, ok: 17</title></path>
+<path class="fwarn" d="M576.45 103H614.82Q618.82 103 618.82 107V115Q618.82 119 614.82 119H576.45Z"><title>Compilation.GetDiagnostics, diagnostic: 2</title></path>
+<text class="t2" x="624.82" y="115" font-size="11">19</text>
+<text class="t2" x="208.32" y="141" font-size="12" text-anchor="end">SemanticModel.GetSymbolInfo</text>
+<path class="fgood" d="M216.32 129H487.71Q491.71 129 491.71 133V141Q491.71 145 487.71 145H216.32Z"><title>SemanticModel.GetSymbolInfo, ok: 13</title></path>
+<text class="t2" x="497.71" y="141" font-size="11">13</text>
+<text class="t2" x="208.32" y="167" font-size="12" text-anchor="end">Compilation.Emit</text>
+<path class="fgood" d="M216.32 155h188.66v16h-188.66Z"><title>Compilation.Emit, ok: 9</title></path>
+<path class="fserious" d="M406.98 155H424.16Q428.16 155 428.16 159V167Q428.16 171 424.16 171H406.98Z"><title>Compilation.Emit, timeout: 1</title></path>
+<text class="t2" x="434.16" y="167" font-size="11">10</text>
+<text class="t2" x="208.32" y="193" font-size="12" text-anchor="end">SyntaxNode.ReplaceNode</text>
+<path class="fgood" d="M216.32 181H424.16Q428.16 181 428.16 185V193Q428.16 197 424.16 197H216.32Z"><title>SyntaxNode.ReplaceNode, ok: 10</title></path>
+<text class="t2" x="434.16" y="193" font-size="11">10</text>
+<text class="t2" x="208.32" y="219" font-size="12" text-anchor="end">SemanticModel.GetTypeInfo</text>
+<path class="fgood" d="M216.32 207H402.98Q406.98 207 406.98 211V219Q406.98 223 402.98 223H216.32Z"><title>SemanticModel.GetTypeInfo, ok: 9</title></path>
+<text class="t2" x="412.98" y="219" font-size="11">9</text>
+<text class="t2" x="208.32" y="245" font-size="12" text-anchor="end">SemanticModel.AnalyzeDataFlow</text>
+<path class="fgood" d="M216.32 233h103.92v16h-103.92Z"><title>SemanticModel.AnalyzeDataFlow, ok: 5</title></path>
+<path class="fcrit" d="M322.24 233H339.42Q343.42 233 343.42 237V245Q343.42 249 339.42 249H322.24Z"><title>SemanticModel.AnalyzeDataFlow, error: 1</title></path>
+<text class="t2" x="349.42" y="245" font-size="11">6</text>
+<text class="t2" x="208.32" y="271" font-size="12" text-anchor="end">SemanticModel.LookupSymbols</text>
+<path class="fgood" d="M216.32 259H318.24Q322.24 259 322.24 263V271Q322.24 275 318.24 275H216.32Z"><title>SemanticModel.LookupSymbols, ok: 5</title></path>
+<text class="t2" x="328.24" y="271" font-size="11">5</text>
+<line class="axis" x1="216.32" y1="98" x2="216.32" y2="98" stroke-width="1"/>
+<line class="axis" x1="216.32" y1="98" x2="216.32" y2="280" stroke-width="1"/>
+</svg>

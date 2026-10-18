@@ -1,6 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: T1. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
+    <Compile Include="Common.fs" />
+    <Compile Include="EventLineTests.fs" />
+    <Compile Include="RunLogTests.fs" />
+    <Compile Include="MeteringTests.fs" />
+    <Compile Include="ValuesTests.fs" />
+    <Compile Include="ReportTests.fs" />
+    <Compile Include="ChartEdgeTests.fs" />
+    <Compile Include="Bench.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 </Project>

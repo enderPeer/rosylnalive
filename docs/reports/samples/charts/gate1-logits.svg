@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="gate1-logits-title gate1-logits-desc">
+<title id="gate1-logits-title">Logits rel_l2 per gate prompt</title>
+<desc id="gate1-logits-desc">Error bars of rel_l2 vs torch32 (log) per prompt: 2 series over 8 categories, whiskers from low to high.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="379" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Logits rel_l2 per gate prompt</text>
+<text class="t2" x="16" y="45" font-size="12">Dot: worst step of the prompt; whiskers: best to worst step. Line: the bound.</text>
+<circle class="f3" cx="24" cy="62" r="4"/>
+<text class="t2" x="38" y="66" font-size="12">vulkan</text>
+<circle class="f4" cx="101.44" cy="62" r="4"/>
+<text class="t2" x="115.44" y="66" font-size="12">d3d12</text>
+<line class="grid" x1="50.64" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="42.64" y="338" font-size="11" text-anchor="end">10⁻⁶</text>
+<line class="grid" x1="50.64" y1="216" x2="696" y2="216" stroke-width="1"/>
+<text class="t3" x="42.64" y="220" font-size="11" text-anchor="end">10⁻⁵</text>
+<line class="grid" x1="50.64" y1="98" x2="696" y2="98" stroke-width="1"/>
+<text class="t3" x="42.64" y="102" font-size="11" text-anchor="end">10⁻⁴</text>
+<line class="ref" x1="50.64" y1="98" x2="696" y2="98" stroke-width="1" stroke-opacity="0.7"><title>bound 1.0e-04</title></line>
+<text class="t2" x="692" y="93" font-size="10" text-anchor="end">bound 1.0e-04</text>
+<text class="t3" x="50.64" y="88" font-size="11" text-anchor="start">rel_l2 vs torch32 (log)</text>
+<text class="t3" x="373.32" y="370" font-size="11" text-anchor="middle">prompt</text>
+<text class="t3" x="90.98" y="351" font-size="11" text-anchor="middle">g01</text>
+<text class="t3" x="171.65" y="351" font-size="11" text-anchor="middle">g02</text>
+<text class="t3" x="252.32" y="351" font-size="11" text-anchor="middle">g03</text>
+<text class="t3" x="332.99" y="351" font-size="11" text-anchor="middle">g04</text>
+<text class="t3" x="413.66" y="351" font-size="11" text-anchor="middle">g05</text>
+<text class="t3" x="494.33" y="351" font-size="11" text-anchor="middle">g06</text>
+<text class="t3" x="575" y="351" font-size="11" text-anchor="middle">g07</text>
+<text class="t3" x="655.67" y="351" font-size="11" text-anchor="middle">g08</text>
+<path class="s3" d="M86.48 235.24V176.23M83.48 235.24h6M83.48 176.23h6" stroke-width="1.5" fill="none"/>
+<circle class="f3 ring" cx="86.48" cy="176.23" r="4" stroke-width="1.5"><title>vulkan, prompt g01: 2.2e-05 (6.9e-06 to 2.2e-05)</title></circle>
+<path class="s3" d="M167.15 238.75V179.31M164.15 238.75h6M164.15 179.31h6" stroke-width="1.5" fill="none"/>
+<circle class="f3 ring" cx="167.15" cy="179.31" r="4" stroke-width="1.5"><title>vulkan, prompt g02: 2.0e-05 (6.4e-06 to 2.0e-05)</title></circle>
+<path class="s3" d="M247.82 238.73V168.78M244.82 238.73h6M244.82 168.78h6" stroke-width="1.5" fill="none"/>
+<circle class="f3 ring" cx="247.82" cy="168.78" r="4" stroke-width="1.5"><title>vulkan, prompt g03: 2.5e-05 (6.4e-06 to 2.5e-05)</title></circle>
+<path class="s3" d="M328.49 232.56V176.12M325.49 232.56h6M325.49 176.12h6" stroke-width="1.5" fill="none"/>
+<circle class="f3 ring" cx="328.49" cy="176.12" r="4" stroke-width="1.5"><title>vulkan, prompt g04: 2.2e-05 (7.2e-06 to 2.2e-05)</title></circle>
+<path class="s3" d="M409.16 239.57V175.62M406.16 239.57h6M406.16 175.62h6" stroke-width="1.5" fill="none"/>
+<circle class="f3 ring" cx="409.16" cy="175.62" r="4" stroke-width="1.5"><title>vulkan, prompt g05: 2.2e-05 (6.3e-06 to 2.2e-05)</title></circle>
+<path class="s3" d="M489.83 239.05V172.98M486.83 239.05h6M486.83 172.98h6" stroke-width="1.5" fill="none"/>
+<circle class="f3 ring" cx="489.83" cy="172.98" r="4" stroke-width="1.5"><title>vulkan, prompt g06: 2.3e-05 (6.4e-06 to 2.3e-05)</title></circle>
+<path class="s3" d="M570.5 230.6V181.46M567.5 230.6h6M567.5 181.46h6" stroke-width="1.5" fill="none"/>
+<circle class="f3 ring" cx="570.5" cy="181.46" r="4" stroke-width="1.5"><title>vulkan, prompt g07: 2.0e-05 (7.5e-06 to 2.0e-05)</title></circle>
+<path class="s3" d="M651.17 232.11V175.54M648.17 232.11h6M648.17 175.54h6" stroke-width="1.5" fill="none"/>
+<circle class="f3 ring" cx="651.17" cy="175.54" r="4" stroke-width="1.5"><title>vulkan, prompt g08: 2.2e-05 (7.3e-06 to 2.2e-05)</title></circle>
+<path class="s4" d="M95.48 228.57V179.23M92.48 228.57h6M92.48 179.23h6" stroke-width="1.5" fill="none"/>
+<circle class="f4 ring" cx="95.48" cy="179.23" r="4" stroke-width="1.5"><title>d3d12, prompt g01: 2.0e-05 (7.8e-06 to 2.0e-05)</title></circle>
+<path class="s4" d="M176.15 227.56V168.41M173.15 227.56h6M173.15 168.41h6" stroke-width="1.5" fill="none"/>
+<circle class="f4 ring" cx="176.15" cy="168.41" r="4" stroke-width="1.5"><title>d3d12, prompt g02: 2.5e-05 (8.0e-06 to 2.5e-05)</title></circle>
+<path class="s4" d="M256.82 227.35V163.81M253.82 227.35h6M253.82 163.81h6" stroke-width="1.5" fill="none"/>
+<circle class="f4 ring" cx="256.82" cy="163.81" r="4" stroke-width="1.5"><title>d3d12, prompt g03: 2.8e-05 (8.0e-06 to 2.8e-05)</title></circle>
+<path class="s4" d="M337.49 227.41V170.32M334.49 227.41h6M334.49 170.32h6" stroke-width="1.5" fill="none"/>
+<circle class="f4 ring" cx="337.49" cy="170.32" r="4" stroke-width="1.5"><title>d3d12, prompt g04: 2.4e-05 (8.0e-06 to 2.4e-05)</title></circle>
+<path class="s4" d="M418.16 230.26V168.7M415.16 230.26h6M415.16 168.7h6" stroke-width="1.5" fill="none"/>
+<circle class="f4 ring" cx="418.16" cy="168.7" r="4" stroke-width="1.5"><title>d3d12, prompt g05: 2.5e-05 (7.6e-06 to 2.5e-05)</title></circle>
+<path class="s4" d="M498.83 219.97V170.65M495.83 219.97h6M495.83 170.65h6" stroke-width="1.5" fill="none"/>
+<circle class="f4 ring" cx="498.83" cy="170.65" r="4" stroke-width="1.5"><title>d3d12, prompt g06: 2.4e-05 (9.3e-06 to 2.4e-05)</title></circle>
+<path class="s4" d="M579.5 227.18V167.35M576.5 227.18h6M576.5 167.35h6" stroke-width="1.5" fill="none"/>
+<circle class="f4 ring" cx="579.5" cy="167.35" r="4" stroke-width="1.5"><title>d3d12, prompt g07: 2.6e-05 (8.0e-06 to 2.6e-05)</title></circle>
+<path class="s4" d="M660.17 222.2V160.76M657.17 222.2h6M657.17 160.76h6" stroke-width="1.5" fill="none"/>
+<circle class="f4 ring" cx="660.17" cy="160.76" r="4" stroke-width="1.5"><title>d3d12, prompt g08: 2.9e-05 (8.9e-06 to 2.9e-05)</title></circle>
+<line class="axis" x1="50.64" y1="334" x2="696" y2="334" stroke-width="1"/>
+</svg>

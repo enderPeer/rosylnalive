@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="training-update_hist-title training-update_hist-desc">
+<title id="training-update_hist-title">Update-to-weight ratio</title>
+<desc id="training-update_hist-desc">Histogram of ratio: 840 samples, 840 in 24 bins.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="320" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="319" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Update-to-weight ratio</text>
+<text class="t2" x="16" y="45" font-size="12">|step update| / |weights| per layer and step, log scale</text>
+<line class="grid" x1="44.48" y1="274" x2="696" y2="274" stroke-width="1"/>
+<text class="t3" x="36.48" y="278" font-size="11" text-anchor="end">0</text>
+<line class="grid" x1="44.48" y1="213.33" x2="696" y2="213.33" stroke-width="1"/>
+<text class="t3" x="36.48" y="217.33" font-size="11" text-anchor="end">50</text>
+<line class="grid" x1="44.48" y1="152.67" x2="696" y2="152.67" stroke-width="1"/>
+<text class="t3" x="36.48" y="156.67" font-size="11" text-anchor="end">100</text>
+<line class="grid" x1="44.48" y1="92" x2="696" y2="92" stroke-width="1"/>
+<text class="t3" x="36.48" y="96" font-size="11" text-anchor="end">150</text>
+<text class="t3" x="58.22" y="291" font-size="11" text-anchor="middle">10⁻⁵</text>
+<text class="t3" x="318.86" y="291" font-size="11" text-anchor="middle">10⁻⁴</text>
+<text class="t3" x="579.51" y="291" font-size="11" text-anchor="middle">10⁻³</text>
+<text class="t3" x="44.48" y="68" font-size="11" text-anchor="start">count</text>
+<text class="t3" x="370.24" y="310" font-size="11" text-anchor="middle">ratio</text>
+<path class="f2" d="M45.48 274V272.79Q45.48 271.57 46.69 271.57H69.41Q70.63 271.57 70.63 272.79V274Z"><title>[8.86e-06, 1.13e-05): 2</title></path>
+<path class="f2" d="M72.63 274V273.39Q72.63 272.79 73.23 272.79H97.17Q97.77 272.79 97.77 273.39V274Z"><title>[1.13e-05, 1.43e-05): 1</title></path>
+<path class="f2" d="M99.77 274V273.39Q99.77 272.79 100.38 272.79H124.31Q124.92 272.79 124.92 273.39V274Z"><title>[1.43e-05, 1.82e-05): 1</title></path>
+<path class="f2" d="M126.92 274V272.79Q126.92 271.57 128.13 271.57H150.85Q152.07 271.57 152.07 272.79V274Z"><title>[1.82e-05, 2.31e-05): 2</title></path>
+<path class="f2" d="M154.07 274V271.57Q154.07 269.15 156.49 269.15H176.79Q179.21 269.15 179.21 271.57V274Z"><title>[2.31e-05, 2.94e-05): 4</title></path>
+<path class="f2" d="M181.21 274V270.36Q181.21 266.72 184.85 266.72H202.72Q206.36 266.72 206.36 270.36V274Z"><title>[2.94e-05, 3.73e-05): 6</title></path>
+<path class="f2" d="M208.36 274V265.87Q208.36 261.87 212.36 261.87H229.51Q233.51 261.87 233.51 265.87V274Z"><title>[3.73e-05, 4.75e-05): 10</title></path>
+<path class="f2" d="M235.51 274V273.39Q235.51 272.79 236.11 272.79H260.05Q260.65 272.79 260.65 273.39V274Z"><title>[4.75e-05, 6.03e-05): 1</title></path>
+<path class="f2" d="M262.65 274V273.39Q262.65 272.79 263.26 272.79H287.19Q287.8 272.79 287.8 273.39V274Z"><title>[6.03e-05, 7.67e-05): 1</title></path>
+<path class="f2" d="M344.09 274V271.57Q344.09 269.15 346.52 269.15H366.81Q369.24 269.15 369.24 271.57V274Z"><title>[1.24e-04, 1.57e-04): 4</title></path>
+<path class="f2" d="M371.24 274V263.44Q371.24 259.44 375.24 259.44H392.39Q396.39 259.44 396.39 263.44V274Z"><title>[1.57e-04, 2.00e-04): 12</title></path>
+<path class="f2" d="M398.39 274V227.04Q398.39 223.04 402.39 223.04H419.53Q423.53 223.04 423.53 227.04V274Z"><title>[2.00e-04, 2.54e-04): 42</title></path>
+<path class="f2" d="M425.53 274V196.71Q425.53 192.71 429.53 192.71H446.68Q450.68 192.71 450.68 196.71V274Z"><title>[2.54e-04, 3.23e-04): 67</title></path>
+<path class="f2" d="M452.68 274V180.93Q452.68 176.93 456.68 176.93H473.83Q477.83 176.93 477.83 180.93V274Z"><title>[3.23e-04, 4.11e-04): 80</title></path>
+<path class="f2" d="M479.83 274V144.53Q479.83 140.53 483.83 140.53H500.97Q504.97 140.53 504.97 144.53V274Z"><title>[4.11e-04, 5.22e-04): 110</title></path>
+<path class="f2" d="M506.97 274V140.89Q506.97 136.89 510.97 136.89H528.12Q532.12 136.89 532.12 140.89V274Z"><title>[5.22e-04, 6.64e-04): 113</title></path>
+<path class="f2" d="M534.12 274V128.76Q534.12 124.76 538.12 124.76H555.27Q559.27 124.76 559.27 128.76V274Z"><title>[6.64e-04, 8.44e-04): 123</title></path>
+<path class="f2" d="M561.27 274V140.89Q561.27 136.89 565.27 136.89H582.41Q586.41 136.89 586.41 140.89V274Z"><title>[8.44e-04, 1.07e-03): 113</title></path>
+<path class="f2" d="M588.41 274V182.15Q588.41 178.15 592.41 178.15H609.56Q613.56 178.15 613.56 182.15V274Z"><title>[1.07e-03, 1.36e-03): 79</title></path>
+<path class="f2" d="M615.56 274V225.83Q615.56 221.83 619.56 221.83H636.71Q640.71 221.83 640.71 225.83V274Z"><title>[1.36e-03, 1.73e-03): 43</title></path>
+<path class="f2" d="M642.71 274V254.95Q642.71 250.95 646.71 250.95H663.85Q667.85 250.95 667.85 254.95V274Z"><title>[1.73e-03, 2.20e-03): 19</title></path>
+<path class="f2" d="M669.85 274V269.51Q669.85 265.51 673.85 265.51H691Q695 265.51 695 269.51V274Z"><title>[2.20e-03, 2.80e-03): 7</title></path>
+<line class="ref" x1="579.51" y1="88" x2="579.51" y2="274" stroke-width="1"><title>10⁻³ (typical)</title></line>
+<text class="t2" x="583.51" y="86" font-size="10" text-anchor="start">10⁻³ (typical)</text>
+<line class="axis" x1="44.48" y1="274" x2="696" y2="274" stroke-width="1"/>
+</svg>
