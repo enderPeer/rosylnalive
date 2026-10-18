@@ -311,6 +311,17 @@ module ServingHarness =
                 DrainNs = drain
             }
 
+    /// One line about a proxy fault, times in ms from the proxy's start.
+    let describeFault (f: Fault) =
+        let ms (ns: int64) = Invariant.i64 (ns / Ns.PerMs)
+
+        match f with
+        | Fault.Partition(n, a, b) -> Invariant.format $"partition n{n} {ms a}-{ms b} ms"
+        | Fault.Sever(n, a) -> Invariant.format $"sever n{n} at {ms a} ms"
+        | Fault.Kill(n, a) -> Invariant.format $"proxy kill n{n} at {ms a} ms"
+        | Fault.Restart(n, a) -> Invariant.format $"proxy restart n{n} at {ms a} ms"
+        | other -> sprintf "%A" other
+
     /// The units a job runs when no lane stops early: lanes * steps * stages.
     let units (job: ServingJob) =
         job.Prompts.Length * job.Steps * (job.Boundaries.Length + 1)
@@ -916,7 +927,7 @@ module ServingHarness =
                                     | Some ms -> Invariant.format $", restarted after {ms} ms"
                                     | None -> ""))
                              |> String.concat "; ")
-                            "proxy_faults", (s.ProxyFaults |> List.map (sprintf "%A") |> String.concat "; ")
+                            "proxy_faults", (s.ProxyFaults |> List.map describeFault |> String.concat "; ")
                         ]
 
                 let run =
