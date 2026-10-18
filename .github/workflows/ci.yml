@@ -93,6 +93,17 @@ jobs:
       - name: cl.exe oracles (D3D12)
         run: ./tools/abi-oracle/d3d12/run.ps1 -NoBuild
 
+      # R2: the generated Vulkan binding is diff-clean against the pinned vk.xml 1.4.365, which bootstrap fetches on
+      # runners (AP-1) and checks against tools/bootstrap/toolchain.json.
+      - name: Vulkan codegen diff
+        run: ./tools/vkgen/check.ps1 -NoBuild
+
+      # R2: the cl.exe ABI oracle compiles static_asserts of every bound struct, union, enum, constant, sType, pNext
+      # extension and delegate signature against Vulkan-Headers 1.4.365 (vulkan_core.h and vulkan.hpp), runs it, and
+      # cross-checks R1's hand-written spike layouts.
+      - name: cl.exe oracles (Vulkan)
+        run: ./tools/abi-oracle/vulkan/run.ps1 -NoBuild
+
       # R4a: catalog codegen diff, reproducible ShaderSetHash, incremental shader build, pinned DXC only.
       - name: Shader checks
         run: ./src/Lrm.Shaders.Build/check-shaders.ps1
