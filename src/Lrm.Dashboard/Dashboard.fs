@@ -251,21 +251,22 @@ module Dashboard =
             let now = fingerprint o.Roots
 
             if seen <> Some now then
-                let output = build o
-                let bytes = output.Bytes
-
+                // A folder that changes during the build (or a page held open while it is replaced) is retried at the
+                // next poll.
                 let ok =
-                    if not (isNull written) && sameBytes bytes written then
-                        true
-                    else
-                        try
+                    try
+                        let output = build o
+                        let bytes = output.Bytes
+
+                        if isNull written || not (sameBytes bytes written) then
                             write path output
                             written <- bytes
                             onWrite output
-                            true
-                        with
-                        | :? IOException
-                        | :? UnauthorizedAccessException -> false
+
+                        true
+                    with
+                    | :? IOException
+                    | :? UnauthorizedAccessException -> false
 
                 if ok then
                     seen <- Some now

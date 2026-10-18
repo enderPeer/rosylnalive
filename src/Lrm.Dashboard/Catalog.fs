@@ -162,20 +162,28 @@ module Catalog =
 
         roots
         |> List.iteri (fun i root ->
-            if Directory.Exists root.Path then
-                for dir in
-                    Directory.GetDirectories root.Path
-                    |> Array.sortWith (fun a b -> String.CompareOrdinal(a, b)) do
-                    match read i dir with
-                    | Ok r when seen.Add r.Id -> runs.Add r
-                    | Ok r ->
-                        bad.Add
-                            {
-                                Root = i
-                                Folder = Path.GetFileName dir
-                                Reason = "run id " + r.Id + " is already listed from an earlier folder"
-                            }
-                    | Error u -> bad.Add u)
+            // A root that is missing or cannot be listed holds no runs.
+            let dirs =
+                try
+                    if Directory.Exists root.Path then
+                        Directory.GetDirectories root.Path
+                    else
+                        [||]
+                with
+                | :? IOException
+                | :? UnauthorizedAccessException -> [||]
+
+            for dir in dirs |> Array.sortWith (fun a b -> String.CompareOrdinal(a, b)) do
+                match read i dir with
+                | Ok r when seen.Add r.Id -> runs.Add r
+                | Ok r ->
+                    bad.Add
+                        {
+                            Root = i
+                            Folder = Path.GetFileName dir
+                            Reason = "run id " + r.Id + " is already listed from an earlier folder"
+                        }
+                | Error u -> bad.Add u)
 
         newestFirst (List.ofSeq runs), List.ofSeq bad
 

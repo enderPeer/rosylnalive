@@ -70,6 +70,25 @@ let tests =
                 Expect.isEmpty found "no runs"
                 Expect.isEmpty bad "nothing unreadable"
 
+            testCase "a run folder that disappears before it is read gets a view that says so"
+            <| fun () ->
+                use tmp = new TempDir()
+                let runs = tmp.Sub "runs"
+
+                let dir =
+                    writeRun runs "r-a" "parity" "A" (unixNs 2026 10 18 10 0) RunStatus.Ok (parityBody 0.5)
+
+                let entry =
+                    match Catalog.read 0 dir with
+                    | Ok e -> e
+                    | Error u -> failtestf "unreadable: %s" u.Reason
+
+                Directory.Delete(dir, true)
+                let v = RunView.load (root runs) entry
+                Expect.isSome v.Error "a view that says so"
+                Expect.stringContains v.Error.Value "cannot be read" "reason"
+                Expect.isFalse (v.Error.Value.Contains runs) "no path in the reason"
+
             testCase "durations come from the manifest; a running run has none"
             <| fun () ->
                 use tmp = new TempDir()

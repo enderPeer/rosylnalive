@@ -196,7 +196,8 @@ let bodyScript =
             "if(tb){tb.textContent='Theme: '+mode;tb.setAttribute('aria-label','Colour theme: '+mode+'. Click to change.')}}"
             "apply();if(tb)tb.addEventListener('click',function(){mode=modes[(modes.indexOf(mode)+1)%3];save(K,mode==='auto'?null:mode);apply()});"
             "var main=d.querySelector('main');if(main)main.classList.add('d-js');"
-            "function current(){var h=decodeURIComponent(location.hash.slice(1)),el=h&&d.getElementById(h),v=el&&el.closest?el.closest('.d-view'):null;return v||d.getElementById('runs')}"
+            "function target(){var h='';try{h=decodeURIComponent(location.hash.slice(1))}catch(e){}return h&&d.getElementById(h)}"
+            "function current(){var el=target(),v=el&&el.closest?el.closest('.d-view'):null;return v||d.getElementById('runs')}"
             "function fill(slot){if(slot.getAttribute('data-done'))return;var from=d.getElementById(slot.getAttribute('data-src'));if(!from)return;"
             "var n=slot.getAttribute('data-n'),c=from.cloneNode(true);c.removeAttribute('id');"
             "[].forEach.call(c.querySelectorAll('[id]'),function(e){e.id=e.id+'-'+n});"
@@ -210,7 +211,7 @@ let bodyScript =
             "var hdr=d.querySelector('.d-top');function measure(){if(hdr)root.style.setProperty('--d-hdr',(hdr.offsetHeight+8)+'px')}"
             "measure();window.addEventListener('resize',measure);"
             // A view starts at the top of the page; a target inside a view scrolls into place below the header.
-            "function place(){var h=decodeURIComponent(location.hash.slice(1)),el=h&&d.getElementById(h);"
+            "function place(){var el=target();"
             "if(!el||(el.classList&&el.classList.contains('d-view')))window.scrollTo(0,0);else el.scrollIntoView()}"
             "window.addEventListener('hashchange',function(){show();place()});show();"
             "var body=d.getElementById('d-runs-body');"

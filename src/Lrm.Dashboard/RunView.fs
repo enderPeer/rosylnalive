@@ -106,7 +106,15 @@ module RunView =
         use span =
             Telemetry.span "dashboard.view" [ Attr.str TelemetryKeys.Component "dashboard"; Attr.str "kind" entry.Kind ]
 
-        match RunLogReader.load entry.Dir with
+        // A run folder can change under the reader (a live run, a collection, a deletion): that run gets a view that
+        // says so, and the page is still built.
+        let read =
+            try
+                RunLogReader.load entry.Dir
+            with e ->
+                Error("its files changed while they were read (" + e.GetType().Name + ")")
+
+        match read with
         | Error e -> failed root entry ("the run log cannot be read: " + e.Replace(entry.Dir, entry.Id))
         | Ok log ->
             try

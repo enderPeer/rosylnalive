@@ -88,10 +88,10 @@ next line</p>
 
 On the development machine (Windows 11, .NET SDK 10.0.402), at the PR's head:
 
-- `LRM_TEST_TIER=cpu dotnet artifacts/bin/Lrm.Dashboard.Tests/release/Lrm.Dashboard.Tests.dll`: 39 tests pass, among them vector MD1, byte-identical pages twice, under de-DE and tr-TR and on one thread, the committed samples page against a fresh render, every chart and report against `Reports.render`, unique ids with every fragment link, compare slot and label resolving, every inline SVG parsing as XML, the self-containment rules of decision 1, watch mode rewriting on a new run and not on an idle poll, and markup in titles and attributes staying text.
+- `LRM_TEST_TIER=cpu dotnet artifacts/bin/Lrm.Dashboard.Tests/release/Lrm.Dashboard.Tests.dll`: 40 tests pass, among them vector MD1, byte-identical pages twice, under de-DE and tr-TR and on one thread, the committed samples page against a fresh render, every chart and report against `Reports.render`, unique ids with every fragment link, compare slot and label resolving, every inline SVG parsing as XML, the self-containment rules of decision 1, watch mode rewriting on a new run and not on an idle poll, and markup in titles and attributes staying text.
 - Every view, loaded in a 375 px iframe in headless Edge 155 (the headless window cannot be narrower than 496 px): `scrollWidth` equals `clientWidth` in all 57 views of the dashboard over `LRM_DATA/runs` plus the synthetic runs, in all 28 of `runs.html` and in all 20 of `samples.html`.
 - Screenshots of a real run's view (desktop and 375 px), the dark theme, and the toggle's light-on-dark and dark-on-light overrides were checked by eye; the PR shows them.
-- Sizes: `samples.html` 684 KiB; `runs.html` 891 KiB; the real runs with one view per kind plus the synthetic runs 1.02 MiB, over the limit. The page over all 296 runs builds in about 2.5 s.
+- Sizes: `samples.html` 684 KiB; `runs.html` 868 KiB; the real runs with one view per kind plus the synthetic runs 1.02 MiB, over the limit. The page over all 327 runs builds in about 2.5 s.
 
 ## Consequences
 
