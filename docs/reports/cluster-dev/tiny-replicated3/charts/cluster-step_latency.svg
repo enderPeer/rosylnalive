@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="cluster-step_latency-title cluster-step_latency-desc">
+<title id="cluster-step_latency-title">End-to-end step latency</title>
+<desc id="cluster-step_latency-desc">Line chart of latency against step: 3 series, 48 points.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="379" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">End-to-end step latency</text>
+<text class="t2" x="16" y="45" font-size="12">Per lane: from the assignment of stage 0 to the acceptance of stage 1</text>
+<rect class="f0" x="16" y="61" width="16" height="2.5" rx="1"/>
+<text class="t2" x="38" y="66" font-size="12">lane 0</text>
+<rect class="f1" x="90.32" y="61" width="16" height="2.5" rx="1"/>
+<text class="t2" x="112.32" y="66" font-size="12">lane 1</text>
+<rect class="f2" x="164.64" y="61" width="16" height="2.5" rx="1"/>
+<text class="t2" x="186.64" y="66" font-size="12">lane 2</text>
+<line class="grid" x1="63.4" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="55.4" y="338" font-size="11" text-anchor="end">0</text>
+<line class="grid" x1="63.4" y1="255.33" x2="696" y2="255.33" stroke-width="1"/>
+<text class="t3" x="55.4" y="259.33" font-size="11" text-anchor="end">200 ms</text>
+<line class="grid" x1="63.4" y1="176.67" x2="696" y2="176.67" stroke-width="1"/>
+<text class="t3" x="55.4" y="180.67" font-size="11" text-anchor="end">400 ms</text>
+<line class="grid" x1="63.4" y1="98" x2="696" y2="98" stroke-width="1"/>
+<text class="t3" x="55.4" y="102" font-size="11" text-anchor="end">600 ms</text>
+<line class="ref" x1="63.4" y1="303.05" x2="696" y2="303.05" stroke-width="1" stroke-opacity="0.7"><title>median</title></line>
+<text class="t2" x="692" y="298.05" font-size="10" text-anchor="end">median</text>
+<text class="t3" x="63.4" y="351" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="147.75" y="351" font-size="11" text-anchor="middle">2</text>
+<text class="t3" x="232.09" y="351" font-size="11" text-anchor="middle">4</text>
+<text class="t3" x="316.44" y="351" font-size="11" text-anchor="middle">6</text>
+<text class="t3" x="400.79" y="351" font-size="11" text-anchor="middle">8</text>
+<text class="t3" x="485.13" y="351" font-size="11" text-anchor="middle">10</text>
+<text class="t3" x="569.48" y="351" font-size="11" text-anchor="middle">12</text>
+<text class="t3" x="653.83" y="351" font-size="11" text-anchor="middle">14</text>
+<line class="axis" x1="63.4" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="63.4" y="88" font-size="11" text-anchor="start">latency</text>
+<text class="t3" x="379.7" y="370" font-size="11" text-anchor="middle">step</text>
+<path class="line s0" d="M63.4 271.26 L105.57 303.12 L147.75 303.5 L189.92 308.12 L232.09 291.21 L274.27 309.33 L316.44 297.92 L358.61 297.29 L400.79 297.48 L442.96 303.35 L485.13 303.47 L527.31 303.03 L569.48 309.49 L611.65 296.48 L653.83 303.47 L696 315.36"><title>lane 0</title></path>
+<path class="line s1" d="M63.4 282.23 L105.57 298.44 L147.75 309.12 L189.92 302.53 L232.09 302.8 L274.27 303.88 L316.44 303.75 L358.61 297.81 L400.79 303.22 L442.96 303.17 L485.13 303.06 L527.31 297.41 L569.48 297.28 L611.65 315.03 L653.83 119.64 L696 302.31"><title>lane 1</title></path>
+<path class="line s2" d="M63.4 264.54 L105.57 297.58 L147.75 302.69 L189.92 315.18 L232.09 309.23 L274.27 303.45 L316.44 303.33 L358.61 298.62 L400.79 297.1 L442.96 296.93 L485.13 308.97 L527.31 303.96 L569.48 302.76 L611.65 297.25 L653.83 308.96 L696 309.08"><title>lane 2</title></path>
+<circle class="f0 ring" cx="63.4" cy="271.26" r="4" stroke-width="2"><title>lane 0, step 0: 159.52 ms</title></circle>
+<circle class="f0 ring" cx="105.57" cy="303.12" r="4" stroke-width="2"><title>lane 0, step 1: 78.52 ms</title></circle>
+<circle class="f0 ring" cx="147.75" cy="303.5" r="4" stroke-width="2"><title>lane 0, step 2: 77.55 ms</title></circle>
+<circle class="f0 ring" cx="189.92" cy="308.12" r="4" stroke-width="2"><title>lane 0, step 3: 65.79 ms</title></circle>
+<circle class="f0 ring" cx="232.09" cy="291.21" r="4" stroke-width="2"><title>lane 0, step 4: 108.79 ms</title></circle>
+<circle class="f0 ring" cx="274.27" cy="309.33" r="4" stroke-width="2"><title>lane 0, step 5: 62.71 ms</title></circle>
+<circle class="f0 ring" cx="316.44" cy="297.92" r="4" stroke-width="2"><title>lane 0, step 6: 91.72 ms</title></circle>
+<circle class="f0 ring" cx="358.61" cy="297.29" r="4" stroke-width="2"><title>lane 0, step 7: 93.33 ms</title></circle>
+<circle class="f0 ring" cx="400.79" cy="297.48" r="4" stroke-width="2"><title>lane 0, step 8: 92.85 ms</title></circle>
+<circle class="f0 ring" cx="442.96" cy="303.35" r="4" stroke-width="2"><title>lane 0, step 9: 77.93 ms</title></circle>
+<circle class="f0 ring" cx="485.13" cy="303.47" r="4" stroke-width="2"><title>lane 0, step 10: 77.63 ms</title></circle>
+<circle class="f0 ring" cx="527.31" cy="303.03" r="4" stroke-width="2"><title>lane 0, step 11: 78.73 ms</title></circle>
+<circle class="f0 ring" cx="569.48" cy="309.49" r="4" stroke-width="2"><title>lane 0, step 12: 62.33 ms</title></circle>
+<circle class="f0 ring" cx="611.65" cy="296.48" r="4" stroke-width="2"><title>lane 0, step 13: 95.40 ms</title></circle>
+<circle class="f0 ring" cx="653.83" cy="303.47" r="4" stroke-width="2"><title>lane 0, step 14: 77.63 ms</title></circle>
+<circle class="f0 ring" cx="696" cy="315.36" r="4" stroke-width="2"><title>lane 0, step 15: 47.40 ms</title></circle>
+<circle class="f1 ring" cx="63.4" cy="282.23" r="4" stroke-width="2"><title>lane 1, step 0: 131.61 ms</title></circle>
+<circle class="f1 ring" cx="105.57" cy="298.44" r="4" stroke-width="2"><title>lane 1, step 1: 90.40 ms</title></circle>
+<circle class="f1 ring" cx="147.75" cy="309.12" r="4" stroke-width="2"><title>lane 1, step 2: 63.25 ms</title></circle>
+<circle class="f1 ring" cx="189.92" cy="302.53" r="4" stroke-width="2"><title>lane 1, step 3: 80.01 ms</title></circle>
+<circle class="f1 ring" cx="232.09" cy="302.8" r="4" stroke-width="2"><title>lane 1, step 4: 79.33 ms</title></circle>
+<circle class="f1 ring" cx="274.27" cy="303.88" r="4" stroke-width="2"><title>lane 1, step 5: 76.57 ms</title></circle>
+<circle class="f1 ring" cx="316.44" cy="303.75" r="4" stroke-width="2"><title>lane 1, step 6: 76.90 ms</title></circle>
+<circle class="f1 ring" cx="358.61" cy="297.81" r="4" stroke-width="2"><title>lane 1, step 7: 92.02 ms</title></circle>
+<circle class="f1 ring" cx="400.79" cy="303.22" r="4" stroke-width="2"><title>lane 1, step 8: 78.24 ms</title></circle>
+<circle class="f1 ring" cx="442.96" cy="303.17" r="4" stroke-width="2"><title>lane 1, step 9: 78.37 ms</title></circle>
+<circle class="f1 ring" cx="485.13" cy="303.06" r="4" stroke-width="2"><title>lane 1, step 10: 78.66 ms</title></circle>
+<circle class="f1 ring" cx="527.31" cy="297.41" r="4" stroke-width="2"><title>lane 1, step 11: 93.03 ms</title></circle>
+<circle class="f1 ring" cx="569.48" cy="297.28" r="4" stroke-width="2"><title>lane 1, step 12: 93.35 ms</title></circle>
+<circle class="f1 ring" cx="611.65" cy="315.03" r="4" stroke-width="2"><title>lane 1, step 13: 48.22 ms</title></circle>
+<circle class="f1 ring" cx="653.83" cy="119.64" r="4" stroke-width="2"><title>lane 1, step 14: 544.98 ms</title></circle>
+<circle class="f1 ring" cx="696" cy="302.31" r="4" stroke-width="2"><title>lane 1, step 15: 80.56 ms</title></circle>
+<circle class="f2 ring" cx="63.4" cy="264.54" r="4" stroke-width="2"><title>lane 2, step 0: 176.60 ms</title></circle>
+<circle class="f2 ring" cx="105.57" cy="297.58" r="4" stroke-width="2"><title>lane 2, step 1: 92.59 ms</title></circle>
+<circle class="f2 ring" cx="147.75" cy="302.69" r="4" stroke-width="2"><title>lane 2, step 2: 79.60 ms</title></circle>
+<circle class="f2 ring" cx="189.92" cy="315.18" r="4" stroke-width="2"><title>lane 2, step 3: 47.86 ms</title></circle>
+<circle class="f2 ring" cx="232.09" cy="309.23" r="4" stroke-width="2"><title>lane 2, step 4: 62.97 ms</title></circle>
+<circle class="f2 ring" cx="274.27" cy="303.45" r="4" stroke-width="2"><title>lane 2, step 5: 77.67 ms</title></circle>
+<circle class="f2 ring" cx="316.44" cy="303.33" r="4" stroke-width="2"><title>lane 2, step 6: 77.98 ms</title></circle>
+<circle class="f2 ring" cx="358.61" cy="298.62" r="4" stroke-width="2"><title>lane 2, step 7: 89.96 ms</title></circle>
+<circle class="f2 ring" cx="400.79" cy="297.1" r="4" stroke-width="2"><title>lane 2, step 8: 93.81 ms</title></circle>
+<circle class="f2 ring" cx="442.96" cy="296.93" r="4" stroke-width="2"><title>lane 2, step 9: 94.23 ms</title></circle>
+<circle class="f2 ring" cx="485.13" cy="308.97" r="4" stroke-width="2"><title>lane 2, step 10: 63.64 ms</title></circle>
+<circle class="f2 ring" cx="527.31" cy="303.96" r="4" stroke-width="2"><title>lane 2, step 11: 76.36 ms</title></circle>
+<circle class="f2 ring" cx="569.48" cy="302.76" r="4" stroke-width="2"><title>lane 2, step 12: 79.42 ms</title></circle>
+<circle class="f2 ring" cx="611.65" cy="297.25" r="4" stroke-width="2"><title>lane 2, step 13: 93.42 ms</title></circle>
+<circle class="f2 ring" cx="653.83" cy="308.96" r="4" stroke-width="2"><title>lane 2, step 14: 63.66 ms</title></circle>
+<circle class="f2 ring" cx="696" cy="309.08" r="4" stroke-width="2"><title>lane 2, step 15: 63.36 ms</title></circle>
+</svg>
