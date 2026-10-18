@@ -147,8 +147,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path $dir | Out-Null
           git archive --format=tar -o $tar $base tools/ci
           if ($LASTEXITCODE -ne 0) { exit 2 }
-          tar -xf $tar -C $dir
-          if ($LASTEXITCODE -ne 0) { exit 2 }
+          [System.Formats.Tar.TarFile]::ExtractToDirectory($tar, $dir, $true)
           & (Join-Path $dir 'tools/ci/hygiene.ps1') -Ci -RepoRoot $env:GITHUB_WORKSPACE -OutDir (Join-Path $env:GITHUB_WORKSPACE 'artifacts/hygiene/base')
           exit $LASTEXITCODE
 

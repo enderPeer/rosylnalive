@@ -54,7 +54,7 @@ Import-Module (Join-Path $PSScriptRoot 'Hygiene.psm1') -Force
 $RepoRoot = [IO.Path]::GetFullPath($RepoRoot)
 if (-not $OutDir) { $OutDir = Join-Path $RepoRoot 'artifacts/hygiene' }
 $allChecks = @('ownership', 'layering', 'sizes', 'eol', 'contract-label')
-$checks = if ($Only) { @($Only | ForEach-Object { $_ -split ',' } | ForEach-Object Trim | Where-Object { $_ }) } else { $allChecks }
+$checks = @(if ($Only) { $Only | ForEach-Object { $_ -split ',' } | ForEach-Object Trim | Where-Object { $_ } } else { $allChecks })
 $unknownChecks = @($checks | Where-Object { $allChecks -cnotcontains $_ })
 if ($unknownChecks.Count -or -not $checks.Count) {
     Write-Host "error: hygiene: unknown check(s) '$($unknownChecks -join ', ')' in -Only; use any of $($allChecks -join ', ')" -ForegroundColor Red
