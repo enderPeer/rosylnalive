@@ -1,0 +1,284 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="170" viewBox="0 0 720 170" role="img" aria-labelledby="kernels-timeline-title kernels-timeline-desc">
+<title id="kernels-timeline-title">Kernel timeline</title>
+<desc id="kernels-timeline-desc">Timeline of 254 intervals on 1 lanes, 0 event marks.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="170" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="169" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Kernel timeline</text>
+<text class="t2" x="16" y="45" font-size="12">Each dispatch at its GPU start, relative to the lane's first dispatch; colour is the kernel family</text>
+<rect class="f1" x="19" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="38" y="66" font-size="12">attention</text>
+<rect class="f4" x="107.96" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="126.96" y="66" font-size="12">elementwise</text>
+<rect class="f5" x="220.44" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="239.44" y="66" font-size="12">memory</text>
+<rect class="fn" x="305.08" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="324.08" y="66" font-size="12">other</text>
+<line class="grid" x1="59.6" y1="102" x2="59.6" y2="124" stroke-width="1"/>
+<line class="grid" x1="216.96" y1="102" x2="216.96" y2="124" stroke-width="1"/>
+<line class="grid" x1="374.31" y1="102" x2="374.31" y2="124" stroke-width="1"/>
+<line class="grid" x1="531.67" y1="102" x2="531.67" y2="124" stroke-width="1"/>
+<line class="grid" x1="689.02" y1="102" x2="689.02" y2="124" stroke-width="1"/>
+<text class="t2" x="51.6" y="117" font-size="12" text-anchor="end">d3d12</text>
+<rect class="f4" x="59.6" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 3.04 µs</title></rect>
+<rect class="f4" x="60.87" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 2.78 µs</title></rect>
+<rect class="f1" x="65.72" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 6.14 µs</title></rect>
+<rect class="f1" x="68.66" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 5.12 µs</title></rect>
+<rect class="f1" x="73.64" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 8.19 µs</title></rect>
+<rect class="f1" x="74.57" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 9.06 µs</title></rect>
+<rect class="f1" x="75.95" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 11.01 µs</title></rect>
+<rect class="f1" x="76.6" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 10.24 µs</title></rect>
+<rect class="f1" x="78.52" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 13.31 µs</title></rect>
+<rect class="f1" x="79.9" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 13.31 µs</title></rect>
+<rect class="f1" x="81.12" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 6.14 µs</title></rect>
+<rect class="f1" x="81.76" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 6.08 µs</title></rect>
+<rect class="f1" x="82.92" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 5.12 µs</title></rect>
+<rect class="f1" x="84.14" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 6.14 µs</title></rect>
+<rect class="f1" x="84.91" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 5.12 µs</title></rect>
+<rect class="f1" x="94.74" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 62.46 µs</title></rect>
+<rect class="f1" x="98.54" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 62.46 µs</title></rect>
+<rect class="f1" x="103.23" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 5.12 µs</title></rect>
+<rect class="f1" x="106.53" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 16.38 µs</title></rect>
+<rect class="f1" x="109.88" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 26.43 µs</title></rect>
+<rect class="f1" x="116.31" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 44.03 µs</title></rect>
+<rect class="f1" x="118.43" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 46.08 µs</title></rect>
+<rect class="f1" x="121.51" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 10.24 µs</title></rect>
+<rect class="f1" x="123.56" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 13.31 µs</title></rect>
+<rect class="f1" x="125.15" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 18.43 µs</title></rect>
+<rect class="f1" x="129.91" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 35.68 µs</title></rect>
+<rect class="f1" x="131.03" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 35.84 µs</title></rect>
+<rect class="f1" x="132.82" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 13.31 µs</title></rect>
+<rect class="f1" x="134.39" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 17.41 µs</title></rect>
+<rect class="f1" x="136.29" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 17.41 µs</title></rect>
+<rect class="f1" x="166.55" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 336.90 µs</title></rect>
+<rect class="f1" x="182.19" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 335.87 µs</title></rect>
+<rect class="f1" x="216.58" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 347.14 µs</title></rect>
+<rect class="f1" x="233.05" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 347.07 µs</title></rect>
+<rect class="f1" x="421.57" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 2.64 ms</title></rect>
+<rect class="f1" x="436.24" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 2.65 ms</title></rect>
+<rect class="f1" x="455.56" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 335.87 µs</title></rect>
+<rect class="f1" x="471.9" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 960.51 µs</title></rect>
+<rect class="f1" x="489.99" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 2.68 ms</title></rect>
+<rect class="f1" x="496" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 10.24 µs</title></rect>
+<rect class="f1" x="496.21" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 8.19 µs</title></rect>
+<rect class="f1" x="496.44" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 7.17 µs</title></rect>
+<rect class="f1" x="496.69" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 9.22 µs</title></rect>
+<rect class="f1" x="496.94" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 8.19 µs</title></rect>
+<rect class="f1" x="497.28" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 17.41 µs</title></rect>
+<rect class="f1" x="497.53" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 15.36 µs</title></rect>
+<rect class="f1" x="497.78" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 15.36 µs</title></rect>
+<rect class="f1" x="498.09" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 15.36 µs</title></rect>
+<rect class="f1" x="498.36" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 15.36 µs</title></rect>
+<rect class="f1" x="498.9" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 21.50 µs</title></rect>
+<rect class="f1" x="499.31" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 21.47 µs</title></rect>
+<rect class="f1" x="499.7" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 16.38 µs</title></rect>
+<rect class="f1" x="500.04" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 20.48 µs</title></rect>
+<rect class="f1" x="500.47" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 18.43 µs</title></rect>
+<rect class="f1" x="501.08" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 52.22 µs</title></rect>
+<rect class="f1" x="501.43" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 51.14 µs</title></rect>
+<rect class="f1" x="501.87" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 49.15 µs</title></rect>
+<rect class="f1" x="502.24" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 52.13 µs</title></rect>
+<rect class="f1" x="502.57" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 51.20 µs</title></rect>
+<rect class="f1" x="503.12" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 60.42 µs</title></rect>
+<rect class="f1" x="503.62" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 59.39 µs</title></rect>
+<rect class="f1" x="504.11" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 56.32 µs</title></rect>
+<rect class="f1" x="504.57" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 60.42 µs</title></rect>
+<rect class="f1" x="504.92" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 21.50 µs</title></rect>
+<rect class="f1" x="505.12" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 20.45 µs</title></rect>
+<rect class="f1" x="505.35" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 18.43 µs</title></rect>
+<rect class="f1" x="505.55" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 19.46 µs</title></rect>
+<rect class="f1" x="505.75" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 19.46 µs</title></rect>
+<rect class="f1" x="506" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 13.31 µs</title></rect>
+<rect class="f1" x="506.26" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 11.26 µs</title></rect>
+<rect class="f1" x="506.52" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 6.14 µs</title></rect>
+<rect class="f1" x="506.72" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 12.29 µs</title></rect>
+<rect class="f1" x="506.91" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 10.18 µs</title></rect>
+<rect class="f1" x="507.23" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 77.82 µs</title></rect>
+<rect class="f1" x="507.54" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 75.78 µs</title></rect>
+<rect class="f1" x="507.84" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 71.68 µs</title></rect>
+<rect class="f1" x="508.18" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 75.78 µs</title></rect>
+<rect class="f1" x="508.5" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 69.63 µs</title></rect>
+<rect class="f1" x="509.42" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 155.65 µs</title></rect>
+<rect class="f1" x="510.12" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 153.60 µs</title></rect>
+<rect class="f1" x="511.06" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 155.65 µs</title></rect>
+<rect class="f1" x="511.68" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 149.50 µs</title></rect>
+<rect class="f1" x="512.17" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 14.34 µs</title></rect>
+<rect class="f1" x="512.39" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 13.31 µs</title></rect>
+<rect class="f1" x="530.86" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 9.88 ms</title></rect>
+<rect class="f1" x="532.72" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 9.88 ms</title></rect>
+<rect class="f1" x="534.6" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 7.17 µs</title></rect>
+<rect class="f1" x="534.9" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 693.25 µs</title></rect>
+<rect class="f1" x="535.29" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 3.44 ms</title></rect>
+<rect class="f1" x="538.64" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 91.14 µs</title></rect>
+<rect class="f1" x="540.25" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 90.11 µs</title></rect>
+<rect class="f1" x="542.11" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 90.11 µs</title></rect>
+<rect class="f1" x="543.77" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 87.04 µs</title></rect>
+<rect class="f1" x="545.69" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 90.11 µs</title></rect>
+<rect class="f1" x="548.08" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 56.32 µs</title></rect>
+<rect class="f1" x="549.43" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 55.30 µs</title></rect>
+<rect class="f1" x="551.04" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 53.25 µs</title></rect>
+<rect class="f1" x="552.35" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 55.30 µs</title></rect>
+<rect class="f1" x="554.21" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 45.06 µs</title></rect>
+<rect class="f1" x="555.46" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 44.03 µs</title></rect>
+<rect class="f1" x="556.89" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 43.01 µs</title></rect>
+<rect class="f1" x="558.12" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 44.03 µs</title></rect>
+<rect class="f1" x="562.09" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 122.88 µs</title></rect>
+<rect class="f1" x="567.23" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 122.88 µs</title></rect>
+<rect class="f1" x="570.29" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 122.88 µs</title></rect>
+<rect class="f1" x="572.77" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 122.88 µs</title></rect>
+<rect class="f1" x="576.9" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 70.66 µs</title></rect>
+<rect class="f1" x="578.4" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 69.63 µs</title></rect>
+<rect class="f1" x="580.34" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 69.63 µs</title></rect>
+<rect class="f1" x="581.95" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 69.63 µs</title></rect>
+<rect class="f1" x="585.78" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 57.31 µs</title></rect>
+<rect class="f1" x="586.95" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 56.32 µs</title></rect>
+<rect class="f1" x="588.49" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 54.27 µs</title></rect>
+<rect class="f1" x="589.72" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 57.34 µs</title></rect>
+<rect class="f1" x="590.92" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 54.27 µs</title></rect>
+<rect class="f1" x="606.91" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 587.78 µs</title></rect>
+<rect class="f1" x="616.75" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 586.75 µs</title></rect>
+<rect class="f1" x="629.24" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 622.59 µs</title></rect>
+<rect class="f1" x="638.27" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 624.64 µs</title></rect>
+<rect class="f1" x="643.34" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 107.52 µs</title></rect>
+<rect class="f1" x="645.2" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 106.50 µs</title></rect>
+<rect class="f1" x="647.62" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 105.47 µs</title></rect>
+<rect class="f1" x="650.11" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 106.50 µs</title></rect>
+<rect class="f1" x="652.06" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 45.06 µs</title></rect>
+<rect class="f1" x="653.04" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 44.03 µs</title></rect>
+<rect class="f1" x="654.19" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 45.06 µs</title></rect>
+<rect class="f1" x="655.33" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 47.10 µs</title></rect>
+<rect class="f1" x="657.3" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 50.18 µs</title></rect>
+<rect class="f1" x="658.52" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 49.15 µs</title></rect>
+<rect class="f1" x="659.92" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 48.13 µs</title></rect>
+<rect class="f1" x="661.35" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 46.08 µs</title></rect>
+<rect class="f1" x="663.01" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 41.98 µs</title></rect>
+<rect class="f1" x="664.16" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 40.96 µs</title></rect>
+<rect class="f1" x="665.43" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 40.96 µs</title></rect>
+<rect class="f1" x="666.69" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 40.96 µs</title></rect>
+<rect class="f1" x="668.7" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 44.03 µs</title></rect>
+<rect class="f1" x="669.79" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 41.98 µs</title></rect>
+<rect class="f1" x="671.08" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 39.94 µs</title></rect>
+<rect class="f1" x="672.1" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 43.01 µs</title></rect>
+<rect class="f1" x="673.54" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 13.31 µs</title></rect>
+<rect class="f1" x="673.73" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 10.24 µs</title></rect>
+<rect class="f1" x="673.93" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 9.22 µs</title></rect>
+<rect class="f1" x="674.11" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 10.24 µs</title></rect>
+<rect class="f1" x="674.29" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 10.24 µs</title></rect>
+<rect class="f1" x="674.48" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 23.55 µs</title></rect>
+<rect class="f1" x="674.68" y="106" width="1" height="14" rx="0.5"><title>attention_gqa_causal: 21.50 µs</title></rect>
+<rect class="f4" x="675.1" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 8.19 µs</title></rect>
+<rect class="f4" x="675.23" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 5.12 µs</title></rect>
+<rect class="f4" x="675.51" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="675.62" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 5.12 µs</title></rect>
+<rect class="f4" x="675.73" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="675.86" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="675.97" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="676.09" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="676.17" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 5.12 µs</title></rect>
+<rect class="f4" x="676.27" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="676.37" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="676.48" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="676.61" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="676.72" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 4.10 µs</title></rect>
+<rect class="f4" x="676.83" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="676.94" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="677.04" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="677.14" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="677.24" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 5.12 µs</title></rect>
+<rect class="f4" x="677.37" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 6.14 µs</title></rect>
+<rect class="f4" x="677.47" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="677.56" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="677.68" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="677.84" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 5.12 µs</title></rect>
+<rect class="f4" x="677.94" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 6.14 µs</title></rect>
+<rect class="f4" x="678.05" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 6.14 µs</title></rect>
+<rect class="f4" x="678.16" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 6.14 µs</title></rect>
+<rect class="f4" x="678.28" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="678.39" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 5.12 µs</title></rect>
+<rect class="f4" x="678.5" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="678.6" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="678.71" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="678.82" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.04 µs</title></rect>
+<rect class="f4" x="678.93" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 5.06 µs</title></rect>
+<rect class="f4" x="679.04" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="679.15" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 6.14 µs</title></rect>
+<rect class="f4" x="679.25" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="679.38" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="679.48" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 5.12 µs</title></rect>
+<rect class="f4" x="679.6" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="679.72" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="679.82" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="680.2" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 8.19 µs</title></rect>
+<rect class="f4" x="680.28" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 5.12 µs</title></rect>
+<rect class="f4" x="680.35" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="680.41" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="680.48" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="680.58" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="680.69" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 5.12 µs</title></rect>
+<rect class="f4" x="680.9" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="f4" x="681.01" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 6.14 µs</title></rect>
+<rect class="f4" x="681.12" y="106" width="1" height="14" rx="0.5"><title>scale_f32: 7.17 µs</title></rect>
+<rect class="fn" x="681.27" y="106" width="1" height="14" rx="0.5"><title>table_echo: 6.14 µs</title></rect>
+<rect class="fn" x="681.35" y="106" width="1" height="14" rx="0.5"><title>table_echo: 5.12 µs</title></rect>
+<rect class="fn" x="681.42" y="106" width="1" height="14" rx="0.5"><title>table_echo: 6.14 µs</title></rect>
+<rect class="fn" x="681.49" y="106" width="1" height="14" rx="0.5"><title>table_echo: 5.12 µs</title></rect>
+<rect class="fn" x="681.56" y="106" width="1" height="14" rx="0.5"><title>table_echo: 6.14 µs</title></rect>
+<rect class="fn" x="681.62" y="106" width="1" height="14" rx="0.5"><title>table_echo: 4.10 µs</title></rect>
+<rect class="fn" x="681.69" y="106" width="1" height="14" rx="0.5"><title>table_echo: 6.14 µs</title></rect>
+<rect class="fn" x="681.77" y="106" width="1" height="14" rx="0.5"><title>table_echo: 4.10 µs</title></rect>
+<rect class="fn" x="681.85" y="106" width="1" height="14" rx="0.5"><title>args_echo: 6.14 µs</title></rect>
+<rect class="fn" x="681.91" y="106" width="1" height="14" rx="0.5"><title>args_echo: 4.10 µs</title></rect>
+<rect class="fn" x="681.98" y="106" width="1" height="14" rx="0.5"><title>args_echo: 6.14 µs</title></rect>
+<rect class="fn" x="682.04" y="106" width="1" height="14" rx="0.5"><title>args_echo: 4.10 µs</title></rect>
+<rect class="fn" x="682.13" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 6.14 µs</title></rect>
+<rect class="fn" x="682.2" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 5.12 µs</title></rect>
+<rect class="fn" x="682.28" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 6.14 µs</title></rect>
+<rect class="fn" x="682.35" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 4.10 µs</title></rect>
+<rect class="fn" x="682.42" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 4.10 µs</title></rect>
+<rect class="fn" x="682.49" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 4.10 µs</title></rect>
+<rect class="fn" x="683.95" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 121.86 µs</title></rect>
+<rect class="fn" x="684.34" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 121.86 µs</title></rect>
+<rect class="fn" x="685.25" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 5.12 µs</title></rect>
+<rect class="fn" x="685.6" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 64.51 µs</title></rect>
+<rect class="fn" x="686.13" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 125.95 µs</title></rect>
+<rect class="fn" x="686.59" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 124.93 µs</title></rect>
+<rect class="fn" x="687.19" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 5.12 µs</title></rect>
+<rect class="fn" x="687.68" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 63.49 µs</title></rect>
+<rect class="fn" x="688.21" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 124.93 µs</title></rect>
+<rect class="fn" x="688.7" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 124.93 µs</title></rect>
+<rect class="fn" x="689.39" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 5.12 µs</title></rect>
+<rect class="fn" x="689.86" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 64.42 µs</title></rect>
+<rect class="fn" x="690.57" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 246.78 µs</title></rect>
+<rect class="fn" x="691.14" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 246.78 µs</title></rect>
+<rect class="fn" x="692.03" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 4.10 µs</title></rect>
+<rect class="fn" x="692.77" y="106" width="1" height="14" rx="0.5"><title>groups_echo: 124.93 µs</title></rect>
+<rect class="f5" x="693.18" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 8.19 µs</title></rect>
+<rect class="f5" x="693.28" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 5.12 µs</title></rect>
+<rect class="f5" x="693.41" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 8.19 µs</title></rect>
+<rect class="f5" x="693.53" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 5.12 µs</title></rect>
+<rect class="f5" x="693.65" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 8.10 µs</title></rect>
+<rect class="f5" x="693.75" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 8.19 µs</title></rect>
+<rect class="f5" x="693.86" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 7.17 µs</title></rect>
+<rect class="f5" x="694" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 8.19 µs</title></rect>
+<rect class="f5" x="694.11" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 5.12 µs</title></rect>
+<rect class="f5" x="694.23" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 8.19 µs</title></rect>
+<rect class="f5" x="694.35" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 8.19 µs</title></rect>
+<rect class="f5" x="694.47" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 8.19 µs</title></rect>
+<rect class="f5" x="694.6" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 9.22 µs</title></rect>
+<rect class="f5" x="694.7" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 6.14 µs</title></rect>
+<rect class="f5" x="694.83" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 9.22 µs</title></rect>
+<rect class="f5" x="695" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 8.19 µs</title></rect>
+<rect class="f5" x="695" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 8.19 µs</title></rect>
+<rect class="f5" x="695" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 9.22 µs</title></rect>
+<rect class="f5" x="695" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 5.12 µs</title></rect>
+<rect class="f5" x="695" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 9.22 µs</title></rect>
+<rect class="f5" x="695" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 9.22 µs</title></rect>
+<rect class="f5" x="695" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 9.15 µs</title></rect>
+<text class="t3" x="59.6" y="141" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="216.96" y="141" font-size="11" text-anchor="middle">1 s</text>
+<text class="t3" x="374.31" y="141" font-size="11" text-anchor="middle">2 s</text>
+<text class="t3" x="531.67" y="141" font-size="11" text-anchor="middle">3 s</text>
+<text class="t3" x="689.02" y="141" font-size="11" text-anchor="middle">4 s</text>
+<line class="axis" x1="59.6" y1="124" x2="696" y2="124" stroke-width="1"/>
+<text class="t3" x="377.8" y="160" font-size="11" text-anchor="middle">GPU time</text>
+</svg>
