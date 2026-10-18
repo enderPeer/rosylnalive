@@ -41,6 +41,7 @@ $tmpRoot = Join-Path ([IO.Path]::GetTempPath()) ("lrm-hygiene-" + [guid]::NewGui
 New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
 
 $results = [Collections.Generic.List[object]]::new()
+$produced = [Collections.Generic.List[object]]::new()
 function Add-Outcome([string]$Group, [string]$Name, [string]$Expect, [string[]]$Problems, [string]$Detail) {
     $ok = -not $Problems
     $results.Add([pscustomobject]@{ Group = $Group; Name = $Name; Expect = $Expect; Ok = $ok; Problems = @($Problems); Detail = $Detail })
@@ -109,6 +110,7 @@ try {
         $known = $null -ne $c.PSObject.Properties['labels']
         $r = Test-Ownership -Map $m -Tracked @(Get-Prop $c 'tracked' @()) -Branch ([string](Get-Prop $c 'branch' '')) `
             -Changes @(Get-Prop $c 'changes' @() | ForEach-Object { ConvertTo-Change $_ }) -Labels @(Get-Prop $c 'labels' @()) -LabelsKnown $known
+        $produced.Add($r)
         Add-Outcome 'ownership' $c.name $c.expect (Compare-Expectation $c $r) (Get-Detail $c $r)
     }
     foreach ($c in Read-Cases 'sizes') {
@@ -120,16 +122,19 @@ try {
             for ($k = 0; $k -lt $count; $k++) { [pscustomobject]@{ Path = "$stem-$k$ext"; Size = [long]$e.size; Type = 'blob' } }
         }
         $r = Test-Sizes -Config $config -Entries @($entries)
+        $produced.Add($r)
         Add-Outcome 'sizes' $c.name $c.expect (Compare-Expectation $c $r) (Get-Detail $c $r)
     }
     foreach ($c in Read-Cases 'eol') {
         $r = Test-Eol -Entries @(ConvertFrom-EolListing @($c.listing))
+        $produced.Add($r)
         Add-Outcome 'eol' $c.name $c.expect (Compare-Expectation $c $r) (Get-Detail $c $r)
     }
     foreach ($c in Read-Cases 'contract-label') {
         $known = $null -ne $c.PSObject.Properties['labels']
         $r = Test-ContractLabel -Map $map -Changes @($c.changes | ForEach-Object { ConvertTo-Change $_ }) -Labels @(Get-Prop $c 'labels' @()) `
             -LabelsKnown $known -Frozen ([bool]$c.frozen) -ChangelogAdded @(Get-Prop $c 'changelogAdded' @())
+        $produced.Add($r)
         Add-Outcome 'contract-label' $c.name $c.expect (Compare-Expectation $c $r) (Get-Detail $c $r)
     }
 
@@ -177,8 +182,18 @@ try {
             }
         }
         $r = Test-Layering -RepoRoot $root
+        $produced.Add($r)
         Add-Outcome 'layering' $c.name $c.expect (Compare-Expectation $c $r) (Get-Detail $c $r)
     }
+
+    # Every record name and metric key the checks produced follows the TelemetryFacade naming rule.
+    $p = @()
+    foreach ($r in $produced) {
+        $name = Get-RecordName $r
+        if (-not (Test-TelemetryName $name)) { $p += "record name '$name'" }
+        foreach ($k in $r.Metrics.Keys) { if (-not (Test-TelemetryName $k)) { $p += "$name metric '$k'" } }
+    }
+    Add-Outcome 'vectors' 'telemetry-names' 'pass' @($p | Sort-Object -Unique) "$($produced.Count) results"
 
     # ---- 4. end to end: fixture git repositories and the real scripts ---------------------------
     Write-Host 'end-to-end (fixture repositories, check-*.ps1 in child processes)' -ForegroundColor Cyan
@@ -235,7 +250,7 @@ try {
     Test-Script 'ownership-changelog-append' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-append', '-Base', 'main', '-Head', 'ws/O1-fixture-append') 0 'shared append-only path; this change only adds lines'
     Test-Script 'ownership-changelog-rewrite' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-rewrite', '-Base', 'main', '-Head', 'ws/O1-fixture-rewrite') 1 'is shared append-only'
     Test-Script 'ownership-move-into-other-family' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-move', '-Base', 'main', '-Head', 'ws/O1-fixture-move') 1 'src/Lrm\.Core/README\.md is owned by family S1, not by family O1 \(branch ws/O1-fixture-move, status A\)'
-    Test-Script 'ownership-current-branch' 'check-ownership.ps1' @('-RepoRoot', $o, '-Base', 'main') 1 'branch=ws/O1-fixture-move'
+    Test-Script 'ownership-current-branch' 'check-ownership.ps1' @('-RepoRoot', $o, '-Base', 'main') 1 'branch ws/O1-fixture-move \(family O1\)'
 
     # Layering: the script itself on an unmodified copy and on the hand-written reference.
     Test-Script 'layering-unmodified' 'check-layering.ps1' @('-RepoRoot', $layeringRoots['unmodified-copy']) 0 'layering: OK'
@@ -263,7 +278,7 @@ try {
     $c = New-FixtureRepo 'e2e-contract' @{ 'docs/ownership.json' = $ownershipJson; 'docs/contracts/lrm-core.md' = "# LrmCore`n"; 'docs/contracts/CHANGELOG.md' = $changelog }
     Commit-Branch $c 'ws/S1-fix-dtype' { Set-FixtureFile $c 'docs/contracts/lrm-core.md' "# LrmCore`n`nDType 9 = U16.`n" }
     $args1 = @('-RepoRoot', $c, '-Base', 'main', '-Head', 'ws/S1-fix-dtype')
-    Test-Script 'contract-before-freeze' 'check-contract-label.ps1' ($args1 + @('-Labels', '')) 0 'frozen=False'
+    Test-Script 'contract-before-freeze' 'check-contract-label.ps1' ($args1 + @('-Labels', '')) 0 'contracts-v1 not tagged yet'
     Git $c @('tag', 'contracts-v1', 'main')
     Test-Script 'contract-frozen-no-label' 'check-contract-label.ps1' ($args1 + @('-Labels', '')) 1 "without the 'contract-change' label: docs/contracts/lrm-core\.md"
     Test-Script 'contract-label-no-changelog' 'check-contract-label.ps1' ($args1 + @('-Labels', 'contract-change')) 1 'needs an entry in docs/contracts/CHANGELOG\.md'

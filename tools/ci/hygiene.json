@@ -1,16 +1,16 @@
 {
   "schema": "lrm.hygiene/1",
-  "about": "Policy of the size check (tools/ci/check-sizes.ps1; S0b). Globs as in docs/ownership.json. Sizes are committed blob sizes (git ls-tree -r -l). A blob is held to the first fileLimits rule whose glob matches, else defaultMaxFileBytes. A budget bounds the total size of the blobs its glob matches. A forbidden rule fails every tracked file it matches, unless one of its except globs matches too. Ownership, contract files and labels are in docs/ownership.json.",
+  "about": "Policy of the size check (tools/ci/check-sizes.ps1; S0b). Globs as in docs/ownership.json. Sizes are committed blob sizes (git ls-tree -r -l). A blob is held to the first fileLimits rule whose glob matches, else defaultMaxFileBytes. A budget bounds the total size of the blobs its glob matches; its name keys its metrics (budget.<name>.bytes). A forbidden rule fails every tracked file it matches, unless one of its except globs matches too. Ownership, contract files and labels are in docs/ownership.json.",
   "sizes": {
     "defaultMaxFileBytes": 1048576,
     "fileLimits": [
       { "glob": "goldens/**", "maxFileBytes": 2097152, "why": "GoldenSet: a committed golden file is at most 2 MiB; larger ones live in LRM_DATA/golden" }
     ],
     "budgets": [
-      { "glob": "goldens/tiny/**", "maxTotalBytes": 5242880, "why": "O1 acceptance: goldens/tiny is at most 5 MiB" },
-      { "glob": "goldens/qwen3-0.6b/**", "maxTotalBytes": 10485760, "why": "G2 acceptance: committed Qwen goldens are at most 10 MiB" },
-      { "glob": "goldens/**", "maxTotalBytes": 20971520, "why": "all committed goldens: the O1 and G2 budgets plus the tokenizer corpus" },
-      { "glob": "**", "maxTotalBytes": 67108864, "why": "the whole tree; anything large belongs under LRM_DATA" }
+      { "name": "goldens_tiny", "glob": "goldens/tiny/**", "maxTotalBytes": 5242880, "why": "O1 acceptance: goldens/tiny is at most 5 MiB" },
+      { "name": "goldens_qwen", "glob": "goldens/qwen3-0.6b/**", "maxTotalBytes": 10485760, "why": "G2 acceptance: committed Qwen goldens are at most 10 MiB" },
+      { "name": "goldens", "glob": "goldens/**", "maxTotalBytes": 20971520, "why": "all committed goldens: the O1 and G2 budgets plus the tokenizer corpus" },
+      { "name": "tree", "glob": "**", "maxTotalBytes": 67108864, "why": "the whole tree; anything large belongs under LRM_DATA" }
     ],
     "forbidden": [
       { "glob": "artifacts/**", "why": "build output (UseArtifactsOutput)" },

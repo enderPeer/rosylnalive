@@ -161,8 +161,7 @@ $md = [Text.StringBuilder]::new()
 [void]$md.AppendLine('| Check | Result | Errors | Warnings | Measured |')
 [void]$md.AppendLine('| --- | --- | ---: | ---: | --- |')
 foreach ($rec in $records) {
-    $measured = @($rec.metrics.GetEnumerator() | ForEach-Object { "$($_.Key) $($_.Value)" }) -join '; '
-    [void]$md.AppendLine("| $($rec.name) | $(if ($rec.passed) { 'pass' } else { '**FAIL**' }) | $($rec.errors) | $($rec.warnings) | $($measured.Replace('|', '\|')) |")
+    [void]$md.AppendLine("| $($rec.name) | $(if ($rec.passed) { 'pass' } else { '**FAIL**' }) | $($rec.errors) | $($rec.warnings) | $(([string]$rec.summary).Replace('|', '\|')) |")
 }
 [void]$md.AppendLine('')
 [void]$md.AppendLine("Result: **$(if ($failed.Count) { "FAILED ($($failed -join ', '))" } else { 'PASSED' })**")
