@@ -22,10 +22,10 @@
       "name": "frozen-code-without-label",
       "why": "contract code counts too: Lrm.Core, Gpu.Core with its generated files, Shaders include files",
       "frozen": true,
-      "changes": [ { "status": "M", "path": "src/Lrm.Core/Canonical.fs" }, { "status": "M", "path": "src/Lrm.Gpu.Core/Kernels.g.fs" }, { "status": "A", "path": "src/Lrm.Shaders/hlsl/include/lrm_args.g.hlsli" } ],
+      "changes": [ { "status": "M", "path": "src/Lrm.Core/Canonical.fs" }, { "status": "M", "path": "src/Lrm.Gpu.Core/Kernels.g.fs" }, { "status": "A", "path": "src/Lrm.Shaders/include/lrm_args.g.hlsli" } ],
       "labels": [],
       "expect": "fail",
-      "match": [ "without the 'contract-change' label: src/Lrm\\.Core/Canonical\\.fs, src/Lrm\\.Gpu\\.Core/Kernels\\.g\\.fs, src/Lrm\\.Shaders/hlsl/include/lrm_args\\.g\\.hlsli$" ]
+      "match": [ "without the 'contract-change' label: src/Lrm\\.Core/Canonical\\.fs, src/Lrm\\.Gpu\\.Core/Kernels\\.g\\.fs, src/Lrm\\.Shaders/include/lrm_args\\.g\\.hlsli$" ]
     },
     {
       "name": "frozen-tolerances-without-label",
