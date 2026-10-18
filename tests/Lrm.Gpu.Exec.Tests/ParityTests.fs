@@ -195,7 +195,13 @@ let goldenChecks (prompt: string) (logits: IHostTensor) (taps: (string * IHostTe
             Attr.str "kind" "chain"
         ]
 
-    let results = GoldenCheck.tensors f (("logits", logits) :: taps) bound attrs true
+    let outputs =
+        if taps |> List.exists (fun (n, _) -> n = "logits") then
+            taps
+        else
+            ("logits", logits) :: taps
+
+    let results = GoldenCheck.tensors f outputs bound attrs true
 
     for r in results do
         for c in r.Checks do
@@ -224,11 +230,15 @@ let tests =
                     Expect.equal a.Taps.Length 39 "39 taps"
                     Expect.equal a.Ids b.Ids "greedy ids"
                     Expect.equal a.Digest b.Digest "cache digests"
-                    Expect.isGreaterThan (goldenChecks prompt a.Prefill a.Taps) 40 "every tap against torch32"
+
+                    Expect.equal
+                        (goldenChecks prompt a.Prefill a.Taps)
+                        41
+                        "every tap against torch32, and max |delta| and KL of the logits"
 
                     exactCheck
                         (Invariant.format
-                            $"cpu-device = cpu-f32 ({prompt}, {ids.Length} tokens + 15 decode steps: logits, 39 taps, caches)")
+                            $"cpu-device = cpu-f32 ({prompt}, a {ids.Length}-token prefill + 15 decode steps: logits, 39 taps, caches)")
                         (pairsOf a b)
 
             accept "greedy decoding on cpu-device: 16 steps of p0 and p1 equal cpu-f32 and the torch32 golden"
@@ -247,10 +257,20 @@ let tests =
                     let b = Greedy.run c (tinyModel ()) ids (GreedyOptions.parity 16)
                     Expect.equal a.Ids b.Ids (prompt + ": cpu-device = cpu-f32")
 
-                    Expect.equal
-                        a.Ids
-                        (Array.truncate 16 (goldenGreedy prompt "torch32"))
-                        (prompt + ": the torch32 golden's first 16")
+                    let m =
+                        GoldenCheck.greedy
+                            [
+                                Attr.str "pair" (TolerancePair.name TolerancePair.GpuVsTorch32)
+                                Attr.str "backend" "cpu-device"
+                                Attr.str "prompt" prompt
+                                Attr.str "tap" "greedy.ids"
+                                Attr.int TelemetryKeys.Layer -1
+                                Attr.str "kind" "chain"
+                            ]
+                            a.Ids
+                            (goldenGreedy prompt "torch32")
+
+                    Expect.isTrue m.Passed (prompt + ": the torch32 golden's first 16")
 
             accept "prefill = decode = chunked prefill on cpu-device, and = cpu-f32 (p2, 70 tokens)"
             <| fun () ->
