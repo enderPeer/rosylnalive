@@ -157,6 +157,9 @@
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Gpu.D3D12.Tests'">
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Gpu.D3D12/Lrm.Gpu.D3D12.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Shaders/Lrm.Shaders.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Tensor/Lrm.Tensor.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Tensor.CpuReference/Lrm.Tensor.CpuReference.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Telemetry/Lrm.Telemetry.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)tests/Lrm.Testing/Lrm.Testing.fsproj" LrmGraph="true" />
   </ItemGroup>
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Gpu.Exec.Tests'">
@@ -226,6 +229,7 @@
   </ItemGroup>
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Tokenizer.Tests'">
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Tokenizer/Lrm.Tokenizer.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Telemetry/Lrm.Telemetry.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)tests/Lrm.Testing/Lrm.Testing.fsproj" LrmGraph="true" />
   </ItemGroup>
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Tools.D3D12Gen'">
