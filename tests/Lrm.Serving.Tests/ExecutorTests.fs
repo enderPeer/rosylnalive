@@ -198,6 +198,27 @@ let tests =
 
                 Expect.throwsT<ObjectDisposedException> (fun () -> s.Apply(work0, input0) |> ignore) "a disposed state"
 
+            testCase "a unit beyond MaxContext is refused before the chain holds a cache"
+            <| fun () ->
+                let job = jobOf tinySpec
+                let chains = plannedChains job
+                let jobId = ServingJob.id job
+
+                use ex =
+                    executor
+                        "cpu-f32"
+                        { executorOptions job with
+                            MaxContext = 12
+                        }
+
+                use s = ex.Open(jobId, stageChain 0 0)
+
+                Expect.throwsT<StageException>
+                    (fun () -> s.Apply(chains[stageChain 0 0].Head) |> ignore)
+                    "p0's 13-row prefill does not fit 12 positions"
+
+                Expect.equal ex.LiveChains 0 "no cache was allocated"
+
             testCase "MaxChains bounds the caches alive at once; disposing a state frees its cache"
             <| fun () ->
                 let job = jobOf tinySpec

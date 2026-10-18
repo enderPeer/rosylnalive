@@ -302,19 +302,33 @@ type QwenStageExecutor<'t>(ops: IForwardOps<'t>, model: Qwen3Model, modelId: Con
                 raise (ObjectDisposedException("chain state", "the chain state was disposed"))
 
             let a, stage = checkUnit slot work input
-            let cache = cacheOf slot stage
 
-            if cache.Length <> a.Pos0 then
+            let length =
+                match slot.Cache with
+                | Some cache -> cache.Length
+                | None -> 0
+
+            if length <> a.Pos0 then
                 fail (
                     sprintf
                         "chain (%d, %d) holds %d positions; unit step %d starts at %d"
                         slot.Chain.Lane
                         slot.Chain.Stage
-                        cache.Length
+                        length
                         work.Step
                         a.Pos0
                 )
 
+            if a.Pos0 + a.Rows > options.MaxContext then
+                fail (
+                    sprintf
+                        "positions %d .. %d do not fit the executor's %d (MaxContext)"
+                        a.Pos0
+                        (a.Pos0 + a.Rows - 1)
+                        options.MaxContext
+                )
+
+            let cache = cacheOf slot stage
             let x = stageInput stage a.Rows input
 
             let result =
@@ -379,6 +393,11 @@ type QwenStageExecutor<'t>(ops: IForwardOps<'t>, model: Qwen3Model, modelId: Con
                 prev <- WorkUnit.id work
                 pos <- pos + a.Rows
                 checkedUnits.Add((work, input, a, stage))
+
+            if pos > options.MaxContext then
+                fail (
+                    sprintf "the chain's %d positions do not fit the executor's %d (MaxContext)" pos options.MaxContext
+                )
 
             match List.ofSeq checkedUnits with
             | [] -> []

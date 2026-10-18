@@ -976,6 +976,7 @@ module ServingHarness =
         let kills = ref 0
         // The run-log node id of each node's latest incarnation (a restart joins as <name>-r<attempt>).
         let runNodes = Collections.Generic.Dictionary<int, string>()
+        let launched = Collections.Generic.HashSet<int>()
 
         let launch (index: int) (incarnation: uint64) (restart: bool) =
             let n = s.Nodes[index - 1]
@@ -1006,6 +1007,7 @@ module ServingHarness =
                     nodeHere dir j s n port incarnation runInfo
 
             started[index] <- side
+            launched.Add index |> ignore
 
         let failure =
             try
@@ -1029,9 +1031,10 @@ module ServingHarness =
 
                     // Late nodes (spares) join once enough units are accepted.
                     for i, n in List.indexed s.Nodes do
+                        // Once: a killed spare comes back only by its own restart.
                         if
                             n.StartAfterUnits > 0
-                            && not (started.ContainsKey(i + 1))
+                            && not (launched.Contains(i + 1))
                             && accepted >= n.StartAfterUnits
                         then
                             launch (i + 1) n.Id false
