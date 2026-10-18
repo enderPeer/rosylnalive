@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="parity-ratio_histogram-title parity-ratio_histogram-desc">
+<title id="parity-ratio_histogram-title">Distance to the bound, every comparison</title>
+<desc id="parity-ratio_histogram-desc">Histogram of measured / bound: 92 samples, 79 in 24 bins, 13 exactly 0.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="320" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="319" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Distance to the bound, every comparison</text>
+<text class="t2" x="16" y="45" font-size="12">measured / bound on a log scale; left of the bound line passes; exact matches in the 0 column</text>
+<line class="grid" x1="38.32" y1="274" x2="696" y2="274" stroke-width="1"/>
+<text class="t3" x="30.32" y="278" font-size="11" text-anchor="end">0</text>
+<line class="grid" x1="38.32" y1="213.33" x2="696" y2="213.33" stroke-width="1"/>
+<text class="t3" x="30.32" y="217.33" font-size="11" text-anchor="end">10</text>
+<line class="grid" x1="38.32" y1="152.67" x2="696" y2="152.67" stroke-width="1"/>
+<text class="t3" x="30.32" y="156.67" font-size="11" text-anchor="end">20</text>
+<line class="grid" x1="38.32" y1="92" x2="696" y2="92" stroke-width="1"/>
+<text class="t3" x="30.32" y="96" font-size="11" text-anchor="end">30</text>
+<text class="t3" x="161.22" y="291" font-size="11" text-anchor="middle">10⁻⁵</text>
+<text class="t3" x="268.17" y="291" font-size="11" text-anchor="middle">10⁻⁴</text>
+<text class="t3" x="375.13" y="291" font-size="11" text-anchor="middle">10⁻³</text>
+<text class="t3" x="482.09" y="291" font-size="11" text-anchor="middle">10⁻²</text>
+<text class="t3" x="589.04" y="291" font-size="11" text-anchor="middle">10⁻¹</text>
+<text class="t3" x="696" y="291" font-size="11" text-anchor="middle">10⁰</text>
+<text class="t3" x="38.32" y="68" font-size="11" text-anchor="start">count</text>
+<text class="t3" x="388.16" y="310" font-size="11" text-anchor="middle">measured / bound</text>
+<path class="f0" d="M81.32 274V270.97Q81.32 267.93 84.35 267.93H92.63Q95.66 267.93 95.66 270.97V274Z"><title>[1.75e-06, 2.49e-06): 1</title></path>
+<path class="f0" d="M146.68 274V270.97Q146.68 267.93 149.72 267.93H157.99Q161.02 267.93 161.02 270.97V274Z"><title>[7.16e-06, 1.02e-05): 1</title></path>
+<path class="f0" d="M326.43 274V270.97Q326.43 267.93 329.46 267.93H337.73Q340.77 267.93 340.77 270.97V274Z"><title>[3.43e-04, 4.88e-04): 1</title></path>
+<path class="f0" d="M342.77 274V270.97Q342.77 267.93 345.8 267.93H354.07Q357.11 267.93 357.11 270.97V274Z"><title>[4.88e-04, 6.93e-04): 1</title></path>
+<path class="f0" d="M359.11 274V241.6Q359.11 237.6 363.11 237.6H369.45Q373.45 237.6 373.45 241.6V274Z"><title>[6.93e-04, 9.85e-04): 6</title></path>
+<path class="f0" d="M375.45 274V247.67Q375.45 243.67 379.45 243.67H385.79Q389.79 243.67 389.79 247.67V274Z"><title>[9.85e-04, 1.40e-03): 5</title></path>
+<path class="f0" d="M391.79 274V217.33Q391.79 213.33 395.79 213.33H402.13Q406.13 213.33 406.13 217.33V274Z"><title>[1.40e-03, 1.99e-03): 10</title></path>
+<path class="f0" d="M408.13 274V253.73Q408.13 249.73 412.13 249.73H418.47Q422.47 249.73 422.47 253.73V274Z"><title>[1.99e-03, 2.83e-03): 4</title></path>
+<path class="f0" d="M424.47 274V156.67Q424.47 152.67 428.47 152.67H434.81Q438.81 152.67 438.81 156.67V274Z"><title>[2.83e-03, 4.02e-03): 20</title></path>
+<path class="f0" d="M440.81 274V126.33Q440.81 122.33 444.81 122.33H451.15Q455.15 122.33 455.15 126.33V274Z"><title>[4.02e-03, 5.72e-03): 25</title></path>
+<path class="f0" d="M457.15 274V247.67Q457.15 243.67 461.15 243.67H467.49Q471.49 243.67 471.49 247.67V274Z"><title>[5.72e-03, 8.13e-03): 5</title></path>
+<path class="f0" d="M40.32 274V199.13Q40.32 195.13 44.32 195.13H62.32Q66.32 195.13 66.32 199.13V274Z"><title>exactly 0: 13</title></path>
+<text class="t3" x="53.32" y="291" font-size="11" text-anchor="middle">0</text>
+<line class="grid" x1="74.32" y1="92" x2="74.32" y2="274" stroke-width="1" stroke-dasharray="3 3"/>
+<line class="ref" x1="696" y1="88" x2="696" y2="274" stroke-width="1"><title>bound</title></line>
+<text class="t2" x="692" y="86" font-size="10" text-anchor="end">bound</text>
+<line class="axis" x1="38.32" y1="274" x2="696" y2="274" stroke-width="1"/>
+</svg>

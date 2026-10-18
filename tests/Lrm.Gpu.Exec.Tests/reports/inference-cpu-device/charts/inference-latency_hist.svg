@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="320" viewBox="0 0 720 320" role="img" aria-labelledby="inference-latency_hist-title inference-latency_hist-desc">
+<title id="inference-latency_hist-title">Decode latency distribution</title>
+<desc id="inference-latency_hist-desc">Histogram of step latency: 63 samples, 63 in 20 bins.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="320" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="319" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Decode latency distribution</text>
+<text class="t2" x="16" y="45" font-size="12">63 steps; median 1.74 ms, p95 2.41 ms</text>
+<line class="grid" x1="38.32" y1="274" x2="696" y2="274" stroke-width="1"/>
+<text class="t3" x="30.32" y="278" font-size="11" text-anchor="end">0</text>
+<line class="grid" x1="38.32" y1="213.33" x2="696" y2="213.33" stroke-width="1"/>
+<text class="t3" x="30.32" y="217.33" font-size="11" text-anchor="end">10</text>
+<line class="grid" x1="38.32" y1="152.67" x2="696" y2="152.67" stroke-width="1"/>
+<text class="t3" x="30.32" y="156.67" font-size="11" text-anchor="end">20</text>
+<line class="grid" x1="38.32" y1="92" x2="696" y2="92" stroke-width="1"/>
+<text class="t3" x="30.32" y="96" font-size="11" text-anchor="end">30</text>
+<text class="t3" x="156.17" y="291" font-size="11" text-anchor="middle">2.0 ms</text>
+<text class="t3" x="282.21" y="291" font-size="11" text-anchor="middle">2.5 ms</text>
+<text class="t3" x="408.25" y="291" font-size="11" text-anchor="middle">3.0 ms</text>
+<text class="t3" x="534.29" y="291" font-size="11" text-anchor="middle">3.5 ms</text>
+<text class="t3" x="660.33" y="291" font-size="11" text-anchor="middle">4.0 ms</text>
+<text class="t3" x="38.32" y="68" font-size="11" text-anchor="start">count</text>
+<text class="t3" x="367.16" y="310" font-size="11" text-anchor="middle">step latency</text>
+<path class="f0" d="M39.32 274V126.33Q39.32 122.33 43.32 122.33H66.2Q70.2 122.33 70.2 126.33V274Z"><title>[1.53 ms, 1.66 ms): 25</title></path>
+<path class="f0" d="M72.2 274V223.4Q72.2 219.4 76.2 219.4H99.09Q103.09 219.4 103.09 223.4V274Z"><title>[1.66 ms, 1.79 ms): 9</title></path>
+<path class="f0" d="M105.09 274V168.8Q105.09 164.8 109.09 164.8H131.97Q135.97 164.8 135.97 168.8V274Z"><title>[1.79 ms, 1.92 ms): 18</title></path>
+<path class="f0" d="M137.97 274V253.73Q137.97 249.73 141.97 249.73H164.86Q168.86 249.73 168.86 253.73V274Z"><title>[1.92 ms, 2.05 ms): 4</title></path>
+<path class="f0" d="M170.86 274V270.97Q170.86 267.93 173.89 267.93H198.71Q201.74 267.93 201.74 270.97V274Z"><title>[2.05 ms, 2.18 ms): 1</title></path>
+<path class="f0" d="M203.74 274V270.97Q203.74 267.93 206.77 267.93H231.59Q234.62 267.93 234.62 270.97V274Z"><title>[2.18 ms, 2.32 ms): 1</title></path>
+<path class="f0" d="M236.62 274V265.87Q236.62 261.87 240.62 261.87H263.51Q267.51 261.87 267.51 265.87V274Z"><title>[2.32 ms, 2.45 ms): 2</title></path>
+<path class="f0" d="M302.39 274V270.97Q302.39 267.93 305.43 267.93H330.24Q333.28 267.93 333.28 270.97V274Z"><title>[2.58 ms, 2.71 ms): 1</title></path>
+<path class="f0" d="M433.93 274V270.97Q433.93 267.93 436.96 267.93H461.78Q464.81 267.93 464.81 270.97V274Z"><title>[3.10 ms, 3.23 ms): 1</title></path>
+<path class="f0" d="M664.12 274V270.97Q664.12 267.93 667.15 267.93H691.97Q695 267.93 695 270.97V274Z"><title>[4.01 ms, 4.14 ms): 1</title></path>
+<line class="ref" x1="89.57" y1="88" x2="89.57" y2="274" stroke-width="1"><title>median</title></line>
+<text class="t2" x="93.57" y="86" font-size="10" text-anchor="start">median</text>
+<line class="axis" x1="38.32" y1="274" x2="696" y2="274" stroke-width="1"/>
+</svg>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="inference-decode_latency-title inference-decode_latency-desc">
+<title id="inference-decode_latency-title">Decode step latency</title>
+<desc id="inference-decode_latency-desc">Line chart of latency against step: 1 series, 63 points.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="379" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Decode step latency</text>
+<text class="t2" x="16" y="45" font-size="12">Host time of each single-token step</text>
+<line class="grid" x1="51.08" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="43.08" y="338" font-size="11" text-anchor="end">0</text>
+<line class="grid" x1="51.08" y1="282.8" x2="696" y2="282.8" stroke-width="1"/>
+<text class="t3" x="43.08" y="286.8" font-size="11" text-anchor="end">1 ms</text>
+<line class="grid" x1="51.08" y1="231.6" x2="696" y2="231.6" stroke-width="1"/>
+<text class="t3" x="43.08" y="235.6" font-size="11" text-anchor="end">2 ms</text>
+<line class="grid" x1="51.08" y1="180.4" x2="696" y2="180.4" stroke-width="1"/>
+<text class="t3" x="43.08" y="184.4" font-size="11" text-anchor="end">3 ms</text>
+<line class="grid" x1="51.08" y1="129.2" x2="696" y2="129.2" stroke-width="1"/>
+<text class="t3" x="43.08" y="133.2" font-size="11" text-anchor="end">4 ms</text>
+<line class="grid" x1="51.08" y1="78" x2="696" y2="78" stroke-width="1"/>
+<text class="t3" x="43.08" y="82" font-size="11" text-anchor="end">5 ms</text>
+<text class="t3" x="248.72" y="351" font-size="11" text-anchor="middle">20</text>
+<text class="t3" x="456.76" y="351" font-size="11" text-anchor="middle">40</text>
+<text class="t3" x="664.79" y="351" font-size="11" text-anchor="middle">60</text>
+<line class="axis" x1="51.08" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="51.08" y="68" font-size="11" text-anchor="start">latency</text>
+<text class="t3" x="373.54" y="370" font-size="11" text-anchor="middle">step</text>
+<path class="line s0" d="M51.08 235.99 L61.48 232.07 L71.88 227.64 L82.29 237.74 L92.69 240.49 L103.09 237.07 L113.49 242 L123.89 236.11 L134.3 238.22 L144.7 240.96 L155.1 236.3 L165.5 237.51 L175.9 239.16 L186.31 235.72 L196.71 170.08 L207.11 247.64 L217.51 198.22 L227.91 239.98 L238.31 240.21 L248.72 248.04 L259.12 242.58 L269.52 249.41 L279.92 254.02 L290.32 253.06 L300.73 252.89 L311.13 249.86 L321.53 232.47 L331.93 240.11 L342.33 252.18 L352.74 249.66 L363.14 251.64 L373.54 248.46 L383.94 217.89 L394.34 241.39 L404.75 250.54 L415.15 245.73 L425.55 249.82 L435.95 248.62 L446.35 250.47 L456.76 248.81 L467.16 255.54 L477.56 254.35 L487.96 253.18 L498.36 251.17 L508.77 231.28 L519.17 254.56 L529.57 121.96 L539.97 214.91 L550.37 250.55 L560.77 250.48 L571.18 255.36 L581.58 241.07 L591.98 251.02 L602.38 254.39 L612.78 254.52 L623.19 252.67 L633.59 251.42 L643.99 254.82 L654.39 234.71 L664.79 244.14 L675.2 242.08 L685.6 245.13 L696 209.91"><title>n0 (cpu-device)</title></path>
+</svg>

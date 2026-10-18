@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="170" viewBox="0 0 720 170" role="img" aria-labelledby="kernels-timeline-title kernels-timeline-desc">
+<title id="kernels-timeline-title">Kernel timeline, step 63</title>
+<desc id="kernels-timeline-desc">Timeline of 42 intervals on 1 lanes, 0 event marks.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="170" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="169" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Kernel timeline, step 63</text>
+<text class="t2" x="16" y="45" font-size="12">Each dispatch at its GPU start, relative to the lane's first dispatch; colour is the kernel family</text>
+<rect class="f0" x="19" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="38" y="66" font-size="12">matmul</text>
+<rect class="f1" x="100.76" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="119.76" y="66" font-size="12">attention</text>
+<rect class="f2" x="189.72" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="208.72" y="66" font-size="12">norm</text>
+<rect class="f3" x="257.32" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="276.32" y="66" font-size="12">rope</text>
+<rect class="f4" x="321.32" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="340.32" y="66" font-size="12">elementwise</text>
+<rect class="f5" x="433.8" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="452.8" y="66" font-size="12">memory</text>
+<rect class="f6" x="518.44" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="537.44" y="66" font-size="12">reduce</text>
+<line class="grid" x1="90.32" y1="102" x2="90.32" y2="124" stroke-width="1"/>
+<line class="grid" x1="241.85" y1="102" x2="241.85" y2="124" stroke-width="1"/>
+<line class="grid" x1="393.37" y1="102" x2="393.37" y2="124" stroke-width="1"/>
+<line class="grid" x1="544.9" y1="102" x2="544.9" y2="124" stroke-width="1"/>
+<text class="t2" x="82.32" y="117" font-size="12" text-anchor="end">cpu-device</text>
+<rect class="f5" x="90.32" y="106" width="2.24" height="14" rx="1.12"><title>embed_gather_bf16: 10.70 µs</title></rect>
+<rect class="f2" x="93.65" y="106" width="1.15" height="14" rx="0.58"><title>rmsnorm_rows, layer 0: 7.10 µs</title></rect>
+<rect class="f0" x="95.93" y="106" width="16.64" height="14" rx="3"><title>matmul_bf16w, layer 0: 58.20 µs</title></rect>
+<rect class="f0" x="114.05" y="106" width="7.39" height="14" rx="3"><title>matmul_bf16w, layer 0: 27.70 µs</title></rect>
+<rect class="f0" x="122.56" y="106" width="4.85" height="14" rx="2.42"><title>matmul_bf16w, layer 0: 19.30 µs</title></rect>
+<rect class="f2" x="128.5" y="106" width="7.42" height="14" rx="3"><title>rmsnorm_rows, layer 0: 27.80 µs</title></rect>
+<rect class="f2" x="137.14" y="106" width="3.15" height="14" rx="1.58"><title>rmsnorm_rows, layer 0: 13.70 µs</title></rect>
+<rect class="f3" x="141.51" y="106" width="3.58" height="14" rx="1.79"><title>rope_apply, layer 0: 15.10 µs</title></rect>
+<rect class="f3" x="146.23" y="106" width="1.73" height="14" rx="0.86"><title>rope_apply, layer 0: 9.00 µs</title></rect>
+<rect class="f5" x="149.11" y="106" width="7.15" height="14" rx="3"><title>copy_rows, layer 0: 26.90 µs</title></rect>
+<rect class="f5" x="157.39" y="106" width="6.91" height="14" rx="3"><title>copy_rows, layer 0: 26.10 µs</title></rect>
+<rect class="f1" x="165.42" y="106" width="248.29" height="14" rx="3"><title>attention_gqa_causal, layer 0: 822.60 µs</title></rect>
+<rect class="f0" x="415.71" y="106" width="16.79" height="14" rx="3"><title>matmul_bf16w, layer 0: 58.70 µs</title></rect>
+<rect class="f4" x="433.68" y="106" width="1.45" height="14" rx="0.73"><title>add, layer 0: 8.10 µs</title></rect>
+<rect class="f2" x="436.25" y="106" width="1.49" height="14" rx="0.74"><title>rmsnorm_rows, layer 0: 8.20 µs</title></rect>
+<rect class="f0" x="438.89" y="106" width="14.12" height="14" rx="3"><title>matmul_bf16w, layer 0: 49.90 µs</title></rect>
+<rect class="f0" x="454.32" y="106" width="8.36" height="14" rx="3"><title>matmul_bf16w, layer 0: 30.90 µs</title></rect>
+<rect class="f4" x="463.89" y="106" width="2" height="14" rx="1"><title>silu_mul, layer 0: 9.90 µs</title></rect>
+<rect class="f0" x="467.07" y="106" width="9.09" height="14" rx="3"><title>matmul_bf16w, layer 0: 33.30 µs</title></rect>
+<rect class="f4" x="477.32" y="106" width="1" height="14" rx="0.5"><title>add, layer 0: 6.20 µs</title></rect>
+<rect class="f2" x="479.38" y="106" width="1" height="14" rx="0.5"><title>rmsnorm_rows, layer 1: 6.10 µs</title></rect>
+<rect class="f0" x="481.41" y="106" width="13.09" height="14" rx="3"><title>matmul_bf16w, layer 1: 46.50 µs</title></rect>
+<rect class="f0" x="495.83" y="106" width="6.33" height="14" rx="3"><title>matmul_bf16w, layer 1: 24.20 µs</title></rect>
+<rect class="f0" x="503.38" y="106" width="5.3" height="14" rx="2.65"><title>matmul_bf16w, layer 1: 20.80 µs</title></rect>
+<rect class="f2" x="509.87" y="106" width="3.88" height="14" rx="1.94"><title>rmsnorm_rows, layer 1: 16.10 µs</title></rect>
+<rect class="f2" x="515.02" y="106" width="2.76" height="14" rx="1.38"><title>rmsnorm_rows, layer 1: 12.40 µs</title></rect>
+<rect class="f3" x="518.99" y="106" width="2.97" height="14" rx="1.48"><title>rope_apply, layer 1: 13.10 µs</title></rect>
+<rect class="f3" x="523.11" y="106" width="2.36" height="14" rx="1.18"><title>rope_apply, layer 1: 11.10 µs</title></rect>
+<rect class="f5" x="526.65" y="106" width="7.36" height="14" rx="3"><title>copy_rows, layer 1: 27.60 µs</title></rect>
+<rect class="f5" x="535.2" y="106" width="6.76" height="14" rx="3"><title>copy_rows, layer 1: 25.60 µs</title></rect>
+<rect class="f1" x="543.14" y="106" width="15.27" height="14" rx="3"><title>attention_gqa_causal, layer 1: 53.70 µs</title></rect>
+<rect class="f0" x="559.75" y="106" width="10.06" height="14" rx="3"><title>matmul_bf16w, layer 1: 36.50 µs</title></rect>
+<rect class="f4" x="571.02" y="106" width="1" height="14" rx="0.5"><title>add, layer 1: 6.40 µs</title></rect>
+<rect class="f2" x="573.2" y="106" width="1" height="14" rx="0.5"><title>rmsnorm_rows, layer 1: 6.00 µs</title></rect>
+<rect class="f0" x="575.2" y="106" width="9.15" height="14" rx="3"><title>matmul_bf16w, layer 1: 33.50 µs</title></rect>
+<rect class="f0" x="585.69" y="106" width="7.97" height="14" rx="3"><title>matmul_bf16w, layer 1: 29.60 µs</title></rect>
+<rect class="f4" x="594.87" y="106" width="1.15" height="14" rx="0.58"><title>silu_mul, layer 1: 7.10 µs</title></rect>
+<rect class="f0" x="597.24" y="106" width="9.24" height="14" rx="3"><title>matmul_bf16w, layer 1: 33.80 µs</title></rect>
+<rect class="f4" x="607.66" y="106" width="1" height="14" rx="0.5"><title>add, layer 1: 5.30 µs</title></rect>
+<rect class="f2" x="609.48" y="106" width="1" height="14" rx="0.5"><title>rmsnorm_rows: 6.30 µs</title></rect>
+<rect class="f0" x="611.6" y="106" width="12.55" height="14" rx="3"><title>matmul_bf16w: 44.70 µs</title></rect>
+<rect class="f6" x="692.67" y="106" width="2.33" height="14" rx="1.17"><title>argmax_rows: 11.00 µs</title></rect>
+<text class="t3" x="90.32" y="141" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="241.85" y="141" font-size="11" text-anchor="middle">0.5 ms</text>
+<text class="t3" x="393.37" y="141" font-size="11" text-anchor="middle">1.0 ms</text>
+<text class="t3" x="544.9" y="141" font-size="11" text-anchor="middle">1.5 ms</text>
+<line class="axis" x1="90.32" y1="124" x2="696" y2="124" stroke-width="1"/>
+<text class="t3" x="393.16" y="160" font-size="11" text-anchor="middle">GPU time</text>
+</svg>
