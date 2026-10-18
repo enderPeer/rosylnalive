@@ -1,0 +1,24 @@
+{
+  "schema": "lrm.ownership/1",
+  "about": "Fixture map for tools/ci/test-hygiene.ps1: the shape of S0a's first docs/ownership.json, with families but no shared, contract or integrators section, as a merge base may still hold it.",
+  "families": {
+    "S0": {
+      "slices": [
+        "S0a",
+        "S0b"
+      ],
+      "paths": [
+        "docs/ownership.json",
+        "tools/ci/**"
+      ]
+    },
+    "S1": {
+      "slices": [
+        "S1"
+      ],
+      "paths": [
+        "src/Lrm.Core/**"
+      ]
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # ProjectGraph contract
 
-Owner: S0 (S0a). Status: v1. Consumers: every workstream.
+Owner: S0 (S0a; the hygiene layering check and its fixtures are S0b's). Status: v1. Consumers: every workstream.
 
 `docs/project-graph.json` is the only source of ProjectReferences and PackageReferences. Every project, its kind, its owner and its edges are listed there, and nowhere else.
 
@@ -38,7 +38,13 @@ These are checked on the transitive closure of `refs` and `buildRefs`:
 ## Project files
 
 - **What an fsproj may hold.** An fsproj is `<Project Sdk="Microsoft.NET.Sdk">` holding ItemGroups of `Compile`, `EmbeddedResource`, `None` and `Content` items, and nothing else. An ItemGroup may carry only `Condition` and `Label`.
-- **Per-project build logic** goes in `<Name>.lrm.targets` next to the fsproj. Examples are R4a's incremental shader target and extra properties. The project's owner owns the file, and `Directory.Build.targets` imports it. It may add targets, properties and file items, but never references.
+- **Per-project build logic** goes in `<Name>.lrm.targets` next to the fsproj. Examples are R4a's incremental shader target and extra properties. The project's owner owns the file, and `Directory.Build.targets` imports it. It may add targets, properties and file items, but never references. Precisely, a `.lrm.targets` file:
+  - imports nothing: no `<Import>`, `<ImportGroup>` or `<Sdk>`, and no `Sdk` or `TreatAsLocalProperty` on `<Project>`;
+  - adds no reference item, as an element or as a task `Output ItemName`. That is any item whose name contains `Reference` or `Package`, `Analyzer`, and the guard's own `_LrmHand*` and `_LrmStray*` items;
+  - sets no property, as an element or as a task `Output PropertyName`, that the root build files set (`Directory.Build.props`, `Directory.Build.targets`, `Directory.Packages.props` and `build/*.props`, for example `LrmIsSpike`, `TreatWarningsAsErrors` or `LrmDxcExe`). It also sets none that steers restore, the guard or the build's identity: `Restore*`, `NuGet*`, central package management, the `Directory*` and `Custom*` import switches, `CI`, `ContinuousIntegrationBuild`, and the Lrm graph and identity properties. Its own properties and items, such as R4a's `LrmShadersOut` and `LrmShaderInput`, are fine.
+  - MSBuild names ignore case, and so do these rules.
+- **Compile items** in an fsproj or a `.lrm.targets` file name only files inside the project's own directory: no `..` segment, no rooted path, and no property or item expansion other than `$(MSBuildThisFileDirectory)`, `$(MSBuildProjectDirectory)` and `$(IntermediateOutputPath)`. Code from another project comes only through a reference in the graph.
+- **No other MSBuild extension files.** Outside `spikes/**`, `Directory.Build.props`, `Directory.Build.targets`, `Directory.Packages.props`, `global.json` and `NuGet.Config` exist only at the root, spelled exactly so. `Directory.Build.rsp`, `Directory.Solution.props`, `Directory.Solution.targets` and `<project>.user` files never exist. A nested `Directory.Build.*` would replace the root one for its subtree, so it could add references or switch off the guard and the locked restore without touching the graph.
 - **Shared settings** come from `Directory.Build.props`:
   - `net10.0` and `x64`;
   - `UseAppHost=false`;
@@ -70,6 +76,47 @@ These are checked on the transitive closure of `refs` and `buildRefs`:
 - **CI.** These steps fail the build-test job:
   - `gen-project-graph.ps1 -Check` fails on a rule violation, an unregistered fsproj, an fsproj holding more than file items, a stray `.lrm.targets`, or generated files that are out of date;
   - the locked restore fails on stale lock files.
+- **Hygiene.** The `hygiene` job (ubuntu-latest) runs the same validator as its layering check (`tools/ci/check-layering.ps1`), so a layering break fails both required checks. The layering check also scans the MSBuild extension files against the rules under Project files above. The build-time guard cannot do that alone, because a `.lrm.targets` file that sets `LrmIsSpike` switches the guard off. Its self-test (`tools/ci/test-hygiene.ps1`) edits a temporary copy of the graph inputs and proves that each rule fails as designed; the tables below list the cases.
+
+### Vectors
+
+Each edit below, applied to a copy of the v1 graph, must fail `gen-project-graph.ps1 -Check` with the message shown (`tools/ci/fixtures/layering/cases.json`). The unmodified copy must pass.
+
+| Edit | Fails with |
+| --- | --- |
+| `src/Lrm.Tokenizer/Lrm.Tokenizer.fsproj` gains `<ProjectReference Include="../Lrm.Gpu.Core/Lrm.Gpu.Core.fsproj" />` | `<ProjectReference> is not allowed` |
+| `src/Lrm.Tensor/Lrm.Tensor.fsproj` gains a `<PropertyGroup>` | `<PropertyGroup> is not allowed` |
+| `Lrm.Models.Qwen` refs `Lrm.Gpu.Core` | `rule model-and-cluster-never-gpu: Lrm.Models.Qwen -> Lrm.Gpu.Core` |
+| `Lrm.Cluster` refs `Lrm.Tensor`, and `Lrm.Tensor` refs `Lrm.Gpu.Core` | `rule model-and-cluster-never-gpu: Lrm.Cluster -> Lrm.Tensor -> Lrm.Gpu.Core` (transitive) |
+| `Lrm.Core` refs `Lrm.Telemetry` | `rule core-is-leaf: Lrm.Core -> Lrm.Telemetry`, and a cycle |
+| `Lrm.Gpu.Exec` refs `Lrm.Gpu.CpuDevice` | `rule exec-never-backend` |
+| `Lrm.Serving` refs `Lrm.Gpu.Vulkan` | `rule only-apps-and-tests-wire-backends` |
+| `Lrm.Gpu.Core` refs `Lrm.Gpu.D3D12.Interop` | `rule interop-only-under-its-backend` |
+| `Lrm.Reports` refs `Lrm.Cli` | `rule no-refs-to-executables` |
+| `Lrm.Gpu.Core` buildRefs `Lrm.Shaders.Build` | `rule build-only-edges: … is not an allowed build-only edge` |
+| `Lrm.Tensor` refs `Lrm.Tensor.CpuReference` | `cycle: … Lrm.Tensor -> Lrm.Tensor.CpuReference -> Lrm.Tensor` |
+| a new `src/Lrm.Rogue/Lrm.Rogue.fsproj` on disk | `is not registered in docs/project-graph.json` |
+| a project at `spikes/vk-heap/VkHeapSpike.fsproj` in the graph | `rule no-spikes` |
+| `Lrm.Tokenizer` names the package `Newtonsoft.Json` | `is not in the top-level packages list` |
+| an allowed new edge, `Lrm.Tokenizer` refs `Lrm.Telemetry`, without regenerating | `build/ProjectGraph.g.props is out of date` |
+
+The MSBuild extension scan has its own cases. Each one writes the files shown into the copy (here `T` is `src/Lrm.Tokenizer/Lrm.Tokenizer.lrm.targets`) and must fail with the message shown.
+
+| Files | Fails with |
+| --- | --- |
+| `T` sets `LrmIsSpike=true` and `RestoreLockedMode=false` and adds a `ProjectReference` to `Lrm.Gpu.D3D12` | `sets the property LrmIsSpike`, `sets the property RestoreLockedMode`, `<ProjectReference> is a reference item` |
+| `T` sets `lrmisspike` and `NUGETLOCKFILEPATH` and adds a `packagereference` | the same three messages, in the file's case |
+| `T` adds a ProjectReference through `CreateItem` `Output ItemName`, and sets `RestoreLockedMode` through `CreateProperty` | `a task Output adds the reference item ProjectReference`, `a task Output sets the property RestoreLockedMode` |
+| `T` removes `_LrmHandProjectReference` and adds `Analyzer` and `PackageDownload` items in a target | `is a reference item`, three times |
+| `T` has `<Import>` and `<ImportGroup>` | `<Import> is not allowed` |
+| `T` sets `TreatWarningsAsErrors`, `LrmDxcExe` and `InvariantGlobalization` | `sets the property …, which the root build files own`, three times |
+| `T` has `<Project Sdk="…" TreatAsLocalProperty="CI">` | `<Project Sdk=...> is not allowed`, `<Project TreatAsLocalProperty=...> is not allowed` |
+| the fsproj has `Compile Include="$(LrmRepoRoot)src/Lrm.Gpu.D3D12/Device.fs"`, and `T` has `Compile Include="../Lrm.Gpu.D3D12/Device.fs"` | `reaches outside the project directory`, twice |
+| `src/Lrm.Tokenizer/Directory.Build.targets` with a ProjectReference | `a nested Directory.Build.targets replaces the root one` |
+| `tests/Directory.Build.props`, `src/Directory.Packages.props`, `tests/Lrm.Core.Tests/DIRECTORY.BUILD.PROPS`, `src/Lrm.Tokenizer/nuget.config`, `tools/global.json` | `a nested … replaces the root one`, five times |
+| `src/Lrm.Tokenizer/Directory.Build.rsp`, `src/Lrm.Tokenizer/Lrm.Tokenizer.fsproj.user`, `Directory.Solution.targets` | `MSBuild reads … by itself` or `MSBuild imports <project>.user` |
+
+Two cases must pass: R4a's shader target with R3's `Tailcalls` switch, and build files under `spikes/**`.
 
 ## Changing the graph
 
