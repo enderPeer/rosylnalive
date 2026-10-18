@@ -55,7 +55,7 @@ Six agents and one integrator build the Qwen3-0.6B forward pass on our own D3D12
 | M2a | Qwen model, forward pass, CpuOps on the tiny model | `src/Lrm.Models.Qwen/**`, `Cmd/{Backends,Forward,Generate}.fs` | O1, O2 | M | Tiny logits and taps in bounds; 16-step greedy identical; prefill and decode bit-equal |
 | M2b | Full-model CPU parity (gate1-cpu) | (F) | M2a, G2, T1 | M | F64 vs torch64p ≤ 1e-10; gate greedy ids identical; parity report |
 | E1 | CpuDevice and conformance harness | `src/Lrm.Gpu.CpuDevice/**`, `tests/Lrm.Kernels.Conformance/**` except `Cases/{basic,matmul,attention}` | R4a, O2 | M | Every catalog kernel emulated; every contract violation raises |
-| D1 | D3D12 runtime backend | `src/Lrm.Gpu.D3D12/**` | R3, R4a, S1 | L | Selftests bit-identical twice; 1.2 GB round trip; soak; hello-d3d12 |
+| D1 | D3D12 runtime backend | `src/Lrm.Gpu.D3D12/**` | R3, R4a, S1 | L | The five selftests bit-identical twice; 1.2 GB round trip; soak; hello-d3d12 |
 | V1 | Vulkan runtime backend | `src/Lrm.Gpu.Vulkan/**` | R1, R2a, R4b, S1 | L | Same suite as D1; hello-vulkan |
 | R5 | WARP and Agility spikes | `spikes/d3d12/**`, `docs/decisions/R5-*` | D1, E1 | S | ADR; warp CI job only if viable |
 | K1 | Basic kernels | `hlsl/kernels/basic/**`, `Cases/basic/**` | R4a, O2, E1, first backend | M | Within KernelBounds; batch-invariant; every dispatch < 100 ms; both backends |
@@ -179,11 +179,13 @@ Six agents and one integrator build the Qwen3-0.6B forward pass on our own D3D12
 
 **D1**
 - In-box D3D12 at SM 6.6. One shader-visible heap of 64 raw UAVs.
+- Runs the five selftests first (`scale_f32`, `table_echo`, `args_echo`, `groups_echo`, `bf16_unpack`), and the fp32 denormal probe (`scale_f32`) right after LoadKernels; it records `gpu.fp32_denormals` and keeps the mode in the ExecutionClass (ADR int-0001: D3D12 on the RTX 4080 is preserve).
 - **Per-page resource-state tracking**: `Copy` inserts UAV↔COPY transitions.
 - `GetDeviceRemovedReason` is checked after every submit in test builds, with DRED breadcrumbs.
 
 **V1**
 - Implements the R1 recipe exactly.
+- Runs the same five selftests and the denormal probe as D1. The SPIR-V blobs declare no denormal mode, so the measured mode may be flush; `shaderDenormPreserveFloat32` is not a requirement.
 - Compute queue family 2, timeline semaphore, `vkCmdPushDataEXT` with 128 bytes, and a global barrier between dependent dispatches.
 - VK_EXT_device_fault diagnostics.
 
@@ -239,7 +241,7 @@ Six agents and one integrator build the Qwen3-0.6B forward pass on our own D3D12
 |---|---|---|---|
 | 0 | S0a, S1 | 1 + integrator | AP-0 and AP-1 answered (asked with this plan). PR0a merged; build-test green on main; S1 merged; tag m0-scaffold. |
 | 1 | S0b, R1, R2a, R2b, R3, R4a, R4b, O1, O2, T1, C1 | ≤ 6 + integrator | ABI oracles green. R4a merged: tag contracts-v1 (S1, R4a, O2, C1 contracts). R1's ADR merged, then R4b: tag contracts-v1.1. Tiny and tokenizer goldens reproducible. O2 tiny checks pass in CI. C1's 200 seeds and kill test pass. Tag wave-1-done. |
-| 2 | G2, M1, M2a, M2b, E1, D1, V1, R5 | ≤ 6 | Goldens double-run identical; tolerances reviewed. Tokenizer 100%. Tag gate1-cpu. E1 selftests pass on both GPUs. Tags hello-d3d12 and hello-vulkan; selftests bit-identical across backends. R5's ADR recorded. Tag wave-2-done. |
+| 2 | G2, M1, M2a, M2b, E1, D1, V1, R5 | ≤ 6 | Goldens double-run identical; tolerances reviewed. Tokenizer 100%. Tag gate1-cpu. E1 selftests pass on both GPUs. Tags hello-d3d12 and hello-vulkan; selftests bit-identical across backends, except `scale_f32` on denormal inputs or results, which follows each class's measured denormal mode. R5's ADR recorded. Tag wave-2-done. |
 | 3 | K1, K2, K3, X1a, X1b, C2a, C2b, T2 | 6 | Every kernel passes conformance on CpuDevice (CI) and both GPUs. X1b within tolerance with identical greedy ids. C2a and C2b green. T2 merged. Tag wave-3-done. |
 | 4 | I1, I2 | 2 + ≤ 3 fix sessions | Tags gate1-vulkan, gate1-d3d12 and gate1-cluster. Reports committed. |
 | 5 | I3 | 1 | `lrm gate1` passes twice on a fresh clone of main; tag gate1; STATUS marks Phase 1 done. |
@@ -251,6 +253,8 @@ D1 may start in wave 1 once R3 and R4a merge. X1a and C2a may start in wave 2 on
 ## 5. Contracts
 
 Contract files change after contracts-v1 only through a `contract-change` PR. That PR needs a CHANGELOG entry and updated known-answer vectors. Each owner writes the full text in `docs/contracts/<name>.md`.
+
+**Until the tag.** `contracts-v1` and `contracts-v1.1` are set once every wave-1 PR and the integration fixes (PR #14) are on `main`, which waits for the user's merges. Until then every wave-1 contract text is frozen by convention: workstream branches do not edit it, and only an `int/` commit changes it, with a CHANGELOG entry and a routed note to every consumer. A workstream that needs a change asks the integrator.
 
 | Contract | Owner | Key terms |
 |---|---|---|
@@ -265,17 +269,17 @@ Contract files change after contracts-v1 only through a `contract-change` PR. Th
 | RunLog | T1 | `LRM_DATA/runs/<runId>/manifest.json` (schema `lrm.run/1`, includes the executionClass and driver) and `events.<node>.jsonl` with keys `v, t, k, n, d, x, u, node, seq, a`. |
 | ReportTemplates | T1 | Templates in `src/Lrm.Reports/templates/*.md` with value, table, chart and each placeholders. Builders are pure functions over RunLogReader. Each chart is a byte-deterministic SVG file in a palette that works on light and dark themes. |
 | HostTensorAndSafetensors | O2 | Memory-mapped reader that validates ranges, and a deterministic writer: sorted names, header padded with spaces to 8 bytes. |
-| CpuReferenceSemantics | O2 | Sequential FMA reductions in increasing index order; parallelism only over output rows; no `Vector<T>`. Weight used as `w`, not `1+w`. NeoX RoPE. `ropeTable(invFreqBits, maxPos)`: freq = f32(f32(pos)·inv_freq), cos and sin = f32(f64 cos/sin). F64 mode uses the same fp32 table, widened. KV cache: K stored after norm and RoPE, V raw, both fp32. argmax returns the lowest index on ties; NaN raises. |
+| CpuReferenceSemantics | O2 | Sequential FMA reductions in increasing index order; parallelism only over output rows; no `Vector<T>`. Weight used as `w`, not `1+w`. NeoX RoPE. `ropeTable(invFreqBits, maxPos)`: freq = f32(f32(pos)·inv_freq), cos and sin = f32(f64 cos/sin). F64 mode uses the same fp32 table, widened. KV cache: K stored after norm and RoPE, V raw, in the mode's dtype: fp32 in F32 mode and on every GPU, fp64 in CpuRef F64 (an fp32 cache would break the 1e-12 chain to torch64p). argmax returns the lowest index on ties; NaN raises. |
 | ComparatorsAndGoldenReader | O2 | relL2 in fp64, maxAbs, maxUlp, KL, top-k agreement, top-2 margin. `Goldens.open` verifies SHA-256 before use. `ToleranceSpec.load`. |
-| KernelBounds | O2 | `src/Lrm.Tensor/KernelBounds.fs`. Bit-exact: add, copy_rows, embed, bf16_unpack, scale_f32 and the argmax index. All others: relL2(gpu, CpuRef64) ≤ max(1e-6, 2·relL2(CpuRef32, CpuRef64)) per case; the measured reference error is logged. The factor changes only through contract-change, with evidence. |
+| KernelBounds | O2 | `src/Lrm.Tensor/KernelBounds.fs`. Bit-exact: the five selftests, embed, add, copy_rows and the argmax index. Every kernel that computes on fp32 values is compared with CpuRef computed in the class's measured fp32 denormal mode; for the fp32 arithmetic kernels (`scale_f32`, `add`) a NaN result matches any NaN (GPUs return `0x7FFFFFFF`), while the kernels that move bits compare every bit, NaN payloads included. All others: relL2(gpu, CpuRef64) ≤ max(1e-6, 2·relL2(CpuRef32, CpuRef64)) + 2^-126·√d / ‖CpuRef64‖ per case, where d counts the reference results below 2^-126 that a flushing class returns as zero; the measured reference error is logged. The factor changes only through contract-change, with evidence. |
 | ReferenceOracles | O1 | Defined below. |
 | GoldenSet | O1 (format); G2 (Qwen content) | `goldens/<set>/g<N>/manifest.json`, schema `lrm.golden/1`: env snapshot, oracle patches, tap methods, EOS setting, threads, double-run result, argmax tie probe. Large files live in `LRM_DATA/golden/`. No LFS and no Releases. Tiny model at `goldens/tiny/g1/model/`: `config.json` in the real schema, bf16 `model.safetensors` without `lm_head`, `SHA256SUMS`, and `REVISION` set to `local:tiny-g1`. |
 | ActivationNames | O1 | `embed.out`; per layer `L{i}.` + input_layernorm, q/k/v_proj, q_norm, k_norm, q_rope, k_rope, v_cache, o_proj.in, o_proj.out, resid_mid, post_attention_layernorm, mlp gate/up, down.in, down.out, out; then `final_norm.out`, `logits`. Shapes `[T, features]`. |
 | ToleranceSpec | G2 (numbers); O2 (types) | Pairs: cpu64-vs-torch64p, cpu32-vs-torch32, cpu32-vs-torch64p, gpu-vs-cpu32, gpu-vs-torch32, gpu-vs-torch64p, vulkan-vs-d3d12. e_ref = relL2(torch32, torch64p). bound = clamp(k·e_ref, floor, 10·floor). CPU32 floors: relL2 1e-5, max\|Δlogit\| 2e-3, KL 1e-7. GPU floors: relL2 1e-4, max\|Δlogit\| 1e-2, KL 1e-6. CPU64 vs torch64p: 1e-10 on the full model, 1e-12 on the tiny model. Greedy rules are in section 6. |
 | HeapLayoutAndTensorTable | R4a | 64 slots, written once. Slot 0 is the table; pages are at most 1 GiB each. Arena kinds in order: Weights, Rope, KvCache, Activations, Scratch, Logits, Taps, then reserved Master, Grad, AdamM, AdamV, RoslynIn, RoslynOut. TensorRow is 64 B. The table has 16,384 rows; token 0 is null. Vulkan slot i sits at byte 16·i, D3D12 slot i at descriptor index i. |
-| KernelAbiAndCatalog | R4a | 128-byte ArgBlock; dword0 = `lrm_groups_x`. D3D12 uses 32 root constants at b0; Vulkan uses `vkCmdPushDataEXT` at offset 0. The frozen catalog keeps the plan's kernel list, fields, thread counts and grids. No float atomics, wave ops or 16-bit types. groupshared at most 32 KiB; every dispatch < 100 ms; x ≤ 65,535. |
+| KernelAbiAndCatalog | R4a | 128-byte ArgBlock; dword0 = `lrm_groups_x`. D3D12 uses 32 root constants at b0; Vulkan uses `vkCmdPushDataEXT` at offset 0. The frozen catalog keeps the plan's kernel list, fields, thread counts and grids, after five selftests: `scale_f32` (also the fp32 denormal probe), `table_echo`, `args_echo`, `groups_echo` (grid folding above 65,535 groups) and `bf16_unpack`. No float atomics, wave ops or 16-bit types. groupshared at most 32 KiB; every dispatch < 100 ms; x ≤ 65,535. |
 | GpuBackendInterface | R4a | IGpuBackend, IGpuHeap, ICommandList and IKernelSet, with factories `Backend.enumerate` and `tryCreate`. Vulkan requires `VK_EXT_descriptor_heap`; D3D12 requires SM 6.6 and binding tier 3. `Copy` is state-correct on every backend. |
-| ShaderBuildAndSourceConvention | R4a (SPIR-V `LRM_BUF`: R4b) | Only the pinned DXC 1.9.2609.5, verified by `--version`. Incremental MSBuild target. DXIL `cs_6_6`; SPIR-V vulkan1.3. `rootsig.bin` is checked against the canonical bytes. One kernel per file, using `LRM_ARGS`, `LRM_BUF` and `lrm_tensor` only. ShaderSetHash. |
+| ShaderBuildAndSourceConvention | R4a (SPIR-V `LRM_BUF`: R4b) | Only the pinned DXC 1.9.2609.5, verified by `--version`. Incremental MSBuild target. DXIL `cs_6_6` with `-denorm preserve`; SPIR-V vulkan1.3 with no `-denorm` (a SPIR-V denormal mode needs `shaderDenormPreserveFloat32`, which the RTX 4080 lacks), so each backend measures its fp32 denormal mode with the probe. `rootsig.bin` is checked against the canonical bytes. One kernel per file, using `LRM_ARGS`, `LRM_BUF` and `lrm_tensor` only; a kernel may include helper headers (`.hlsli` beside it) under the same lint, and no source uses conditional compilation, so both targets compile one body. ShaderSetHash. |
 | BatchInvariance | R4a (rule) | Reduction order depends only on the reduction length. A row computed alone equals the same row in a batch, and prefill equals decode, within one class. Failover never relies on this. |
 | VulkanHeapRecipe | R1 | Mapping set 0, binding 0, HEAP_WITH_CONSTANT_OFFSET, stride 16. Variant chosen, push data at offset 0 (128 B), reserved range at the end, features and memory types. |
 | VulkanInteropApi | R2 | vk.xml names, ABI order, generated dispatch tables, and `bindings.json` as the single list of bound items. pNext chains live in one stack frame. Wildcard arms on every enum match. |
@@ -309,7 +313,8 @@ Contract files change after contracts-v1 only through a `contract-change` PR. Th
 - **Taps.** Module forward hooks and pre-hooks are used, plus exactly one function wrapper. The wrapper replaces `modeling_qwen3.apply_rotary_pos_emb` and records `q_rope` and `k_rope`; the manifest says `tap.method: wrap`. `k_rope` must equal the cache contents once.
 - **Greedy.**
   - The manual 64-step loop ignores EOS.
-  - `generate()` gets a fresh `GenerationConfig(do_sample=False, max_new_tokens=64, eos_token_id=None)`. It must give 64 tokens equal to the manual loop and to a no-cache recompute.
+  - `generate()` runs only through `common.greedy_generate`. A fresh `GenerationConfig(do_sample=False, max_new_tokens=64, eos_token_id=None)` alone still stops at EOS in transformers 5.20.1, because the model's own generation config fills its `None` fields (ADR O1-0001). So the tool swaps in a neutral `GenerationConfig()` for the call, asserts the effective config and records it.
+  - It must give 64 tokens equal to the manual loop and to a no-cache recompute. For torch32 this holds exactly. For torch64p it holds up to the first step where the float32-cast argmax differs, because `generate()` takes its argmax over float32; `common.greedy_manual_detail` records `f32_argmax_agrees` per step.
   - `min_new_tokens` is never used, because it masks the EOS logits.
 - **Prompt pool.** At least 200 candidates, drawn by seed from committed corpora in `tools/goldens/qwen/corpus/`: C# snippets written for this repo, Apache LICENSE paragraphs, design-doc paragraphs, multilingual lines and ChatML wrappers. All candidates get torch32 greedy runs with margins. Calibration uses a fixed subset of 12 prompts.
 - **Gate prompts.**
@@ -419,7 +424,7 @@ Contract files change after contracts-v1 only through a `contract-change` PR. Th
 5. **R4 split.** R4a (contracts-v1, D3D12-ready) and R4b (SPIR-V binding, contracts-v1.1).
 6. **ExecutionClass.** Lives in Lrm.Core.
 7. **Validation.** `rootsig.bin` is checked against canonical bytes. DXC validation enforces groupshared; there is no DXBC parse.
-8. **Precision.** Weights stay bf16, widened exactly. Activations, residual and KV cache are fp32.
+8. **Precision.** Weights stay bf16, widened exactly. Activations, residual and KV cache are fp32 on every GPU and in CpuRef F32; CpuRef F64 keeps them in fp64.
 9. **Oracles.** torch32 is the spec, torch64p the truth. bf16 goldens serve Phase 2 calibration only.
 10. **RoPE.** `inv_freq` is pinned data. `T_spec` is shared by torch64p and CpuRef.
 11. **Kernel bounds.** Relative to the reference's own fp32 error.
@@ -427,7 +432,7 @@ Contract files change after contracts-v1 only through a `contract-change` PR. Th
 13. **M2 and the CLI.** M2 is split so the tiny model unblocks X1a and C2a. The CLI backend registry is split into `Backends.fs` (M2) and `GpuBackends.fs` (X1), in a fixed compile order.
 14. **S0 split.** PR0a lands on day 1; PR0b, the governance part, follows in parallel.
 15. **Mutexes.** Per-backend mutexes plus a model-CPU mutex, with a bench tier for timing.
-16. **EOS.** Ignored in every parity run; `generate()` gets an explicit config with no EOS.
+16. **EOS.** Ignored in every parity run; `generate()` gets an explicit config with no EOS, with the model's generation config swapped for a neutral one (`common.greedy_generate`, ADR O1-0001).
 17. **Failover.** Exact replay is primary. Fast rebuild is allowed only for invariant classes and must equal replay.
 18. **D3D12 and taps.** D3D12 tracks resource state per page. Taps are copied at record time.
 19. **Deadlines.** Count only after a node is Ready.
