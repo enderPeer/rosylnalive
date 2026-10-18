@@ -4,6 +4,7 @@ open System
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
+open System.Runtime.ExceptionServices
 open System.Runtime.InteropServices
 open System.Threading.Tasks
 open Lrm.Core
@@ -125,6 +126,12 @@ type internal DeviceMemory(layout: HeapLayout, uninitialized: uint32) =
             buffers[slot] <- b
             b
         | b -> b
+
+    /// The buffer of a slot when something has touched it, else null.
+    member _.TryBuffer(slot: int) : byte[] = buffers[slot]
+
+    /// The word an untouched buffer holds.
+    member _.Uninitialized = uninitialized
 
     /// Frees every buffer.
     member _.Release() =
@@ -389,8 +396,12 @@ type CpuDeviceBackend(info: DeviceInfo, options: DeviceOptions, cpu: CpuDeviceOp
             for g in 0L .. total - 1L do
                 group g
         else
-            Parallel.For(0L, total, ParallelOptions(MaxDegreeOfParallelism = cpu.Threads), (fun g -> group g))
-            |> ignore
+            try
+                Parallel.For(0L, total, ParallelOptions(MaxDegreeOfParallelism = cpu.Threads), (fun g -> group g))
+                |> ignore
+            with :? AggregateException as e when e.InnerExceptions.Count >= 1 ->
+                // As on one thread: the first exception itself, not wrapped.
+                ExceptionDispatchInfo.Capture(e.InnerExceptions[0]).Throw()
 
         // The arithmetic model on the results: flushed denormals, then canonical NaN.
         if arithmetic && (flush || cpu.CanonicalNaN) then
@@ -593,7 +604,13 @@ and [<Sealed>] internal CpuHeap(owner: CpuDeviceBackend, layout: HeapLayout, mem
 
         member _.Download(slot: int, offset: int64, destination: Span<byte>) =
             Dispatch.checkTransfer layout true slot offset (int64 destination.Length)
-            ReadOnlySpan(memory.Buffer slot, int offset, destination.Length).CopyTo destination
+
+            match memory.TryBuffer slot with
+            | null ->
+                // Never touched: the uninitialized words, without allocating a page that may be 1 GiB.
+                MemoryMarshal.Cast<byte, uint32>(destination).Fill memory.Uninitialized
+            | b -> ReadOnlySpan(b, int offset, destination.Length).CopyTo destination
+
             GpuTelemetry.bytesMoved owner.Backend "download" (int64 destination.Length)
 
 /// A command list of a CpuDevice. Every dispatch is checked when it is recorded: Dispatch.prepare, the kernel set, the
