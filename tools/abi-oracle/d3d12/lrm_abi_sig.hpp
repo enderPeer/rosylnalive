@@ -1,7 +1,8 @@
-// ABI oracle for Lrm.Gpu.D3D12.Interop: call signatures. The generated d3d12_sig.g.cpp states, for every unmanaged
-// delegate and P/Invoke the interop declares, the kind and size of its return value and each parameter as the .NET
-// runtime sees them; these templates derive the same facts from the SDK's own declarations (the C vtables, with
-// CINTERFACE) and static_assert that they agree. Owner: R3 (D3D12ComIdiom contract). Hand-written.
+// ABI oracle for Lrm.Gpu.D3D12.Interop: call signatures and field kinds. The generated d3d12_sig.g.cpp states, for
+// every unmanaged delegate and P/Invoke the interop declares, the kind and size of its return value and each
+// parameter as the .NET runtime sees them, and the kind and size of every bound struct field. These templates derive
+// the same facts from the SDK's own declarations (the C vtables with CINTERFACE, and the struct members) and
+// static_assert that they agree. Owner: R3 (D3D12ComIdiom contract). Hand-written.
 #pragma once
 
 #include "lrm_abi.h"
@@ -60,3 +61,6 @@ namespace lrm
 // Parameter `i` of F has the runtime kind and size.
 #define LRM_SIG_ARG(F, NAME, I, K, S)                                                                                \
     static_assert(lrm::accepts(lrm::sig<F>::args[I], lrm::k{K, S}), NAME ": parameter " #I " is " #K #S)
+// Field f of struct T has the runtime kind and size: an integer is not a float, a pointer not a struct.
+#define LRM_FIELD_KIND(T, f, K, S)                                                                                   \
+    static_assert(lrm::accepts(lrm::of<decltype(((T *)nullptr)->f)>(), lrm::k{K, S}), #T "." #f " is " #K #S)

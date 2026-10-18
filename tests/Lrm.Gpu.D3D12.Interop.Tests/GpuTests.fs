@@ -58,8 +58,7 @@ type private Context(dev: ComPtr<ID3D12Device>) =
     /// Closes the list, runs it, waits (10 s at most), checks the removed reason, then resets for reuse.
     member _.SubmitAndWait() =
         list.Close()
-        let mutable l = list.Ptr
-        queue.ExecuteCommandLists(1u, NativePtr.toNativeInt &&l)
+        queue.ExecuteCommandLists list
         value <- value + 1UL
         queue.Signal(fence, value)
 
@@ -88,8 +87,8 @@ type private Context(dev: ComPtr<ID3D12Device>) =
         dev.CreateCommittedResource(&props, D3D12_HEAP_FLAGS.NONE, &desc, state, 0n)
 
     member _.Barrier(r: ComPtr<ID3D12Resource>, before, after) =
-        let mutable b = Desc.transition r before after
-        list.ResourceBarrier(1u, NativePtr.toNativeInt &&b)
+        let b = Desc.transition r before after
+        list.ResourceBarrier &b
 
     interface IDisposable with
         member _.Dispose() =
@@ -100,15 +99,13 @@ type private Context(dev: ComPtr<ID3D12Device>) =
             queue.Dispose()
 
 let private write (r: ComPtr<ID3D12Resource>) (data: byte[]) =
-    let mutable p = 0n
-    r.Map(0u, 0n, NativePtr.toNativeInt &&p)
+    let p = r.Map(0u, 0n)
     Marshal.Copy(data, 0, p, data.Length)
     r.Unmap(0u, 0n)
 
 let private read (r: ComPtr<ID3D12Resource>) (bytes: int) =
-    let mutable p = 0n
     let mutable range = D3D12_RANGE(Begin = 0un, End = unativeint bytes)
-    r.Map(0u, NativePtr.toNativeInt &&range, NativePtr.toNativeInt &&p)
+    let p = r.Map(0u, NativePtr.toNativeInt &&range)
     let out = Array.zeroCreate<byte> bytes
     Marshal.Copy(p, out, 0, bytes)
     let mutable written = D3D12_RANGE(Begin = 0un, End = 0un)
@@ -254,7 +251,7 @@ let private dispatchAdd () : byte[] =
     let p = NativePtr.toNativeInt pin
 
     use rootSig: ComPtr<ID3D12RootSignature> =
-        dev.CreateRootSignature(0u, p, unativeint dxil.Length)
+        dev.CreateRootSignature(0u, ReadOnlySpan dxil)
 
     let psoDesc = Desc.computePipeline rootSig p (unativeint dxil.Length)
     use pso: ComPtr<ID3D12PipelineState> = dev.CreateComputePipelineState(&psoDesc)
@@ -281,17 +278,22 @@ let private dispatchAdd () : byte[] =
     ctx.Barrier(bufB, D3D12_RESOURCE_STATES.COMMON, D3D12_RESOURCE_STATES.COPY_DEST)
     l.CopyBufferRegion(bufA, 0UL, upload, 0UL, uint64 bytes)
     l.CopyBufferRegion(bufB, 0UL, upload, uint64 bytes, uint64 bytes)
-    ctx.Barrier(bufA, D3D12_RESOURCE_STATES.COPY_DEST, D3D12_RESOURCE_STATES.UNORDERED_ACCESS)
-    ctx.Barrier(bufB, D3D12_RESOURCE_STATES.COPY_DEST, D3D12_RESOURCE_STATES.UNORDERED_ACCESS)
-    ctx.Barrier(bufC, D3D12_RESOURCE_STATES.COMMON, D3D12_RESOURCE_STATES.UNORDERED_ACCESS)
+
+    // Three transitions in one call, through a span (the single-element form is used everywhere else).
+    l.ResourceBarrier(
+        ReadOnlySpan
+            [|
+                Desc.transition bufA D3D12_RESOURCE_STATES.COPY_DEST D3D12_RESOURCE_STATES.UNORDERED_ACCESS
+                Desc.transition bufB D3D12_RESOURCE_STATES.COPY_DEST D3D12_RESOURCE_STATES.UNORDERED_ACCESS
+                Desc.transition bufC D3D12_RESOURCE_STATES.COMMON D3D12_RESOURCE_STATES.UNORDERED_ACCESS
+            |]
+    )
+
     // Directly indexed heaps must be bound before the root signature.
-    let mutable heapPtr = heap.Ptr
-    l.SetDescriptorHeaps(1u, NativePtr.toNativeInt &&heapPtr)
+    l.SetDescriptorHeaps heap
     l.SetComputeRootSignature rootSig
     l.SetPipelineState pso
-    let args = [| 0u; 1u; 2u; uint32 n |]
-    use argsPin = fixed args
-    l.SetComputeRoot32BitConstants(0u, uint32 args.Length, NativePtr.toNativeInt argsPin, 0u)
+    l.SetComputeRoot32BitConstants(0u, ReadOnlySpan [| 0u; 1u; 2u; uint32 n |], 0u)
     l.EndQuery(queries, D3D12_QUERY_TYPE.TIMESTAMP, 0u)
     l.Dispatch(uint32 (n / 64), 1u, 1u)
     l.EndQuery(queries, D3D12_QUERY_TYPE.TIMESTAMP, 1u)
@@ -377,8 +379,7 @@ let private failures () =
 
     let e =
         try
-            let mutable p = 0n
-            r.Map(0u, 0n, NativePtr.toNativeInt &&p)
+            r.Map(0u, 0n) |> ignore
             failtest "mapping a default-heap buffer succeeded"
         with :? D3D12Exception as e ->
             e
@@ -387,7 +388,23 @@ let private failures () =
     Expect.equal e.RemovedReason (Some HResult.S_OK) "the removed reason comes from the owning device"
     Expect.equal (dev.GetDeviceRemovedReason()) HResult.S_OK "still healthy"
 
-/// Sequenced: one GPU workload at a time, and the leak test compares the process-wide live-reference count.
+/// Struct returns whose hidden RetVal pointer is followed by other parameters, on the real device: D1 sizes placed
+/// resources with GetResourceAllocationInfo.
+let private retVal () =
+    use dev = createDevice ()
+    let d = Desc.buffer (1UL <<< 20) D3D12_RESOURCE_FLAGS.ALLOW_UNORDERED_ACCESS
+    let one = dev.GetResourceAllocationInfo(0u, &d)
+    Expect.equal one.SizeInBytes (1UL <<< 20) "a 1 MiB buffer takes 1 MiB"
+    Expect.equal one.Alignment 65536UL "D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT"
+    let two = dev.GetResourceAllocationInfo(0u, ReadOnlySpan [| d; d |])
+    Expect.equal two.SizeInBytes (2UL <<< 20) "two buffers back to back"
+
+    let p = dev.GetCustomHeapProperties(0u, D3D12_HEAP_TYPE.UPLOAD)
+    Expect.equal p.Type D3D12_HEAP_TYPE.CUSTOM "an upload heap as a custom heap"
+    Expect.equal p.CPUPageProperty D3D12_CPU_PAGE_PROPERTY.WRITE_COMBINE "write-combined"
+    Expect.equal p.MemoryPoolPreference D3D12_MEMORY_POOL.L0 "system memory on a discrete GPU"
+    Expect.equal (dev.GetDeviceRemovedReason()) HResult.S_OK "still healthy"
+
 /// DRED, which D1 reads after a device removal. The settings come from D3D12GetDebugInterface in the in-box runtime
 /// and apply to devices created afterwards in this process only; the test forces auto-breadcrumbs on for one device,
 /// reads its DRED data, then restores the defaults.
@@ -418,6 +435,7 @@ let private dred () =
         finally
             set D3D12_DRED_ENABLEMENT.SYSTEM_CONTROLLED
 
+/// Sequenced: one GPU workload at a time, and the leak test compares the process-wide live-reference count.
 let tests =
     testSequenced
     <| testList
@@ -449,6 +467,7 @@ let tests =
 
             testCase "refcounts balance: the device's last Release returns 0" leakTest
             testCase "failed calls raise D3D12Exception with the removed reason" failures
+            testCase "struct returns come back through RetVal before other parameters" retVal
             testCase "DRED settings and data are reachable" dred
             Determinism.testTwice "a 1 MiB copy round trip is bit-identical twice" copyRoundTrip
             Determinism.testTwice "a ResourceDescriptorHeap dispatch is bit-identical twice" dispatchAdd

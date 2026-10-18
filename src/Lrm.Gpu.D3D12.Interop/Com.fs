@@ -300,10 +300,12 @@ type IidOf<'I when 'I :> IUnknown> private () =
 /// A COM interface pointer, typed by the phantom marker 'I. A struct over one nativeint: copying it copies the
 /// pointer, not a reference. Exactly one variable owns each reference and releases it once, with `use`, Dispose or
 /// ComPtr.release (which also clears the variable). Wrappers that return a ComPtr hand the caller a new reference.
+/// There is no public constructor: Attach takes ownership of a reference (and counts it), Borrow wraps one that
+/// something else owns.
 [<Struct; CustomEquality; NoComparison>]
 type ComPtr<'I when 'I :> IUnknown> =
     val Ptr: nativeint
-    new(ptr: nativeint) = { Ptr = ptr }
+    private new(ptr: nativeint) = { Ptr = ptr }
 
     member p.IsNull = p.Ptr = 0n
 
@@ -315,6 +317,11 @@ type ComPtr<'I when 'I :> IUnknown> =
             Com.track 1L
 
         new ComPtr<'I>(ptr)
+
+    /// Wraps a pointer whose reference someone else owns (a pointer inside a D3D12 struct, or one the caller keeps),
+    /// without counting it. A borrowed ComPtr must never be released or disposed: that would release a reference it
+    /// does not own and undercount Com.liveReferences. Call AddRef for an owned copy.
+    static member Borrow(ptr: nativeint) : ComPtr<'I> = new ComPtr<'I>(ptr)
 
     /// A new owned reference to the same object (IUnknown::AddRef).
     member p.AddRef() : ComPtr<'I> =
@@ -377,6 +384,6 @@ module ComPtr =
         p <- ComPtr<'I>.Null
         v.Release() |> ignore
 
-    /// The raw pointers of `xs`, for array arguments such as ExecuteCommandLists or SetDescriptorHeaps.
-    /// No references are added.
+    /// The raw pointers of `xs`, for the …Raw forms of array methods (the typed ExecuteCommandLists or
+    /// SetDescriptorHeaps take a ReadOnlySpan<ComPtr<_>> or a single ComPtr). No references are added.
     let pointers (xs: ComPtr<'I> seq) : nativeint[] = xs |> Seq.map _.Ptr |> Array.ofSeq

@@ -1,9 +1,9 @@
 {
   "schema": "lrm.d3d12-bindings/1",
-  "about": "The single list of bound D3D12 and DXGI items (D3D12ComIdiom contract). tools/d3d12gen reads it with the pinned Windows SDK headers and writes src/Lrm.Gpu.D3D12.Interop/D3D12.g.fs and D3D12Methods.g.fs. Interfaces get marker types, IIDs, every vtable slot, a delegate per method and wrappers for the methods each one declares; structs are roots whose field types are bound too; enums are bound when a bound struct or method uses them, or when listed here. opaqueEnums are bound as int32 without members. Regenerate with: dotnet run --project tools/d3d12gen/Lrm.Tools.D3D12Gen -c Release",
+  "about": "The single list of bound D3D12 and DXGI items (D3D12ComIdiom contract). tools/d3d12gen reads it with the pinned Windows SDK headers and writes src/Lrm.Gpu.D3D12.Interop/D3D12.g.fs and D3D12Methods.g.fs. Interfaces get marker types, IIDs, every vtable slot, a delegate per method and wrappers for the methods each one declares; structs are roots whose field types are bound too; enums are bound when a bound struct or method uses them, or when listed here. opaqueEnums are bound as int32 without members. sdk.servicing is the Windows SDK installer whose headers produced the pinned hashes. Regenerate with: dotnet run --project tools/d3d12gen/Lrm.Tools.D3D12Gen -c Release",
   "sdk": {
     "version": "10.0.26100.0",
-    "root": "C:/Program Files (x86)/Windows Kits/10/Include",
+    "servicing": "10.0.26100.7705",
     "headers": {
       "shared/dxgicommon.h": "bef78ab75f5dd09bf8f8f26fbfc66c6b5770b0eeb968ec4b87934cf8d187f490",
       "shared/dxgiformat.h": "0ac14d7da595c528e0f14c64685d83596c392d36a0ab49ce2ecab05299e6c0d0",

@@ -130,58 +130,115 @@ let private references () =
 
     types, marshal, imports
 
-let private opcodes =
-    typeof<Emit.OpCodes>.GetFields(BindingFlags.Public ||| BindingFlags.Static)
-    |> Array.map (fun f -> f.GetValue null :?> Emit.OpCode)
-    |> Array.map (fun op -> uint16 op.Value, op)
-    |> dict
+/// The extension methods of the generated <I>Methods types.
+let private wrappers () =
+    typeof<IUnknown>.Assembly.GetTypes()
+    |> Array.filter (fun t -> t.Name.EndsWith "Methods" && t.IsAbstract && t.IsSealed)
+    |> Array.collect (fun t -> t.GetMethods(BindingFlags.Public ||| BindingFlags.Static ||| BindingFlags.DeclaredOnly))
+    |> Array.filter (fun m -> m.IsDefined(typeof<ExtensionAttribute>, false))
 
-/// Methods whose IL has a tail. prefix. A tail call frees the caller's frame first, so a callee that receives
-/// NativePtr.toNativeInt &&local would read a dead stack slot (ADR R3-0001).
-let tailCalls (path: string) : string list =
-    use fs = File.OpenRead path
-    use pe = new PEReader(fs)
-    let md = pe.GetMetadataReader()
+/// The directory of the dotnet host running this exe (tools/test.ps1 runs `dotnet <exe>.dll`).
+let private dotnetRoot () =
+    let host = Environment.ProcessPath
 
-    [
-        for h in md.MethodDefinitions do
-            let m = md.GetMethodDefinition h
+    if not (isNull host) && Path.GetFileNameWithoutExtension host = "dotnet" then
+        Path.GetDirectoryName host
+    else
+        match Env.tryGet "DOTNET_ROOT" with
+        | Some r -> r
+        | None -> failtestf "cannot find the dotnet root (host %s, no DOTNET_ROOT)" host
 
-            if m.RelativeVirtualAddress <> 0 then
-                let il = pe.GetMethodBody(m.RelativeVirtualAddress).GetILBytes()
-                let mutable i = 0
-                let mutable found = false
+/// Compiles TailCallConsumer.fs (an embedded resource) with the pinned SDK's F# compiler, optimized and with tail
+/// calls on (the Release defaults), against the interop next to this exe. Returns the assembly's path.
+let private compileConsumer () : string =
+    let repo = Env.repoRoot ()
 
-                while i < il.Length do
-                    let value, len =
-                        if il[i] = 0xFEuy then
-                            (0xFE00us ||| uint16 il[i + 1]), 2
-                        else
-                            uint16 il[i], 1
+    let sdk =
+        use doc =
+            Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(repo, "global.json")))
 
-                    let op = opcodes[value]
+        doc.RootElement.GetProperty("sdk").GetProperty("version").GetString()
 
-                    if op = Emit.OpCodes.Tailcall then
-                        found <- true
+    let root = dotnetRoot ()
+    let fsc = Path.Combine(root, "sdk", sdk, "FSharp", "fsc.dll")
 
-                    let operand =
-                        match op.OperandType with
-                        | Emit.OperandType.InlineNone -> 0
-                        | Emit.OperandType.ShortInlineBrTarget
-                        | Emit.OperandType.ShortInlineI
-                        | Emit.OperandType.ShortInlineVar -> 1
-                        | Emit.OperandType.InlineVar -> 2
-                        | Emit.OperandType.InlineI8
-                        | Emit.OperandType.InlineR -> 8
-                        | Emit.OperandType.InlineSwitch -> 4 + 4 * BitConverter.ToInt32(il, i + len)
-                        | _ -> 4
+    if not (File.Exists fsc) then
+        failtestf "the F# compiler of SDK %s is not at %s" sdk fsc
 
-                    i <- i + len + operand
+    let dir = Path.Combine(repo, "artifacts", "d3d12-interop-tests", "tailcalls")
+    Directory.CreateDirectory dir |> ignore
+    let src = Path.Combine(dir, "TailCallConsumer.fs")
+    let dll = Path.Combine(dir, "TailCallConsumer.dll")
 
-                if found then
-                    let t = md.GetTypeDefinition(m.GetDeclaringType())
-                    yield md.GetString t.Name + "." + md.GetString m.Name
-    ]
+    do
+        use r =
+            Assembly.GetExecutingAssembly().GetManifestResourceStream "TailCallConsumer.fs"
+
+        use w = File.Create src
+        r.CopyTo w
+
+    let isManaged (path: string) =
+        try
+            use fs = File.OpenRead path
+            use pe = new PEReader(fs)
+            pe.HasMetadata
+        with _ ->
+            false
+
+    let framework =
+        Directory.GetFiles(RuntimeEnvironment.GetRuntimeDirectory(), "*.dll")
+        |> Array.filter isManaged
+        |> Array.sort
+
+    let bin = AppContext.BaseDirectory
+
+    let args =
+        [
+            "--nologo"
+            "--noframework"
+            "--targetprofile:netcore"
+            "--target:library"
+            "--optimize+"
+            "--tailcalls+"
+            "--deterministic+"
+            "--nowarn:9,51"
+            "-o:" + dll
+            "-r:" + Path.Combine(bin, "FSharp.Core.dll")
+            "-r:" + typeof<IUnknown>.Assembly.Location
+            "-r:" + Path.Combine(bin, "Lrm.Core.dll")
+            yield! framework |> Array.map (fun f -> "-r:" + f)
+            src
+        ]
+
+    // One argument per line: fsc does not split response-file lines at spaces (C:\Program Files\dotnet on CI).
+    let rsp = Path.Combine(dir, "fsc.rsp")
+    File.WriteAllLines(rsp, args)
+
+    let host =
+        Path.Combine(
+            root,
+            (if OperatingSystem.IsWindows() then
+                 "dotnet.exe"
+             else
+                 "dotnet")
+        )
+
+    let psi = Diagnostics.ProcessStartInfo host
+
+    psi.ArgumentList.Add fsc
+    psi.ArgumentList.Add("@" + rsp)
+    psi.UseShellExecute <- false
+    psi.RedirectStandardOutput <- true
+    psi.RedirectStandardError <- true
+    use p = Diagnostics.Process.Start psi
+    let out = p.StandardOutput.ReadToEndAsync()
+    let err = p.StandardError.ReadToEndAsync()
+    p.WaitForExit()
+
+    if p.ExitCode <> 0 then
+        failtestf "fsc exited %d:\n%s%s" p.ExitCode out.Result err.Result
+
+    dll
 
 let private idiom =
     testList
@@ -190,7 +247,49 @@ let private idiom =
             testCase "no tail calls in the interop or its tests (Tailcalls=false)"
             <| fun () ->
                 for asm in [ typeof<IUnknown>.Assembly; Assembly.GetExecutingAssembly() ] do
-                    Expect.isEmpty (tailCalls asm.Location) (asm.GetName().Name + " has no tail. prefixes")
+                    Expect.isEmpty (TailCalls.scan asm.Location) (asm.GetName().Name + " has no tail. prefixes")
+
+            testCase "every generated wrapper takes this by reference (inref<ComPtr<'I>>)"
+            <| fun () ->
+                let ws = wrappers ()
+                Expect.isGreaterThan ws.Length 300 "wrappers are generated"
+
+                for m in ws do
+                    let p = m.GetParameters()[0]
+                    let name = m.DeclaringType.Name + "." + m.Name
+                    Expect.isTrue p.ParameterType.IsByRef (name + ": this is a byref")
+                    Expect.isTrue p.IsIn (name + ": this is an inref")
+                    let e = p.ParameterType.GetElementType()
+
+                    Expect.isTrue
+                        (e.IsGenericType && e.GetGenericTypeDefinition() = typedefof<ComPtr<IUnknown>>)
+                        (name + ": this is a ComPtr")
+
+            testCase "a consumer built with tail calls gets no tail. prefix at wrapper calls"
+            <| fun () ->
+                let dll = compileConsumer ()
+                let sites = TailCalls.scan dll
+                let atWrappers = sites |> List.filter (fun s -> s.Callee.Contains "Methods.")
+
+                Lrm.Core.Telemetry.check
+                    "gpu.interop.tailcalls"
+                    atWrappers.IsEmpty
+                    [
+                        Lrm.Core.Attr.str Lrm.Core.TelemetryKeys.Backend "d3d12"
+                        Lrm.Core.Attr.int "tail_calls" sites.Length
+                        Lrm.Core.Attr.int "tail_calls_at_wrappers" atWrappers.Length
+                    ]
+
+                Expect.isEmpty atWrappers "no call to a generated wrapper is a tail call"
+
+                // The control: the same call made straight through a cached delegate is a tail call, so tail calls
+                // were on, and the low-level Vtbl.get path stays the caller's responsibility.
+                Expect.equal
+                    (sites |> List.map (fun s -> s.Caller, s.Callee))
+                    [
+                        "Lrm.Gpu.D3D12.Interop.TailCallConsumer.controlDelegate", "ResourceBarrier.Invoke"
+                    ]
+                    "only the control has a tail call"
 
             testCase "no ComImport, RCWs or ComWrappers in the interop assembly"
             <| fun () ->
@@ -300,10 +399,24 @@ let private generatorCheck () =
     let err = p.StandardError.ReadToEndAsync()
     p.WaitForExit()
 
+    let attrs =
+        [
+            Lrm.Core.Attr.str Lrm.Core.TelemetryKeys.Backend "d3d12"
+            Lrm.Core.Attr.str "check" "codegen_diff"
+        ]
+
     match p.ExitCode with
-    | 0 -> ()
-    | 4 -> skiptestf "the pinned Windows SDK headers are not available: %s" err.Result
-    | code -> failtestf "d3d12gen --check exited %d: %s%s" code out.Result err.Result
+    | 0 -> Lrm.Core.Telemetry.check "gpu.codegen.d3d12" true attrs
+    | 4 ->
+        // Not a pass: a machine without the pinned SDK servicing build cannot regenerate byte for byte. Say so in the
+        // run log and on the console, then skip (the summary counts it as ignored).
+        let reason = err.Result.Trim()
+        Lrm.Core.Telemetry.event "gpu.codegen.d3d12.skipped" (Lrm.Core.Attr.str "reason" reason :: attrs)
+        eprintfn "d3d12gen codegen diff SKIPPED (not passed): %s" reason
+        skiptestf "the pinned Windows SDK headers are not available: %s" reason
+    | code ->
+        Lrm.Core.Telemetry.check "gpu.codegen.d3d12" false attrs
+        failtestf "d3d12gen --check exited %d: %s%s" code out.Result err.Result
 
 let private abi =
     testList
@@ -372,6 +485,9 @@ let private abi =
                             c,
                             "LRM_SLOT(ID3D12Device, CreateCommittedResource, 27);",
                             "LRM_SLOT(ID3D12Device, CreateCommittedResource, 28);"
+                            // D3D12_MESSAGE.ID is an int whose offset (8) and the struct size are kept by alignment
+                            // even when the field is 2 bytes wide: only the field size catches it.
+                            c, "LRM_FIELD_SIZE(D3D12_MESSAGE, ID, 4);", "LRM_FIELD_SIZE(D3D12_MESSAGE, ID, 2);"
                             c, "LRM_ENUM(D3D12_HEAP_TYPE_UPLOAD, 2LL);", "LRM_ENUM(D3D12_HEAP_TYPE_UPLOAD, 3LL);"
                             c,
                             "LRM_HRESULT(DXGI_ERROR_NOT_FOUND, 0x887A0002);",
@@ -379,6 +495,10 @@ let private abi =
                             cpp,
                             "LRM_SIG_ARG(LRM_VFN(ID3D12GraphicsCommandList, Dispatch), \"ID3D12GraphicsCommandList::Dispatch\", 1, 'i', 4);",
                             "LRM_SIG_ARG(LRM_VFN(ID3D12GraphicsCommandList, Dispatch), \"ID3D12GraphicsCommandList::Dispatch\", 1, 'i', 8);"
+                            // A UINT64 bound as a double of the same size and offset: only the field kind catches it.
+                            cpp,
+                            "LRM_FIELD_KIND(D3D12_RESOURCE_DESC, Width, 'i', 8);",
+                            "LRM_FIELD_KIND(D3D12_RESOURCE_DESC, Width, 'f', 8);"
                         ]
 
                     AbiOracle.mutant repo (Path.Combine(root, "src1")) compileTime
@@ -396,6 +516,8 @@ let private abi =
                             "D3D12_HEAP_TYPE_UPLOAD == 3LL"
                             "DXGI_ERROR_NOT_FOUND == 0x887A0003"
                             "ID3D12GraphicsCommandList::Dispatch: parameter 1"
+                            "sizeof(D3D12_MESSAGE.ID) == 2"
+                            "D3D12_RESOURCE_DESC.Width is 'f'8"
                         ] do
                         Expect.stringContains r.Output needle ("reported: " + needle)
 
@@ -447,6 +569,22 @@ let private com =
                 Expect.isTrue p.IsNull "release clears the variable"
                 Expect.equal o.Refs 0 "released exactly once"
                 Expect.equal (Com.liveReferences ()) before "no live references left"
+
+            testCase "ComPtr has no public constructor; Borrow wraps a pointer without counting it"
+            <| fun () ->
+                let ctors =
+                    typeof<ComPtr<IUnknown>>.GetConstructors(BindingFlags.Public ||| BindingFlags.Instance)
+
+                Expect.isEmpty ctors "no public constructor: Attach (owned) or Borrow (not owned)"
+                use o = new FakeObject(3, [])
+                let before = Com.liveReferences ()
+                let b = ComPtr<IUnknown>.Borrow o.Ptr
+                Expect.equal b.Ptr o.Ptr "the pointer"
+                Expect.equal (Com.liveReferences ()) before "a borrowed pointer is not counted"
+                Expect.equal o.Refs 1 "and gets no reference"
+                use owned = b.AddRef()
+                Expect.equal (Com.liveReferences ()) (before + 1L) "AddRef gives an owned, counted reference"
+                Expect.equal o.Refs 2 "AddRef reached the object"
 
             testCase "AddRef and QueryInterface hand out owned references"
             <| fun () ->
@@ -552,6 +690,204 @@ let private com =
                 Expect.throwsT<NullReferenceException> (fun () -> p.GetCompletedValue() |> ignore) "null call"
         ]
 
+/// Reads `n` values of 'T at `p` (none for a null pointer).
+let private readArray<'T when 'T: unmanaged> (p: nativeint) (n: int) : 'T list =
+    if p = 0n then
+        []
+    else
+        [ for i in 0 .. n - 1 -> NativePtr.get (NativePtr.ofNativeInt<'T> p) i ]
+
+let private spans =
+    testList
+        "spans"
+        [
+            testCase "ResourceBarrier: a span passes its length and a pinned pointer, one element a count of 1"
+            <| fun () ->
+                use o = new FakeObject(Slots.ID3D12GraphicsCommandList.Count, [])
+                let seen = ResizeArray<uint32 * bool * nativeint list>()
+
+                o.Set(
+                    Slots.ID3D12GraphicsCommandList.ResourceBarrier,
+                    Fn.ID3D12GraphicsCommandList.ResourceBarrier(fun _ n p ->
+                        let bs = readArray<D3D12_RESOURCE_BARRIER> p (int n)
+                        seen.Add(n, (p = 0n), bs |> List.map _.UAV.pResource))
+                )
+
+                use l = ComPtr<ID3D12GraphicsCommandList>.Attach o.Ptr
+                let mutable a = Desc.uavBarrier (ComPtr<ID3D12Resource>.Borrow 0x10n)
+                let b = Desc.uavBarrier (ComPtr<ID3D12Resource>.Borrow 0x20n)
+                l.ResourceBarrier(ReadOnlySpan [| a; b |])
+                l.ResourceBarrier &b
+                l.ResourceBarrier ReadOnlySpan<D3D12_RESOURCE_BARRIER>.Empty
+                l.ResourceBarrierRaw(1u, NativePtr.toNativeInt &&a)
+
+                Expect.equal
+                    (List.ofSeq seen)
+                    [
+                        2u, false, [ 0x10n; 0x20n ]
+                        1u, false, [ 0x20n ]
+                        0u, true, []
+                        1u, false, [ 0x10n ]
+                    ]
+                    "count, null pointer, barriers"
+
+            testCase "ExecuteCommandLists and SetDescriptorHeaps take ComPtr spans or one ComPtr"
+            <| fun () ->
+                use q = new FakeObject(Slots.ID3D12CommandQueue.Count, [])
+                use g = new FakeObject(Slots.ID3D12GraphicsCommandList.Count, [])
+                let lists = ResizeArray<nativeint list>()
+                let heaps = ResizeArray<nativeint list>()
+
+                q.Set(
+                    Slots.ID3D12CommandQueue.ExecuteCommandLists,
+                    Fn.ID3D12CommandQueue.ExecuteCommandLists(fun _ n pp -> lists.Add(readArray<nativeint> pp (int n)))
+                )
+
+                g.Set(
+                    Slots.ID3D12GraphicsCommandList.SetDescriptorHeaps,
+                    Fn.ID3D12GraphicsCommandList.SetDescriptorHeaps(fun _ n pp ->
+                        heaps.Add(readArray<nativeint> pp (int n)))
+                )
+
+                use queue = ComPtr<ID3D12CommandQueue>.Attach q.Ptr
+                use list = ComPtr<ID3D12GraphicsCommandList>.Attach g.Ptr
+                let other = ComPtr<ID3D12GraphicsCommandList>.Borrow 0x200n
+                queue.ExecuteCommandLists list
+                queue.ExecuteCommandLists(ReadOnlySpan [| list; other |])
+                list.SetDescriptorHeaps(ComPtr<ID3D12DescriptorHeap>.Borrow 0x300n)
+
+                Expect.equal (List.ofSeq lists) [ [ g.Ptr ]; [ g.Ptr; 0x200n ] ] "command lists"
+                Expect.equal (List.ofSeq heaps) [ [ 0x300n ] ] "descriptor heaps"
+
+            testCase "SetComputeRoot32BitConstants takes a uint32 span; Values[4] must hold 4"
+            <| fun () ->
+                use o = new FakeObject(Slots.ID3D12GraphicsCommandList.Count, [])
+                let constants = ResizeArray<uint32 * uint32 list * uint32>()
+                let clears = ResizeArray<uint32 list>()
+
+                o.Set(
+                    Slots.ID3D12GraphicsCommandList.SetComputeRoot32BitConstants,
+                    Fn.ID3D12GraphicsCommandList.SetComputeRoot32BitConstants(fun _ index n p offset ->
+                        constants.Add(index, readArray<uint32> p (int n), offset))
+                )
+
+                o.Set(
+                    Slots.ID3D12GraphicsCommandList.ClearUnorderedAccessViewUint,
+                    Fn.ID3D12GraphicsCommandList.ClearUnorderedAccessViewUint(fun _ _ _ _ values _ _ ->
+                        clears.Add(readArray<uint32> values 4))
+                )
+
+                use l = ComPtr<ID3D12GraphicsCommandList>.Attach o.Ptr
+                l.SetComputeRoot32BitConstants(3u, ReadOnlySpan [| 7u; 8u; 9u |], 5u)
+                Expect.equal (List.ofSeq constants) [ 3u, [ 7u; 8u; 9u ], 5u ] "index, values, offset"
+
+                let gpu = D3D12_GPU_DESCRIPTOR_HANDLE(ptr = 1UL)
+                let cpu = D3D12_CPU_DESCRIPTOR_HANDLE(ptr = 2un)
+                let r = ComPtr<ID3D12Resource>.Borrow 0x30n
+                l.ClearUnorderedAccessViewUint(gpu, cpu, r, ReadOnlySpan [| 1u; 2u; 3u; 4u |], 0u, 0n)
+
+                Expect.throwsT<ArgumentException>
+                    (fun () -> l.ClearUnorderedAccessViewUint(gpu, cpu, r, ReadOnlySpan [| 1u; 2u; 3u |], 0u, 0n))
+                    "three values are refused"
+
+                Expect.equal (List.ofSeq clears) [ [ 1u; 2u; 3u; 4u ] ] "only the valid call reached COM"
+
+            testCase "RetVal is returned when other parameters follow it"
+            <| fun () ->
+                use o = new FakeObject(Slots.ID3D12Device.Count, [])
+                let seen = ResizeArray<uint32 * uint64 list>()
+
+                o.Set(
+                    Slots.ID3D12Device.GetResourceAllocationInfo,
+                    Fn.ID3D12Device.GetResourceAllocationInfo(fun _ retVal mask n descs ->
+                        let ds = readArray<D3D12_RESOURCE_DESC> descs (int n)
+                        seen.Add(mask, ds |> List.map _.Width)
+
+                        let info =
+                            D3D12_RESOURCE_ALLOCATION_INFO(
+                                SizeInBytes = (ds |> List.sumBy _.Width),
+                                Alignment = 65536UL
+                            )
+
+                        NativePtr.write (NativePtr.ofNativeInt retVal) info
+                        retVal)
+                )
+
+                o.Set(
+                    Slots.ID3D12Device.GetCustomHeapProperties,
+                    Fn.ID3D12Device.GetCustomHeapProperties(fun _ retVal nodeMask kind ->
+                        let props =
+                            D3D12_HEAP_PROPERTIES(
+                                Type = D3D12_HEAP_TYPE.CUSTOM,
+                                CPUPageProperty =
+                                    (if kind = D3D12_HEAP_TYPE.UPLOAD then
+                                         D3D12_CPU_PAGE_PROPERTY.WRITE_COMBINE
+                                     else
+                                         D3D12_CPU_PAGE_PROPERTY.NOT_AVAILABLE),
+                                MemoryPoolPreference = D3D12_MEMORY_POOL.L0,
+                                CreationNodeMask = nodeMask,
+                                VisibleNodeMask = nodeMask
+                            )
+
+                        NativePtr.write (NativePtr.ofNativeInt retVal) props
+                        retVal)
+                )
+
+                use dev = ComPtr<ID3D12Device>.Attach o.Ptr
+                let d = Desc.buffer 4096UL D3D12_RESOURCE_FLAGS.NONE
+                let e = Desc.buffer 1000UL D3D12_RESOURCE_FLAGS.NONE
+                let one = dev.GetResourceAllocationInfo(1u, &d)
+                let two = dev.GetResourceAllocationInfo(0u, ReadOnlySpan [| d; e |])
+                Expect.equal (one.SizeInBytes, one.Alignment) (4096UL, 65536UL) "one description"
+                Expect.equal two.SizeInBytes 5096UL "two descriptions"
+                Expect.equal (List.ofSeq seen) [ 1u, [ 4096UL ]; 0u, [ 4096UL; 1000UL ] ] "mask and widths"
+
+                let p = dev.GetCustomHeapProperties(0u, D3D12_HEAP_TYPE.UPLOAD)
+
+                Expect.equal
+                    (p.Type, p.CPUPageProperty, p.MemoryPoolPreference)
+                    (D3D12_HEAP_TYPE.CUSTOM, D3D12_CPU_PAGE_PROPERTY.WRITE_COMBINE, D3D12_MEMORY_POOL.L0)
+                    "heap properties"
+
+            testCase "Map returns the pointer; CreateRootSignature takes the blob as a byte span"
+            <| fun () ->
+                use res = new FakeObject(Slots.ID3D12Resource.Count, [])
+                use o = new FakeObject(Slots.ID3D12Device.Count, [])
+
+                use rs =
+                    new FakeObject(Slots.ID3D12RootSignature.Count, [ Iids.ID3D12RootSignature ])
+
+                let mutable blob = []
+                let mutable iid = Guid.Empty
+
+                res.Set(
+                    Slots.ID3D12Resource.Map,
+                    Fn.ID3D12Resource.Map(fun _ _ _ ppData ->
+                        Marshal.WriteIntPtr(ppData, 0x4000n)
+                        HResult.S_OK)
+                )
+
+                o.Set(
+                    Slots.ID3D12Device.CreateRootSignature,
+                    Fn.ID3D12Device.CreateRootSignature(fun _ _ p length riid ppv ->
+                        blob <- readArray<byte> p (int length)
+                        iid <- Marshal.PtrToStructure<Guid> riid
+                        Marshal.WriteIntPtr(ppv, rs.Ptr)
+                        HResult.S_OK)
+                )
+
+                use r = ComPtr<ID3D12Resource>.Attach res.Ptr
+                Expect.equal (r.Map(0u, 0n)) 0x4000n "the mapped pointer"
+                use dev = ComPtr<ID3D12Device>.Attach o.Ptr
+
+                use rootSig: ComPtr<ID3D12RootSignature> =
+                    dev.CreateRootSignature(0u, ReadOnlySpan [| 1uy; 2uy; 3uy |])
+
+                Expect.equal rootSig.Ptr rs.Ptr "the root signature"
+                Expect.equal blob [ 1uy; 2uy; 3uy ] "the blob bytes and their length"
+                Expect.equal iid Iids.ID3D12RootSignature "riid from the result type"
+        ]
+
 let private descs =
     testList
         "desc"
@@ -595,7 +931,7 @@ let private descs =
 
             testCase "a transition barrier has the probe's bytes"
             <| fun () ->
-                let r = new ComPtr<ID3D12Resource>(0x1122334455667788n)
+                let r = ComPtr<ID3D12Resource>.Borrow 0x1122334455667788n
 
                 let b =
                     Desc.transition r D3D12_RESOURCE_STATES.COMMON D3D12_RESOURCE_STATES.UNORDERED_ACCESS
@@ -737,4 +1073,4 @@ let private deviceCheck =
 
 /// Sequenced: the COM tests compare the process-wide live-reference count.
 let tests =
-    testSequenced (testList "d3d12.interop" [ probe; idiom; abi; com; descs; deviceCheck ])
+    testSequenced (testList "d3d12.interop" [ probe; idiom; abi; com; spans; descs; deviceCheck ])

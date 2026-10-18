@@ -56,6 +56,9 @@ type Param =
         Type: CType
         /// SAL annotations without arguments, for example _In_opt_ or _COM_Outptr_.
         Annotations: string list
+        /// The token texts of each annotation's argument list, in the order of Annotations (empty without one):
+        /// _In_reads_(NumBarriers) gives ["NumBarriers"], _In_reads_(N*sizeof(UINT)) gives ["N"; "*"; "sizeof"; ...].
+        AnnotationArgs: string list list
     }
 
 type Method =
@@ -260,15 +263,20 @@ let private takeUntil (r: Reader) (terminators: string list) =
 
     List.ofSeq acc
 
-/// Skips SAL annotations (with their argument lists) and returns their names.
+/// Reads SAL annotations and returns each name with the token texts of its argument list (empty without one).
 let private annotations (r: Reader) =
-    let acc = ResizeArray<string>()
+    let acc = ResizeArray<string * string list>()
 
     while not r.AtEnd && r.Peek.Kind = Ident && isSal r.Peek.Text do
-        acc.Add(r.Next().Text)
+        let name = r.Next().Text
 
         if r.Is "(" then
-            r.SkipGroup()
+            r.Next() |> ignore
+            let args = takeUntil r [ ")" ] |> List.map _.Text
+            r.Expect ")"
+            acc.Add(name, args)
+        else
+            acc.Add(name, [])
 
     List.ofSeq acc
 
@@ -392,7 +400,8 @@ let private parseParams (r: Reader) (lookup: string -> int64 option) : Param lis
                 {
                     Name = name
                     Type = ty
-                    Annotations = ann
+                    Annotations = ann |> List.map fst
+                    AnnotationArgs = ann |> List.map snd
                 }
 
             if r.Is "," then r.Next() |> ignore else go <- false

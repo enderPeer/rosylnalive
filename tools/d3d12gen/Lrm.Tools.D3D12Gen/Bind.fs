@@ -125,7 +125,8 @@ type Resolved =
 type Bindings =
     {
         SdkVersion: string
-        SdkRoot: string
+        /// The Windows SDK installer whose headers produced the pinned hashes, for example 10.0.26100.7705.
+        SdkServicing: string
         Headers: (string * string) list
         Interfaces: string list
         Structs: string list
@@ -150,7 +151,7 @@ let loadBindings (path: string) : Bindings =
 
     {
         SdkVersion = sdk.GetProperty("version").GetString()
-        SdkRoot = sdk.GetProperty("root").GetString()
+        SdkServicing = sdk.GetProperty("servicing").GetString()
         Headers =
             [
                 for p in sdk.GetProperty("headers").EnumerateObject() -> p.Name, p.Value.GetString()
@@ -183,6 +184,16 @@ type Layout =
         Explicit: bool
     }
 
+/// The element of an _In_reads_ array parameter.
+type SpanElem =
+    /// A bound struct T: ReadOnlySpan<T>; the single-element overload takes inref<T>.
+    | ElemStruct of string
+    /// An array of J* for a bound interface J: ReadOnlySpan<ComPtr<'P>> with 'P :> J (ComPtr is one pointer); the
+    /// single-element overload takes ComPtr<'P>.
+    | ElemInterface of string
+    /// A scalar or enum in F# spelling (bytes for void buffers): ReadOnlySpan<T>, no single-element overload.
+    | ElemScalar of string
+
 /// How one parameter is passed by the typed wrapper.
 type ParamShape =
     /// Passed through as the delegate's type.
@@ -197,13 +208,22 @@ type ParamShape =
     | OutGeneric
     /// An Interface** out parameter; the wrapper returns ComPtr<Interface>.
     | OutInterface of string
-    /// The hidden RetVal pointer of a struct-returning method; the wrapper returns the struct.
+    /// The hidden RetVal pointer of a struct-returning method (the first parameter after This); the wrapper
+    /// returns the struct.
     | RetVal of string
     /// An _In_ pointer to a bound struct: the wrapper takes inref<T> and pins it for the call.
     | InStruct of string
-    /// The last parameter, an _Out_ pointer to one value (a scalar, enum or bound struct) of an HRESULT method:
-    /// the wrapper returns the value.
+    /// The last parameter, an _Out_ pointer to one value (a scalar, enum or bound struct) of an HRESULT method, or
+    /// an _Outptr_ void** that receives a plain pointer (ID3D12Resource::Map): the wrapper returns the value.
     | OutValue of string
+    /// An _In_reads_ array whose count is another parameter that sizes nothing else: the wrapper takes a
+    /// ReadOnlySpan, pins it for the call and passes its length as the count.
+    | InSpan of elem: SpanElem * count: string
+    /// The count of an InSpan (F# type uint32 or unativeint): the wrapper passes the span's length.
+    | SpanCount of span: string * fsType: string
+    /// A C array parameter (const T p[n]): the wrapper takes a ReadOnlySpan<T> of exactly n elements (or empty, for
+    /// null, when the parameter is optional).
+    | FixedSpan of elem: string * length: int * optional: bool
 
 type BoundMethod =
     {
@@ -718,6 +738,81 @@ let build (b: Bindings) (h: Header) (cpp: IReadOnlyDictionary<string, CppInterfa
             |> List.filter (fun (p, _) -> List.contains "_Out_" p.Annotations)
             |> List.length
 
+        // ---- _In_reads_ arrays: ReadOnlySpan when the count is a parameter that sizes nothing else
+        let isIdentifier (s: string) =
+            s.Length > 0 && (Char.IsLetter s[0] || s[0] = '_')
+
+        // How many parameters' annotations name each identifier (a count shared by two arrays is not a span).
+        let mentions =
+            ps
+            |> List.collect (fun (p, _) -> p.AnnotationArgs |> List.concat |> List.filter isIdentifier |> List.distinct)
+            |> List.countBy id
+            |> Map.ofList
+
+        let countParam (name: string) =
+            ps
+            |> List.tryPick (fun (p, r) ->
+                match r with
+                | RPrim(_, prim) when p.Name = name && (prim.FSharp = "uint32" || prim.FSharp = "unativeint") ->
+                    Some prim.FSharp
+                | _ -> None)
+
+        let spanOf (p: Param, r: Resolved) : (SpanElem * string) option =
+            let reads =
+                List.zip p.Annotations p.AnnotationArgs
+                |> List.tryPick (fun (a, args) ->
+                    match a with
+                    | "_In_reads_"
+                    | "_In_reads_opt_" -> Some(false, args)
+                    | "_In_reads_bytes_"
+                    | "_In_reads_bytes_opt_" -> Some(true, args)
+                    | _ -> None)
+
+            match reads with
+            | None -> None
+            | Some(bytes, args) ->
+                // The count, and the element type a void buffer names through sizeof: N or N*sizeof(T).
+                let count, sizeofType =
+                    match args with
+                    | [ c ] when isIdentifier c -> Some c, None
+                    | [ c; "*"; "sizeof"; "("; t; ")" ] when isIdentifier c -> Some c, Some t
+                    | _ -> None, None
+
+                let scalar (r: Resolved) =
+                    match r with
+                    | RPrim(_, prim) -> Some(ElemScalar prim.FSharp)
+                    | REnum e when enumSeen.Contains e && not (opaque.Contains e) -> Some(ElemScalar e)
+                    | _ -> None
+
+                let elem =
+                    match r with
+                    | RPointer(RStruct s) when not bytes && structSeen.Contains s && sizeofType.IsNone ->
+                        Some(ElemStruct s)
+                    | RPointer(RPointer inner) when not bytes && sizeofType.IsNone ->
+                        isBoundInterface inner |> Option.map ElemInterface
+                    | RPointer RVoid when bytes && sizeofType.IsNone -> Some(ElemScalar "byte")
+                    | RPointer RVoid when not bytes ->
+                        match sizeofType with
+                        | None -> Some(ElemScalar "byte")
+                        | Some t -> scalar (resolve (Named t))
+                    | RPointer inner when not bytes && sizeofType.IsNone -> scalar inner
+                    | _ -> None
+
+                match count, elem with
+                | Some c, Some e when mentions.TryFind c = Some 1 && (countParam c).IsSome -> Some(e, c)
+                | _ -> None
+
+        let spans =
+            ps
+            |> List.choose (fun (p, r) -> spanOf (p, r) |> Option.map (fun (e, c) -> p.Name, (e, c)))
+            |> Map.ofList
+
+        let spanCounts =
+            spans
+            |> Map.toList
+            |> List.map (fun (span, (_, c)) -> c, (span, (countParam c).Value))
+            |> Map.ofList
+
         let shapes =
             ps
             |> List.mapi (fun k (p, r) ->
@@ -735,10 +830,29 @@ let build (b: Bindings) (h: Header) (cpp: IReadOnlyDictionary<string, CppInterfa
                     OutGeneric
                 | RPointer(RPointer inner) when isLast && isOutAnn p && (isBoundInterface inner).IsSome ->
                     OutInterface (isBoundInterface inner).Value
-                | RPointer inner when isLast && p.Name = "RetVal" ->
+                | RPointer inner when p.Name = "RetVal" ->
+                    // MIDL's _WIN32 vtables put the hidden result pointer right after This, whatever follows it.
                     match inner with
-                    | RStruct s -> RetVal s
+                    | RStruct s when k = 0 -> RetVal s
+                    | RStruct _ -> fail "%s: RetVal is parameter %d, not the first after This" where k
                     | other -> fail "%s: RetVal of %A" where other
+                | RPointer(RPointer RVoid) when
+                    isLast
+                    && p.Annotations |> List.exists (fun a -> a.StartsWith "_Outptr_")
+                    && not (k > 0 && snd ps[k - 1] = RHandle "REFIID")
+                    ->
+                    OutValue "nativeint"
+                | _ when spans.ContainsKey p.Name -> InSpan spans[p.Name]
+                | _ when spanCounts.ContainsKey p.Name -> SpanCount spanCounts[p.Name]
+                | RArray(e, len) when
+                    p.Annotations
+                    |> List.exists (fun a -> a = "_In_" || a = "_In_reads_" || a = "_In_reads_opt_")
+                    && (match e with
+                        | RPrim _ -> true
+                        | REnum x -> enumSeen.Contains x && not (opaque.Contains x)
+                        | _ -> false)
+                    ->
+                    FixedSpan(fsType e where, len, p.Annotations |> List.exists (fun a -> a.EndsWith "_opt_"))
                 | RPointer inner when (isBoundInterface inner).IsSome -> InterfaceIn (isBoundInterface inner).Value
                 | RHandle "LPCWSTR" -> WideString
                 | RPointer(RStruct st) when List.contains "_In_" p.Annotations && structSeen.Contains st -> InStruct st
@@ -769,7 +883,7 @@ let build (b: Bindings) (h: Header) (cpp: IReadOnlyDictionary<string, CppInterfa
             | RStruct s -> fail "%s returns %s by value without a RetVal pointer" where s
             | r -> fsType r where
 
-        match shapes |> List.tryLast with
+        match shapes |> List.tryHead with
         | Some(RetVal s) when ret <> RPointer(RStruct s) ->
             fail "%s: RetVal methods must return the RetVal pointer" where
         | _ -> ()
