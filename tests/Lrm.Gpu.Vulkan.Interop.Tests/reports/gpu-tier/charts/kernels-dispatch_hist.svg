@@ -5,7 +5,7 @@
 <rect class="bg" x="0" y="0" width="720" height="320" rx="8"/>
 <rect class="frame" x="0.5" y="0.5" width="719" height="319" rx="8"/>
 <text class="t1" x="16" y="26" font-size="15" font-weight="600">Dispatch durations</text>
-<text class="t2" x="16" y="45" font-size="12">2 dispatches on a log scale; the longest is 1.89 µs (budget 100 ms)</text>
+<text class="t2" x="16" y="45" font-size="12">2 dispatches on a log scale; the longest is 1.95 µs (budget 100 ms)</text>
 <line class="grid" x1="32.16" y1="274" x2="696" y2="274" stroke-width="1"/>
 <text class="t3" x="24.16" y="278" font-size="11" text-anchor="end">0</text>
 <line class="grid" x1="32.16" y1="78" x2="696" y2="78" stroke-width="1"/>
@@ -13,6 +13,6 @@
 <text class="t3" x="32.16" y="68" font-size="11" text-anchor="start">count</text>
 <text class="t3" x="364.08" y="310" font-size="11" text-anchor="middle">duration</text>
 <path class="f0" d="M33.16 274V82Q33.16 78 37.16 78H54.82Q58.82 78 58.82 82V274Z"><title>[1.02 µs, 1.05 µs): 1</title></path>
-<path class="f0" d="M669.34 274V82Q669.34 78 673.34 78H691Q695 78 695 82V274Z"><title>[1.84 µs, 1.89 µs): 1</title></path>
+<path class="f0" d="M669.34 274V82Q669.34 78 673.34 78H691Q695 78 695 82V274Z"><title>[1.90 µs, 1.95 µs): 1</title></path>
 <line class="axis" x1="32.16" y1="274" x2="696" y2="274" stroke-width="1"/>
 </svg>

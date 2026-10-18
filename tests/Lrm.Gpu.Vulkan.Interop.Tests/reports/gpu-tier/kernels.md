@@ -4,7 +4,7 @@
 No conformance cases were recorded. Every dispatch is under the 100 ms budget.
 
 - Conformance cases: 0, failed: 0
-- GPU dispatches: 2, total GPU time 2.91 µs
+- GPU dispatches: 2, total GPU time 2.98 µs
 
 ## Conformance matrix
 
@@ -44,25 +44,25 @@ _No rows._
 
 | Kernel | Backend | Layer | Step | Duration | Of budget |
 | --- | --- | ---: | ---: | ---: | ---: |
-| args_echo | vulkan |  |  | 1.89 µs | 0.0% |
+| args_echo | vulkan |  |  | 1.95 µs | 0.0% |
 | args_echo | vulkan |  |  | 1.02 µs | 0.0% |
 
 ## Run
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-135406-613f45ec` |
+| Run | `20261018-144112-f93fa5d9` |
 | Title | Vulkan interop: device creation and hello-compute (R2) |
 | Kind | kernels |
 | Status | ok |
-| Started | 2026-10-18T13:54:06.498Z |
-| Ended | 2026-10-18T13:54:07.223Z |
+| Started | 2026-10-18T14:41:12.819Z |
+| Ended | 2026-10-18T14:41:13.521Z |
 | Execution class | vulkan pci:10de:2704, 616.92, win-x64 shaders a1a15c99c3fb |
 | Class id | `9c41399f5fa9` |
 | Driver | 616.92 |
-| Commit | `510c4d9ca9baacd21c67d0ca753ab6bbbe686b4d` |
+| Commit | `2b77c602cc52f6c883949b2613763a01a3723352` |
 | Nodes | 1 |
-| Records | 100 |
+| Records | 102 |
 | Synthetic | no |
 
 | Parameter | Value |
@@ -77,7 +77,7 @@ _No rows._
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| n0 | creator | vulkan pci:10de:2704, 616.92, win-x64 shaders a1a15c99c3fb | 100 | ok | 0 |
+| n0 | creator | vulkan pci:10de:2704, 616.92, win-x64 shaders a1a15c99c3fb | 102 | ok | 0 |
 
 ### Log problems
 
