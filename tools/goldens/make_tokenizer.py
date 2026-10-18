@@ -540,7 +540,7 @@ def main() -> int:
     ap.add_argument("--no-telemetry", action="store_true", help="do not write a run log under LRM_DATA/runs")
     args = ap.parse_args()
 
-    log = c.RunLog("make_tokenizer", enabled=not args.no_telemetry)
+    log = c.RunLog("make_tokenizer", enabled=not args.no_telemetry, kind="goldens")
     c.setup_torch(8)
     guards = c.check_effective_guards()
     from tokenizers import Tokenizer
@@ -637,7 +637,7 @@ def main() -> int:
     if args.check:
         problems = c.compare_tree(args.out, files)
         log.check("goldens.regen_identical", not problems, set="tokenizer")
-        log.close()
+        log.close("failed" if problems else "ok")
         if problems:
             print("CHECK FAILED:", *problems, sep="\n  ")
             return 1
