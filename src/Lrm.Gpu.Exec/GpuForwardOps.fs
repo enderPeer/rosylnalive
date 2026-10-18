@@ -263,7 +263,8 @@ type GpuOps internal (backend: IGpuBackend, heap: IGpuHeap, plan: ExecPlan, xcla
             Hi = x.Offset + int64 (row0 + rows) * rowBytes
         }
 
-    let dispatch
+    let dispatchWith
+        (extra: Attr list)
         (kernel: KernelId)
         (layer: int option)
         (args: ArgBlock)
@@ -291,6 +292,7 @@ type GpuOps internal (backend: IGpuBackend, heap: IGpuHeap, plan: ExecPlan, xcla
                             | None -> ()
                             yield Attr.int "step" step
                             yield Attr.str "phase" phase
+                            yield! extra
                         ]
                     )
                 )
@@ -301,6 +303,8 @@ type GpuOps internal (backend: IGpuBackend, heap: IGpuHeap, plan: ExecPlan, xcla
         recorded <- recorded + 1
         dispatches <- dispatches + 1L
         timer |> Option.iter l.EndTimer
+
+    let dispatch = dispatchWith []
 
     let weight (name: string) =
         match weights.TryGetValue name with
@@ -925,7 +929,19 @@ type GpuOps internal (backend: IGpuBackend, heap: IGpuHeap, plan: ExecPlan, xcla
                     Cols = uint32 x.Cols
                 }
 
-            dispatch
+            // Outside a forward (Greedy's pick) the forward's scope is gone: attribute the dispatch to the stage of
+            // the handle, as Greedy meters the argmax.
+            let extra =
+                if current.IsNone && x.Stage >= 0 then
+                    [
+                        Attr.str TelemetryKeys.Component Forward.Component
+                        Attr.int TelemetryKeys.Stage x.Stage
+                    ]
+                else
+                    []
+
+            dispatchWith
+                extra
                 Kernels.ArgmaxRows.Id
                 None
                 (Kernels.ArgmaxRows.encode args)
