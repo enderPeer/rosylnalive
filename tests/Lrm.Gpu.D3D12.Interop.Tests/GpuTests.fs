@@ -435,6 +435,225 @@ let private dred () =
         finally
             set D3D12_DRED_ENABLEMENT.SYSTEM_CONTROLLED
 
+// ---- the fp32 denormal probe (GpuBackendInterface contract), on the real scale_f32 DXIL blob ---------------------
+//
+// R1's spike saw fp32 denormals flushed on both GPUs with blobs built without a denormal mode. R4a's DXIL blobs are
+// built with -denorm preserve (fp32-denorm-mode=preserve). This runs the probe the contract defines, through this
+// interop and the embedded shader set, before D1 exists: scale_f32 with a = 0.5 over Fp32Denormals.probeInputs, with
+// LRM's heap layout (slot 0 the tensor table, slot 1 a page) and the canonical root signature. Integrator ADR
+// int-0001 records the result. The measurement goes to a run log (kind kernels) as gpu.fp32_denormals and a
+// gpu.dispatch interval, so `lrm report` renders it.
+
+/// The probe's run log, created on first use; Main finishes it (finishRun).
+let private probeRun =
+    lazy
+        (let r = accepted ()
+         let shaders = Lrm.Shaders.Shaders.embedded ()
+
+         let info: Lrm.Gpu.Core.DeviceInfo =
+             {
+                 Backend = ExecutionBackend.D3D12
+                 Index = r.Adapter.Index
+                 Name = r.Adapter.Description
+                 VendorId = r.Adapter.VendorId
+                 PciDeviceId = r.Adapter.DeviceId
+                 Driver = defaultArg r.Adapter.UmdVersion r.Adapter.DriverVersion
+                 MemoryBytes = int64 r.Adapter.DedicatedVideoMemory
+                 Details = []
+             }
+
+         let flags =
+             Lrm.Gpu.Core.ShaderSet.flagsFor Lrm.Gpu.Core.ShaderTarget.Dxil shaders
+             |> String.concat " "
+
+         let run =
+             Lrm.Telemetry.RunContext.Create(
+                 { Lrm.Telemetry.RunOptions.create "kernels" "D3D12 fp32 denormal probe on scale_f32 (int-0001)" with
+                     ExecutionClass = Some(Lrm.Gpu.Core.GpuClass.fill info shaders)
+                     GitSha = Env.commit ()
+                     Params =
+                         [
+                             "probe", "scale_f32, a = 0.5, Fp32Denormals.probeInputs (GpuBackendInterface)"
+                             "dxil_flags", flags
+                             "driver", r.Adapter.DriverVersion
+                             "source", "tests/Lrm.Gpu.D3D12.Interop.Tests (gpu tier)"
+                         ]
+                 }
+             )
+
+         printfn "denormal probe run log: %s" run.Directory
+         run)
+
+/// Finishes the probe's run log if the probe ran: ok when the exe passed, failed otherwise.
+let finishRun (exitCode: int) =
+    if probeRun.IsValueCreated then
+        let run = probeRun.Value
+
+        run.Finish(
+            if exitCode = 0 then
+                Lrm.Telemetry.RunStatus.Ok
+            else
+                Lrm.Telemetry.RunStatus.Failed
+        )
+
+/// The poison of the probe's output words: signalling-NaN patterns, which no multiply produces, different per run.
+let private poisonWord (run: int) (i: int) = 0x7FA00000u + uint32 (run * 16 + i)
+
+let mutable private probeRuns = 0
+
+let private denormalProbe () : byte[] =
+    let run = Interlocked.Increment &probeRuns
+    use _ = probeRun.Value.Install()
+    let shaders = Lrm.Shaders.Shaders.embedded ()
+
+    let blob =
+        match Lrm.Gpu.Core.ShaderSet.tryBlob "scale_f32" Lrm.Gpu.Core.ShaderTarget.Dxil shaders with
+        | Some b -> b.Bytes
+        | None -> failtest "the embedded shader set has no dxil/scale_f32"
+
+    let inputs = Lrm.Gpu.Core.Fp32Denormals.probeInputs
+    let n = inputs.Length
+    let tableBytes = int Lrm.Gpu.Core.Heap.TableBytes
+    let pageBytes = 65536
+    let yOffset = 256
+
+    // The tensor table: token 1 is x (slot 1, offset 0), token 2 is y (slot 1, offset 256), both f32 [7].
+    let table = Array.zeroCreate<byte> tableBytes
+
+    let row (token: int) (offset: int64) (flags: Lrm.Gpu.Core.TensorFlags) (name: string) =
+        let r =
+            Lrm.Gpu.Core.TensorRow.create 1 offset DType.F32 [ int64 n ] flags (Lrm.Gpu.Core.TensorRow.debugIdOf name)
+
+        r.WriteTo(Span(table, token * Lrm.Gpu.Core.Heap.RowBytes, Lrm.Gpu.Core.Heap.RowBytes))
+
+    row 1 0L Lrm.Gpu.Core.TensorFlags.ReadOnly "probe.x"
+    row 2 (int64 yOffset) Lrm.Gpu.Core.TensorFlags.None "probe.y"
+
+    // The page: x, then y poisoned.
+    let page = Array.zeroCreate<byte> pageBytes
+
+    for i in 0 .. n - 1 do
+        BitConverter.TryWriteBytes(Span(page, 4 * i, 4), inputs[i]) |> ignore
+
+        BitConverter.TryWriteBytes(Span(page, yOffset + 4 * i, 4), poisonWord run i)
+        |> ignore
+
+    let args = Array.zeroCreate<uint32> Lrm.Gpu.Core.ArgBlock.WordCount
+    args[0] <- 1u // lrm_groups_x: ceildiv(7, 256) = 1 group
+    args[1] <- 1u // x
+    args[2] <- 2u // y
+    args[3] <- uint32 n // n
+    args[4] <- Lrm.Gpu.Core.ArgBlock.f32Bits Lrm.Gpu.Core.Fp32Denormals.ProbeScale // a
+    let block = Lrm.Gpu.Core.ArgBlock.OfWords args
+
+    use dev = createDevice ()
+    use ctx = new Context(dev)
+
+    use upload =
+        ctx.Buffer(D3D12_HEAP_TYPE.UPLOAD, uint64 (tableBytes + pageBytes), D3D12_RESOURCE_STATES.GENERIC_READ)
+
+    use tableBuf =
+        ctx.Buffer(D3D12_HEAP_TYPE.DEFAULT, uint64 tableBytes, D3D12_RESOURCE_STATES.COMMON)
+
+    use pageBuf =
+        ctx.Buffer(D3D12_HEAP_TYPE.DEFAULT, uint64 pageBytes, D3D12_RESOURCE_STATES.COMMON)
+
+    use readback =
+        ctx.Buffer(D3D12_HEAP_TYPE.READBACK, uint64 (4 * n), D3D12_RESOURCE_STATES.COPY_DEST)
+
+    use stamps =
+        ctx.Buffer(D3D12_HEAP_TYPE.READBACK, 16UL, D3D12_RESOURCE_STATES.COPY_DEST)
+
+    write upload (Array.append table page)
+
+    // The canonical root signature (rootsig.bin) and the scale_f32 pipeline, as D1 builds every PSO.
+    use rootSig: ComPtr<ID3D12RootSignature> =
+        dev.CreateRootSignature(0u, ReadOnlySpan shaders.RootSignature)
+
+    use pin = fixed blob
+
+    let psoDesc =
+        Desc.computePipeline rootSig (NativePtr.toNativeInt pin) (unativeint blob.Length)
+
+    use pso: ComPtr<ID3D12PipelineState> = dev.CreateComputePipelineState(&psoDesc)
+
+    // LRM's heap: slot 0 the table, slot 1 the page, as raw UAVs at descriptor indices 0 and 1.
+    let heapDesc =
+        Desc.descriptorHeap D3D12_DESCRIPTOR_HEAP_TYPE.CBV_SRV_UAV (uint32 Lrm.Gpu.Core.Heap.SlotCount) true
+
+    use heap: ComPtr<ID3D12DescriptorHeap> = dev.CreateDescriptorHeap(&heapDesc)
+
+    let inc =
+        dev.GetDescriptorHandleIncrementSize D3D12_DESCRIPTOR_HEAP_TYPE.CBV_SRV_UAV
+
+    let start = heap.GetCPUDescriptorHandleForHeapStart()
+
+    for (slot, r, bytes) in [ 0, tableBuf, tableBytes; 1, pageBuf, pageBytes ] do
+        let mutable uav = Desc.rawBufferUav 0UL (uint32 (bytes / 4))
+        let at = D3D12_CPU_DESCRIPTOR_HANDLE(ptr = start.ptr + unativeint (slot * int inc))
+        dev.CreateUnorderedAccessView(r, ComPtr<ID3D12Resource>.Null, NativePtr.toNativeInt &&uav, at)
+
+    let qdesc = Desc.queryHeap D3D12_QUERY_HEAP_TYPE.TIMESTAMP 2u
+    use queries: ComPtr<ID3D12QueryHeap> = dev.CreateQueryHeap(&qdesc)
+
+    let l = ctx.List
+    ctx.Barrier(tableBuf, D3D12_RESOURCE_STATES.COMMON, D3D12_RESOURCE_STATES.COPY_DEST)
+    ctx.Barrier(pageBuf, D3D12_RESOURCE_STATES.COMMON, D3D12_RESOURCE_STATES.COPY_DEST)
+    l.CopyBufferRegion(tableBuf, 0UL, upload, 0UL, uint64 tableBytes)
+    l.CopyBufferRegion(pageBuf, 0UL, upload, uint64 tableBytes, uint64 pageBytes)
+    ctx.Barrier(tableBuf, D3D12_RESOURCE_STATES.COPY_DEST, D3D12_RESOURCE_STATES.UNORDERED_ACCESS)
+    ctx.Barrier(pageBuf, D3D12_RESOURCE_STATES.COPY_DEST, D3D12_RESOURCE_STATES.UNORDERED_ACCESS)
+    l.SetDescriptorHeaps heap
+    l.SetComputeRootSignature rootSig
+    l.SetPipelineState pso
+    l.SetComputeRoot32BitConstants(0u, ReadOnlySpan(block.ToWords()), 0u)
+    l.EndQuery(queries, D3D12_QUERY_TYPE.TIMESTAMP, 0u)
+    l.Dispatch(1u, 1u, 1u)
+    l.EndQuery(queries, D3D12_QUERY_TYPE.TIMESTAMP, 1u)
+    l.ResolveQueryData(queries, D3D12_QUERY_TYPE.TIMESTAMP, 0u, 2u, stamps, 0UL)
+    ctx.Barrier(pageBuf, D3D12_RESOURCE_STATES.UNORDERED_ACCESS, D3D12_RESOURCE_STATES.COPY_SOURCE)
+    l.CopyBufferRegion(readback, 0UL, pageBuf, uint64 yOffset, uint64 (4 * n))
+    ctx.SubmitAndWait()
+
+    let out = read readback (4 * n)
+    let results = MemoryMarshal.Cast<byte, uint32>(ReadOnlySpan out).ToArray()
+
+    for i in 0 .. n - 1 do
+        if results[i] = poisonWord run i then
+            failtestf "probe word %d still holds its poison: scale_f32 wrote nothing" i
+
+    // Raises GpuContractException when the normal controls are wrong (scale_f32 itself failed).
+    let mode = Lrm.Gpu.Core.Fp32Denormals.classify results
+    Lrm.Gpu.Core.Fp32Denormals.record ExecutionBackend.D3D12 mode
+
+    let hex (xs: uint32[]) =
+        xs |> Array.map (sprintf "%08x") |> String.concat " "
+
+    printfn
+        "fp32 denormal probe (d3d12, scale_f32, -denorm preserve): %s\n  inputs   %s\n  results  %s\n  preserve %s\n  flush    %s"
+        (Lrm.Gpu.Core.Fp32Denormals.name mode)
+        (hex inputs)
+        (hex results)
+        (hex (Lrm.Gpu.Core.Fp32Denormals.expected Lrm.Gpu.Core.Fp32DenormalMode.Preserve))
+        (hex (Lrm.Gpu.Core.Fp32Denormals.expected Lrm.Gpu.Core.Fp32DenormalMode.Flush))
+
+    let ticks = MemoryMarshal.Cast<byte, uint64>(ReadOnlySpan(read stamps 16)).ToArray()
+    let freq = ctx.Queue.GetTimestampFrequency()
+    let toNs (t: uint64) = int64 (float t * 1e9 / float freq)
+
+    Telemetry.gpuInterval
+        "gpu.dispatch"
+        (toNs ticks[0])
+        (toNs (ticks[1] - ticks[0]))
+        [
+            Attr.str TelemetryKeys.Backend "d3d12"
+            Attr.str TelemetryKeys.Kernel "scale_f32"
+            Attr.str "case" "fp32_denormal_probe"
+            Attr.int "groups" 1
+        ]
+
+    out
+
 /// Sequenced: one GPU workload at a time, and the leak test compares the process-wide live-reference count.
 let tests =
     testSequenced
@@ -471,6 +690,9 @@ let tests =
             testCase "DRED settings and data are reachable" dred
             Determinism.testTwice "a 1 MiB copy round trip is bit-identical twice" copyRoundTrip
             Determinism.testTwice "a ResourceDescriptorHeap dispatch is bit-identical twice" dispatchAdd
+            Determinism.testTwice
+                "the fp32 denormal probe on the real scale_f32 blob is bit-identical twice"
+                denormalProbe
         ]
 
 /// bench tier: the cost of one COM call through Vtbl.get and a cached delegate (AddRef and Release on a DXGI factory,

@@ -2,6 +2,7 @@
   <!-- Owner: O2. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
     <Compile Include="Common.fs" />
+    <Compile Include="ParityRun.fs" />
     <Compile Include="TinyModel.fs" />
     <Compile Include="TensorTests.fs" />
     <Compile Include="SafetensorsTests.fs" />

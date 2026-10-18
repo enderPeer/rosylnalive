@@ -57,3 +57,23 @@ let isWorker () = var "LRM_TEST_WORKER" = Some "1"
 
 /// Environment entries a test sets on a child process so that it runs as a worker.
 let workerEnvironment = [ "LRM_TEST_WORKER", "1" ]
+
+/// The commit the running test exe was built from, for run manifests (RunOptions.GitSha): the SDK stamps it after
+/// '+' in the entry assembly's informational version. None outside a git checkout.
+let commit () =
+    let entry = Assembly.GetEntryAssembly()
+
+    let version =
+        if isNull entry then
+            null
+        else
+            entry.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+
+    match
+        if isNull version then
+            None
+        else
+            Some version.InformationalVersion
+    with
+    | Some v when v.IndexOf '+' >= 0 && v.IndexOf '+' < v.Length - 1 -> Some(v.Substring(v.IndexOf '+' + 1))
+    | _ -> None

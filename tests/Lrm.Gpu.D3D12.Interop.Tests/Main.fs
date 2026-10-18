@@ -58,4 +58,8 @@ let private abiOracle (args: string list) =
 let main argv =
     match List.ofArray argv with
     | "abi-oracle" :: rest -> abiOracle rest
-    | _ -> Runner.main argv tiers
+    | _ ->
+        let code = Runner.main argv tiers
+        // The denormal probe's run log, if the gpu tier ran it.
+        GpuTests.finishRun code
+        code
