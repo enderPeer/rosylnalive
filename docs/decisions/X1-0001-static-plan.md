@@ -27,6 +27,7 @@ Development machine, 32 threads, .NET 10.0.13; `tools/test.ps1` and the test exe
 - **Planner properties** over 100 random tiny-model plans, and Qwen3-0.6B's plan from its config: the vectors of the contract (weights 1,192,165,376 bytes in 2 pages, 1,416 table rows, 549 dispatches for a 900-row prefill).
 - **Qwen3-0.6B on CpuDevice** (model tier): a 4-token prefill and 3 decode steps bit-identical to CpuOps F32 in 9 s.
 - **CpuDevice's checks** held on every run: no missing barrier, no read of unwritten memory, no kernel rule broken.
+- **A preview on D3D12** (informative, for X1b; not on this branch's tree). On a scratch merge of this branch with `main` (K1 to K3's kernels), a throwaway gpu-tier test under the D3D12 mutex ran the unchanged executor on the RTX 4080 (`pci:10de:2704`, driver 32.0.16.1692, DXIL ShaderSetHash `dd7e4d94…`): the tiny model's p0 and p2, prefill with every tap and 15 decode steps, were bit-identical run to run, gave the same 16 greedy ids as cpu-f32, and every logits row and tap was within relL2 9.5e-7 of cpu-f32; Qwen3-0.6B gave the same 16 greedy ids as cpu-f32 after `785 3974 13876 38835`, 16 steps in 0.24 s after a 0.63 s create.
 
 ## Consequences
 
