@@ -1,6 +1,6 @@
 /// The Vulkan side of the spike, end to end on VK_EXT_descriptor_heap:
-/// - a logical device on a compute-only queue family with descriptorHeap, bufferDeviceAddress, timelineSemaphore,
-///   runtimeDescriptorArray, synchronization2 and maintenance5;
+/// - a logical device on a compute-only queue family with descriptorHeap, shaderStorageBufferArrayDynamicIndexing,
+///   bufferDeviceAddress, timelineSemaphore, runtimeDescriptorArray, synchronization2 and maintenance5;
 /// - arena pages as device-local buffers with device addresses;
 /// - one resource heap buffer, written once with vkWriteResourceDescriptorsEXT, the reserved range at its end;
 /// - pipelines created with VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT, a NULL layout and a set 0 binding 0 -> heap
@@ -191,6 +191,9 @@ type VulkanContext() =
 
         let missing =
             [
+                // g_buf[slot] indexes an array of storage buffers with a dynamically uniform, non-constant index.
+                if f2.features.shaderStorageBufferArrayDynamicIndexing = 0u then
+                    "shaderStorageBufferArrayDynamicIndexing"
                 if v12.bufferDeviceAddress = 0u then "bufferDeviceAddress"
                 if v12.timelineSemaphore = 0u then "timelineSemaphore"
                 if v12.runtimeDescriptorArray = 0u then "runtimeDescriptorArray"
@@ -202,7 +205,15 @@ type VulkanContext() =
         if not missing.IsEmpty then
             failwithf "device lacks features: %s" (String.concat ", " missing)
 
-        // Enable exactly what the recipe needs.
+        // Enable exactly what the recipe needs. The 1.0 feature goes through VkPhysicalDeviceFeatures2 in the chain,
+        // so pEnabledFeatures stays NULL (VUID-VkDeviceCreateInfo-pNext-00373). maintenance5 goes through
+        // VkPhysicalDeviceMaintenance5Features, so VkPhysicalDeviceVulkan14Features must not be chained
+        // (VUID-VkDeviceCreateInfo-pNext-10360).
+        let mutable core = VkPhysicalDeviceFeatures()
+        core.shaderStorageBufferArrayDynamicIndexing <- 1u
+        let mutable ef2 = VkPhysicalDeviceFeatures2()
+        ef2.sType <- VkStructureType.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2
+        ef2.features <- core
         let mutable e12 = VkPhysicalDeviceVulkan12Features()
         e12.sType <- VkStructureType.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES
         e12.bufferDeviceAddress <- 1u
@@ -217,6 +228,7 @@ type VulkanContext() =
         let mutable ehf = VkPhysicalDeviceDescriptorHeapFeaturesEXT()
         ehf.sType <- VkStructureType.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_FEATURES_EXT
         ehf.descriptorHeap <- 1u
+        ef2.pNext <- NativePtr.toNativeInt &&e12
         e12.pNext <- NativePtr.toNativeInt &&e13
         e13.pNext <- NativePtr.toNativeInt &&em5
         em5.pNext <- NativePtr.toNativeInt &&ehf
@@ -230,7 +242,8 @@ type VulkanContext() =
         let exts = [ VkConst.VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME ]
         let mutable ci = VkDeviceCreateInfo()
         ci.sType <- SType.DeviceCreateInfo
-        ci.pNext <- NativePtr.toNativeInt &&e12
+        ci.pNext <- NativePtr.toNativeInt &&ef2
+        ci.pEnabledFeatures <- 0n
         ci.queueCreateInfoCount <- 1u
         ci.pQueueCreateInfos <- s.Struct q
         ci.enabledExtensionCount <- uint32 exts.Length
@@ -504,7 +517,9 @@ type VulkanContext() =
     member _.TimelineValue = timelineValue
 
     /// Waits for the device and resets the command pool. A reserved range stays bound to a command buffer until the
-    /// buffer is reset, and the application must not access it before that.
+    /// buffer is reset, and the application must not access it before that. Every heap the allocator hands out may
+    /// reuse the previous heap's address, so this runs before a new heap's reserved range is written, and before a
+    /// heap is read or destroyed.
     member _.ReleaseHeapBindings() =
         ok "vkDeviceWaitIdle" (fns.DeviceWaitIdle.Invoke device)
         ok "vkResetCommandPool" (fns.ResetCommandPool.Invoke(device, pool, 0u))
@@ -774,6 +789,11 @@ type VulkanConfig
             (control |> Option.map (fun c -> "+" + c.Suffix) |> Option.defaultValue "")
 
     do
+        // The previous configuration's heap may still be bound to the unreset command buffer, and this heap may get
+        // the same address (when configurations ran one after another, every heap got 0x2ffe30000). Release it
+        // before the canary write below.
+        ctx.ReleaseHeapBindings()
+
         if facts.StorageBufferDescriptorSize <> facts.Heap.BufferDescriptorSize then
             failwithf
                 "vkGetPhysicalDeviceDescriptorSizeEXT(STORAGE_BUFFER) = %d but bufferDescriptorSize = %d"
@@ -787,8 +807,12 @@ type VulkanConfig
         if geo.HeapBytes > facts.Heap.MaxResourceHeapSize then
             failwith "heap larger than maxResourceHeapSize"
 
+    // The recipe's usage; only the device-local fallback, filled by a copy, adds TRANSFER_DST.
     let heapUsage =
-        Flags.BufDescriptorHeapEXT ||| Flags.BufShaderDeviceAddress ||| Flags.BufTransferDst
+        match placement with
+        | Bar
+        | HostMemory -> Flags.BufDescriptorHeapEXT ||| Flags.BufShaderDeviceAddress
+        | CopyToDeviceLocal -> Flags.BufDescriptorHeapEXT ||| Flags.BufShaderDeviceAddress ||| Flags.BufTransferDst
 
     // Extra bytes so the heap start can be aligned up to resourceHeapAlignment inside the buffer.
     let slack = max facts.Heap.ResourceHeapAlignment 64UL
@@ -986,7 +1010,8 @@ type VulkanConfig
         member _.Dispose() =
             if not disposed then
                 disposed <- true
-                fns.DeviceWaitIdle.Invoke device |> ignore
+                // Waits for the device and unbinds this heap from the command buffer before it is destroyed.
+                ctx.ReleaseHeapBindings()
 
                 for KeyValue(_, p) in pipelines do
                     fns.DestroyPipeline.Invoke(device, p, 0n)
