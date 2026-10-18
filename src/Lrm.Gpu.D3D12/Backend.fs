@@ -470,9 +470,6 @@ and [<Sealed>] D3D12CommandList internal (owner: D3D12Backend) =
 
     member internal _.Owner = owner
 
-    /// Commands recorded so far (for tests of the encoder against a real list).
-    member internal _.Commands = List.ofSeq commands
-
     member internal _.Close() =
         checkOpen ()
 

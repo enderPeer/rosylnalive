@@ -27,8 +27,8 @@ module Hello =
     let private gib (bytes: int64) = float bytes / 1073741824.0
 
     /// Runs the hello with `write` for each output line. Exit codes: 0 every selftest case is bit-exact; 1 D3D12 is
-    /// unavailable or the device failed; 2 usage; 3 no accepted adapter (or the requested one is rejected); 4 a
-    /// selftest case failed.
+    /// unavailable, the device failed or the backend raised; 2 usage; 3 no accepted adapter (or the requested one is
+    /// rejected); 4 a selftest case failed or the probe could not run.
     let runWith (write: string -> unit) (shaders: ShaderSet) (args: string[]) : int =
         match parseArgs args with
         | Error e ->
@@ -165,6 +165,10 @@ module Hello =
                 1
             | :? D3D12DeviceLostException as e ->
                 write ("hello-d3d12: " + e.Message)
+                1
+            | e ->
+                // A contract violation or a failed probe here is a bug in the backend or the shader set.
+                write (sprintf "hello-d3d12: %s: %s" (e.GetType().Name) e.Message)
                 1
 
     /// Runs the hello on the console (the CLI's `lrm hello-d3d12`).
