@@ -58,6 +58,9 @@ type KernelCase =
         Scalars: (string * uint32) list
         /// Free text for reports: why the case exists.
         Doc: string
+        /// True for a case too large to emulate in CI (for example an lm_head-sized matmul with many rows): the CpuDevice
+        /// suite skips it with a reason; GPU backends run it.
+        GpuOnly: bool
     }
 
     /// "<kernel>/<name>".
@@ -84,9 +87,13 @@ module Case =
                 }
             Scalars = []
             Doc = ""
+            GpuOnly = false
         }
 
     let doc (text: string) (c: KernelCase) = { c with Doc = text }
+
+    /// Marks a case too large to emulate in CI: the CpuDevice suite skips it; GPU backends run it.
+    let gpuOnly (c: KernelCase) = { c with GpuOnly = true }
 
     let tensor (t: CaseTensor) (c: KernelCase) =
         { c with

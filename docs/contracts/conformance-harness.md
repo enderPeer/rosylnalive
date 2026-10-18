@@ -18,7 +18,7 @@ type KernelCase = { Kernel: string; Name: string; Io: CaseIo; Scalars: (string *
 - **Counts are capacities.** A tensor may hold more elements than the dispatch touches (KernelAbiAndCatalog, tensor access). `Dims` (default `[elements]`) may be anything whose product is the count: kernels never read the dims of a data token.
 - **Written tensors** have 4-byte elements, and a kernel writes exactly one field; both hold for the whole v1 catalog.
 - **Validation.** `Session.Create` raises `ArgumentException` naming the case and the rule for: an unknown kernel, a kernel without a KernelBounds entry, a name that is empty or holds `/`, a field that is not a token field, data of the wrong kind for the field's access, a dtype the field does not accept, input bytes that are not a positive multiple of the element size, an output of no elements, dims that do not give the count, an unbound or doubly bound field, an undeclared alias, a missing, repeated or unknown scalar, and two cases with one id (`<kernel>/<name>`).
-- **Builders.** `Case.create kernel name |> Case.f32 "x" xs |> Case.output "y" n |> Case.u32 "n" n |> Case.f32Arg "a" a`; also `f32Bits`, `bf16`, `u32s`, `i32s`, `inputBytes`, `outputOf`, `outputU32`, `meta`, `nullMeta`, `inPlace`, `dims`, `i32`, `f32ArgBits` and `doc`. `CaseGen` gives deterministic data (DetRng seed `0x4C524D2D45314341`, stream `DetRng.streamOf("conformance." + name)`).
+- **Builders.** `Case.create kernel name |> Case.f32 "x" xs |> Case.output "y" n |> Case.u32 "n" n |> Case.f32Arg "a" a`; also `f32Bits`, `bf16`, `u32s`, `i32s`, `inputBytes`, `outputOf`, `outputU32`, `meta`, `nullMeta`, `inPlace`, `dims`, `i32`, `f32ArgBits` and `doc`. `Case.gpuOnly` marks a case too large to emulate in CI (an lm_head-sized matmul with many rows, say): CpuDevice never plans it and its suite skips it with the reason; GPU backends run it. `CaseGen` gives deterministic data (DetRng seed `0x4C524D2D45314341`, stream `DetRng.streamOf("conformance." + name)`).
 
 ## Where cases live
 
@@ -115,7 +115,7 @@ The mode is the class's (ADR int-0001; KernelAbiAndCatalog, kernel rules), measu
 
 ## Backends and runs
 
-- **cpu tier (CI):** the harness's own tests, then every case on CpuDevice (at most 4 threads), then the negative control.
+- **cpu tier (CI):** the harness's own tests, then every case not marked `GpuOnly` on CpuDevice (at most 4 threads), then the negative control.
 - **gpu tier (local):** for each GPU backend whose assembly (`Lrm.Gpu.D3D12`, `Lrm.Gpu.Vulkan`) exposes a provider, every case on its first accepted device, under that backend's mutex (TestTiers), then the negative control; `Devices.record` names the device, driver and ShaderSetHash. `Discovery.provider` finds a public static property or field of type `IGpuBackendProvider` (an F# module value) or a public provider type with a parameterless constructor, so D1 and V1 add their provider and nothing else. Until then the gpu tier has no conformance tests.
 - **Run logs.** Each backend's suite writes a run log of kind `kernels` (RunLog) with the backend's class; `lrm report <runId>` renders the kernels report: the matrix by kernel and backend, the failing cases with measured, bound and detail, the denormal mode and the probe's words, and GPU time per kernel from `gpu.dispatch`. A rendered CpuDevice run is committed under `tests/Lrm.Kernels.Conformance/reports/`.
 

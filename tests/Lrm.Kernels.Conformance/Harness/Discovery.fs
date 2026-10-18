@@ -28,6 +28,14 @@ module Discovery =
             with :? ReflectionTypeLoadException as e ->
                 e.Types |> Array.filter (fun t -> not (isNull t))
 
+        // A member whose initialization throws (a missing native library, say) is skipped, never fatal: discovery runs
+        // in every tier, the cpu tier on machines without a GPU included.
+        let attempt (f: unit -> obj) =
+            try
+                [| f () |]
+            with _ ->
+                [||]
+
         let values =
             types
             |> Array.sortBy _.FullName
@@ -38,13 +46,13 @@ module Discovery =
                         typeof<IGpuBackendProvider>.IsAssignableFrom p.PropertyType
                         && p.GetIndexParameters().Length = 0)
                     |> Array.sortBy _.Name
-                    |> Array.map (fun p -> p.GetValue null)
+                    |> Array.collect (fun p -> attempt (fun () -> p.GetValue null))
 
                 let fields =
                     t.GetFields publicStatic
                     |> Array.filter (fun f -> typeof<IGpuBackendProvider>.IsAssignableFrom f.FieldType)
                     |> Array.sortBy _.Name
-                    |> Array.map (fun f -> f.GetValue null)
+                    |> Array.collect (fun f -> attempt (fun () -> f.GetValue null))
 
                 Array.append props fields)
 
@@ -56,7 +64,7 @@ module Discovery =
                 && typeof<IGpuBackendProvider>.IsAssignableFrom t
                 && not (isNull (t.GetConstructor Type.EmptyTypes)))
             |> Array.sortBy _.FullName
-            |> Array.map Activator.CreateInstance
+            |> Array.collect (fun t -> attempt (fun () -> Activator.CreateInstance t))
 
         Array.append values constructed
         |> Array.choose (function
@@ -72,9 +80,9 @@ module Discovery =
             try
                 providersIn (Assembly.Load(AssemblyName name))
                 |> List.tryFind (fun p -> p.Backend = backend)
-            with
-            | :? System.IO.FileNotFoundException
-            | :? BadImageFormatException -> None
+            with e ->
+                eprintfn "conformance: no %s provider (%s: %s)" name (e.GetType().Name) e.Message
+                None
 
     /// Every case list: the public `cases: KernelCase list` value of each module whose full name starts with
     /// Lrm.Kernels.Conformance.Cases., in ordinal order of the module names.

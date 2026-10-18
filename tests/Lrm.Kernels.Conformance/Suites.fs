@@ -14,6 +14,14 @@ open Lrm.Testing
 /// Every case of this exe (Discovery.cases over Cases/**).
 let allCases = lazy (Discovery.cases typeof<KernelCase>.Assembly)
 
+/// The cases a class runs: on CpuDevice every case not marked GPU-only (those are never planned, so their tensors
+/// cost no host memory); on a GPU backend every case.
+let casesFor (cls: ExecutionClass) =
+    if cls.Backend = ExecutionBackend.CpuDevice then
+        allCases.Value |> List.filter (fun c -> not c.GpuOnly)
+    else
+        allCases.Value
+
 /// One backend's conformance run: the backend, created on first use, its run log and its session.
 type BackendRun(label: string, create: unit -> IGpuBackend, title: string, record: IGpuBackend -> unit) =
     let state =
@@ -41,8 +49,7 @@ type BackendRun(label: string, create: unit -> IGpuBackend, title: string, recor
              printfn "conformance run log (%s): %s" label run.Directory
              use _ = run.Install()
 
-             let session =
-                 Session.Create(backend, kernels, allCases.Value, HarnessOptions.Default)
+             let session = Session.Create(backend, kernels, casesFor cls, HarnessOptions.Default)
 
              run, session)
 
@@ -72,6 +79,9 @@ let suite (run: BackendRun) : Test =
             let log, session = run.State
             use _ = log.Install()
 
+            if c.GpuOnly && session.ExecutionClass.Backend = ExecutionBackend.CpuDevice then
+                skiptestf "%s is marked GPU-only: too large to emulate in CI" c.Id
+
             if not (session.Contains c) then
                 skiptestf "%s has no %s kernel yet (its source is missing)" session.BackendName c.Kernel
 
@@ -90,7 +100,7 @@ let suite (run: BackendRun) : Test =
                 let _, session = run.State
 
                 let passing =
-                    allCases.Value
+                    casesFor session.ExecutionClass
                     |> List.filter session.Contains
                     |> List.filter (fun c -> (session.Control c).Passed)
                     |> List.map _.Id
