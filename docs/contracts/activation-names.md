@@ -62,7 +62,7 @@ A tap is one named activation of one forward pass. The model-level taps are `emb
 ## Semantics
 
 - **Exact definitions.** `resid_mid` and `L{i}.out` are the sums HF computes. `L0`'s input is `embed.out`, and `L{i}`'s input for `i > 0` is `L{i−1}.out`.
-- **The KV cache stores exactly the cache taps.** `k_rope` is K after k_norm and RoPE, and `v_cache` is V raw, both fp32 (CpuReferenceSemantics). The golden tools check bit for bit that both equal the transformers `DynamicCache` contents after the forward.
+- **The KV cache stores exactly the cache taps.** `k_rope` is K after k_norm and RoPE, and `v_cache` is V raw. Like every tap, both are in the dtype of the computation (see Dtype above): F32 for torch32, CpuRef F32 and the GPU backends; F64 for torch64p and CpuRef F64. The golden tools check bit for bit that both equal the transformers `DynamicCache` contents after the forward, in each oracle's own dtype.
 - **Decode steps.** A single-token decode step has T = 1, and its attention taps attend over the cached rows plus the new one. Golden taps are recorded for prefills. Prefill-equals-decode is checked on our side (M2a, X1), not against goldens.
 - **Two-stage splits.** A stage that runs layers a..b emits `L{a}.*` to `L{b}.*`. The first stage also emits `embed.out`, and the last also emits `final_norm.out` and `logits`.
 

@@ -5,7 +5,7 @@ Reference outputs that LRM's own code is checked against. Each set lives in `gol
 | Set | What | Owner | Generator | Committed |
 | --- | --- | --- | --- | --- |
 | `tiny/g1` | A 2-layer Qwen3 in the real config schema, with torch32 and torch64p forward taps, greedy ids, T_spec, gradients and one AdamW step | O1 | `tools/goldens/make_tiny.py` | everything, 3.8 MiB |
-| `tokenizer/g1` | The Qwen3 tokenizer corpus (5,313 cases) with ids from HF tokenizers | O1 | `tools/goldens/make_tokenizer.py` | everything, 0.9 MiB |
+| `tokenizer/g1` | The Qwen3 tokenizer corpus (5,597 cases) with ids from HF tokenizers | O1 | `tools/goldens/make_tokenizer.py` | everything, 1.0 MiB |
 | `qwen3-0.6b/g1` | Full-model goldens and tolerances | G2 | `tools/goldens/qwen/` | small files; large ones in `LRM_DATA/golden` |
 
 Committed files are at most 2 MiB each. O1's sets and this README together stay under 5 MiB. Large goldens live under `LRM_DATA/golden/` and are listed in the manifest with `"location": "data"`. Nothing uses Git LFS or release assets.
@@ -57,25 +57,25 @@ Each line is one JSON object, with sorted keys and ASCII-only escapes. Every cas
 | --- | --- | --- |
 | `encode` | `text`, `ids` | `ids = Encode(text)`, with no BOS |
 | `encode_bytes` | `bytes` (hex), `text`, `ids` | Raw bytes, often invalid UTF-8. `text` is the bytes decoded with one U+FFFD per maximal invalid subpart, and `ids = Encode(text)` |
-| `decode` | `ids`, `bytes` (hex), `text` | `bytes` is the concatenated token bytes (DecodeBytes). `text = Decode(ids)`, the bytes decoded with errors=replace |
-| `encode_reject` | `text`, `error` | The text holds a lone surrogate, and Encode must raise |
+| `decode` | `ids`, `bytes` (hex), `text` | `bytes` is the concatenated token bytes (DecodeBytes). `text = Decode(ids)`, the bytes decoded with errors=replace. Ids 151,669 to 151,935 (lm_head rows with no token) add no bytes |
+| `encode_reject` | `utf16` (hex), `error` | The text, given as its UTF-16 code units (4 hex digits each), holds a lone surrogate, and Encode must raise. There is no `text` field, so every JSON string in the file is valid UTF-16 and `System.Text.Json` reads every line |
 
 The categories are:
 - C# and IL: every snippet, line and three-line window, with LF, CRLF, CR, tab and two-space variants;
 - English prose and multilingual lines: de, zh, ja, ko, ru, el, ar, he, hi, th, vi, tr and more, with their NFD forms;
 - whitespace: space, tab and newline runs, CRLF, lone CR, and every Unicode White_Space character (U+0085, U+2028 and others) plus look-alikes that are not whitespace;
-- digits, including non-ASCII and astral digits;
+- digits, including non-ASCII and astral digits, and the other number classes (Nl such as Ⅻ, No such as ½) after a space and next to letters;
 - contractions in every case variant, and case-fold probes next to an apostrophe (U+017F, U+0130, U+212A and others);
 - emoji, astral letters, and letters added in Unicode 15 and 16;
 - every one of the 26 added tokens in about 20 contexts, plus ChatML;
 - NFC probes, every code point up to U+00FF, invalid UTF-8, lone surrogates and long inputs;
-- 395 seeded mixtures, and 495 decode cases, including every single-byte token.
+- 395 seeded mixtures, and 519 decode cases, including every single-byte token, the empty list and ids with no token.
 
 `manifest.json` records:
 - counts per kind and category;
 - the no-BOS check on every encode;
 - `decode(encode(text)) == NFC(text)` for every encode;
-- a second opinion from transformers' own `Qwen2Tokenizer`, which agrees on all 4,810 encode cases.
+- a second opinion from transformers' own `Qwen2Tokenizer`, which agrees on all 5,070 encode cases.
 
 ## Regenerating and checking
 
