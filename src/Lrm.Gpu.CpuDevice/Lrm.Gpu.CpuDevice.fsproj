@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: E1. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
-    <Compile Include="Placeholder.fs" />
+    <Compile Include="KernelRules.fs" />
+    <Compile Include="Emulators.fs" />
+    <Compile Include="CpuDevice.fs" />
   </ItemGroup>
 </Project>
