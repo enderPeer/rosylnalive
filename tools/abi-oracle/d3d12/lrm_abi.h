@@ -23,6 +23,9 @@
 #define LRM_SIZE(T, n) LRM_STATIC_ASSERT(sizeof(T) == (n), "sizeof(" #T ") == " #n)
 /* offsetof(T, f) equals the runtime offset (Marshal.OffsetOf) of the F# field. */
 #define LRM_OFFSET(T, f, n) LRM_STATIC_ASSERT(offsetof(T, f) == (n), "offsetof(" #T ", " #f ") == " #n)
+/* sizeof(T::f) equals the runtime size of the F# field's type, so a field of the wrong width fails even where
+   alignment keeps every offset and the struct size unchanged. */
+#define LRM_FIELD_SIZE(T, f, n) LRM_STATIC_ASSERT(sizeof(((T *)0)->f) == (n), "sizeof(" #T "." #f ") == " #n)
 /* A bound enum member has the value of the F# enum case. */
 #define LRM_ENUM(e, v) LRM_STATIC_ASSERT((long long)(e) == (v), #e " == " #v)
 /* Method m of interface I sits in vtable slot n (the generated Slots constant). */

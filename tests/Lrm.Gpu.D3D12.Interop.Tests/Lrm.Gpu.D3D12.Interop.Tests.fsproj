@@ -7,5 +7,7 @@
     <Compile Include="CpuTests.fs" />
     <Compile Include="GpuTests.fs" />
     <Compile Include="Main.fs" />
+    <!-- Compiled at test time with tail calls on, then scanned for tail. prefixes (CpuTests); not part of this build. -->
+    <EmbeddedResource Include="TailCallConsumer.fs" LogicalName="TailCallConsumer.fs" />
   </ItemGroup>
 </Project>

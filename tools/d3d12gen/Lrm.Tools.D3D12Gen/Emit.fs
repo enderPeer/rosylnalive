@@ -264,7 +264,17 @@ let types (m: Model) : string =
 
     o.Text.TrimEnd('\n') + "\n"
 
+/// How the typed wrapper takes an InSpan parameter: the span itself, or one element (count 1).
+type private SpanForm =
+    | AsSpan
+    | AsOne
+
 /// D3D12Methods.g.fs: typed extension methods for every method an interface declares.
+///
+/// Every wrapper takes `this` as inref<ComPtr<'I>>. F# never compiles a call with a byref argument as a tail call,
+/// so no call to a wrapper carries the tail. prefix, whatever the caller's Tailcalls setting: a stack address the
+/// caller passes (a span over a local, NativePtr.toNativeInt &&local) stays valid for the whole native call
+/// (ADR R3-0001). Spans alone would not do that: F# tail-calls methods whose only stack reference is a span.
 let methods (m: Model) : string =
     let o = Out()
     banner m o "Typed wrappers"
@@ -273,6 +283,7 @@ let methods (m: Model) : string =
     o.Line "#nowarn \"9\""
     o.Line "#nowarn \"51\""
     o.Blank()
+    o.Line "open System"
     o.Line "open System.Runtime.CompilerServices"
     o.Line "open Microsoft.FSharp.NativeInterop"
     o.Blank()
@@ -294,10 +305,20 @@ let methods (m: Model) : string =
                 let qualified = sprintf "%s::%s" i.Name meth.Name
                 let fn = sprintf "Fn.%s.%s" i.Name (ident meth.Name)
                 let slot = sprintf "Slots.%s.%s" i.Name (ident meth.Name)
-                let call = sprintf "(Vtbl.get<%s> this.Ptr %s).Invoke" fn slot
+
+                let callOn (self: string) =
+                    sprintf "(Vtbl.get<%s> %s %s).Invoke" fn self slot
+
                 let names = meth.Params |> List.map (fun p -> ident p.Name)
 
                 let typed = b.ReturnsHresult && not b.HresultIsValue
+
+                // A string is pinned inside a closure, which cannot capture the byref `this`: copy the pointer first.
+                let self =
+                    if b.Shapes |> List.contains WideString then
+                        "self'"
+                    else
+                        "this.Ptr"
 
                 // Shapes that only typed HRESULT wrappers interpret.
                 let shapes =
@@ -310,44 +331,23 @@ let methods (m: Model) : string =
                         | OutInterface _ when not typed -> Plain
                         | s -> s)
 
-                // ---- generic parameters and the typed parameter list
-                let generics = ResizeArray<string * string>()
-                generics.Add("'I", i.Name)
-                let typedParams = ResizeArray<string>()
-                let mutable k = 0
+                let spanShapes =
+                    shapes
+                    |> List.filter (function
+                        | InSpan _
+                        | FixedSpan _ -> true
+                        | _ -> false)
 
-                for (p, s, dt) in List.zip3 meth.Params shapes b.DelegateParams do
-                    match s with
-                    | InterfaceIn j ->
-                        let g = sprintf "'P%d" k
-                        k <- k + 1
-                        generics.Add(g, j)
-                        typedParams.Add(sprintf "%s: ComPtr<%s>" (ident p.Name) g)
-                    | WideString -> typedParams.Add(sprintf "%s: string" (ident p.Name))
-                    | InStruct st -> typedParams.Add(sprintf "%s: inref<%s>" (ident p.Name) st)
-                    | Plain -> typedParams.Add(sprintf "%s: %s" (ident p.Name) dt)
-                    | Riid
-                    | OutGeneric
-                    | OutInterface _
-                    | OutValue _
-                    | RetVal _ -> ()
+                // A single-element overload when the only span is an array of bound structs or interfaces.
+                let forms =
+                    match spanShapes with
+                    | [ InSpan((ElemStruct _ | ElemInterface _), _) ] -> [ AsSpan; AsOne ]
+                    | _ -> [ AsSpan ]
 
                 let outGeneric = shapes |> List.contains OutGeneric
 
-                if outGeneric then
-                    generics.Add("'T", "IUnknown")
-
-                let genericDecl (gs: (string * string) seq) =
-                    let gs = List.ofSeq gs
-                    let names = gs |> List.map fst |> String.concat ", "
-
-                    let constraints =
-                        gs |> List.map (fun (g, c) -> sprintf "%s :> %s" g c) |> String.concat " and "
-
-                    sprintf "<%s when %s>" names constraints
-
                 let returnType, retVal =
-                    match shapes |> List.tryLast with
+                    match shapes |> List.tryHead with
                     | Some(RetVal s) -> s, true
                     | _ ->
                         if typed then
@@ -361,102 +361,209 @@ let methods (m: Model) : string =
                         else
                             b.DelegateReturn, false
 
-                // ---- the argument list passed to Invoke
-                let wide = ResizeArray<string * string>()
-                let pinned = ResizeArray<string * string>()
+                let genericDecl (gs: (string * string) seq) =
+                    let gs = List.ofSeq gs
+                    let names = gs |> List.map fst |> String.concat ", "
 
-                let args =
-                    List.zip3 meth.Params shapes names
-                    |> List.map (fun (p, s, n) ->
+                    let constraints =
+                        gs |> List.map (fun (g, c) -> sprintf "%s :> %s" g c) |> String.concat " and "
+
+                    sprintf "<%s when %s>" names constraints
+
+                for form in forms do
+                    // ---- generic parameters and the typed parameter list
+                    let generics = ResizeArray<string * string>()
+                    generics.Add("'I", i.Name)
+                    let typedParams = ResizeArray<string>()
+                    let mutable k = 0
+
+                    let fresh (j: string) =
+                        let g = sprintf "'P%d" k
+                        k <- k + 1
+                        generics.Add(g, j)
+                        g
+
+                    for (p, s, dt) in List.zip3 meth.Params shapes b.DelegateParams do
+                        let name = ident p.Name
+
                         match s with
-                        | InterfaceIn _ -> n + ".Ptr"
-                        | WideString ->
-                            let local = sprintf "w%d'" wide.Count
-                            wide.Add(n, local)
-                            local
-                        | InStruct _ ->
-                            let local = sprintf "p%d'" pinned.Count
-                            pinned.Add(n, local)
-                            "NativePtr.toNativeInt " + local
-                        | Riid -> "NativePtr.toNativeInt &&iid'"
+                        | InterfaceIn j -> typedParams.Add(sprintf "%s: ComPtr<%s>" name (fresh j))
+                        | WideString -> typedParams.Add(sprintf "%s: string" name)
+                        | InStruct st -> typedParams.Add(sprintf "%s: inref<%s>" name st)
+                        | InSpan(e, _) ->
+                            match e, form with
+                            | ElemStruct st, AsOne -> typedParams.Add(sprintf "%s: inref<%s>" name st)
+                            | ElemInterface j, AsOne -> typedParams.Add(sprintf "%s: ComPtr<%s>" name (fresh j))
+                            | ElemStruct st, AsSpan -> typedParams.Add(sprintf "%s: ReadOnlySpan<%s>" name st)
+                            | ElemInterface j, AsSpan ->
+                                typedParams.Add(sprintf "%s: ReadOnlySpan<ComPtr<%s>>" name (fresh j))
+                            | ElemScalar t, _ -> typedParams.Add(sprintf "%s: ReadOnlySpan<%s>" name t)
+                        | FixedSpan(t, _, _) -> typedParams.Add(sprintf "%s: ReadOnlySpan<%s>" name t)
+                        | Plain -> typedParams.Add(sprintf "%s: %s" name dt)
+                        | Riid
                         | OutGeneric
                         | OutInterface _
-                        | OutValue _ -> "NativePtr.toNativeInt &&out'"
-                        | RetVal _ -> "NativePtr.toNativeInt &&ret'"
-                        | Plain -> n)
-
-                let invoke =
-                    sprintf "%s(this.Ptr%s)" call (args |> List.map (fun a -> ", " + a) |> String.concat "")
-
-                let invokeWithStrings =
-                    // Pin each string for the duration of the call.
-                    wide
-                    |> Seq.rev
-                    |> Seq.fold (fun inner (n, local) -> sprintf "Com.withWide %s (fun %s -> %s)" n local inner) invoke
-
-                o.Line(sprintf "    /// %s (slot %d): %s." qualified meth.Slot (cSignature meth))
-
-                if typed then
-                    o.Line
-                        "    /// Raises D3D12Exception, with the device-removed reason, when the HRESULT is a failure."
-
-                o.Line "    [<Extension>]"
-
-                o.Line(
-                    sprintf
-                        "    static member %s%s(%s) : %s ="
-                        (ident b.WrapperName)
-                        (genericDecl generics)
-                        (("this: ComPtr<'I>" :: List.ofSeq typedParams) |> String.concat ", ")
-                        returnType
-                )
-
-                if outGeneric then
-                    o.Line "        let mutable iid' = IidOf<'T>.Value"
-
-                if
-                    shapes
-                    |> List.exists (function
-                        | OutGeneric
-                        | OutInterface _ -> true
-                        | _ -> false)
-                then
-                    o.Line "        let mutable out' = 0n"
-
-                match shapes |> List.tryLast with
-                | Some(OutValue t) -> o.Line(sprintf "        let mutable out' = Unchecked.defaultof<%s>" t)
-                | _ -> ()
-
-                for (n, local) in pinned do
-                    o.Line(sprintf "        use %s = fixed &%s" local n)
-
-                if retVal then
-                    o.Line(sprintf "        let mutable ret' = Unchecked.defaultof<%s>" returnType)
-                    o.Line(sprintf "        %s |> ignore" invokeWithStrings)
-                    o.Line "        ret'"
-                elif typed then
-                    o.Line(sprintf "        let hr' = %s" invokeWithStrings)
-                    o.Line(sprintf "        Com.check \"%s\" hr' this.Ptr" qualified)
+                        | OutValue _
+                        | RetVal _
+                        | SpanCount _ -> ()
 
                     if outGeneric then
-                        o.Line "        ComPtr<'T>.Attach out'"
-                    else
-                        match shapes |> List.tryLast with
-                        | Some(OutInterface j) -> o.Line(sprintf "        ComPtr<%s>.Attach out'" j)
-                        | Some(OutValue _) -> o.Line "        out'"
+                        generics.Add("'T", "IUnknown")
+
+                    // ---- the argument list passed to Invoke, and the locals it needs
+                    let wide = ResizeArray<string * string>()
+                    let setup = ResizeArray<string>()
+
+                    let args =
+                        List.zip3 meth.Params shapes names
+                        |> List.map (fun (p, s, n) ->
+                            match s with
+                            | InterfaceIn _ -> n + ".Ptr"
+                            | WideString ->
+                                let local = sprintf "w%d'" wide.Count
+                                wide.Add(n, local)
+                                local
+                            | InStruct _ ->
+                                let local = sprintf "p%d'" setup.Count
+                                setup.Add(sprintf "use %s = fixed &%s" local n)
+                                "NativePtr.toNativeInt " + local
+                            | InSpan(e, _) ->
+                                let local = sprintf "p%d'" setup.Count
+
+                                match e, form with
+                                | ElemStruct _, AsOne -> setup.Add(sprintf "use %s = fixed &%s" local n)
+                                | ElemInterface _, AsOne -> setup.Add(sprintf "let mutable %s = %s.Ptr" local n)
+                                | _ -> setup.Add(sprintf "use %s = fixed %s" local n)
+
+                                match e, form with
+                                | ElemInterface _, AsOne -> "NativePtr.toNativeInt &&" + local
+                                | _ -> "NativePtr.toNativeInt " + local
+                            | SpanCount(span, t) ->
+                                match form with
+                                | AsOne -> if t = "uint32" then "1u" else "1un"
+                                | AsSpan -> sprintf "%s %s.Length" t (ident span)
+                            | FixedSpan(_, len, optional) ->
+                                let local = sprintf "p%d'" setup.Count
+
+                                let ok =
+                                    if optional then
+                                        sprintf "%s.Length = %d || %s.Length = 0" n len n
+                                    else
+                                        sprintf "%s.Length = %d" n len
+
+                                let need =
+                                    if optional then
+                                        sprintf "%d (or 0 for null)" len
+                                    else
+                                        string len
+
+                                setup.Add(
+                                    sprintf
+                                        "if not (%s) then invalidArg \"%s\" \"%s: %s must hold %s elements\""
+                                        ok
+                                        p.Name
+                                        qualified
+                                        p.Name
+                                        need
+                                )
+
+                                setup.Add(sprintf "use %s = fixed %s" local n)
+                                "NativePtr.toNativeInt " + local
+                            | Riid -> "NativePtr.toNativeInt &&iid'"
+                            | OutGeneric
+                            | OutInterface _
+                            | OutValue _ -> "NativePtr.toNativeInt &&out'"
+                            | RetVal _ -> "NativePtr.toNativeInt &&ret'"
+                            | Plain -> n)
+
+                    let invoke =
+                        sprintf "%s(%s%s)" (callOn self) self (args |> List.map (fun a -> ", " + a) |> String.concat "")
+
+                    let invokeWithStrings =
+                        // Pin each string for the duration of the call.
+                        wide
+                        |> Seq.rev
+                        |> Seq.fold
+                            (fun inner (n, local) -> sprintf "Com.withWide %s (fun %s -> %s)" n local inner)
+                            invoke
+
+                    o.Line(sprintf "    /// %s (slot %d): %s." qualified meth.Slot (cSignature meth))
+
+                    for (p, s) in List.zip meth.Params shapes do
+                        match s, form with
+                        | SpanCount(span, _), AsSpan -> o.Line(sprintf "    /// %s is the length of %s." p.Name span)
+                        | SpanCount(span, _), AsOne ->
+                            o.Line(sprintf "    /// One element: %s is a single value and %s is 1." span p.Name)
                         | _ -> ()
-                else
-                    o.Line(sprintf "        %s" invokeWithStrings)
 
-                o.Blank()
+                    if typed then
+                        o.Line
+                            "    /// Raises D3D12Exception, with the device-removed reason, when the HRESULT is a failure."
 
-                // ---- the raw form of HRESULT methods: the delegate's own parameters, the HRESULT returned
-                if typed then
+                    o.Line "    [<Extension>]"
+
                     o.Line(
                         sprintf
-                            "    /// %s (slot %d), raw: the C parameters as passed, the HRESULT returned."
-                            qualified
-                            meth.Slot
+                            "    static member %s%s(%s) : %s ="
+                            (ident b.WrapperName)
+                            (genericDecl generics)
+                            (("this: inref<ComPtr<'I>>" :: List.ofSeq typedParams) |> String.concat ", ")
+                            returnType
+                    )
+
+                    if self <> "this.Ptr" then
+                        o.Line(sprintf "        let %s = this.Ptr" self)
+
+                    if outGeneric then
+                        o.Line "        let mutable iid' = IidOf<'T>.Value"
+
+                    if
+                        shapes
+                        |> List.exists (function
+                            | OutGeneric
+                            | OutInterface _ -> true
+                            | _ -> false)
+                    then
+                        o.Line "        let mutable out' = 0n"
+
+                    match shapes |> List.tryLast with
+                    | Some(OutValue t) -> o.Line(sprintf "        let mutable out' = Unchecked.defaultof<%s>" t)
+                    | _ -> ()
+
+                    for line in setup do
+                        o.Line("        " + line)
+
+                    if retVal then
+                        o.Line(sprintf "        let mutable ret' = Unchecked.defaultof<%s>" returnType)
+                        o.Line(sprintf "        %s |> ignore" invokeWithStrings)
+                        o.Line "        ret'"
+                    elif typed then
+                        o.Line(sprintf "        let hr' = %s" invokeWithStrings)
+                        o.Line(sprintf "        Com.check \"%s\" hr' %s" qualified self)
+
+                        if outGeneric then
+                            o.Line "        ComPtr<'T>.Attach out'"
+                        else
+                            match shapes |> List.tryLast with
+                            | Some(OutInterface j) -> o.Line(sprintf "        ComPtr<%s>.Attach out'" j)
+                            | Some(OutValue _) -> o.Line "        out'"
+                            | _ -> ()
+                    else
+                        o.Line(sprintf "        %s" invokeWithStrings)
+
+                    o.Blank()
+
+                // ---- the raw form: the delegate's own parameters and return value, for HRESULT methods and for
+                // methods with span parameters (a pointer into native memory needs no span)
+                if typed || not spanShapes.IsEmpty then
+                    let what =
+                        if typed then
+                            "the HRESULT returned"
+                        else
+                            "the C return value"
+
+                    o.Line(
+                        sprintf "    /// %s (slot %d), raw: the C parameters as passed, %s." qualified meth.Slot what
                     )
 
                     o.Line "    [<Extension>]"
@@ -466,16 +573,17 @@ let methods (m: Model) : string =
 
                     o.Line(
                         sprintf
-                            "    static member %sRaw<'I when 'I :> %s>(%s) : int ="
+                            "    static member %sRaw<'I when 'I :> %s>(%s) : %s ="
                             b.WrapperName
                             i.Name
-                            (("this: ComPtr<'I>" :: rawParams) |> String.concat ", ")
+                            (("this: inref<ComPtr<'I>>" :: rawParams) |> String.concat ", ")
+                            b.DelegateReturn
                     )
 
                     o.Line(
                         sprintf
                             "        %s(this.Ptr%s)"
-                            call
+                            (callOn "this.Ptr")
                             (names |> List.map (fun a -> ", " + a) |> String.concat "")
                     )
 

@@ -1,8 +1,9 @@
 <Project>
   <!--
-    Owner: R3. No F# tail calls: a call that receives the address of a stack local (NativePtr.toNativeInt &&x) must
-    not be compiled with the tail. prefix, which frees the caller's frame before the callee reads it (ADR R3-0001,
-    D3D12ComIdiom contract).
+    Owner: R3. No F# tail calls in this project. The generated wrappers cannot be tail-called (they take `this` by
+    reference), but code here also passes stack addresses (NativePtr.toNativeInt &&x) straight to Fn delegates and to
+    its own functions, and a tail. prefix would free the frame before the callee reads it (ADR R3-0001, D3D12ComIdiom
+    rule 3). The cpu tier checks the IL with TailCalls.scan.
   -->
   <PropertyGroup>
     <Tailcalls>false</Tailcalls>

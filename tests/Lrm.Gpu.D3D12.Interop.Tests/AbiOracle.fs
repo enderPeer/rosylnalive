@@ -1,8 +1,10 @@
 /// The ABI oracle (D3D12ComIdiom contract): dumps the runtime layout of everything the interop binds as C and C++
 /// static assertions, then compiles them with cl.exe against the Windows SDK headers and runs the result.
 ///
-/// - Struct sizes and field offsets come from the loaded types (Marshal.SizeOf, RuntimeHelpers.SizeOf,
-///   Marshal.OffsetOf), not from the generator, so a wrong mapping fails here.
+/// - Struct sizes, field offsets, field sizes and field kinds come from the loaded types (Marshal.SizeOf,
+///   RuntimeHelpers.SizeOf, Marshal.OffsetOf, the field's type), not from the generator, so a wrong mapping fails
+///   here even when alignment keeps every offset and the total size right (a 32-bit enum bound as uint16 before a
+///   pointer, or float for int).
 /// - Vtable slots: offsetof(IVtbl, Method) == slot * sizeof(void*) for every Slots constant, sizeof(IVtbl) == Count.
 /// - Signatures: each unmanaged delegate's Invoke and each P/Invoke against the C declaration (kind and size of the
 ///   return value and of every parameter).
@@ -26,6 +28,18 @@ let interop = typeof<IUnknown>.Assembly
 let cFile = "d3d12_abi.g.c"
 let cppFile = "d3d12_sig.g.cpp"
 
+/// One field of a bound struct as the runtime lays it out.
+type FieldInfo =
+    {
+        Name: string
+        /// Marshal.OffsetOf.
+        Offset: int
+        /// RuntimeHelpers.SizeOf of the field's type.
+        Size: int
+        /// The ABI kind of the field's type (see `code`): 'w' pointer-sized, 'i' integer or enum, 'f' float, 's' struct.
+        Kind: char
+    }
+
 type StructInfo =
     {
         CName: string
@@ -33,14 +47,33 @@ type StructInfo =
         ManagedSize: int
         MarshalSize: int
         Blittable: bool
-        /// Field name and Marshal.OffsetOf, in declaration order.
-        Fields: (string * int) list
+        /// The fields in declaration order.
+        Fields: FieldInfo list
     }
 
 let private attr<'A when 'A :> Attribute> (t: Type) : 'A option =
     match t.GetCustomAttribute(typeof<'A>, false) with
     | null -> None
     | a -> Some(a :?> 'A)
+
+/// The ABI code of a .NET type in a signature: kind char and size.
+let rec code (t: Type) : char * int =
+    if t = typeof<Void> then
+        'v', 0
+    elif t = typeof<nativeint> || t = typeof<unativeint> || t.IsPointer then
+        'w', 8
+    elif t.IsEnum then
+        code (Enum.GetUnderlyingType t)
+    elif t = typeof<float32> then
+        'f', 4
+    elif t = typeof<float> then
+        'f', 8
+    elif t.IsPrimitive then
+        'i', Marshal.SizeOf t
+    elif t.IsValueType then
+        's', Marshal.SizeOf t
+    else
+        failwithf "%s cannot appear in a blittable signature" t.FullName
 
 let structs () : StructInfo list =
     interop.GetTypes()
@@ -65,7 +98,13 @@ let structs () : StructInfo list =
                     Blittable = blittable
                     Fields =
                         t.GetFields(BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic)
-                        |> Array.map (fun f -> f.Name, int (Marshal.OffsetOf(t, f.Name)))
+                        |> Array.map (fun f ->
+                            {
+                                Name = f.Name
+                                Offset = int (Marshal.OffsetOf(t, f.Name))
+                                Size = RuntimeHelpers.SizeOf f.FieldType.TypeHandle
+                                Kind = fst (code f.FieldType)
+                            })
                         |> List.ofArray
                 })
     |> Array.sortBy _.CName
@@ -111,25 +150,6 @@ let slots () =
 
         let count = lits |> List.find (fun (n, _) -> n = "Count") |> snd
         t.Name, lits |> List.filter (fun (n, _) -> n <> "Count") |> List.sortBy snd, count)
-
-/// The ABI code of a .NET type in a signature: kind char and size.
-let rec code (t: Type) : char * int =
-    if t = typeof<Void> then
-        'v', 0
-    elif t = typeof<nativeint> || t = typeof<unativeint> || t.IsPointer then
-        'w', 8
-    elif t.IsEnum then
-        code (Enum.GetUnderlyingType t)
-    elif t = typeof<float32> then
-        'f', 4
-    elif t = typeof<float> then
-        'f', 8
-    elif t.IsPrimitive then
-        'i', Marshal.SizeOf t
-    elif t.IsValueType then
-        's', Marshal.SizeOf t
-    else
-        failwithf "%s cannot appear in a blittable signature" t.FullName
 
 /// (interface, method, return code, parameter codes) for every generated delegate.
 let delegates () =
@@ -220,8 +240,9 @@ let cSource () : string * int =
     for s in ss do
         check (sprintf "LRM_SIZE(%s, %d);" s.CName s.ManagedSize)
 
-        for (f, off) in s.Fields do
-            check (sprintf "LRM_OFFSET(%s, %s, %d);" s.CName f off)
+        for f in s.Fields do
+            check (sprintf "LRM_OFFSET(%s, %s, %d);" s.CName f.Name f.Offset)
+            check (sprintf "LRM_FIELD_SIZE(%s, %s, %d);" s.CName f.Name f.Size)
 
     line ""
     let es = enums ()
@@ -281,6 +302,14 @@ let cppSource () : string * int =
         ps
         |> Array.iteri (fun i (k, s) -> check (sprintf "LRM_SIG_ARG(%s, \"%s\", %d, '%c', %d);" f name i k s))
 
+    let ss = structs ()
+    line (sprintf "// Struct fields: the kind and size of every field of %d structs." ss.Length)
+
+    for s in ss do
+        for f in s.Fields do
+            check (sprintf "LRM_FIELD_KIND(%s, %s, '%c', %d);" s.CName f.Name f.Kind f.Size)
+
+    line ""
     let ds = delegates ()
     line (sprintf "// Vtable methods: %d unmanaged delegates." ds.Length)
 
@@ -333,8 +362,37 @@ type Toolchain =
         SdkVersion: string option
     }
 
-/// The pinned Windows SDK (tools/d3d12gen/bindings.json).
-let pinnedSdk = "10.0.26100.0"
+/// The pinned Windows SDK version (sdk.version in tools/d3d12gen/bindings.json).
+let pinnedSdk () =
+    let path =
+        Path.Combine(Lrm.Testing.Env.repoRoot (), "tools", "d3d12gen", "bindings.json")
+
+    use doc = Text.Json.JsonDocument.Parse(File.ReadAllText path)
+    doc.RootElement.GetProperty("sdk").GetProperty("version").GetString()
+
+/// The Windows Kits 10 root, resolved as tools/d3d12gen does: the KitsRoot10 value the SDK installer writes, else
+/// Program Files (x86)/Windows Kits/10.
+let kitsRoot () : string =
+    let fromRegistry =
+        if OperatingSystem.IsWindows() then
+            try
+                use key =
+                    Microsoft.Win32.Registry.LocalMachine.OpenSubKey @"SOFTWARE\Microsoft\Windows Kits\Installed Roots"
+
+                match key with
+                | null -> None
+                | k ->
+                    match k.GetValue "KitsRoot10" with
+                    | :? string as s when s <> "" -> Some s
+                    | _ -> None
+            with _ ->
+                None
+        else
+            None
+
+    match fromRegistry with
+    | Some r -> r
+    | None -> Path.Combine(Environment.GetFolderPath Environment.SpecialFolder.ProgramFilesX86, "Windows Kits", "10")
 
 /// VS 2022 Build Tools (or any VS with the x64 C++ tools) through vswhere.
 let findToolchain () : Toolchain option =
@@ -363,13 +421,14 @@ let findToolchain () : Toolchain option =
         if out = "" || not (File.Exists vcvars) then
             None
         else
-            let sdkInclude = Path.Combine(pf86, "Windows Kits", "10", "Include", pinnedSdk)
+            let sdk = pinnedSdk ()
+            let sdkInclude = Path.Combine(kitsRoot (), "Include", sdk)
 
             Some
                 {
                     Vswhere = vswhere
                     Vcvars = vcvars
-                    SdkVersion = if Directory.Exists sdkInclude then Some pinnedSdk else None
+                    SdkVersion = if Directory.Exists sdkInclude then Some sdk else None
                 }
 
 type OracleRun =

@@ -41,6 +41,63 @@ let private findRepo () =
 let private sha256 (bytes: byte[]) =
     Convert.ToHexString(SHA256.HashData bytes).ToLowerInvariant()
 
+/// The Windows Kits 10 root: the KitsRoot10 value the SDK installer writes, else Program Files (x86)\Windows Kits\10.
+/// The ABI oracle (tests/Lrm.Gpu.D3D12.Interop.Tests/AbiOracle.fs) resolves it the same way.
+let kitsRoot () : string =
+    let fromRegistry =
+        if OperatingSystem.IsWindows() then
+            try
+                use key =
+                    Microsoft.Win32.Registry.LocalMachine.OpenSubKey @"SOFTWARE\Microsoft\Windows Kits\Installed Roots"
+
+                match key with
+                | null -> None
+                | k ->
+                    match k.GetValue "KitsRoot10" with
+                    | :? string as s when s <> "" -> Some s
+                    | _ -> None
+            with _ ->
+                None
+        else
+            None
+
+    match fromRegistry with
+    | Some r -> r
+    | None -> Path.Combine(Environment.GetFolderPath Environment.SpecialFolder.ProgramFilesX86, "Windows Kits", "10")
+
+/// The servicing builds of the Windows SDK installed here ("10.0.26100.7705"), from the installer's uninstall
+/// entries; empty when none is found. Only for the message when the pinned headers differ.
+let private installedSdkBuilds () : string list =
+    let prefix = "Windows Software Development Kit - Windows "
+
+    if not (OperatingSystem.IsWindows()) then
+        []
+    else
+        try
+            [
+                for view in
+                    [
+                        Microsoft.Win32.RegistryView.Registry64
+                        Microsoft.Win32.RegistryView.Registry32
+                    ] do
+                    use hklm =
+                        Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, view)
+
+                    use un = hklm.OpenSubKey @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
+
+                    if not (isNull un) then
+                        for name in un.GetSubKeyNames() do
+                            use k = un.OpenSubKey name
+
+                            match k.GetValue "DisplayName" with
+                            | :? string as n when n.StartsWith prefix -> yield n.Substring(prefix.Length).Trim()
+                            | _ -> ()
+            ]
+            |> List.distinct
+            |> List.sort
+        with _ ->
+            []
+
 /// The generated files, relative to the repo root.
 let outputs =
     [
@@ -60,7 +117,7 @@ let private run (o: Options) : int =
         let sdk =
             o.Sdk
             |> Option.orElse (Option.ofObj (Environment.GetEnvironmentVariable "LRM_WINSDK_INCLUDE"))
-            |> Option.defaultValue (Path.Combine(b.SdkRoot, b.SdkVersion))
+            |> Option.defaultWith (fun () -> Path.Combine(kitsRoot (), "Include", b.SdkVersion))
 
         let problems =
             [
@@ -80,7 +137,18 @@ let private run (o: Options) : int =
             for p in problems do
                 eprintfn "d3d12gen: %s" p
 
-            eprintfn "d3d12gen: the SDK %s headers in %s differ from the pin; nothing generated" b.SdkVersion sdk
+            let here =
+                match installedSdkBuilds () with
+                | [] -> "no Windows SDK installer entry found here"
+                | builds -> sprintf "installed here: %s" (String.concat ", " builds)
+
+            eprintfn
+                "d3d12gen: the SDK %s headers in %s differ from the pin, taken from Windows SDK %s (%s); nothing generated"
+                b.SdkVersion
+                sdk
+                b.SdkServicing
+                here
+
             4
         else
             let files =
