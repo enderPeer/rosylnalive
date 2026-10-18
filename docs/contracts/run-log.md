@@ -108,7 +108,7 @@ One telemetry record per line: compact JSON with exactly the keys `v, t, k, n, d
 
 A reader therefore types numbers by their text: a number with `.`, `e` or `E` is a Float, any other is an Int (int64).
 
-**JSON text.** Strings escape `"` and `\`, the short escapes `\b \f \n \r \t`, every other character below U+0020 as `\u00xx` (lowercase hex), and U+2028 and U+2029 as `\u2028` and `\u2029`. A lone surrogate becomes U+FFFD. Every other character is written as itself in UTF-8. Numbers use the invariant culture only.
+**JSON text.** Strings escape `"` and `\`, the short escapes `\b \f \n \r \t`, every other character below U+0020 as `\u00xx` (lowercase hex), and U+2028 and U+2029 as `\u2028` and `\u2029`. A lone surrogate becomes U+FFFD. Every other character is written as itself in UTF-8, a surrogate pair as its one 4-byte sequence. The bytes of a line are the UTF-8 of its text and nothing else: they never depend on the lines written before it or on how the writer buffers the text. Numbers use the invariant culture only.
 
 **Header and trailer.** Every events file starts with a header record and a finished one ends with a trailer, both of kind `event`:
 
@@ -155,7 +155,7 @@ run.Finish RunStatus.Ok          // trailer, close, manifest status and end time
 ```
 
 - **`RunOptions`**: `Kind`, `Title`, `Node` (default `n0`), `ExecutionClass`, `Params`, `Synthetic`, `GitSha`, `RunId` (default `RunId.fresh ()`), `RunsRoot` (default `LrmPaths.runs ()`), `Clock` (default `TelemetryClock.system`; tests and simulations pass a virtual clock) and `FlushInterval` (default 1 s).
-- **`RunContext.Join(runDir, node, class, clock)`** opens another node's file in an existing run; it refuses the creator's node id. The cluster (C1, C2) gives every process of a run its own node id under one `runId`.
+- **`RunContext.Join(runDir, options)`** opens another node's file in an existing run; it refuses the creator's node id. `JoinOptions` holds `Node`, `ExecutionClass`, `Clock`, `FlushInterval` (default 1 s), `Manifest` and `RestartOf` (see "Runs across hosts"); `Join(runDir, node, class, clock)` is the shared-folder shorthand. The cluster (C1, C2) gives every process of a run its own node id under one `runId`.
 - **`Finish status`** writes the trailer, closes the file and, on the creator, rewrites the manifest with the status and end time. Later calls do nothing. Disposing without `Finish` finishes with `aborted`.
 - **The sink never throws** (TelemetryFacade contract). A record whose name, unit or attribute keys break the naming rules (`TelemetryNames.check`) is refused and counted as `invalid`; a record that cannot be written (an I/O error, or the sink is closed) is dropped and counted as `dropped`. The trailer reports both, and so does every report.
 - **Thread-safe.** Records from any thread are serialized under one lock, which also assigns `seq`.
@@ -163,11 +163,22 @@ run.Finish RunStatus.Ok          // trailer, close, manifest status and end time
 - **Telemetry never changes values.** Nothing the sink or `RunContext` does feeds back into a computation; the cpu tier runs an instrumented computation with the no-op facade, an in-memory sink, the run-log sink and the run-log sink on a virtual clock, and requires identical bits.
 - **Determinism.** The same records with the same clock give byte-identical files under any culture. Timestamps never enter a hash.
 
+## Runs across hosts
+
+A cluster run spans hosts that share no file system and no clock. Four rules keep one run folder readable as one run.
+
+- **The manifest travels with the run.** A node on another host joins with `JoinOptions.Manifest` set to the creator's manifest (the cluster sends it when the node registers). `Join` creates `LRM_DATA/runs/<runId>/` on that host if it is missing, checks that the folder is named after the run, and writes the manifest there when the folder has none. That copy is the node's local reference only; it is never collected back, and the creator's `manifest.json` stays the one that counts.
+- **Events files are collected, never merged.** Each node writes only `events.<node>.jsonl` in its local folder. The creator's host collects every node's file into its own run folder under the same name, byte for byte, during the run or after it. Collection never rewrites, merges or reorders lines. A file collected while its node is still writing is a file with a cut-off last line and no trailer, which the reader already tolerates; a later collection replaces the copy with the longer file.
+- **A restarted process is a new node.** Events files are never reopened (`FileMode.CreateNew`), so a process that restarts takes a new id, `RunLogNames.restartedNode node attempt` = `<node>-r<attempt>` (`n1-r1`, `n1-r2`, ...), and joins with `JoinOptions.RestartOf` = its old id. Its header records `restart_of`, and `NodeLog.RestartOf` reads it back. The old node's file keeps what it wrote before the restart.
+- **One time axis: the creator's clock.** The creating node measures each other node's clock offset (for example from a ping's round trip) and records it with `RunContext.RecordClockOffset(target, offsetNs, rttNs)`: an event `run.clock_offset` in the creator's own file, with `target` (the node), `offset_ns` (the target's clock minus the creator's, in ns) and `rtt_ns` (the round trip the measurement took, its uncertainty). Only the creator may record offsets; the reader reports offsets in any other file as a problem and ignores them. The reader subtracts the last offset recorded for a node from every `TimeNs` of that node, in `load` and `stream`, and reports it as `NodeLog.ClockOffsetNs`. A node with no recorded offset keeps its own times. GPU timestamps (`$gpu_start`) are never shifted: they belong to their device's own domain.
+
 ## Reading: RunLogReader
 
-- `RunLogReader.load dir` returns a `RunLog`: the manifest, one `NodeLog` per events file (ordered by node id, ordinal) and every data record as a typed `RunEvent`, nodes in id order and each node in seq order. Structural records (`run.node`, `run.end`) are not in `Events`; they fill the `NodeLog` (role, execution class, status, dropped and invalid counts). `RunLog.ClassOf node` is the node's class from its header, else the manifest's for the creator.
+- `RunLogReader.load dir` returns a `RunLog`: the manifest, one `NodeLog` per events file (ordered by node id, ordinal) and every data record as a typed `RunEvent`, nodes in id order and each node in seq order, times on the creator's clock. Structural records (`run.node`, `run.end`, `run.clock_offset`) are not in `Events`; they fill the `NodeLog` (role, execution class, status, dropped and invalid counts, `RestartOf`, `ClockOffsetNs`). `RunLog.ClassOf node` is the node's class from its header, else the manifest's for the creator.
 - `RunLogReader.stream dir` streams the same data records without holding them, and `readLines path` streams one file as (line number, record or error).
-- **Tolerance.** Only a missing or invalid manifest is an error. Inside an events file, a bad line is skipped and reported, and the rest is read. `RunLog.Problems` lists, per node: malformed lines (with the reason), a cut-off last line, a `seq` that skips (records lost), a record of another node, a missing or misplaced header, a missing trailer, a trailer whose count disagrees, records after the trailer, and non-zero dropped or invalid counts. Every report prints them.
+- **Bytes first.** A file is split into lines on LF bytes, and each line is checked as UTF-8 on its own. A line with invalid UTF-8 (a stray byte, or a file cut inside a multi-byte character) is a problem of that line, `invalid UTF-8`; it never stops the read. A UTF-8 byte order mark at the start of the file is skipped.
+- **Tolerance.** Only a missing or invalid manifest is an error. Inside an events file, a bad line is skipped and reported, and the rest is read. `RunLog.Problems` lists, per node: malformed lines (with the reason), invalid UTF-8, a cut-off last line, a `seq` that skips (records lost), a record of another node, a missing or misplaced header, a missing trailer, a trailer whose count disagrees, records after the trailer, clock offsets from a node that did not create the run, and non-zero dropped or invalid counts. Every report prints them.
+- **Reasons in fixed words.** A reason never quotes the .NET runtime's own message, which changes with its version and UI culture: a JSON syntax error is `malformed JSON at byte <n>` (`at line <l>, byte <n>` in a manifest, lines from 1), a bad number `bad number`, a decoding error `invalid UTF-8`. The same damaged log gives the same problems, and so the same report bytes, on every machine.
 - **Strict line parsing** (`EventLine.decode`): every key present exactly once, no other key, `v` = 1, a known kind, integer `t`, `d` and `seq`, `$span` exactly on span records and `$gpu_start` exactly on gpu records, no other `$` key, no duplicate attribute, and attribute values of the four types only.
 - `RunEvent` offers `TryStr`, `TryInt`, `TryFloat` (an Int widens), `TryBool` and `TryText` (any value as display text).
 
@@ -237,6 +248,7 @@ Rows are sorted by node, component, stage and layer (ordinal; no layer first). `
 | Name | Kind | Emitted by |
 | --- | --- | --- |
 | `run.node`, `run.end` | event | `RunContext` only: the header and trailer of every events file |
+| `run.clock_offset` | event | `RunContext.RecordClockOffset`, on the creating node only |
 | `report.render` | span | `Lrm.Reports`, one per rendered report |
 | `telemetry.*` | gauge | Telemetry's own measurements (bench tier) |
 
@@ -250,6 +262,10 @@ The cpu tier of `Lrm.Telemetry.Tests` checks:
 - the execution class and driver in the manifest and the node header, joined nodes, and that folders and events files are never overwritten;
 - an aborted run, 8 threads writing 16,000 records with gapless `seq`, and a sink that never throws (invalid names, writes after close, a failing stream);
 - that the reader reports a cut-off line, a `seq` gap, a malformed line and a missing trailer, and keeps the good records;
+- that a surrogate pair at any chunk boundary of the sink's buffer, after any earlier line, is written as the line's own UTF-8;
+- that a file cut inside a multi-byte character, or holding a stray byte, reads with a per-line problem instead of an exception;
+- that malformed-JSON reasons are fixed words, the same under de-DE and tr-TR;
+- that clock offsets put a joined node on the creator's clock in `load` and `stream`, that only the creator records them, and that a node on another host joins a copy of the run folder whose collected events file reads back with its `restart_of`;
 - the FLOP registry vectors, attribution with self time, GPU time and every meter unit, arena peaks, and `Metering.op`;
 - that telemetry on or off changes no value, and that the same records on a virtual clock give byte-identical files under de-DE.
 

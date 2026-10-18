@@ -238,6 +238,14 @@ module EventLine =
 
     let private expectedKeys = [ "v"; "t"; "k"; "n"; "d"; "x"; "u"; "node"; "seq"; "a" ]
 
+    /// The reason for a JSON syntax error, in fixed words: the runtime's own message changes with its version and UI
+    /// culture, and these reasons end up in reports.
+    let syntaxError (e: JsonException) =
+        if e.BytePositionInLine.HasValue then
+            "malformed JSON at byte " + Invariant.i64 e.BytePositionInLine.Value
+        else
+            "malformed JSON"
+
     /// Parses one line. Every key must be present exactly once, "v" must be 1, and the structural attributes must match
     /// the kind: $span on span records only, $gpu_start on gpu records only.
     let decode (line: string) : Result<RunEvent, string> =
@@ -328,5 +336,5 @@ module EventLine =
                 }
         with
         | LineError msg -> Error msg
-        | :? JsonException as e -> Error("malformed JSON: " + e.Message)
-        | :? FormatException as e -> Error("bad number: " + e.Message)
+        | :? JsonException as e -> Error(syntaxError e)
+        | :? FormatException -> Error "bad number"
