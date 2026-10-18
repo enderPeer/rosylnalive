@@ -1,11 +1,40 @@
 {
   "schema": "lrm.ownership/1",
-  "about": "OwnershipAndContractChange contract: each workstream family owns the paths matched by its globs; slices (a/b ids) share their family's paths. A leading '!' excludes paths from that family. '**' matches any number of path segments, '*' matches within one segment. Every tracked file belongs to exactly one family. Branches are ws/<id>-<slug>, ws/<id>-fix-<slug> and int/<slug>; the hygiene job (S0b) fails edits outside the branch's family. The integrator (int/*) may touch any path. Each family writes its contract texts as docs/contracts/<name>.md (plan section 5), its ADRs as docs/decisions/<family>-*.md, and its generated reports under its own docs/reports/ folder; wave-exit reports (docs/reports/waves/**) belong to the integrator (S0). There are no mid-plan handovers.",
+  "about": "OwnershipAndContractChange contract (docs/contracts/ownership-and-contract-change.md): each workstream family owns the paths matched by its globs; slices (a/b ids) share their family's paths. A leading '!' excludes paths from that family. '**/' matches zero or more path segments, a trailing '**' anything, '*' matches within one segment and '?' one character. Every tracked file belongs to exactly one family. Branches are ws/<id>-<slug>, ws/<id>-fix-<slug> and int/<slug>; the hygiene job (tools/ci/check-ownership.ps1) fails edits outside the branch's family. The integrator (int/*) may touch any path; 'integrators' lists the GitHub logins whose int/ PRs and exception labels count in CI. A branch is judged by this file as it is at its merge base, never by its own copy, and only family S0 and int/ branches change the governance paths (this file, tools/ci/** and .github/**). 'shared' lists paths that any family may append to, at the end, without owning them. 'contract' names the contract files (tools/ci/check-contract-label.ps1), the contract-change label they need once the freeze tag exists, and the exception label with which the integrator accepts a reviewed out-of-path edit. Each family writes its contract texts as docs/contracts/<name>.md (plan section 5), its ADRs as docs/decisions/<family>-*.md, and its generated reports under its own docs/reports/ folder; wave-exit reports (docs/reports/waves/**) belong to the integrator (S0). There are no mid-plan handovers.",
   "branches": [
     "ws/<id>-<slug>",
     "ws/<id>-fix-<slug>",
     "int/<slug>"
   ],
+  "integrators": [
+    "enderPeer"
+  ],
+  "shared": [
+    {
+      "path": "docs/contracts/CHANGELOG.md",
+      "mode": "append",
+      "why": "every contract-change PR adds its own entry"
+    }
+  ],
+  "contract": {
+    "label": "contract-change",
+    "exceptionLabel": "ownership-exception",
+    "freezeTag": "contracts-v1",
+    "files": [
+      "docs/contracts/*.md",
+      "!docs/contracts/README.md",
+      "!docs/contracts/CHANGELOG.md",
+      "src/Lrm.Core/**",
+      "src/Lrm.Gpu.Core/**",
+      "src/Lrm.Shaders/hlsl/**/*.hlsli",
+      "src/Lrm.Shaders/Lrm.Shaders.lrm.targets",
+      "src/Lrm.Shaders.Build/**",
+      "src/Lrm.Tensor/**",
+      "src/Lrm.Cluster/Protocol*.fs",
+      "**/*.schema.json",
+      "goldens/**/tolerances.json"
+    ]
+  },
   "families": {
     "S0": {
       "slices": [

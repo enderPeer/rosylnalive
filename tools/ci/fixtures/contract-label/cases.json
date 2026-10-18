@@ -1,0 +1,95 @@
+{
+  "about": "Contract-label fixtures, run by tools/ci/test-hygiene.ps1 against docs/ownership.json. frozen: the freeze tag (contracts-v1) exists. changelogAdded: the lines the PR adds to docs/contracts/CHANGELOG.md. 'labels' absent means the labels are unknown.",
+  "cases": [
+    {
+      "name": "before-freeze",
+      "why": "positive control: before contracts-v1, contract texts change without the label",
+      "frozen": false,
+      "changes": [ { "status": "M", "path": "docs/contracts/lrm-core.md" } ],
+      "labels": [],
+      "expect": "pass"
+    },
+    {
+      "name": "frozen-text-without-label",
+      "why": "after contracts-v1, a contract text changes only in a contract-change PR",
+      "frozen": true,
+      "changes": [ { "status": "M", "path": "docs/contracts/lrm-core.md" } ],
+      "labels": [],
+      "expect": "fail",
+      "match": [ "^contract files changed after contracts-v1 without the 'contract-change' label: docs/contracts/lrm-core\\.md$" ]
+    },
+    {
+      "name": "frozen-code-without-label",
+      "why": "contract code counts too: Lrm.Core, Gpu.Core with its generated files, Shaders include files",
+      "frozen": true,
+      "changes": [ { "status": "M", "path": "src/Lrm.Core/Canonical.fs" }, { "status": "M", "path": "src/Lrm.Gpu.Core/Kernels.g.fs" }, { "status": "A", "path": "src/Lrm.Shaders/hlsl/include/lrm_args.g.hlsli" } ],
+      "labels": [],
+      "expect": "fail",
+      "match": [ "without the 'contract-change' label: src/Lrm\\.Core/Canonical\\.fs, src/Lrm\\.Gpu\\.Core/Kernels\\.g\\.fs, src/Lrm\\.Shaders/hlsl/include/lrm_args\\.g\\.hlsli$" ]
+    },
+    {
+      "name": "frozen-tolerances-without-label",
+      "why": "tolerances.json and Cluster Protocol*.fs are contract files",
+      "frozen": true,
+      "changes": [ { "status": "M", "path": "goldens/qwen3-0.6b/g1/tolerances.json" }, { "status": "M", "path": "src/Lrm.Cluster/ProtocolFrames.fs" } ],
+      "labels": [],
+      "expect": "fail",
+      "match": [ "goldens/qwen3-0\\.6b/g1/tolerances\\.json, src/Lrm\\.Cluster/ProtocolFrames\\.fs$" ]
+    },
+    {
+      "name": "frozen-non-contract",
+      "why": "positive control: kernels, cluster internals and the contract index are not contract files",
+      "frozen": true,
+      "changes": [ { "status": "A", "path": "src/Lrm.Shaders/hlsl/kernels/basic/add.hlsl" }, { "status": "M", "path": "src/Lrm.Cluster/Coordinator.fs" }, { "status": "M", "path": "docs/contracts/README.md" } ],
+      "labels": [],
+      "expect": "pass"
+    },
+    {
+      "name": "label-without-changelog",
+      "why": "a contract-change PR needs a CHANGELOG entry",
+      "frozen": true,
+      "changes": [ { "status": "M", "path": "docs/contracts/lrm-core.md" } ],
+      "labels": [ "contract-change" ],
+      "expect": "fail",
+      "match": [ "^a 'contract-change' PR needs an entry in docs/contracts/CHANGELOG\\.md" ]
+    },
+    {
+      "name": "changelog-misses-a-text",
+      "why": "every contract text the PR touches is named in the added CHANGELOG lines",
+      "frozen": true,
+      "changes": [ { "status": "M", "path": "docs/contracts/lrm-core.md" }, { "status": "M", "path": "docs/contracts/execution-class.md" }, { "status": "M", "path": "docs/contracts/CHANGELOG.md", "added": 2, "deleted": 0 } ],
+      "labels": [ "contract-change" ],
+      "changelogAdded": [ "", "- **LrmCore v2** (`lrm-core.md`, S1): DType code 9 = U16. Vectors: C2 gains a U16 row." ],
+      "expect": "fail",
+      "match": [ "^docs/contracts/CHANGELOG\\.md: no added line names execution-class\\.md, which this PR changes$" ],
+      "errors": 1
+    },
+    {
+      "name": "complete-contract-change",
+      "why": "positive control: label, contract change and a CHANGELOG entry naming it",
+      "frozen": true,
+      "changes": [ { "status": "M", "path": "docs/contracts/lrm-core.md" }, { "status": "M", "path": "src/Lrm.Core/DType.fs" }, { "status": "M", "path": "docs/contracts/CHANGELOG.md", "added": 2, "deleted": 0 } ],
+      "labels": [ "contract-change" ],
+      "changelogAdded": [ "", "- **LrmCore v2** (`lrm-core.md`, S1): DType code 9 = U16. Vectors: C2 gains a U16 row." ],
+      "expect": "pass"
+    },
+    {
+      "name": "label-without-contract-change",
+      "why": "the label marks contract changes only",
+      "frozen": true,
+      "changes": [ { "status": "M", "path": "src/Lrm.Cluster/Coordinator.fs" }, { "status": "M", "path": "docs/contracts/CHANGELOG.md", "added": 1, "deleted": 0 } ],
+      "labels": [ "contract-change" ],
+      "changelogAdded": [ "- nothing" ],
+      "expect": "fail",
+      "match": [ "^the 'contract-change' label is set, but no contract file changed; remove the label$" ]
+    },
+    {
+      "name": "labels-unknown",
+      "why": "outside a PR the label rule is reported as a warning, not enforced",
+      "frozen": true,
+      "changes": [ { "status": "M", "path": "docs/contracts/lrm-core.md" } ],
+      "expect": "pass",
+      "warn": [ "^PR labels are unknown \\(not a pull request\\), so the 'contract-change' label was not checked for: docs/contracts/lrm-core\\.md$" ]
+    }
+  ]
+}

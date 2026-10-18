@@ -1,0 +1,51 @@
+{
+  "about": "EOL fixtures, run by tools/ci/test-hygiene.ps1. listing: lines of `git ls-files --eol` (info, a tab, the path).",
+  "cases": [
+    {
+      "name": "clean-tree",
+      "why": "positive control: LF text, an empty file, a declared binary and a CRLF .cmd checkout",
+      "listing": [
+        "i/lf    w/lf    attr/text=auto eol=lf \tsrc/Lrm.Core/Hash.fs",
+        "i/none  w/none  attr/text=auto eol=lf \tgoldens/tiny/g1/model/REVISION",
+        "i/-text w/-text attr/-text            \troslyn-research-2026-10-17.zip",
+        "i/lf    w/crlf  attr/text eol=crlf    \ttools/bootstrap/vcvars.cmd"
+      ],
+      "expect": "pass"
+    },
+    {
+      "name": "crlf-in-index",
+      "why": "the repository stores LF only; a CRLF blob fails",
+      "listing": [ "i/crlf  w/crlf  attr/text=auto eol=lf \ttools/goldens/make_tiny.py" ],
+      "expect": "fail",
+      "match": [ "^tools/goldens/make_tiny\\.py has crlf line endings in the index" ]
+    },
+    {
+      "name": "mixed-in-index",
+      "why": "mixed line endings fail too",
+      "listing": [ "i/mixed w/mixed attr/text=auto eol=lf \tsrc/Lrm.Tensor/Shape.fs" ],
+      "expect": "fail",
+      "match": [ "^src/Lrm\\.Tensor/Shape\\.fs has mixed line endings in the index" ]
+    },
+    {
+      "name": "no-text-attribute",
+      "why": ".gitattributes must give every file a text attribute",
+      "listing": [ "i/lf    w/lf    attr/                 \tsrc/Lrm.Core/Hash.fs" ],
+      "expect": "fail",
+      "match": [ "^src/Lrm\\.Core/Hash\\.fs has no text attribute" ]
+    },
+    {
+      "name": "undeclared-binary",
+      "why": "binary content must be declared binary in .gitattributes",
+      "listing": [ "i/-text w/-text attr/text=auto eol=lf \tspikes/probes/bindtest/explicit.dxbc" ],
+      "expect": "fail",
+      "match": [ "^spikes/probes/bindtest/explicit\\.dxbc holds binary content but \\.gitattributes does not mark it binary; add a rule such as '\\*\\.dxbc binary'$" ]
+    },
+    {
+      "name": "crlf-checkout-only",
+      "why": "CRLF in the working tree alone is a warning, not an error",
+      "listing": [ "i/lf    w/crlf  attr/text=auto eol=lf \tspikes/probes/nfc.fsx" ],
+      "expect": "pass",
+      "warn": [ "^spikes/probes/nfc\\.fsx has crlf line endings in the working tree only" ]
+    }
+  ]
+}
