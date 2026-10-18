@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="540" viewBox="0 0 720 540" role="img" aria-labelledby="goldens-files-title goldens-files-desc">
+<title id="goldens-files-title">Committed bytes per file</title>
+<desc id="goldens-files-desc">Bar chart of bytes for 16 file values, 1 series.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="540" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="539" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Committed bytes per file</text>
+<text class="t2" x="16" y="45" font-size="12">Every file of the set; a committed golden file is at most 2 MiB</text>
+<line class="grid" x1="266" y1="78" x2="266" y2="494" stroke-width="1"/>
+<line class="grid" x1="390.67" y1="78" x2="390.67" y2="494" stroke-width="1"/>
+<line class="grid" x1="515.33" y1="78" x2="515.33" y2="494" stroke-width="1"/>
+<line class="grid" x1="640" y1="78" x2="640" y2="494" stroke-width="1"/>
+<text class="t3" x="266" y="511" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="390.67" y="511" font-size="11" text-anchor="middle">0.5 MiB</text>
+<text class="t3" x="515.33" y="511" font-size="11" text-anchor="middle">1.0 MiB</text>
+<text class="t3" x="640" y="511" font-size="11" text-anchor="middle">1.5 MiB</text>
+<text class="t3" x="266" y="68" font-size="11" text-anchor="start">file</text>
+<text class="t3" x="453" y="530" font-size="11" text-anchor="middle">bytes</text>
+<text class="t2" x="258" y="95" font-size="12" text-anchor="end">goldens/tiny/g1/adamw_f32.safetensors</text>
+<path class="f0" d="M266 83H592.45Q596.45 83 596.45 87V95Q596.45 99 592.45 99H266Z"><title>goldens/tiny/g1/adamw_f32.safetensors, bytes: 1.33 MiB</title></path>
+<text class="t2" x="602.45" y="95" font-size="11">1.33 MiB</text>
+<text class="t2" x="258" y="121" font-size="12" text-anchor="end">goldens/tiny/g1/fwd_f32.p0.safetensors</text>
+<path class="f0" d="M266 109H307.13Q311.13 109 311.13 113V121Q311.13 125 307.13 125H266Z"><title>goldens/tiny/g1/fwd_f32.p0.safetensors, bytes: 185.34 KiB</title></path>
+<text class="t2" x="317.13" y="121" font-size="11">185.34 KiB</text>
+<text class="t2" x="258" y="147" font-size="12" text-anchor="end">goldens/tiny/g1/fwd_f32.p1.safetensors</text>
+<path class="f0" d="M266 135H268.08Q270.17 135 270.17 137.08V148.92Q270.17 151 268.08 151H266Z"><title>goldens/tiny/g1/fwd_f32.p1.safetensors, bytes: 17.12 KiB</title></path>
+<text class="t2" x="276.17" y="147" font-size="11">17.12 KiB</text>
+<text class="t2" x="258" y="173" font-size="12" text-anchor="end">goldens/tiny/g1/fwd_f32.p2.safetensors</text>
+<path class="f0" d="M266 161H279.23Q283.23 161 283.23 165V173Q283.23 177 279.23 177H266Z"><title>goldens/tiny/g1/fwd_f32.p2.safetensors, bytes: 70.76 KiB</title></path>
+<text class="t2" x="289.23" y="173" font-size="11">70.76 KiB</text>
+<text class="t2" x="258" y="199" font-size="12" text-anchor="end">goldens/tiny/g1/fwd_f64p.p0.safetensors</text>
+<path class="f0" d="M266 187H351.45Q355.45 187 355.45 191V199Q355.45 203 351.45 203H266Z"><title>goldens/tiny/g1/fwd_f64p.p0.safetensors, bytes: 367.36 KiB</title></path>
+<text class="t2" x="361.45" y="199" font-size="11">367.36 KiB</text>
+<text class="t2" x="258" y="225" font-size="12" text-anchor="end">goldens/tiny/g1/fwd_f64p.p1.safetensors</text>
+<path class="f0" d="M266 213H269.79Q273.58 213 273.58 216.79V225.21Q273.58 229 269.79 229H266Z"><title>goldens/tiny/g1/fwd_f64p.p1.safetensors, bytes: 31.15 KiB</title></path>
+<text class="t2" x="279.58" y="225" font-size="11">31.15 KiB</text>
+<text class="t2" x="258" y="251" font-size="12" text-anchor="end">goldens/tiny/g1/fwd_f64p.p2.safetensors</text>
+<path class="f0" d="M266 239H296.27Q300.27 239 300.27 243V251Q300.27 255 296.27 255H266Z"><title>goldens/tiny/g1/fwd_f64p.p2.safetensors, bytes: 140.77 KiB</title></path>
+<text class="t2" x="306.27" y="251" font-size="11">140.77 KiB</text>
+<text class="t2" x="258" y="277" font-size="12" text-anchor="end">goldens/tiny/g1/grads_f32.safetensors</text>
+<path class="f0" d="M266 265H372.13Q376.13 265 376.13 269V277Q376.13 281 372.13 281H266Z"><title>goldens/tiny/g1/grads_f32.safetensors, bytes: 452.30 KiB</title></path>
+<text class="t2" x="382.13" y="277" font-size="11">452.30 KiB</text>
+<text class="t2" x="258" y="303" font-size="12" text-anchor="end">goldens/tiny/g1/grads_f64p.safetensors</text>
+<path class="f0" d="M266 291H481.64Q485.64 291 485.64 295V303Q485.64 307 481.64 307H266Z"><title>goldens/tiny/g1/grads_f64p.safetensors, bytes: 902.06 KiB</title></path>
+<text class="t2" x="491.64" y="303" font-size="11">902.06 KiB</text>
+<text class="t2" x="258" y="329" font-size="12" text-anchor="end">goldens/tiny/g1/greedy.safetensors</text>
+<path class="f0" d="M266 317H266.57Q267.14 317 267.14 317.57V332.43Q267.14 333 266.57 333H266Z"><title>goldens/tiny/g1/greedy.safetensors, bytes: 4.66 KiB</title></path>
+<text class="t2" x="273.14" y="329" font-size="11">4.66 KiB</text>
+<text class="t2" x="258" y="355" font-size="12" text-anchor="end">goldens/tiny/g1/manifest.json</text>
+<path class="f0" d="M266 343H270.09Q274.09 343 274.09 347V355Q274.09 359 270.09 359H266Z"><title>goldens/tiny/g1/manifest.json, bytes: 33.21 KiB</title></path>
+<text class="t2" x="280.09" y="355" font-size="11">33.21 KiB</text>
+<text class="t2" x="258" y="381" font-size="12" text-anchor="end">goldens/tiny/g1/model/REVISION</text>
+<path class="f0" d="M266 369H266Q266 369 266 369V385Q266 385 266 385H266Z"><title>goldens/tiny/g1/model/REVISION, bytes: 14 B</title></path>
+<text class="t2" x="272" y="381" font-size="11">14 B</text>
+<text class="t2" x="258" y="407" font-size="12" text-anchor="end">goldens/tiny/g1/model/SHA256SUMS</text>
+<path class="f0" d="M266 395H266.03Q266.06 395 266.06 395.03V410.97Q266.06 411 266.03 411H266Z"><title>goldens/tiny/g1/model/SHA256SUMS, bytes: 237 B</title></path>
+<text class="t2" x="272.06" y="407" font-size="11">237 B</text>
+<text class="t2" x="258" y="433" font-size="12" text-anchor="end">goldens/tiny/g1/model/config.json</text>
+<path class="f0" d="M266 421H266.08Q266.17 421 266.17 421.08V436.92Q266.17 437 266.08 437H266Z"><title>goldens/tiny/g1/model/config.json, bytes: 705 B</title></path>
+<text class="t2" x="272.17" y="433" font-size="11">705 B</text>
+<text class="t2" x="258" y="459" font-size="12" text-anchor="end">goldens/tiny/g1/model/model.safetenso…</text>
+<path class="f0" d="M266 447H317.35Q321.35 447 321.35 451V459Q321.35 463 317.35 463H266Z"><title>goldens/tiny/g1/model/model.safetensors, bytes: 227.30 KiB</title></path>
+<text class="t2" x="327.35" y="459" font-size="11">227.30 KiB</text>
+<text class="t2" x="258" y="485" font-size="12" text-anchor="end">goldens/tiny/g1/rope.safetensors</text>
+<path class="f0" d="M266 473H277.67Q281.67 473 281.67 477V485Q281.67 489 277.67 489H266Z"><title>goldens/tiny/g1/rope.safetensors, bytes: 64.38 KiB</title></path>
+<text class="t2" x="287.67" y="485" font-size="11">64.38 KiB</text>
+<line class="axis" x1="266" y1="78" x2="266" y2="78" stroke-width="1"/>
+<line class="axis" x1="266" y1="78" x2="266" y2="494" stroke-width="1"/>
+</svg>

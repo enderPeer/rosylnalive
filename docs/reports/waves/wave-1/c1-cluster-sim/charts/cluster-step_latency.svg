@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="cluster-step_latency-title cluster-step_latency-desc">
+<title id="cluster-step_latency-title">End-to-end step latency</title>
+<desc id="cluster-step_latency-desc">Line chart of latency against step: 3 series, 24 points.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="379" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">End-to-end step latency</text>
+<text class="t2" x="16" y="45" font-size="12">Per lane: from the assignment of stage 0 to the acceptance of stage 2</text>
+<rect class="f0" x="16" y="61" width="16" height="2.5" rx="1"/>
+<text class="t2" x="38" y="66" font-size="12">lane 0</text>
+<rect class="f1" x="90.32" y="61" width="16" height="2.5" rx="1"/>
+<text class="t2" x="112.32" y="66" font-size="12">lane 1</text>
+<rect class="f2" x="164.64" y="61" width="16" height="2.5" rx="1"/>
+<text class="t2" x="186.64" y="66" font-size="12">lane 2</text>
+<line class="grid" x1="63.4" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="55.4" y="338" font-size="11" text-anchor="end">0</text>
+<line class="grid" x1="63.4" y1="275" x2="696" y2="275" stroke-width="1"/>
+<text class="t3" x="55.4" y="279" font-size="11" text-anchor="end">100 ms</text>
+<line class="grid" x1="63.4" y1="216" x2="696" y2="216" stroke-width="1"/>
+<text class="t3" x="55.4" y="220" font-size="11" text-anchor="end">200 ms</text>
+<line class="grid" x1="63.4" y1="157" x2="696" y2="157" stroke-width="1"/>
+<text class="t3" x="55.4" y="161" font-size="11" text-anchor="end">300 ms</text>
+<line class="grid" x1="63.4" y1="98" x2="696" y2="98" stroke-width="1"/>
+<text class="t3" x="55.4" y="102" font-size="11" text-anchor="end">400 ms</text>
+<line class="ref" x1="63.4" y1="312.17" x2="696" y2="312.17" stroke-width="1" stroke-opacity="0.7"><title>median</title></line>
+<text class="t2" x="692" y="307.17" font-size="10" text-anchor="end">median</text>
+<text class="t3" x="63.4" y="351" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="244.14" y="351" font-size="11" text-anchor="middle">2</text>
+<text class="t3" x="424.89" y="351" font-size="11" text-anchor="middle">4</text>
+<text class="t3" x="605.63" y="351" font-size="11" text-anchor="middle">6</text>
+<line class="axis" x1="63.4" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="63.4" y="88" font-size="11" text-anchor="start">latency</text>
+<text class="t3" x="379.7" y="370" font-size="11" text-anchor="middle">step</text>
+<path class="line s0" d="M63.4 302.62 L153.77 313.42 L244.14 311.89 L334.51 313.03 L424.89 312.96 L515.26 115.84 L605.63 308.85 L696 232.17"><title>lane 0</title></path>
+<path class="line s1" d="M63.4 308.82 L153.77 313.26 L244.14 312.84 L334.51 313.07 L424.89 312.46 L515.26 104.11 L605.63 275.7 L696 264.38"><title>lane 1</title></path>
+<path class="line s2" d="M63.4 314.88 L153.77 314.09 L244.14 312.96 L334.51 313.4 L424.89 311.52 L515.26 313.4 L605.63 112.53 L696 272.33"><title>lane 2</title></path>
+<circle class="f0 ring" cx="63.4" cy="302.62" r="4" stroke-width="2"><title>lane 0, step 0: 53.18 ms</title></circle>
+<circle class="f0 ring" cx="153.77" cy="313.42" r="4" stroke-width="2"><title>lane 0, step 1: 34.88 ms</title></circle>
+<circle class="f0 ring" cx="244.14" cy="311.89" r="4" stroke-width="2"><title>lane 0, step 2: 37.48 ms</title></circle>
+<circle class="f0 ring" cx="334.51" cy="313.03" r="4" stroke-width="2"><title>lane 0, step 3: 35.54 ms</title></circle>
+<circle class="f0 ring" cx="424.89" cy="312.96" r="4" stroke-width="2"><title>lane 0, step 4: 35.66 ms</title></circle>
+<circle class="f0 ring" cx="515.26" cy="115.84" r="4" stroke-width="2"><title>lane 0, step 5: 369.76 ms</title></circle>
+<circle class="f0 ring" cx="605.63" cy="308.85" r="4" stroke-width="2"><title>lane 0, step 6: 42.63 ms</title></circle>
+<circle class="f0 ring" cx="696" cy="232.17" r="4" stroke-width="2"><title>lane 0, step 7: 172.59 ms</title></circle>
+<circle class="f1 ring" cx="63.4" cy="308.82" r="4" stroke-width="2"><title>lane 1, step 0: 42.68 ms</title></circle>
+<circle class="f1 ring" cx="153.77" cy="313.26" r="4" stroke-width="2"><title>lane 1, step 1: 35.16 ms</title></circle>
+<circle class="f1 ring" cx="244.14" cy="312.84" r="4" stroke-width="2"><title>lane 1, step 2: 35.86 ms</title></circle>
+<circle class="f1 ring" cx="334.51" cy="313.07" r="4" stroke-width="2"><title>lane 1, step 3: 35.48 ms</title></circle>
+<circle class="f1 ring" cx="424.89" cy="312.46" r="4" stroke-width="2"><title>lane 1, step 4: 36.51 ms</title></circle>
+<circle class="f1 ring" cx="515.26" cy="104.11" r="4" stroke-width="2"><title>lane 1, step 5: 389.65 ms</title></circle>
+<circle class="f1 ring" cx="605.63" cy="275.7" r="4" stroke-width="2"><title>lane 1, step 6: 98.82 ms</title></circle>
+<circle class="f1 ring" cx="696" cy="264.38" r="4" stroke-width="2"><title>lane 1, step 7: 118.00 ms</title></circle>
+<circle class="f2 ring" cx="63.4" cy="314.88" r="4" stroke-width="2"><title>lane 2, step 0: 32.41 ms</title></circle>
+<circle class="f2 ring" cx="153.77" cy="314.09" r="4" stroke-width="2"><title>lane 2, step 1: 33.75 ms</title></circle>
+<circle class="f2 ring" cx="244.14" cy="312.96" r="4" stroke-width="2"><title>lane 2, step 2: 35.66 ms</title></circle>
+<circle class="f2 ring" cx="334.51" cy="313.4" r="4" stroke-width="2"><title>lane 2, step 3: 34.92 ms</title></circle>
+<circle class="f2 ring" cx="424.89" cy="311.52" r="4" stroke-width="2"><title>lane 2, step 4: 38.10 ms</title></circle>
+<circle class="f2 ring" cx="515.26" cy="313.4" r="4" stroke-width="2"><title>lane 2, step 5: 34.92 ms</title></circle>
+<circle class="f2 ring" cx="605.63" cy="112.53" r="4" stroke-width="2"><title>lane 2, step 6: 375.38 ms</title></circle>
+<circle class="f2 ring" cx="696" cy="272.33" r="4" stroke-width="2"><title>lane 2, step 7: 104.52 ms</title></circle>
+</svg>
