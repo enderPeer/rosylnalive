@@ -29,7 +29,6 @@ type D3D12Backend private (info: DeviceInfo, options: DeviceOptions, ctx: Device
     let backend = ExecutionBackend.D3D12
     let backendAttr = Attr.str TelemetryKeys.Backend (ExecutionBackend.name backend)
     let mutable heap: D3D12Heap option = None
-    let mutable view: IGpuHeap option = None
     let mutable kernels: D3D12Kernels option = None
     let mutable klass: ExecutionClass option = None
     let mutable denormals: (Fp32DenormalMode * uint32[]) option = None
@@ -334,9 +333,7 @@ type D3D12Backend private (info: DeviceInfo, options: DeviceOptions, ctx: Device
             let h = new D3D12Heap(ctx, layout, "lrm.d3d12.heap")
             heap <- Some h
             GpuTelemetry.heapCreated backend layout
-            let v = new D3D12HeapView(this, h) :> IGpuHeap
-            view <- Some v
-            v
+            new D3D12HeapView(this, h) :> IGpuHeap
 
         member this.LoadKernels(shaders: ShaderSet) =
             checkLive ()
