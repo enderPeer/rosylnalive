@@ -16,29 +16,38 @@ type GpuExecOptions =
         /// The most multiply-adds (rows · n · k) one matmul dispatch covers. The default is lm_head of Qwen3-0.6B at
         /// 64 rows, 64 · 151,936 · 1,024 (ADR K2-0001, the lm_head row cap).
         MatMulMacsPerDispatch: int64
+        /// The most rows a forward of the stage with the head takes with HeadRows.All: its logits [rows, vocab] are
+        /// planned at min(T, MaxLogitsRows, the rows one 1 GiB page holds), and BeginForward refuses an All-head forward
+        /// of more rows. HeadRows.Last (greedy prefill) and single-row forwards run at every T the plan holds. A plan that
+        /// only ever reads the last row (greedy decoding) sets 1 and keeps no [T, vocab] logits.
+        MaxLogitsRows: int
         /// True: the ops own the backend, and Dispose (or a failed create) disposes it, with its heap and weights.
         OwnsBackend: bool
     }
 
-    /// Timers on, 2^20 query-key pairs per attention dispatch, the lm_head cap per matmul dispatch, and the ops own
-    /// the backend.
+    /// Timers on, 2^20 query-key pairs per attention dispatch, the lm_head cap per matmul dispatch, All-head logits up
+    /// to what one page holds, and the ops own the backend.
     static member Default =
         {
             TimeDispatches = true
             AttentionPairsPerDispatch = 1L <<< 20
             MatMulMacsPerDispatch = 64L * 151936L * 1024L
+            MaxLogitsRows = Int32.MaxValue
             OwnsBackend = true
         }
 
 [<RequireQualifiedAccess>]
 module GpuExecOptions =
-    /// Raises ArgumentException unless both budgets are at least 1.
+    /// Raises ArgumentException unless both budgets and MaxLogitsRows are at least 1.
     let validate (o: GpuExecOptions) =
         if o.AttentionPairsPerDispatch < 1L then
             invalidArg "options" (sprintf "%d query-key pairs per attention dispatch" o.AttentionPairsPerDispatch)
 
         if o.MatMulMacsPerDispatch < 1L then
             invalidArg "options" (sprintf "%d multiply-adds per matmul dispatch" o.MatMulMacsPerDispatch)
+
+        if o.MaxLogitsRows < 1 then
+            invalidArg "options" (sprintf "%d logits rows for HeadRows.All" o.MaxLogitsRows)
 
 /// How the executor splits long work so every dispatch stays inside the 100 ms budget (KernelAbiAndCatalog, kernel
 /// rules). Rows are batch-invariant (BatchInvariance), so a split never changes a bit.

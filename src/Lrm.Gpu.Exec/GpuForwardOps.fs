@@ -465,6 +465,25 @@ type GpuOps internal (backend: IGpuBackend, heap: IGpuHeap, plan: ExecPlan, xcla
             if not (options.Taps.Covers call.Taps) then
                 raise (ForwardException(sprintf "the taps %A are not in the ops' plan (%A)" call.Taps options.Taps))
 
+            let sp = plan.StagePlan call.Stage
+
+            let vi =
+                if sp.Variants.Length > 1 && call.Head = HeadRows.Last && call.Rows > 1 then
+                    1
+                else
+                    0
+
+            if sp.HasHead && not sp.Variants[vi].LastRow && call.Rows > plan.LogitsRows then
+                raise (
+                    ForwardException(
+                        sprintf
+                            "a forward of %d rows with the head on every row (HeadRows.All); the plan's logits hold %d rows (GpuExecOptions.MaxLogitsRows, at most one 1 GiB page): run HeadRows.Last, or the prompt in chunks of at most %d rows"
+                            call.Rows
+                            plan.LogitsRows
+                            plan.LogitsRows
+                    )
+                )
+
             // The previous result and taps of this stage end here.
             match kept.TryGetValue call.Stage.Index with
             | true, xs ->
@@ -473,14 +492,6 @@ type GpuOps internal (backend: IGpuBackend, heap: IGpuHeap, plan: ExecPlan, xcla
 
                 kept.Remove call.Stage.Index |> ignore
             | _ -> ()
-
-            let sp = plan.StagePlan call.Stage
-
-            let vi =
-                if sp.Variants.Length > 1 && call.Head = HeadRows.Last && call.Rows > 1 then
-                    1
-                else
-                    0
 
             step <-
                 match steps.TryGetValue call.Stage.Index with
@@ -727,8 +738,10 @@ type GpuOps internal (backend: IGpuBackend, heap: IGpuHeap, plan: ExecPlan, xcla
                 raise (
                     ForwardException(
                         sprintf
-                            "stage %d holds %d caches already, the plan's limit (OpsOptions.Caches); dispose one first"
+                            "layer %d of stage %d holds %d cache tensors already, the plan's limit (a K and a V for each of OpsOptions.Caches = %d); release one first"
+                            layer
                             stage.Index
+                            (2 * options.Caches)
                             options.Caches
                     )
                 )
@@ -1195,12 +1208,27 @@ module GpuForwardOps =
     let create (backend: IGpuBackend) (shaders: ShaderSet) (weights: Qwen3Weights) (options: OpsOptions) =
         createWith GpuExecOptions.Default backend shaders weights options :> IForwardOps<GpuTensor>
 
+/// A registry runner whose backend cannot run the executor (GpuExecutor, "The registry"): no accepted device, a
+/// loaded shader set without a kernel the executor dispatches, or a table or heap the backend refuses. The backend's
+/// GpuContractException is the Cause. It is a ForwardException, so `lrm forward` and `lrm generate` print it as one
+/// line and exit with 1.
+type GpuBackendUnavailableException(backend: string, cause: exn) =
+    inherit ForwardException(sprintf "%s: the GPU executor cannot run on this backend: %s" backend cause.Message)
+
+    /// The registry name of the backend, such as d3d12.
+    member _.Backend = backend
+
+    /// What the backend raised.
+    member _.Cause = cause
+
 /// Registry entries (OpsFactory, Commands/Backends.fs) for GPU backends: each runner gets a fresh backend from
 /// `device` and owns it.
 [<RequireQualifiedAccess>]
 module GpuBackendFactory =
     /// A factory named by the ExecutionBackend's name. `device` creates the backend for a runner's options (its
-    /// threads, for CpuDevice); `shaders` gives the shader set to load.
+    /// threads, for CpuDevice); `shaders` gives the shader set to load. A GpuContractException while the device or the
+    /// ops are created becomes a GpuBackendUnavailableException (a failed create has disposed the backend already);
+    /// a plan the executor refuses stays an ArgumentException.
     let create
         (backend: ExecutionBackend)
         (summary: string)
@@ -1215,10 +1243,12 @@ module GpuBackendFactory =
             Summary = summary
             Create =
                 fun w o ->
-                    let d = device o
-
                     let ops =
-                        GpuForwardOps.createWith { exec with OwnsBackend = true } d (shaders ()) w o
+                        try
+                            let d = device o
+                            GpuForwardOps.createWith { exec with OwnsBackend = true } d (shaders ()) w o
+                        with :? GpuContractException as e ->
+                            raise (GpuBackendUnavailableException(name, e))
 
                     QwenRunner.ofOps name w.Model (ops :> IForwardOps<GpuTensor>)
         }

@@ -15,7 +15,8 @@ type PlanOp =
         Sequence: int
         Kind: PlanOpKind
         Inputs: ValueRef list
-        /// The result's capacity, [Rows, Cols] at the plan's largest T. Cols is 0 for an op without a result.
+        /// The result's capacity, [Rows, Cols] at the plan's largest T (the head's logits in `all` at the plan's
+        /// LogitsRows). Cols is 0 for an op without a result.
         Rows: int
         Cols: int
         /// The decoder layer the op belongs to (telemetry only); None for the embedding and the head.
@@ -102,9 +103,13 @@ type ExecPlan =
         Exec: GpuExecOptions
         /// The most rows one forward runs: min(MaxRows, MaxContext).
         MaxRows: int
+        /// The most rows a forward of the stage with the head runs with HeadRows.All: min(MaxRows, MaxLogitsRows, the
+        /// rows one page of [rows, vocab] f32 logits holds). HeadRows.Last runs at every row count up to MaxRows.
+        LogitsRows: int
         Layout: HeapLayout
         Table: SealedTable
-        /// The weights the forward reads, in canonical order, with their shapes and tokens (bf16, read only).
+        /// The weights the planned stages read, in canonical order, with their shapes and tokens (bf16, read only): a
+        /// plan of some stages of a split holds only their layers, and the embedding when it embeds or has the tied head.
         Weights: (string * int64[] * TensorToken) list
         /// cos and sin of T_spec for positions 0 .. MaxContext - 1, [MaxContext, head_dim / 2] f32 (read only).
         RopeCos: TensorToken
@@ -193,8 +198,15 @@ module Liveness =
 
     /// A variant from a trace: its ops and taps in order, every result's last use, its home (the logits pool for the
     /// result of the stage with the head, else first fit in the activations pool among the results live at the same
-    /// time), and FirstClobber.
-    let variant (model: Qwen3Model) (name: string) (lastRow: bool) (hasHead: bool) (t: TracedForward) : PlanVariant =
+    /// time), and FirstClobber. With the head, its result (and a tap of it) holds at most `logitsRows` rows.
+    let variant
+        (model: Qwen3Model)
+        (name: string)
+        (lastRow: bool)
+        (hasHead: bool)
+        (logitsRows: int)
+        (t: TracedForward)
+        : PlanVariant =
         let computes =
             t.Calls
             |> List.indexed
@@ -221,6 +233,24 @@ module Liveness =
                 })
             |> Array.ofList
 
+        let result =
+            match t.Result with
+            | ValueRef.Value p when p >= 0 && p < ops.Length && ops[p].HasResult -> p
+            | r ->
+                raise (ForwardException(sprintf "trace: the forward returned %A, not the result of one of its ops" r))
+
+        // The head's logits hold at most logitsRows rows (GpuExecOptions.MaxLogitsRows, one page).
+        let ops =
+            if hasHead && ops[result].Rows > logitsRows then
+                ops
+                |> Array.map (fun o ->
+                    if o.Index = result then
+                        { o with Rows = max 1 logitsRows }
+                    else
+                        o)
+            else
+                ops
+
         let taps =
             t.Calls
             |> List.indexed
@@ -232,16 +262,14 @@ module Liveness =
                             Name = n
                             Source = source
                             Sequence = seq
-                            Rows = rows
+                            // A tap holds at most what its source holds (the head's logits).
+                            Rows =
+                                (match source with
+                                 | ValueRef.Value p -> min rows ops[p].Rows
+                                 | _ -> rows)
                             Cols = cols
                         }
                 | TraceCall.Compute _ -> None)
-
-        let result =
-            match t.Result with
-            | ValueRef.Value p when p >= 0 && p < ops.Length && ops[p].HasResult -> p
-            | r ->
-                raise (ForwardException(sprintf "trace: the forward returned %A, not the result of one of its ops" r))
 
         let lastUse = ops |> Array.map _.Sequence
 
@@ -351,15 +379,38 @@ module ExecPlan =
                 yield Qwen3Params.LmHeadName, [| int64 c.Vocab; int64 c.Hidden |]
         ]
 
+    /// The most rows of f32 logits [rows, vocab] one heap page holds (1,766 for Qwen3-0.6B's vocabulary).
+    let pageLogitsRows (c: Qwen3Config) =
+        int (min (int64 Int32.MaxValue) (Heap.MaxPageBytes / (max 1L (int64 c.Vocab) * 4L)))
+
+    /// The most rows an All-head forward of the plan's head stage runs: min(T, MaxLogitsRows, pageLogitsRows), and at
+    /// least 1.
+    let logitsRows (c: Qwen3Config) (o: OpsOptions) (exec: GpuExecOptions) =
+        max 1 (min (maxRows o) (min exec.MaxLogitsRows (pageLogitsRows c)))
+
+    /// The weights a set of variants reads, by safetensors name: every RmsNorm and MatMul weight, and the embedding of
+    /// an Embed (the tied head reads the embedding under its own name).
+    let weightsRead (model: Qwen3Model) (variants: PlanVariant seq) =
+        variants
+        |> Seq.collect _.Ops
+        |> Seq.choose (fun o ->
+            match o.Kind with
+            | PlanOpKind.Embed -> Some model.Params.Embed
+            | PlanOpKind.RmsNorm(w, _)
+            | PlanOpKind.MatMul w -> Some w
+            | _ -> None)
+        |> Set.ofSeq
+
     let private fits (what: string) (bytes: int64) =
         if bytes > Heap.MaxPageBytes then
             invalidArg
                 "options"
                 (sprintf "%s needs %d bytes, more than one 1 GiB page; plan fewer rows or positions" what bytes)
 
-    /// Builds the plan (pass one): traces every planned stage, lays out the arenas, adds every tensor to the table and
-    /// seals it. Raises ArgumentException for options outside OpsOptions.validate or GpuExecOptions.validate, a T above
-    /// 65,535, or a tensor larger than a page; GpuContractException when the table or the heap overflows.
+    /// Builds the plan (pass one): traces every planned stage, lays out the arenas (with only the weights the planned
+    /// stages read), adds every tensor to the table and seals it. Raises ArgumentException for options outside
+    /// OpsOptions.validate or GpuExecOptions.validate, a T above 65,535, or a tensor larger than a page;
+    /// GpuContractException when the table or the heap overflows.
     let build (model: Qwen3Model) (options: OpsOptions) (exec: GpuExecOptions) : ExecPlan =
         let c = model.Config
         OpsOptions.validate c options
@@ -371,24 +422,32 @@ module ExecPlan =
                 "options"
                 (sprintf "a forward of %d rows exceeds %d, the rows of one embedding dispatch" tmax MaxEmbedRows)
 
+        let headRows = logitsRows c options exec
+
         let stagePlans =
             options.Stages
             |> List.map (fun stage ->
                 let hasHead = Stage.hasHead c stage
                 let all = StaticOrder.trace model stage tmax HeadRows.All options.Taps
-                let variants = [ Liveness.variant model "all" false hasHead all ]
+                let variants = [ Liveness.variant model "all" false hasHead headRows all ]
 
                 let variants =
                     if hasHead && tmax > 1 then
                         let last = StaticOrder.trace model stage tmax HeadRows.Last options.Taps
-                        variants @ [ Liveness.variant model "last" true hasHead last ]
+                        variants @ [ Liveness.variant model "last" true hasHead headRows last ]
                     else
                         variants
 
                 stage, hasHead, Array.ofList variants)
 
         let planner = HeapPlanner()
-        let shapes = weightShapes model
+
+        // Only what the planned stages read: a node that plans one stage of a split uploads no other layer.
+        let shapes =
+            let read =
+                weightsRead model (stagePlans |> Seq.collect (fun (_, _, variants) -> variants))
+
+            weightShapes model |> List.filter (fun (name, _) -> read.Contains name)
 
         let weightPlaces =
             shapes
@@ -591,6 +650,7 @@ module ExecPlan =
             Options = options
             Exec = exec
             MaxRows = tmax
+            LogitsRows = headRows
             Layout = layout
             Table = table.Seal()
             Weights = weights

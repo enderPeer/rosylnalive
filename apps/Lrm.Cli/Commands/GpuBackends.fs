@@ -6,12 +6,16 @@
 ///     cpu-device   the CPU emulation of the kernel catalog (E1), bit-exact to CpuRef F32
 ///     d3d12        Direct3D 12 (D1), on the first accepted adapter
 ///     vulkan       not in this build: Lrm.Gpu.Vulkan (V1) has no provider yet; X1b registers it with its provider
+///                  (a plan change against X1a's deliverable, recorded in the GpuExecutor contract and PR #31)
+///
+/// A backend that cannot run the executor (no accepted device, a shader set without the executor's kernels) fails the
+/// runner's creation with GpuBackendUnavailableException, a ForwardException that the commands print as one line.
 ///
 /// Apps wire backends and libraries never do (ProjectGraph): the executor knows only IGpuBackend, and this file is
 /// where the concrete providers meet it. Owner: X1 (X1a).
 ///
 ///     lrm exec-plan [--model DIR|tiny|qwen3-0.6b] [--max-rows 512] [--max-context 512] [--taps none|all|NAMES]
-///                   [--caches 1] [--split 14]
+///                   [--caches 1] [--split 14 [--stage 1]] [--max-logits-rows N]
 ///                                          prints the executor's static plan for a model's config.json
 module Lrm.Cli.Commands.GpuBackends
 
@@ -70,11 +74,15 @@ do
 
 let private usage () =
     eprintfn "usage: lrm exec-plan [--model DIR|tiny|qwen3-0.6b] [--max-rows 512] [--max-context 512]"
-    eprintfn "                     [--taps none|all|NAMES] [--caches 1] [--split LAYER]"
+    eprintfn "                     [--taps none|all|NAMES] [--caches 1] [--split LAYER [--stage I]]"
+    eprintfn "                     [--max-logits-rows N]"
     eprintfn ""
     eprintfn "  Prints the GPU executor's static plan (GpuExecutor contract) for the model's config.json: the arenas,"
     eprintfn "  the table, each stage's static order and pool, and the dispatches of a prefill of --max-rows rows and"
-    eprintfn "  of a decode step at the last position. No weights are read and no device is created."
+    eprintfn "  of a decode step at the last position. No weights are read and no device is created. --split plans"
+    eprintfn "  both stages of a split, --stage I only stage I of it (a pipeline node: only its layers' weights)."
+    eprintfn "  --max-logits-rows caps the rows of an All-head forward (GpuExecOptions.MaxLogitsRows; 1 for a plan"
+    eprintfn "  that only decodes greedily)."
     2
 
 let private mib (bytes: int64) =
@@ -105,7 +113,19 @@ let private dispatchesOf (plan: ExecPlan) (v: PlanVariant) (rows: int) (pos0: in
 
 let private plan (argv: string[]) =
     let parsed =
-        Cli.parse [ "model"; "max-rows"; "max-context"; "taps"; "caches"; "split" ] [] argv
+        Cli.parse
+            [
+                "model"
+                "max-rows"
+                "max-context"
+                "taps"
+                "caches"
+                "split"
+                "stage"
+                "max-logits-rows"
+            ]
+            []
+            argv
 
     let build () =
         Cli.result {
@@ -119,13 +139,28 @@ let private plan (argv: string[]) =
             let! maxRows = Cli.intOption p "max-rows" maxContext
             let! caches = Cli.intOption p "caches" 1
 
+            let! logitsRows =
+                Cli.intOption p "max-logits-rows" GpuExecOptions.Default.MaxLogitsRows
+
             let! stages =
-                match p.Get "split" with
-                | None -> Ok [ Stage.whole config ]
-                | Some s ->
+                match p.Get "split", p.Get "stage" with
+                | None, None -> Ok [ Stage.whole config ]
+                | None, Some _ -> Error "--stage needs --split"
+                | Some s, only ->
                     match Invariant.tryParseI32 s with
-                    | Some b -> Ok(Stage.split config [ b ])
                     | None -> Error(sprintf "--split '%s' is not a layer" s)
+                    | Some b ->
+                        let stages = Stage.split config [ b ]
+
+                        match only with
+                        | None -> Ok stages
+                        | Some i ->
+                            match Invariant.tryParseI32 i with
+                            | Some n when n >= 0 && n < stages.Length -> Ok [ stages[n] ]
+                            | _ ->
+                                Error(
+                                    sprintf "--stage '%s' is not a stage of the split (0 .. %d)" i (stages.Length - 1)
+                                )
 
             let model =
                 {
@@ -142,7 +177,12 @@ let private plan (argv: string[]) =
                     Caches = caches
                 }
 
-            return dir, model, options
+            let exec =
+                { GpuExecOptions.Default with
+                    MaxLogitsRows = logitsRows
+                }
+
+            return dir, model, options, exec
         }
 
     let run =
@@ -156,9 +196,9 @@ let private plan (argv: string[]) =
     | Error e ->
         eprintfn "lrm exec-plan: %s" e
         usage ()
-    | Ok(dir, model, options) ->
+    | Ok(dir, model, options, exec) ->
         try
-            let plan = ExecPlan.build model options GpuExecOptions.Default
+            let plan = ExecPlan.build model options exec
             let c = model.Config
 
             printfn
@@ -192,22 +232,38 @@ let private plan (argv: string[]) =
                     sp.Stage.Index
                     sp.Stage.FirstLayer
                     sp.Stage.LastLayer
-                    (if sp.HasHead then ", with the head" else "")
+                    (if sp.HasHead then
+                         Invariant.format $", with the head (HeadRows.All up to {plan.LogitsRows} rows)"
+                     else
+                         "")
                     sp.Taps.Count
 
                 for v in sp.Variants do
-                    let prefill = dispatchesOf plan v plan.MaxRows 0
-                    let decode = dispatchesOf plan v 1 (options.MaxContext - 1)
+                    // The all head serves at most LogitsRows rows; a decode step (one row) always runs `all`
+                    // (BeginForward picks `last` only for HeadRows.Last over more than one row).
+                    let rows =
+                        if sp.HasHead && not v.LastRow then
+                            min plan.MaxRows plan.LogitsRows
+                        else
+                            plan.MaxRows
+
+                    let prefill = dispatchesOf plan v rows 0
                     let total (xs: (string * int) list) = xs |> List.sumBy snd
 
+                    let decode =
+                        if v.LastRow then
+                            "n/a (a decode step runs all)"
+                        else
+                            Invariant.i32 (total (dispatchesOf plan v 1 (options.MaxContext - 1)))
+
                     printfn
-                        "  %-4s %d ops, pool %s; a prefill of %d rows: %d dispatches; a decode step: %d"
+                        "  %-4s %d ops, pool %s; a prefill of %d rows: %d dispatches; a decode step: %s"
                         v.Name
                         v.Ops.Length
                         (mib v.PoolBytes)
-                        plan.MaxRows
+                        rows
                         (total prefill)
-                        (total decode)
+                        decode
 
                     for k, n in prefill do
                         printfn "         %-22s %5d" k n
