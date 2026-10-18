@@ -18,10 +18,30 @@ type DebugMessage =
         Message: string
     }
 
+/// The Vulkan side of a DebugMessenger: its handle and the GC handle that roots its callback delegate. The instance
+/// adopts it, so a messenger whose owner was dropped without Dispose is destroyed before vkDestroyInstance; until
+/// then the delegate stays rooted whether or not anything references the DebugMessenger.
+[<Sealed>]
+type internal MessengerLifetime(instance: Instance, handle: VkDebugUtilsMessengerEXT, root: GCHandle) =
+    let mutable disposed = 0
+
+    member _.Handle = handle
+    member _.IsDisposed = disposed <> 0
+
+    interface IDisposable with
+        member this.Dispose() =
+            if Threading.Interlocked.Exchange(&disposed, 1) = 0 then
+                instance.Release this
+                instance.Commands.DestroyDebugUtilsMessengerEXT(instance.Handle, handle)
+                // Only now can the driver no longer call the function pointer.
+                root.Free()
+
 /// A VkDebugUtilsMessengerEXT whose callback forwards each message to `sink` and to telemetry (a gpu.debug.message
-/// event). The callback delegate is rooted by this object until it is disposed, so the driver never calls a
-/// collected delegate (the VulkanInteropApi contract: callbacks stay rooted). The callback never throws into the
-/// driver: a sink exception is dropped and counted.
+/// event). The callback delegate is rooted by a GCHandle from before vkCreateDebugUtilsMessengerEXT until after
+/// vkDestroyDebugUtilsMessengerEXT, so the driver never calls a collected delegate, even when the owner drops this
+/// object without disposing it (the VulkanInteropApi contract: callbacks stay rooted). Disposing it, or else disposing
+/// its instance, destroys the messenger and frees the root. The callback never throws into the driver: a sink
+/// exception is dropped and counted.
 [<Sealed>]
 type DebugMessenger(instance: Instance, severities: VkDebugUtilsMessageSeverityFlagsEXT, sink: DebugMessage -> unit) =
     let dropped = ref 0
@@ -57,10 +77,11 @@ type DebugMessenger(instance: Instance, severities: VkDebugUtilsMessageSeverityF
 
             VkConst.VK_FALSE)
 
-    let handle =
+    let lifetime =
         if not (instance.HasExtension VkConst.VK_EXT_DEBUG_UTILS_EXTENSION_NAME) then
             invalidOp "the instance was created without VK_EXT_debug_utils"
 
+        let root = GCHandle.Alloc callback
         let mutable ci = VkDebugUtilsMessengerCreateInfoEXT.Create()
         ci.messageSeverity <- severities
 
@@ -71,22 +92,27 @@ type DebugMessenger(instance: Instance, severities: VkDebugUtilsMessageSeverityF
 
         ci.pfnUserCallback <- Marshal.GetFunctionPointerForDelegate callback
         let mutable m = VkDebugUtilsMessengerEXT.Null
-        instance.Commands.CreateDebugUtilsMessengerEXT(instance.Handle, &ci, &m)
-        m
 
-    let mutable disposed = false
+        try
+            instance.Commands.CreateDebugUtilsMessengerEXT(instance.Handle, &ci, &m)
+        with _ ->
+            root.Free()
+            reraise ()
 
-    member _.Handle = handle
+        let l = new MessengerLifetime(instance, m, root)
+        instance.Adopt l
+        l
+
+    member _.Handle = lifetime.Handle
+
+    /// True once the messenger is destroyed, by Dispose or by disposing its instance.
+    member _.IsDisposed = lifetime.IsDisposed
 
     /// Messages whose sink raised.
     member _.Dropped = dropped.Value
 
     interface IDisposable with
-        member _.Dispose() =
-            if not disposed then
-                disposed <- true
-                instance.Commands.DestroyDebugUtilsMessengerEXT(instance.Handle, handle)
-                GC.KeepAlive callback
+        member _.Dispose() = (lifetime :> IDisposable).Dispose()
 
 /// VK_EXT_debug_utils object names and labels. Names and labels encode their text per call: for setup and
 /// diagnostics, not for every dispatch.

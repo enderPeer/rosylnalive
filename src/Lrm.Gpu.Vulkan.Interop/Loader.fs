@@ -162,10 +162,27 @@ type VulkanLoader private (lib: nativeint, getInstanceProcAddr: PFN_vkGetInstanc
     interface IDisposable with
         member _.Dispose() = NativeLibrary.Free lib
 
-/// A VkInstance with its instance-level dispatch table. Disposing destroys the instance.
+/// A VkInstance with its instance-level dispatch table. Disposing destroys the instance, after the instance-level
+/// objects still alive on it (debug messengers whose owners never disposed them), newest first.
 and [<Sealed>] Instance internal (loader: VulkanLoader, handle: VkInstance, options: InstanceOptions) =
     let commands = VkInstanceCommands(fun name -> loader.ProcAddr(handle, name))
+    let children = ResizeArray<IDisposable>()
     let mutable disposed = false
+
+    /// Keeps `child`, an object created on this instance, until it is released or the instance is disposed.
+    member internal _.Adopt(child: IDisposable) =
+        lock children (fun () ->
+            if disposed then
+                invalidOp "the instance is disposed"
+
+            children.Add child)
+
+    /// Forgets `child` (it destroyed its Vulkan object itself).
+    member internal _.Release(child: IDisposable) =
+        lock children (fun () -> children.Remove child |> ignore)
+
+    /// The instance-level objects (debug messengers) created on this instance and not yet destroyed.
+    member _.LiveObjects = lock children (fun () -> children.Count)
 
     member _.Handle = handle
     member _.Loader = loader
@@ -310,6 +327,21 @@ and [<Sealed>] Instance internal (loader: VulkanLoader, handle: VkInstance, opti
 
     interface IDisposable with
         member _.Dispose() =
-            if not disposed then
-                disposed <- true
+            let alive =
+                lock children (fun () ->
+                    if disposed then
+                        None
+                    else
+                        disposed <- true
+                        let a = children.ToArray()
+                        children.Clear()
+                        Some a)
+
+            match alive with
+            | None -> ()
+            | Some a ->
+                // Vulkan destroys an instance's children before the instance.
+                for c in Array.rev a do
+                    c.Dispose()
+
                 commands.DestroyInstance(handle)
