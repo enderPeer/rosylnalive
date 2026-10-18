@@ -173,6 +173,10 @@ module TelemetryNames =
     [<Literal>]
     let ClusterPrefix = "cluster."
 
+    /// The run log's own structural records (T1's RunLog contract): run.node, run.end and run.clock_offset.
+    [<Literal>]
+    let RunPrefix = "run."
+
     /// One kernel conformance case (ConformanceHarness).
     [<Literal>]
     let ConformanceCase = "conformance.case"
@@ -190,12 +194,12 @@ module TelemetryNames =
     let MemArena = "mem.arena"
 
     /// Name prefixes reserved for their owning components.
-    let reservedPrefixes = [ GpuPrefix; ModelPrefix; ClusterPrefix ]
+    let reservedPrefixes = [ GpuPrefix; ModelPrefix; ClusterPrefix; RunPrefix ]
 
     /// Exact names reserved for their owning components.
     let reservedNames = [ ConformanceCase; TokenizerCase; GoldenCompare; MemArena ]
 
-    /// True when `name` is reserved: it starts with gpu., model. or cluster., or is one of the reserved names.
+    /// True when `name` is reserved: it starts with gpu., model., cluster. or run., or is one of the reserved names.
     let isReserved (name: string) =
         not (isNull name)
         && (reservedNames |> List.exists (Invariant.equals name)
