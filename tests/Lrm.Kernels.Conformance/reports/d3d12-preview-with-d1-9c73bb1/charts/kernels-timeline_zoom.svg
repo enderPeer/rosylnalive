@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="170" viewBox="0 0 720 170" role="img" aria-labelledby="kernels-timeline_zoom-title kernels-timeline_zoom-desc">
+<title id="kernels-timeline_zoom-title">Kernel timeline, embedding and layers 0 to 1</title>
+<desc id="kernels-timeline_zoom-desc">Timeline of 22 intervals on 1 lanes, 0 event marks.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="170" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="169" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Kernel timeline, embedding and layers 0 to 1</text>
+<text class="t2" x="16" y="45" font-size="12">The start of the same step, close up</text>
+<rect class="f5" x="19" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="38" y="66" font-size="12">memory</text>
+<line class="grid" x1="103.65" y1="102" x2="103.65" y2="124" stroke-width="1"/>
+<line class="grid" x1="253.93" y1="102" x2="253.93" y2="124" stroke-width="1"/>
+<line class="grid" x1="404.22" y1="102" x2="404.22" y2="124" stroke-width="1"/>
+<line class="grid" x1="554.5" y1="102" x2="554.5" y2="124" stroke-width="1"/>
+<text class="t2" x="51.6" y="117" font-size="12" text-anchor="end">d3d12</text>
+<rect class="f5" x="59.6" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 2.05 µs</title></rect>
+<rect class="f5" x="86.94" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 1.79 µs</title></rect>
+<rect class="f5" x="130.8" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 1.57 µs</title></rect>
+<rect class="f5" x="155.63" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 2.05 µs</title></rect>
+<rect class="f5" x="186.01" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 2.91 µs</title></rect>
+<rect class="f5" x="218.08" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 2.05 µs</title></rect>
+<rect class="f5" x="251.56" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 3.07 µs</title></rect>
+<rect class="f5" x="284.27" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 2.46 µs</title></rect>
+<rect class="f5" x="313.09" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 2.05 µs</title></rect>
+<rect class="f5" x="340.66" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 2.14 µs</title></rect>
+<rect class="f5" x="367.9" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 2.05 µs</title></rect>
+<rect class="f5" x="398.93" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 2.94 µs</title></rect>
+<rect class="f5" x="424.17" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 3.07 µs</title></rect>
+<rect class="f5" x="447.22" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 2.05 µs</title></rect>
+<rect class="f5" x="474.65" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 1.79 µs</title></rect>
+<rect class="f5" x="500.13" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 2.05 µs</title></rect>
+<rect class="f5" x="525.74" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 2.05 µs</title></rect>
+<rect class="f5" x="568.69" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 2.30 µs</title></rect>
+<rect class="f5" x="611.14" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 2.05 µs</title></rect>
+<rect class="f5" x="641.51" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 2.43 µs</title></rect>
+<rect class="f5" x="668.74" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 2.91 µs</title></rect>
+<rect class="f5" x="695" y="106" width="1" height="14" rx="0.5"><title>bf16_unpack: 2.05 µs</title></rect>
+<text class="t3" x="103.65" y="141" font-size="11" text-anchor="middle">265 ms</text>
+<text class="t3" x="253.93" y="141" font-size="11" text-anchor="middle">270 ms</text>
+<text class="t3" x="404.22" y="141" font-size="11" text-anchor="middle">275 ms</text>
+<text class="t3" x="554.5" y="141" font-size="11" text-anchor="middle">280 ms</text>
+<line class="axis" x1="59.6" y1="124" x2="696" y2="124" stroke-width="1"/>
+<text class="t3" x="377.8" y="160" font-size="11" text-anchor="middle">GPU time</text>
+</svg>
