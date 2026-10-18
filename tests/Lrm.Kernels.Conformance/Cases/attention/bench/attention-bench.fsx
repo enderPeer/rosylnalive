@@ -3,15 +3,19 @@
 // keys, plus one-head head_dim-1 grids of 8,192, 16,384 and 65,535 queries. Informational, like the bench tier
 // (TestTiers): it gates nothing; the conformance cases gate correctness and the budget.
 //
-// Each configuration is dispatched `reps` times back to back in one submission (a barrier between dispatches), first
-// with telemetry off to raise the GPU clocks, then again inside the run log, where the backend's gpu.dispatch
-// intervals carry `step` (the configuration's number, as printed) and `case` (its name). The run log is of kind
-// `kernels`, so `lrm report <runId>` renders it with the kernels template (GPU time by kernel, timeline, dispatch
-// histogram, slowest dispatches).
+// Two modes, one run log each:
+// - warm (the default): each configuration is dispatched `reps` times (8) back to back in one submission (a barrier
+//   between dispatches), first with telemetry off to raise the GPU clocks, then again inside the run log;
+// - cold: the configurations X1's chunking rule rests on (ADR K3-0001, decision 8), each `reps` times (3) as a single
+//   dispatch after 2.5 s of idle GPU. That is how the conformance harness meets a case: with the clock still down.
+// The backend's gpu.dispatch intervals carry `step` (the configuration's number in `configs`, the same in both modes,
+// as printed) and `case` (its name). The run log is of kind `kernels`, so `lrm report <runId>` renders it with the
+// kernels template (GPU time by kernel, timeline, dispatch histogram, slowest dispatches).
 //
 // Usage, after `dotnet build Lrm.slnx -c Release`, from the repository root:
-//     dotnet fsi --tailcalls- tests/Lrm.Kernels.Conformance/Cases/attention/bench/attention-bench.fsx [reps]
-// It takes the d3d12 test mutex through Lrm.Testing, so it waits for (and never overlaps) GPU test runs.
+//     dotnet fsi --tailcalls- tests/Lrm.Kernels.Conformance/Cases/attention/bench/attention-bench.fsx [warm|cold] [reps]
+// It takes the d3d12 test mutex through Lrm.Testing, so it waits for (and never overlaps) GPU test runs. The cold mode
+// holds it for about a minute, mostly idle.
 #r "../../../../../artifacts/bin/Lrm.Kernels.Conformance/release/Lrm.Core.dll"
 #r "../../../../../artifacts/bin/Lrm.Kernels.Conformance/release/Lrm.Gpu.Core.dll"
 #r "../../../../../artifacts/bin/Lrm.Kernels.Conformance/release/Lrm.Gpu.D3D12.Interop.dll"
@@ -31,10 +35,27 @@ open Lrm.Testing
 
 Process.init ()
 
-let reps =
-    match fsi.CommandLineArgs |> Array.tail with
-    | [| r |] -> int r
-    | _ -> 8
+/// Warm: back-to-back dispatches after an untimed submission. Cold: one dispatch after `IdleMs` of idle GPU.
+type Mode =
+    | Warm
+    | Cold
+
+let mode, reps =
+    let mode, rest =
+        match fsi.CommandLineArgs |> Array.tail |> List.ofArray with
+        | "cold" :: rest -> Cold, rest
+        | "warm" :: rest -> Warm, rest
+        | rest -> Warm, rest
+
+    match rest, mode with
+    | [ r ], _ -> mode, int r
+    | [], Warm -> mode, 8
+    | [], Cold -> mode, 3
+    | _ -> failwith "usage: attention-bench.fsx [warm|cold] [reps]"
+
+/// The idle time before each cold dispatch: long enough for the RTX 4080 to drop to its idle clock.
+[<Literal>]
+let IdleMs = 2500
 
 /// One configuration: rows queries at positions past .. past + rows - 1 with the given heads.
 type Config =
@@ -74,9 +95,11 @@ let configs =
         qwen "decode_p2047" 1 2047
         qwen "decode_p4095" 1 4095
         qwen "chunk_t128_past3968" 128 3968
+        qwen "chunk_t256_past3840" 256 3840
         qwen "chunk_t512_past3584" 512 3584
         qwen "chunk_t1024_past3072" 1024 3072
         qwen "prefill_t512" 512 0
+        qwen "prefill_t900" 900 0
         qwen "prefill_t1024" 1024 0
         qwen "prefill_t2048" 2048 0
         qwen "prefill_t4096" 4096 0
@@ -84,6 +107,21 @@ let configs =
         oneHead "hd1_rows16384" 16384
         oneHead "hd1_rows65535" 65535
     ]
+
+/// The configurations the cold mode times: decode at 4095, the chunk sizes at 4096 keys, a 900-token gate prompt, and
+/// the prefills of 1024 and 4096 tokens in one dispatch.
+let coldConfigs =
+    set
+        [
+            "decode_p4095"
+            "chunk_t128_past3968"
+            "chunk_t256_past3840"
+            "chunk_t512_past3584"
+            "chunk_t1024_past3072"
+            "prefill_t900"
+            "prefill_t1024"
+            "prefill_t4096"
+        ]
 
 /// One line for the run manifest: what a configuration dispatches.
 let describe (c: Config) =
@@ -185,11 +223,11 @@ let argsOf (c: Config) =
             Scale = float32 (1.0 / sqrt (float c.HeadDim))
         }
 
-/// `reps` dispatches of one block in one submission; the dispatch times in ms.
-let submit (args: ArgBlock) =
+/// `n` dispatches of one block in one submission; the dispatch times in ms.
+let submit (n: int) (args: ArgBlock) =
     let commands = backend.Begin()
 
-    for r in 1..reps do
+    for r in 1..n do
         if r > 1 then
             commands.Barrier()
 
@@ -201,9 +239,22 @@ let submit (args: ArgBlock) =
 
 let cls = backend.ExecutionClass
 
+let title, modeText =
+    match mode with
+    | Warm -> "attention_gqa_causal bench on d3d12 (warm GPU)", "warm: back to back after an untimed submission"
+    | Cold ->
+        "attention_gqa_causal bench on d3d12 (cold GPU)",
+        Invariant.format $"cold: one dispatch after {IdleMs} ms of idle GPU"
+
+/// The configurations this mode times, with their step numbers.
+let timed =
+    configs
+    |> List.indexed
+    |> List.filter (fun (_, c) -> mode = Warm || coldConfigs.Contains c.Name)
+
 let run =
     RunContext.Create(
-        { RunOptions.create "kernels" "attention_gqa_causal bench on d3d12 (warm GPU)" with
+        { RunOptions.create "kernels" title with
             ExecutionClass = Some cls
             GitSha = git "rev-parse HEAD"
             Params =
@@ -211,8 +262,9 @@ let run =
                     "source", "tests/Lrm.Kernels.Conformance/Cases/attention/bench/attention-bench.fsx"
                     "backend", ExecutionBackend.name cls.Backend
                     "device", backend.Info.Name
+                    "mode", modeText
                     "reps", Invariant.i32 reps
-                    yield! configs |> List.mapi (fun i c -> Invariant.format $"step {i}", describe c)
+                    yield! timed |> List.map (fun (i, c) -> Invariant.format $"step {i}", describe c)
                 ]
         }
     )
@@ -227,17 +279,28 @@ printfn
 
 printfn "%-4s %-22s %10s %10s %10s" "step" "config" "min ms" "median ms" "max ms"
 
-configs
-|> List.iteri (fun i c ->
+/// `n` dispatches of configuration `i` in one submission, inside the run log; the dispatch times in ms.
+let measure (i: int) (c: Config) (args: ArgBlock) (n: int) =
+    use _ = run.Install()
+    use _ = Telemetry.scope [ Attr.int "step" i; Attr.str "case" c.Name ]
+    submit n args
+
+for i, c in timed do
     let args = argsOf c
-    submit args |> ignore
 
     let times =
-        use _ = run.Install()
-        use _ = Telemetry.scope [ Attr.int "step" i; Attr.str "case" c.Name ]
-        submit args |> List.sort
+        match mode with
+        | Warm ->
+            submit reps args |> ignore
+            measure i c args reps |> List.sort
+        | Cold ->
+            List.init reps (fun _ ->
+                Threading.Thread.Sleep IdleMs
+                measure i c args 1)
+            |> List.concat
+            |> List.sort
 
-    printfn "%-4d %-22s %10.3f %10.3f %10.3f" i c.Name times.Head times[times.Length / 2] (List.last times))
+    printfn "%-4d %-22s %10.3f %10.3f %10.3f" i c.Name times.Head times[times.Length / 2] (List.last times)
 
 run.Finish RunStatus.Ok
 (backend :> IDisposable).Dispose()
