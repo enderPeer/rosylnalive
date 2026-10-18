@@ -173,6 +173,9 @@
   </ItemGroup>
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Gpu.Vulkan.Interop.Tests'">
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Gpu.Vulkan.Interop/Lrm.Gpu.Vulkan.Interop.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Gpu.Core/Lrm.Gpu.Core.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Shaders/Lrm.Shaders.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Telemetry/Lrm.Telemetry.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)tests/Lrm.Testing/Lrm.Testing.fsproj" LrmGraph="true" />
   </ItemGroup>
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Gpu.Vulkan.Tests'">

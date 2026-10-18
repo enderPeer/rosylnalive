@@ -19,7 +19,28 @@
           "FSharp.Core": "[10.1.402, )"
         }
       },
+      "lrm.gpu.core": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )"
+        }
+      },
       "lrm.gpu.vulkan.interop": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )"
+        }
+      },
+      "lrm.shaders": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Gpu.Core": "[1.0.0, )"
+        }
+      },
+      "lrm.telemetry": {
         "type": "Project",
         "dependencies": {
           "FSharp.Core": "[10.1.402, )",
