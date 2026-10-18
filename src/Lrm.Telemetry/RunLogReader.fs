@@ -3,6 +3,7 @@ namespace Lrm.Telemetry
 open System
 open System.IO
 open System.Text
+open System.Text.Unicode
 open Lrm.Core
 
 /// What one node's events file says about the node (RunLog contract).
@@ -24,6 +25,11 @@ type NodeLog =
         /// The trailer's counts: records lost to I/O errors or written after close, and records with invalid names.
         Dropped: int64
         Invalid: int64
+        /// The node id this process had before it restarted (the header's restart_of), or "".
+        RestartOf: string
+        /// This node's clock minus the creating node's clock, in ns, from the creator's last run.clock_offset record
+        /// for it; 0 when none was recorded. The reader has already subtracted it from every TimeNs of this node.
+        ClockOffsetNs: int64
         /// Everything wrong with this file: malformed lines, seq gaps, a missing header or trailer, a cut-off last line.
         Problems: string list
     }
@@ -36,7 +42,7 @@ type RunLog =
         /// One entry per events file, ordered by node id (ordinal).
         Nodes: NodeLog list
         /// Every data record of every node: nodes in id order, each node in seq order. Structural records (run.node,
-        /// run.end) are not included.
+        /// run.end, run.clock_offset) are not included. Times are on the creating node's clock (see ClockOffsetNs).
         Events: RunEvent list
     }
 
@@ -93,41 +99,70 @@ module RunLogReader =
         else
             []
 
-    let private endsWithNewline (path: string) =
-        use fs =
-            new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite ||| FileShare.Delete)
-
-        if fs.Length = 0L then
-            true
+    /// The bytes of one line as text: strict UTF-8, so a damaged byte makes the line a problem instead of an
+    /// exception or a silent U+FFFD.
+    let private decodeLine (bytes: byte[]) (offset: int) (count: int) : Result<RunEvent, string> =
+        if count = 0 then
+            Error "empty line"
+        elif not (Utf8.IsValid(ReadOnlySpan<byte>(bytes, offset, count))) then
+            Error "invalid UTF-8"
         else
-            fs.Seek(-1L, SeekOrigin.End) |> ignore
-            fs.ReadByte() = int '\n'
+            EventLine.decode (Encoding.UTF8.GetString(bytes, offset, count))
 
-    /// Streams the lines of one events file as (line number from 1, parsed record or error). A last line without its
-    /// LF (cut off while being written) is reported as an error instead of being parsed.
+    /// Streams the lines of one events file as (line number from 1, parsed record or error). The file is split on
+    /// LF bytes and each line is checked as UTF-8 on its own, so a file cut inside a multi-byte character or holding
+    /// a stray byte still reads: the bad line is an error and every other line parses. A last line without its LF
+    /// (cut off while being written) is reported as an error instead of being parsed.
     let readLines (path: string) : seq<int * Result<RunEvent, string>> =
         seq {
-            let complete = endsWithNewline path
-
             use fs =
-                new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite ||| FileShare.Delete)
+                new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite ||| FileShare.Delete, 65536)
 
-            use reader = new StreamReader(fs, UTF8Encoding(false, true))
+            let buffer: byte[] = Array.zeroCreate 65536
+            let mutable line: byte[] = Array.zeroCreate 4096
+            let mutable length = 0
             let mutable number = 0
-            let mutable line = reader.ReadLine()
+            let mutable read = fs.Read(buffer, 0, buffer.Length)
 
-            while not (isNull line) do
-                number <- number + 1
-                let next = reader.ReadLine()
+            while read > 0 do
+                let mutable start = 0
 
-                if isNull next && not complete then
-                    yield number, Error "the last line is cut off (no final LF)"
-                elif line.Length = 0 then
-                    yield number, Error "empty line"
-                else
-                    yield number, EventLine.decode line
+                while start < read do
+                    let lf = Array.IndexOf(buffer, 10uy, start, read - start)
+                    let stop = if lf < 0 then read else lf
+                    let n = stop - start
 
-                line <- next
+                    if length + n > line.Length then
+                        Array.Resize(&line, max (length + n) (line.Length * 2))
+
+                    Buffer.BlockCopy(buffer, start, line, length, n)
+                    length <- length + n
+
+                    if lf < 0 then
+                        start <- read
+                    else
+                        number <- number + 1
+                        // A UTF-8 byte order mark is not part of the format, but it is not worth losing a line over.
+                        let skip =
+                            if
+                                number = 1
+                                && length >= 3
+                                && line[0] = 0xEFuy
+                                && line[1] = 0xBBuy
+                                && line[2] = 0xBFuy
+                            then
+                                3
+                            else
+                                0
+
+                        yield number, decodeLine line skip (length - skip)
+                        length <- 0
+                        start <- lf + 1
+
+                read <- fs.Read(buffer, 0, buffer.Length)
+
+            if length > 0 then
+                yield number + 1, Error "the last line is cut off (no final LF)"
         }
 
     let private classOfHeader (e: RunEvent) =
@@ -147,10 +182,18 @@ module RunLogReader =
             | Ok c -> Some c
             | Error _ -> None
 
-    /// Reads one events file: its node summary and its data records in seq order.
-    let readNode (node: string) (path: string) : NodeLog * RunEvent list =
+    let private isStructural (e: RunEvent) =
+        e.Kind = TelemetryKind.Event
+        && (Invariant.equals e.Name RunLogNames.NodeHeader
+            || Invariant.equals e.Name RunLogNames.NodeEnd
+            || Invariant.equals e.Name RunLogNames.ClockOffset)
+
+    /// One file read: the node summary (no clock offset applied yet), its data records, and the clock offsets it
+    /// records for other nodes as (target, offset ns), the last record per target, sorted by target.
+    let private readFile (node: string) (path: string) =
         let problems = ResizeArray<string>()
         let events = ResizeArray<RunEvent>()
+        let offsets = Collections.Generic.Dictionary<string, int64>(StringComparer.Ordinal)
         let mutable expected = 0L
         let mutable header: RunEvent option = None
         let mutable trailer: RunEvent option = None
@@ -183,6 +226,10 @@ module RunLogReader =
                     | _ -> ()
 
                     trailer <- Some ev
+                | RunLogNames.ClockOffset when ev.Kind = TelemetryKind.Event ->
+                    match ev.TryStr "target", ev.TryInt "offset_ns" with
+                    | Some target, Some offset -> offsets[target] <- offset
+                    | _ -> problems.Add(sprintf "line %d: run.clock_offset without target and offset_ns" number)
                 | _ -> events.Add ev
 
         if header.IsNone then
@@ -213,26 +260,58 @@ module RunLogReader =
                     |> Option.bind RunStatus.tryParse
                 Dropped = trailer |> Option.bind (fun t -> t.TryInt "dropped") |> Option.defaultValue 0L
                 Invalid = trailer |> Option.bind (fun t -> t.TryInt "invalid") |> Option.defaultValue 0L
+                RestartOf = header |> Option.bind (fun h -> h.TryStr "restart_of") |> Option.defaultValue ""
+                ClockOffsetNs = 0L
                 Problems = List.ofSeq problems
             }
 
-        log, List.ofSeq events
+        let recorded =
+            offsets
+            |> Seq.map (fun kv -> kv.Key, kv.Value)
+            |> Seq.sortWith (fun (a, _) (b, _) -> String.CompareOrdinal(a, b))
+            |> List.ofSeq
 
-    /// Streams the data records of a run: nodes in id order, each in seq order. Bad lines are skipped.
+        log, List.ofSeq events, recorded
+
+    /// Moves a node's records onto the creating node's clock.
+    let private shift (offset: int64) (events: RunEvent list) =
+        if offset = 0L then
+            events
+        else
+            events |> List.map (fun e -> { e with TimeNs = e.TimeNs - offset })
+
+    /// Reads one events file on its own: its node summary and its data records in seq order, on the node's own clock
+    /// (clock offsets live in the creating node's file; RunLogReader.load applies them).
+    let readNode (node: string) (path: string) : NodeLog * RunEvent list =
+        let log, events, _ = readFile node path
+        log, events
+
+    /// The clock offsets the creating node recorded (RunLog contract, "Runs across hosts"), by target node.
+    let private creatorOffsets (creator: string) (files: (string * string) list) =
+        match files |> List.tryFind (fun (n, _) -> Invariant.equals n creator) with
+        | None -> Map.empty
+        | Some(node, path) ->
+            let _, _, offsets = readFile node path
+            Map.ofList offsets
+
+    /// Streams the data records of a run: nodes in id order, each in seq order, times on the creating node's clock.
+    /// Bad lines are skipped.
     let stream (runDir: string) : seq<RunEvent> =
         seq {
-            for node, path in eventFiles runDir do
+            let files = eventFiles runDir
+
+            let offsets =
+                match RunManifest.read runDir with
+                | Ok m -> creatorOffsets m.Node files
+                | Error _ -> Map.empty
+
+            for node, path in files do
+                let offset = offsets.TryFind node |> Option.defaultValue 0L
+
                 for _, parsed in readLines path do
                     match parsed with
-                    | Ok ev when
-                        not (
-                            ev.Kind = TelemetryKind.Event
-                            && (Invariant.equals ev.Name RunLogNames.NodeHeader
-                                || Invariant.equals ev.Name RunLogNames.NodeEnd)
-                        )
-                        && Invariant.equals ev.Node node
-                        ->
-                        yield ev
+                    | Ok ev when not (isStructural ev) && Invariant.equals ev.Node node ->
+                        yield { ev with TimeNs = ev.TimeNs - offset }
                     | _ -> ()
         }
 
@@ -244,7 +323,33 @@ module RunLogReader =
         match RunManifest.read dir with
         | Error e -> Error e
         | Ok manifest ->
-            let nodes = eventFiles dir |> List.map (fun (node, path) -> readNode node path)
+            let read = eventFiles dir |> List.map (fun (node, path) -> readFile node path)
+
+            let offsets =
+                read
+                |> List.tryFind (fun (n, _, _) -> Invariant.equals n.Node manifest.Node)
+                |> Option.map (fun (_, _, o) -> Map.ofList o)
+                |> Option.defaultValue Map.empty
+
+            let nodes =
+                read
+                |> List.map (fun (n, events, recorded) ->
+                    let offset = offsets.TryFind n.Node |> Option.defaultValue 0L
+
+                    let problems =
+                        if recorded.IsEmpty || Invariant.equals n.Node manifest.Node then
+                            n.Problems
+                        else
+                            n.Problems
+                            @ [
+                                "run.clock_offset records from a node that did not create the run are ignored"
+                            ]
+
+                    { n with
+                        ClockOffsetNs = offset
+                        Problems = problems
+                    },
+                    shift offset events)
 
             Ok
                 {

@@ -240,7 +240,17 @@ module RunManifest =
                 }
         with
         | ManifestError msg -> Error msg
-        | :? JsonException as e -> Error("malformed JSON: " + e.Message)
+        | :? JsonException as e ->
+            // Fixed words, not the runtime's message (EventLine.syntaxError); lines count from 1 here.
+            if e.LineNumber.HasValue && e.BytePositionInLine.HasValue then
+                Error(
+                    "malformed JSON at line "
+                    + Invariant.i64 (e.LineNumber.Value + 1L)
+                    + ", byte "
+                    + Invariant.i64 e.BytePositionInLine.Value
+                )
+            else
+                Error "malformed JSON"
 
     /// Reads <runDir>/manifest.json.
     let read (runDir: string) : Result<RunManifest, string> =

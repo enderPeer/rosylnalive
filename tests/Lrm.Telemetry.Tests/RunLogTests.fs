@@ -326,6 +326,199 @@ let tests =
                 Expect.stringContains problems "no run.end trailer" "missing trailer"
                 Expect.equal (log.Events |> List.map _.Name) [ "model.steps"; "model.layer" ] "the good records survive"
 
+            testCase "the sink writes a surrogate pair whole at every chunk boundary, whatever came before"
+            <| fun () ->
+                // A fresh sink's StringBuilder holds 512 characters, then grows chunks of 512: with the pair at the
+                // end of 400 to 1,200 characters, some line puts its high surrogate last in a chunk (offsets 511 and
+                // 1,023). The expected bytes are the line's own UTF-8, so the chunking and the lines before (one long
+                // line first) may not show.
+                let written (history: TelemetryRecord list) (r: TelemetryRecord) =
+                    let stream = new MemoryStream()
+                    let sink = JsonlSink.OfStream(stream, NodeId.local)
+
+                    for h in history do
+                        sink.Write h
+
+                    sink.Write r
+                    sink.Close()
+                    let bytes = stream.ToArray()
+
+                    let skip =
+                        history
+                        |> List.mapi (fun i h -> (EventLine.encode "n0" (int64 i) h).Length + 1)
+                        |> List.sum
+
+                    bytes[skip..]
+
+                let event (text: string) =
+                    { record TelemetryKind.Event "e" with
+                        Attrs = [ Attr.str "s" text ]
+                    }
+
+                let long = event (String('y', 3000))
+
+                for pair in [ "😀"; "𠀀"; "𝑥" ] do
+                    for history in [ []; [ long ] ] do
+                        for n in 400..1200 do
+                            let r = event (String('x', n) + pair)
+                            let line = EventLine.encode "n0" (int64 history.Length) r + "\n"
+                            let bytes = written history r
+
+                            if bytes <> Encoding.UTF8.GetBytes line then
+                                failtestf
+                                    "%s after %d characters (history %d): %s"
+                                    pair
+                                    n
+                                    history.Length
+                                    (Encoding.UTF8.GetString bytes)
+
+            testCase "the reader survives invalid UTF-8: a file cut inside a character, a stray byte"
+            <| fun () ->
+                use tmp = new TempDir()
+
+                let dir =
+                    use run = RunContext.Create(optionsIn tmp.Path "utf8")
+                    run.Telemetry.Event("model.note", [ Attr.str "text" "café" ])
+                    run.Telemetry.Event("model.note", [ Attr.str "text" "plain" ])
+                    run.Finish RunStatus.Ok
+                    run.Directory
+
+                let path = eventsPath dir "n0"
+                let bytes = File.ReadAllBytes path
+                // Cut just after the lead byte of "é" (0xC3), as a node killed mid-flush leaves it.
+                let lead = Array.IndexOf(bytes, 0xC3uy)
+                File.WriteAllBytes(path, bytes[..lead])
+                let cut = RunLogReader.loadOrFail dir
+
+                Expect.stringContains
+                    (String.concat "\n" cut.Problems)
+                    "line 2: the last line is cut off"
+                    "cut-off line"
+
+                Expect.isEmpty cut.Events "nothing but the header before the cut"
+
+                // A stray 0xFF in the middle line: that line is a problem, the lines around it read.
+                let stray = Array.copy bytes
+                stray[lead] <- 0xFFuy
+                File.WriteAllBytes(path, stray)
+                let log = RunLogReader.loadOrFail dir
+                Expect.contains log.Problems "n0: line 2: invalid UTF-8" "the bad line"
+                Expect.equal (log.Events |> List.map (fun e -> e.TryStr "text")) [ Some "plain" ] "the next line reads"
+                Expect.isTrue log.Nodes.Head.Ended "the trailer reads"
+
+                // The CLI path: load returns, it does not throw.
+                File.WriteAllBytes(path, bytes[..lead])
+                Expect.isOk (RunLogReader.load dir) "load does not throw"
+
+            testCase "malformed JSON is reported in fixed words, the same under any culture"
+            <| fun () ->
+                let reason () =
+                    match EventLine.decode "{not json" with
+                    | Error e -> e
+                    | Ok _ -> failtest "decoded"
+
+                let manifestReason () =
+                    match RunManifest.parse "{\n  \"schema\": \n}" with
+                    | Error e -> e
+                    | Ok _ -> failtest "parsed"
+
+                Expect.equal (reason ()) "malformed JSON at byte 1" "line"
+                Expect.equal (withCulture "de-DE" reason) (reason ()) "line under de-DE"
+                Expect.equal (manifestReason ()) "malformed JSON at line 3, byte 0" "manifest"
+                Expect.equal (withCulture "tr-TR" manifestReason) (manifestReason ()) "manifest under tr-TR"
+
+            testCase "clock offsets recorded by the creator put every node on the creator's clock"
+            <| fun () ->
+                use tmp = new TempDir()
+
+                use run =
+                    RunContext.Create
+                        { optionsIn tmp.Path "clocks" with
+                            Clock = Some(steppingClock 1_000L 1_000L)
+                        }
+
+                // n1's clock reads 5 ms ahead of the creator's.
+                use other =
+                    RunContext.Join(
+                        run.Directory,
+                        { JoinOptions.create (NodeId.parse "n1") with
+                            Clock = Some(steppingClock 5_001_000L 1_000L)
+                            FlushInterval = TimeSpan.Zero
+                        }
+                    )
+
+                other.Telemetry.Event("cluster.tick", [])
+                run.RecordClockOffset(NodeId.parse "n1", 5_000_000L, 40_000L)
+                run.Telemetry.Event("cluster.tick", [])
+
+                Expect.throwsT<InvalidOperationException>
+                    (fun () -> other.RecordClockOffset(NodeId.parse "n0", 1L, 1L))
+                    "only the creator records offsets"
+
+                other.Finish RunStatus.Ok
+                run.Finish RunStatus.Ok
+                let log = RunLogReader.loadOrFail run.Directory
+                Expect.isEmpty log.Problems "a clean log"
+
+                Expect.equal
+                    (log.Nodes |> List.map (fun n -> n.Node, n.ClockOffsetNs))
+                    [ "n0", 0L; "n1", 5_000_000L ]
+                    "offsets"
+
+                let tick node =
+                    (log.Events |> List.find (fun e -> e.Node = node)).TimeNs
+                // n1's tick was its second clock read (5,002,000 on its clock, 2,000 on the creator's).
+                Expect.equal (tick "n1") 2_000L "n1 on the creator's clock"
+                Expect.equal (log.Events |> List.map _.Name) [ "cluster.tick"; "cluster.tick" ] "offsets are structural"
+                Expect.equal (RunLogReader.stream run.Directory |> List.ofSeq) log.Events "stream applies them too"
+
+            testCase "a node on another host joins a copy of the run folder; a restarted node gets a new id"
+            <| fun () ->
+                use creatorHost = new TempDir()
+                use otherHost = new TempDir()
+                use run = RunContext.Create(optionsIn creatorHost.Path "remote")
+                let manifest = (RunManifest.read run.Directory |> Result.toOption).Value
+                let local = Path.Combine(otherHost.Path, "remote")
+
+                let restarted = RunLogNames.restartedNode (NodeId.parse "n1") 1
+                Expect.equal restarted.Value "n1-r1" "restart id"
+
+                use remote =
+                    RunContext.Join(
+                        local,
+                        { JoinOptions.create restarted with
+                            Manifest = Some manifest
+                            RestartOf = Some(NodeId.parse "n1")
+                            FlushInterval = TimeSpan.Zero
+                        }
+                    )
+
+                remote.Telemetry.Event("cluster.tick", [])
+                remote.Finish RunStatus.Ok
+                run.Finish RunStatus.Ok
+                Expect.isTrue (File.Exists(Path.Combine(local, "manifest.json"))) "the local copy of the manifest"
+
+                // Collection: the events file is copied byte for byte into the creator's run folder.
+                File.Copy(eventsPath local "n1-r1", eventsPath run.Directory "n1-r1")
+                let log = RunLogReader.loadOrFail run.Directory
+                Expect.isEmpty log.Problems "a clean log"
+
+                Expect.equal
+                    (log.Nodes |> List.map (fun n -> n.Node, n.Role, n.RestartOf))
+                    [ "n0", "creator", ""; "n1-r1", "joined", "n1" ]
+                    "nodes"
+
+                Expect.throwsT<ArgumentException>
+                    (fun () ->
+                        RunContext.Join(
+                            Path.Combine(otherHost.Path, "elsewhere"),
+                            { JoinOptions.create (NodeId.parse "n2") with
+                                Manifest = Some manifest
+                            }
+                        )
+                        |> ignore)
+                    "the folder must be named after the run"
+
             testCase "loading needs a valid manifest"
             <| fun () ->
                 use tmp = new TempDir()

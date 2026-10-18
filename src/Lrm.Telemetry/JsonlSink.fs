@@ -19,6 +19,8 @@ open Lrm.Core
 type JsonlSink private (stream: Stream, node: NodeId, path: string, flushInterval: TimeSpan) as this =
     let gate = obj ()
     let sb = StringBuilder(512)
+    // One encoder carries a surrogate pair across the builder's chunk boundaries; flushed at the end of every line.
+    let encoder = UTF8Encoding(false).GetEncoder()
     let mutable bytes: byte[] = Array.zeroCreate 1024
     let mutable nextSeq = 0L
     let mutable dropped = 0L
@@ -110,12 +112,16 @@ type JsonlSink private (stream: Stream, node: NodeId, path: string, flushInterva
                         sb.Clear() |> ignore
                         EventLine.append sb node.Value nextSeq record
                         sb.Append '\n' |> ignore
-                        // Encode the builder's chunks straight into the byte buffer: no string per line.
+                        // Encode the builder's chunks straight into the byte buffer: no string per line. The encoder
+                        // keeps a high surrogate that ends one chunk for the low surrogate that starts the next, so a
+                        // line's bytes never depend on how the builder happened to split it.
                         let mutable count = 0
                         let mutable chunks = sb.GetChunks()
+                        encoder.Reset()
 
                         while chunks.MoveNext() do
                             let span = chunks.Current.Span
+                            // GetMaxByteCount(n) also covers a surrogate held over from the previous chunk.
                             let needed = count + Encoding.UTF8.GetMaxByteCount span.Length
 
                             if bytes.Length < needed then
@@ -123,7 +129,21 @@ type JsonlSink private (stream: Stream, node: NodeId, path: string, flushInterva
 
                             count <-
                                 count
-                                + Encoding.UTF8.GetBytes(span, Span<byte>(bytes, count, bytes.Length - count))
+                                + encoder.GetBytes(span, Span<byte>(bytes, count, bytes.Length - count), false)
+
+                        // The flush writes nothing for the lines EventLine builds (it never leaves a lone surrogate).
+                        let needed = count + Encoding.UTF8.GetMaxByteCount 0
+
+                        if bytes.Length < needed then
+                            Array.Resize(&bytes, max needed (bytes.Length * 2))
+
+                        count <-
+                            count
+                            + encoder.GetBytes(
+                                ReadOnlySpan<char>.Empty,
+                                Span<byte>(bytes, count, bytes.Length - count),
+                                true
+                            )
 
                         stream.Write(bytes, 0, count)
                         nextSeq <- nextSeq + 1L
