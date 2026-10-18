@@ -40,4 +40,11 @@ Agents cite ADRs by file name in PRs, contracts and code comments. The integrato
 | ADR | Decision | Status |
 | --- | --- | --- |
 | [0000](0000-adr-process.md) | How LRM records decisions | accepted |
-| [0001](0001-shader-toolchain.md) | Shader toolchain and bindless source convention | accepted; its SPIR-V binding part is provisional until R1's ADR and R4b |
+| [0001](0001-shader-toolchain.md) | Shader toolchain and bindless source convention | accepted; the SPIR-V binding part was confirmed by R1's ADR and R4b |
+| [O1-0001](O1-0001-eos-in-generate.md) | `generate()` gets a neutral generation config; `eos_token_id=None` alone leaks EOS | accepted |
+| [O1-0002](O1-0002-t-spec-correct-rounding.md) | T_spec's f64 cos and sin are correctly rounded | accepted |
+| [O1-0003](O1-0003-tiny-model.md) | The tiny model's shape and scales | accepted |
+| [O2-0001](O2-0001-exact-rope-table.md) | The RoPE table is computed in exact integer arithmetic, never with `Math.Cos` | accepted |
+| [R1-heap-recipe](R1-heap-recipe.md) | The Vulkan descriptor-heap recipe (explicit `g_buf[]`, HEAP_WITH_CONSTANT_OFFSET) | accepted; its ArgBlock lines amended for VulkanHeapRecipe v1.1 |
+| [R3-0001](R3-0001-interop-shape-and-tail-calls.md) | D3D12 interop shape; no tail calls at wrappers, and Tailcalls=false for GPU code | accepted |
+| [int-0001](int-0001-denormals.md) | fp32 denormals on the GPU backends: what D3D12 does with `-denorm preserve` | accepted |
