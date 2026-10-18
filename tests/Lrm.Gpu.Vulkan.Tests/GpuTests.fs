@@ -45,6 +45,13 @@ let private bits (x: float32) = BitConverter.SingleToUInt32Bits x
 let private isDenormal (w: uint32) =
     w &&& 0x7F800000u = 0u && w &&& 0x007FFFFFu <> 0u
 
+/// True when the exact product x * a (exact in float64) is non-zero and below 2^-126 in magnitude. The Vulkan class of
+/// the RTX 4080 flushes such a product to zero even when IEEE rounding would round it up to 2^-126 (tininess before
+/// rounding; for example 0x00FFFFFF * 0.5), so its denormal mode decides these elements as well.
+let private tinyProduct (a: float32) (x: uint32) =
+    let p = abs (float (BitConverter.UInt32BitsToSingle x) * float a)
+    p > 0.0 && p < Math.Pow(2.0, -126.0)
+
 // ---- GpuBackendInterface rules on hardware, compared with RecordingBackend ---------------------------------------
 
 /// Runs the same sequence of calls, valid and invalid, and returns each step's outcome: "ok", or the exception type and
@@ -547,6 +554,104 @@ let private probeTelemetry () =
             (named GpuTelemetry.BytesMoved).Length
             (span.Attrs |> List.map (fun a -> a.Key, a.Value))
 
+/// Inputs at the bottom of the normal range for scale_f32 with a = 0.5: products just below 2^-126 that IEEE rounds up
+/// to 2^-126 (0x80FFFFFF, 0x00FFFFFF), products that stay denormal, and the exact 2^-126 control.
+let tininessInputs =
+    [|
+        0x80FFFFFFu
+        0x00FFFFFFu
+        0x00FFFFFEu
+        0x80FFFFFEu
+        0x00800001u
+        0x00FFFFFDu
+        0x01000000u
+        0x00800000u
+    |]
+
+/// A flush class flushes a product whose exact value is below 2^-126, before rounding: 0x00FFFFFF * 0.5 is
+/// 2^-126 * (1 - 2^-24), which IEEE rounds up to 0x00800000 but this class returns as zero. The model in
+/// Fp32Denormals.flushBits (round, then flush the rounded result) predicts 0x00800000 there, so a flush-mode reference
+/// that rounds first misjudges such elements (a finding for E1's and KernelBounds' flush model). Recorded as
+/// gpu.fp32_tininess with the words. Skipped when the class does not flush.
+let private tininess () : byte[] =
+    use backend = create ()
+    let b = backend :> IGpuBackend
+    let n = tininessInputs.Length
+    let layout = HeapLayout.ofPages [ ArenaKind.Scratch, Heap.PageGranularity ]
+    let t = TensorTable layout
+
+    let x =
+        t.Add("x", TensorRow.create 1 0L DType.F32 [ int64 n ] TensorFlags.ReadOnly 0u)
+
+    let y =
+        t.Add("y", TensorRow.create 1 256L DType.F32 [ int64 n ] TensorFlags.None 0u)
+
+    let table = t.Seal()
+    let heap = b.CreateHeap layout
+    heap.WriteTable table
+    b.LoadKernels(shaders ()) |> ignore
+
+    if backend.Fp32Denormals <> Some Fp32DenormalMode.Flush then
+        skiptestf "the class measured %A, not flush" backend.Fp32Denormals
+
+    heap.Upload(1, 0L, ReadOnlySpan(bytesOf tininessInputs))
+    heap.Upload(1, 256L, ReadOnlySpan(bytesOf (Array.create n 0x7FA5A5A5u)))
+    let c = b.Begin()
+    Kernels.ScaleF32.dispatch c { X = x; Y = y; N = uint32 n; A = 0.5f }
+    b.Wait(b.Submit c) |> ignore
+    let out = Array.zeroCreate<byte>(4 * n)
+    heap.Download(1, 256L, Span out)
+    let words = wordsOf out
+    let ieee = tininessInputs |> Array.map (SelfTests.scaleBits 0.5f)
+
+    let afterRounding =
+        tininessInputs
+        |> Array.map (SelfTests.scaleExpected Fp32DenormalMode.Flush 0.5f)
+
+    // Tininess before rounding: a denormal input, or a non-zero exact product below 2^-126, gives zero of its sign.
+    let beforeRounding =
+        Array.map2
+            (fun x r ->
+                if isDenormal x || tinyProduct 0.5f x then
+                    r &&& 0x80000000u
+                else
+                    r)
+            tininessInputs
+            ieee
+
+    let hex (ws: uint32[]) = Fp32Denormals.wordsText ws
+
+    printfn
+        "tininess (vulkan, flush): inputs %s
+  results         %s
+  IEEE            %s
+  flush after     %s
+  flush before    %s"
+        (hex tininessInputs)
+        (hex words)
+        (hex ieee)
+        (hex afterRounding)
+        (hex beforeRounding)
+
+    let differ = Array.map2 (<>) words afterRounding |> Array.filter id |> Array.length
+
+    Telemetry.event
+        "gpu.fp32_tininess"
+        [
+            Attr.str TelemetryKeys.Backend "vulkan"
+            Attr.str "mode" "flush"
+            Attr.str "inputs" (hex tininessInputs)
+            Attr.str "results" (hex words)
+            Attr.str "ieee" (hex ieee)
+            Attr.str "flush_after_rounding" (hex afterRounding)
+            Attr.str "flush_before_rounding" (hex beforeRounding)
+            Attr.int "differ_from_after_rounding" differ
+        ]
+
+    Expect.equal words beforeRounding "the class flushes tiny products before rounding"
+    Expect.equal differ 2 "0x80FFFFFF and 0x00FFFFFF: the round-then-flush model predicts the smallest normal"
+    out
+
 // ---- the selftests ----------------------------------------------------------------------------------------------
 
 /// Cross-checks a selftest run with KernelBounds against the CPU expectation (CpuRef semantics in the mode).
@@ -662,8 +767,8 @@ let private d3d12Selftests () =
 
 /// Vulkan's selftest words equal D3D12's wherever the two classes agree: every bit of the bit-moving selftests
 /// (table_echo, args_echo, groups_echo, bf16_unpack), and every scale_f32 element when the two denormal modes are the
-/// same, or else every element whose input and CPU result are normal (KernelAbiAndCatalog: bit-exact claims on fp32
-/// denormals are class-dependent). The two backends' inputs, layouts and tables are the same bytes (cpu tier).
+/// same, or else every element whose input is normal and whose exact product is not below 2^-126 (KernelAbiAndCatalog:
+/// bit-exact claims on fp32 denormals are class-dependent). The two backends' inputs, layouts and tables are the same bytes (cpu tier).
 let private acrossBackends () =
     match d3d12Reference with
     | None ->
@@ -705,9 +810,7 @@ let private acrossBackends () =
             for i in 0 .. vw.Length - 1 do
                 let agree =
                     match inputs with
-                    | Some xs when vMode <> dMode ->
-                        not (isDenormal xs[i])
-                        && not (isDenormal (SelfTests.scaleBits SelfTests.ScaleA xs[i]))
+                    | Some xs when vMode <> dMode -> not (isDenormal xs[i]) && not (tinyProduct SelfTests.ScaleA xs[i])
                     | _ -> true
 
                 if agree then
@@ -721,7 +824,7 @@ let private acrossBackends () =
                     caseExcluded <- caseExcluded + 1
 
             printfn
-                "  %-12s %-14s %d elements, %d compared, %d excluded (denormal input or result), %d differ"
+                "  %-12s %-14s %d elements, %d compared, %d excluded (denormal input or tiny product), %d differ"
                 v.Kernel
                 v.Case
                 vw.Length
@@ -1293,6 +1396,7 @@ let tests =
                 heapWrites
             gpuTestTwice "the fp32 denormal probe is bit-identical twice" probe
             gpuTest "the probe's telemetry follows the interface table, timed and untimed" probeTelemetry
+            gpuTestTwice "the flush class flushes products below 2^-126 before rounding, twice" tininess
             gpuTestTwice "the five selftests are bit-exact against the CPU and bit-identical twice" selftests
             gpuTest "the negative control: without dispatches every selftest case is unwritten" negativeControl
             gpuTest "the selftest words equal D3D12's where the two classes agree" acrossBackends
