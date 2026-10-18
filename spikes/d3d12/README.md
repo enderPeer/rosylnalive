@@ -19,10 +19,10 @@ The Agility SDK half of R5 is skipped: AP-4 (the Agility SDK NuGet) is not appro
 - **Tests** (Lrm.Testing tiers; the gpu tier holds the d3d12 mutex, because WARP is Direct3D 12 and Lrm.Testing has no d3d12-warp backend):
   - cpu: the CPU limit, the relabelling facade, the verdict, the d3d12-warp DeviceInfo and class, the wrapper's refusal of a d3d12 Info, and the control shader set;
   - gpu, on WARP:
-    - the adapter and its capabilities, and D1's backend opening it;
+    - the adapter and its capabilities, and D1's backend opening it (with the debug layer asked for: on only when `D3D12SDKLayers.dll` is installed, which it is not here);
     - D1's fp32 denormal probe inside `LoadKernels`, with the embedded set (`-denorm preserve`), and the int-0001 control: `scale_f32` compiled now with the pinned DXC without `-denorm`;
     - D1's five selftests (nine cases) twice, bit-exact against the CPU and `KernelBounds.checkExact`, every dispatch under 100 ms, then their negative control;
-    - the same selftests on the hardware adapter (the RTX 4080), compared word for word with WARP's (skipped without hardware);
+    - the same selftests on the hardware adapter (the RTX 4080), compared word for word with WARP's, with the hardware run's records on the run log's `hw` node (skipped without hardware);
     - D1's copy test, the descriptor-write count, `scale_f32` over 64 Ki to 16 Mi elements for the 100 ms budget, and COM references;
     - E1's conformance suite (every discovered case, then its negative control) on d3d12-warp, through `Suites.BackendRun`.
 
@@ -41,11 +41,15 @@ pwsh spikes/d3d12/ci-probe.ps1 -Results artifacts/warp-ci                # what 
 
 A gpu-tier run takes about 4 s at 4 processors. It writes two run logs under `LRM_DATA/runs`, both of kind `kernels`, which `lrm report <runId>` renders:
 
-- **The spike's own run log** has the d3d12-warp class. Its records are:
-  - from D1's backend, relabelled: `gpu.dispatch`, `gpu.dispatches`, `gpu.bytes_moved`, `gpu.transfer`, `gpu.wait`, `gpu.probe`, `gpu.load_kernels`, `gpu.buffer_memory`, `mem.arena`, `gpu.heap.slots`, `gpu.fp32_denormals` and `gpu.selftest`;
-  - from the spike: the WARP `gpu.device.check` and `gpu.device.memory` in a `gpu.device.discover` span, `gpu.heap.descriptor_writes`, and `gpu.warp.versus_hardware` checks;
-  - from the hardware comparison, with `backend = d3d12`: the hardware run's records.
+- **The spike's own run log** has two nodes, because a node has one class (RunLog):
+  - **`n0`**, the creator, with the d3d12-warp class. Its records are:
+    - from D1's backend, relabelled: `gpu.dispatch`, `gpu.dispatches`, `gpu.bytes_moved`, `gpu.transfer`, `gpu.wait`, `gpu.probe`, `gpu.load_kernels`, `gpu.buffer_memory`, `mem.arena`, `gpu.heap.slots`, `gpu.fp32_denormals` and `gpu.selftest`;
+    - from the spike: the WARP `gpu.device.check` and `gpu.device.memory` in a `gpu.device.discover` span, `gpu.warp.backend` (timestamp frequency, DRED and whether the debug layer is on), `gpu.heap.descriptor_writes`, and the `gpu.warp.versus_hardware` checks;
+    - D1's d3d12 enumeration, once: its `gpu.device.check` records keep `backend = d3d12`, since they are the d3d12 class's verdicts on each adapter (WARP rejected).
+  - **`hw`**, joined with the hardware adapter's own d3d12 class (the RTX 4080, driver 616.92 here): every record of the hardware comparison's run, with `backend = d3d12`. There is no `hw` node without hardware, as on a runner.
 - **E1's conformance run log** has `conformance.case` checks and the backend's records, all `d3d12-warp`.
+
+The kernels report's headline totals ("GPU dispatches" and "total GPU time") cover every node, so the selftests report counts the hardware comparison's 10 dispatches with WARP's. The GPU-time chart, the slowest dispatches and the denormal tables name each record's backend and node, and the Nodes table names both classes.
 
 The rendered reports are committed under [`reports/`](reports/):
 
@@ -55,7 +59,11 @@ The rendered reports are committed under [`reports/`](reports/):
 
 The kernels template does not read `gpu.device.check`, `gpu.selftest` or `gpu.warp.versus_hardware`, so the ADR tabulates them (a request to the integrator, like D1's).
 
-`ci-probe.ps1` is what a one-off run on a windows-latest runner executes. It prints the OS build and the in-box versions, builds the spike and the CLI, runs `warp-info` and both tiers (`LRM_WARP_CPUS=all` by default there), renders every new run log, and writes `summary.md` (and the GitHub step summary). It changes no setting and downloads nothing; the workflow's bootstrap step provides DXC.
+`ci-probe.ps1` is what a one-off run on a windows-latest runner executes. It prints the OS (`Win32_OperatingSystem`'s caption, the release and the build with its update revision), the in-box versions and whether `D3D12SDKLayers.dll` is present. Then it builds the spike and the CLI, runs `warp-info` and both tiers (`LRM_WARP_CPUS=all` by default there), and renders every new run log. It writes `summary.md` (and the GitHub step summary) on every path, failures included, with whether D1's backend ran WARP under the debug layer. It changes no setting and downloads nothing; the workflow's bootstrap step provides DXC. Its exit code:
+
+- 0: WARP accepted and both tiers passed;
+- 1: a build, `warp-info` or a tier failed, or the script did: no verdict on WARP;
+- 3: `warp-info` rejected WARP for d3d12-warp (its own exit 3), the only code that is a verdict.
 
 ## Layout
 

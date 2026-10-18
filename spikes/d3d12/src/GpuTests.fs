@@ -83,7 +83,8 @@ let private adapter () =
     Expect.isEmpty r.Rejections "the d3d12-warp verdict accepts WARP"
     Expect.isGreaterThanOrEqual a.Index 0 "EnumAdapterByGpuPreference lists the WARP adapter"
 
-    let d3d12 = Adapters.enumerate () |> List.find (fun c -> Adapters.luidOf c.Info = Some a.Luid)
+    let d3d12 =
+        d3d12Candidates.Value |> List.find (fun c -> Adapters.luidOf c.Info = Some a.Luid)
     Expect.isFalse d3d12.Accepted "the d3d12 device check rejects the same adapter (d3d12-warp is its own class)"
     Expect.equal d3d12.Info.Index a.Index "the same position in D1's enumeration"
 
@@ -94,11 +95,26 @@ let private adapter () =
     let info = (b :> IGpuBackend).Info
     Expect.equal info.Backend ExecutionBackend.D3D12Warp "d3d12-warp"
 
+    // Options ask for the debug layer (Debug = true). D1 enables it only when D3D12SDKLayers is installed and only
+    // for the process's first device, which this test creates; once on, it stays on for every later device. A runner
+    // image with the Graphics Tools may have it, so the probe's summary records it.
+    let debugLayer = if inner.DebugLayer then "on" else "off"
+
     printfn
         "D1's backend on WARP: timestamps at %d Hz, DRED %s, debug layer %s"
         inner.TimestampFrequency
         (if inner.DredEnabled then "forced on" else "unavailable")
-        (if inner.DebugLayer then "on" else "not installed")
+        (if inner.DebugLayer then "on" else "off (D3D12SDKLayers not installed)")
+
+    Telemetry.event
+        "gpu.warp.backend"
+        [
+            Attr.str TelemetryKeys.Backend Relabel.To
+            Attr.int64 "timestamp_hz" (int64 inner.TimestampFrequency)
+            Attr.bool "dred" inner.DredEnabled
+            Attr.bool "debug_requested" inner.Options.Debug
+            Attr.str "debug_layer" debugLayer
+        ]
 
 // ---- the fp32 denormal probe -------------------------------------------------------------------------------------
 
@@ -215,13 +231,21 @@ let private negativeControl () =
         Expect.isFalse c.Passed (sprintf "%s %s fails without its dispatch" c.Kernel c.Case)
         Expect.equal c.NotWritten c.Elements (sprintf "%s %s: every element is unwritten" c.Kernel c.Case)
 
+/// The name of the hardware comparison's test, which also names its records on the hardware node.
+let private versusHardwareName =
+    "the selftests on WARP and on the hardware adapter differ at most in NaN payloads"
+
 /// The same selftests on the first accepted hardware adapter (the RTX 4080 here), and a byte comparison per case with
-/// WARP's. Different classes, so no bit-identity claim: the comparison is a measurement. Skipped without hardware (CI).
+/// WARP's. Different classes, so no bit-identity claim: the comparison is a measurement. The hardware run's records go
+/// to the run log's hardware node, which has that adapter's d3d12 class (Common.hardwareTelemetry); the comparison's
+/// gpu.warp.versus_hardware checks stay on n0. Skipped without hardware (CI).
 let private versusHardware () =
     match hardware () with
     | None -> skiptest "no hardware d3d12 adapter is accepted (a CI runner)"
     | Some info ->
         let hw =
+            use _ = Telemetry.install (hardwareTelemetry info versusHardwareName)
+
             use b =
                 D3D12Backend.Create(
                     info,
@@ -527,7 +551,7 @@ let tests () =
             gpuTestTwice "the int-0001 control on WARP: scale_f32 without -denorm, bit-identical twice" control
             gpuTestTwice "D1's five selftests on WARP are bit-exact against the CPU and bit-identical twice" selftests
             gpuTest "the negative control: without dispatches every selftest case is unwritten on WARP" negativeControl
-            gpuTest "the selftests on WARP and on the hardware adapter differ at most in NaN payloads" versusHardware
+            gpuTest versusHardwareName versusHardware
             gpuTestTwice "copies across and within pages are state-correct on WARP, bit-identical twice" copies
             gpuTest "WARP's heap writes 64 descriptors at CreateHeap and the probe's heap 64, then none" heapWrites
             gpuTestTwice "scale_f32 throughput on WARP, 64 Ki to 16 Mi elements, exact and bit-identical twice" throughput

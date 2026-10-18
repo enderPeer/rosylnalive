@@ -1,5 +1,6 @@
 /// Shared state of the spike's tests: the WARP provider, the affinity applied at start, the gpu tier's run log (kind
-/// kernels, the d3d12-warp class) and byte helpers.
+/// kernels: node n0 with the d3d12-warp class, and node hw with the hardware adapter's d3d12 class for the hardware
+/// comparison) and byte helpers.
 module Lrm.Spikes.D3D12.Common
 
 open System
@@ -92,9 +93,44 @@ let private run =
 let runIfCreated () =
     if run.IsValueCreated then Some run.Value else None
 
+/// The node id of the hardware comparison's records in the gpu tier's run log.
+let HardwareNode = NodeId.parse "hw"
+
+/// The hardware comparison's node: joined to the run log with the hardware adapter's own d3d12 class (GpuClass.fill
+/// over its DeviceInfo and the embedded set, as D1's LoadKernels does). A node has one class (RunLog), so the
+/// hardware run's records go here, never to n0, whose class is d3d12-warp.
+let mutable private hardwareNode: (DeviceInfo * RunContext) option = None
+
+/// The facade of the hardware node, under `test` = `name`; the node joins the run log on first use.
+let hardwareTelemetry (info: DeviceInfo) (name: string) : ITelemetry =
+    let node =
+        match hardwareNode with
+        | Some(i, n) when i = info -> n
+        | Some(i, _) -> failwithf "the hardware node has the class of %s, not %s" i.Name info.Name
+        | None ->
+            let n =
+                RunContext.Join(
+                    run.Value.Directory,
+                    { JoinOptions.create HardwareNode with
+                        ExecutionClass = Some(GpuClass.fill info (shaders ()))
+                    }
+                )
+
+            printfn "warp spike: node %s (%s, d3d12) joined the run log" HardwareNode.Value info.Name
+            hardwareNode <- Some(info, n)
+            n
+
+    node.Telemetry.Child [ Attr.str "test" name ]
+
 let finishRun (exitCode: int) =
+    let status = if exitCode = 0 then RunStatus.Ok else RunStatus.Failed
+
+    match hardwareNode with
+    | Some(_, n) -> n.Finish status
+    | None -> ()
+
     match runIfCreated () with
-    | Some r -> r.Finish(if exitCode = 0 then RunStatus.Ok else RunStatus.Failed)
+    | Some r -> r.Finish status
     | None -> ()
 
 /// A gpu test whose telemetry goes to the run log, under `test` = its name.
@@ -118,6 +154,10 @@ let recordDevice () =
         (sprintf "WARP %s" r.Adapter.DriverVersion)
         (Some (ShaderSet.setHash ShaderTarget.Dxil (shaders ())).Hex)
 
+/// D1's d3d12 enumeration, once per process. Its discovery records (gpu.device.check with backend = d3d12: the d3d12
+/// class's verdict on each adapter, WARP rejected) are written once, by the test that asks first.
+let d3d12Candidates = lazy (Adapters.enumerate ())
+
 /// The first accepted hardware d3d12 adapter, if any (none on a CI runner).
 let hardware () =
-    Adapters.enumerate () |> List.tryFind _.Accepted |> Option.map _.Info
+    d3d12Candidates.Value |> List.tryFind _.Accepted |> Option.map _.Info

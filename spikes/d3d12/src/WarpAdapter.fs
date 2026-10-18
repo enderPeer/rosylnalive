@@ -27,6 +27,10 @@ let DeviceBasicRender = 0x008Cu
 /// The in-box files whose versions name the WARP build and the D3D12 runtime.
 let inboxFiles = [ "d3d10warp.dll"; "d3d12.dll"; "D3D12Core.dll"; "dxgi.dll" ]
 
+/// The debug layer's file, which the Graphics Tools optional feature installs (not in-box): when it is present, D1's
+/// DeviceOptions.Debug turns the debug layer on for the process's first device.
+let layerFiles = [ "D3D12SDKLayers.dll" ]
+
 /// The file version of a System32 DLL, or "missing".
 let fileVersion (name: string) =
     let path = Path.Combine(Environment.SystemDirectory, name)
@@ -68,7 +72,7 @@ type WarpReport =
         /// matched by LUID; -1 when that enumeration does not list it).
         Adapter: AdapterIdentity
         Capabilities: Result<Capabilities, string>
-        /// DLL name and file version, in `inboxFiles` order.
+        /// DLL name and file version ("missing" when absent), in `inboxFiles` then `layerFiles` order.
         Files: (string * string) list
         /// Windows' build with its update revision (osBuild).
         Os: string
@@ -201,7 +205,7 @@ let probe () : WarpReport =
         {
             Adapter = a
             Capabilities = caps
-            Files = inboxFiles |> List.map (fun f -> f, fileVersion f)
+            Files = inboxFiles @ layerFiles |> List.map (fun f -> f, fileVersion f)
             Os = os
             OsEdition = edition
             Rejections = rejections a caps
