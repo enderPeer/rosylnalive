@@ -9,5 +9,6 @@
     <Compile Include="Greedy.fs" />
     <Compile Include="CpuOps.fs" />
     <Compile Include="Runner.fs" />
+    <Compile Include="GoldenCheck.fs" />
   </ItemGroup>
 </Project>

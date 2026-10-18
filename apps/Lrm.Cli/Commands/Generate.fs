@@ -5,10 +5,12 @@
 ///                  (--ids 1,2,3 | --ids-from FILE[:TENSOR] | --prompt TEXT) [--steps 16] [--stop-at-eos] [--margins]
 ///                  [--expect FILE:TENSOR] [--case NAME] [--threads 8] [--warmup 0] [--run-log] [--title TEXT]
 ///
-/// EOS is ignored unless --stop-at-eos is given (parity runs ignore it). --expect compares the ids with an integer
-/// tensor, such as goldens/tiny/g1/greedy.safetensors:p0.ids.torch32, and records a greedy_match golden.compare check.
-/// --run-log writes a run log of kind inference (LRM_DATA/runs), one node per backend, for `lrm report`. --warmup N
-/// runs N untimed, unrecorded greedy steps first, so JIT compilation and the weight copies stay out of the rates.
+/// EOS is ignored unless --stop-at-eos is given (parity runs ignore it). --expect compares the ids with the first ids
+/// of an integer tensor, such as goldens/tiny/g1/greedy.safetensors:p0.ids.torch32, and records a greedy_match
+/// golden.compare check: --steps 16 against a 64-id golden compares 16 ids, and --steps beyond the golden's length is
+/// refused (exit 2). --run-log writes one run log of kind inference (LRM_DATA/runs) per backend, for `lrm report`.
+/// --warmup N runs N untimed, unrecorded greedy steps first, so JIT compilation and the weight copies stay out of the
+/// rates.
 module Lrm.Cli.Commands.Generate
 
 open System
@@ -33,8 +35,11 @@ let private usage () =
     eprintfn "  --stop-at-eos stop after the config's EOS id (parity runs ignore EOS)"
     eprintfn "  --margins     print each step's top-2 logit margin"
     eprintfn "  --warmup      untimed, unrecorded greedy steps before the measured run (default 0)"
-    eprintfn "  --expect      the ids the run must give, as FILE:TENSOR; exit 1 when they differ"
-    eprintfn "  --run-log     write a run log of kind inference under LRM_DATA/runs"
+
+    eprintfn
+        "  --expect      the ids the run must give, as FILE:TENSOR (its first --steps ids); exit 1 when they differ"
+
+    eprintfn "  --run-log     write a run log of kind inference under LRM_DATA/runs, one per backend"
     2
 
 let private values =
@@ -65,26 +70,6 @@ let private caseOfSpec (spec: string) =
     | i when i > 0 -> tensor.Substring(0, i)
     | _ -> tensor
 
-let private greedyMatch (pair: TolerancePair option) (case: string) (got: int[]) (expected: int[]) =
-    let matched =
-        Seq.zip got expected |> Seq.takeWhile (fun (a, b) -> a = b) |> Seq.length
-
-    Compare.check
-        "greedy_match"
-        BoundOp.AtLeast
-        (float matched)
-        (float expected.Length)
-        (int64 expected.Length)
-        [
-            match pair with
-            | Some p -> yield Attr.str "pair" (TolerancePair.name p)
-            | None -> ()
-            yield Attr.str "prompt" case
-            yield Attr.str "tap" "greedy.ids"
-            yield Attr.int TelemetryKeys.Layer -1
-            yield Attr.str "kind" "chain"
-        ]
-
 let private run (argv: string[]) : int =
     match Cli.parse values switches argv with
     | Error e ->
@@ -105,7 +90,19 @@ let private run (argv: string[]) : int =
                     let! expected =
                         match p.Get "expect" with
                         | None -> Ok None
-                        | Some spec -> Cli.idsFrom spec "" |> Result.map (fun ids -> Some(spec, ids))
+                        | Some spec ->
+                            match Cli.idsFrom spec "" with
+                            | Ok ids when ids.Length < steps ->
+                                Error(
+                                    sprintf
+                                        "--expect %s holds %d ids, fewer than --steps %d; pass --steps %d or fewer"
+                                        spec
+                                        ids.Length
+                                        steps
+                                        ids.Length
+                                )
+                            | Ok ids -> Ok(Some(spec, ids))
+                            | Error e -> Error e
 
                     return dir, backends, steps, threads, warmup, expected
             }
@@ -142,24 +139,30 @@ let private run (argv: string[]) : int =
                                 $"lrm generate: {Path.GetFileName w.Dir} ({w.Revision.Text}), {prompt.Length} prompt tokens, {steps} steps"
                         )
 
-                    let host =
-                        Cli.RunHost(
+                    use host =
+                        new Cli.RunHost(
                             "inference",
-                            title,
+                            (fun backend ->
+                                if backends.Length > 1 then
+                                    Invariant.format $"{title}, on {backend}"
+                                else
+                                    title),
                             p.Has "run-log",
-                            [
-                                "model", Cli.displayPath w.Dir
-                                "revision", w.Revision.Text
-                                "model_sha256", w.Sha256.Hex
-                                "prompt", source
-                                "prompt_tokens", Invariant.i32 prompt.Length
-                                "steps", Invariant.i32 steps
-                                "stop_at_eos", (if options.StopAtEos then "true" else "false")
-                                "threads", Invariant.i32 threads
-                                "warmup_steps", Invariant.i32 warmup
-                                "backends", backends |> List.map _.Name |> String.concat ","
-                                "command", "lrm generate"
-                            ]
+                            fun backend ->
+                                [
+                                    "model", Cli.displayPath w.Dir
+                                    "revision", w.Revision.Text
+                                    "model_sha256", w.Sha256.Hex
+                                    "prompt", source
+                                    "prompt_tokens", Invariant.i32 prompt.Length
+                                    "steps", Invariant.i32 steps
+                                    "stop_at_eos", (if options.StopAtEos then "true" else "false")
+                                    "threads", Invariant.i32 threads
+                                    "warmup_steps", Invariant.i32 warmup
+                                    "backend", backend
+                                    "backends", backends |> List.map _.Name |> String.concat ","
+                                    "command", "lrm generate"
+                                ]
                         )
 
                     printfn
@@ -175,13 +178,17 @@ let private run (argv: string[]) : int =
                     let results = Collections.Generic.List<string * int[]>()
 
                     for i, f in List.indexed backends do
-                        let runner =
+                        // The plan: greedy decoding on the whole model, one cache, no taps.
+                        use runner =
                             f.Create
                                 w
-                                {
+                                { OpsOptions.defaults w.Config with
                                     Threads = threads
                                     MaxContext = Greedy.positions prompt.Length steps
+                                    MaxRows = prompt.Length
                                 }
+
+                        let mutable backendFailed = false
 
                         printfn "%s: %s" f.Name (Cli.describe runner.ExecutionClass)
 
@@ -189,7 +196,7 @@ let private run (argv: string[]) : int =
                             runner.Greedy(prompt, GreedyOptions.parity (min warmup steps)) |> ignore
 
                         do
-                            use _ = host.Install(i, runner.ExecutionClass)
+                            use _ = host.Install(i, f.Name, runner.ExecutionClass)
                             let r = runner.Greedy(prompt, options)
                             results.Add(f.Name, r.Ids)
                             printfn "  ids: %s" (r.Ids |> Array.map Invariant.i32 |> String.concat " ")
@@ -222,25 +229,39 @@ let private run (argv: string[]) : int =
                                     elif spec.Contains "torch32" then "torch32"
                                     else ""
 
-                                let expectedIds =
-                                    if r.StoppedAtEos && r.Ids.Length < ids.Length then
-                                        ids[.. r.Ids.Length - 1]
-                                    else
+                                // The ids generated (fewer after an EOS stop) against the golden's first ids.
+                                let c =
+                                    GoldenCheck.greedy
+                                        [
+                                            match Cli.pairFor f.Name oracle with
+                                            | Some p -> yield Attr.str "pair" (TolerancePair.name p)
+                                            | None -> ()
+                                            yield Attr.str "backend" f.Name
+                                            yield Attr.str "prompt" case
+                                            yield Attr.str "tap" "greedy.ids"
+                                            yield Attr.int TelemetryKeys.Layer -1
+                                            yield Attr.str "kind" "chain"
+                                        ]
+                                        r.Ids
                                         ids
 
-                                let c = greedyMatch (Cli.pairFor f.Name oracle) case r.Ids expectedIds
-
                                 printfn
-                                    "  expect: %d of %d steps match %s%s"
+                                    "  expect: %d of %d ids match %s (its first %d of %d)%s"
                                     (int c.Measured)
-                                    expectedIds.Length
+                                    r.Ids.Length
                                     spec
+                                    r.Ids.Length
+                                    ids.Length
                                     (if c.Passed then "" else " (MISMATCH)")
 
                                 if not c.Passed then
-                                    failed <- true
+                                    backendFailed <- true
 
                         host.PrintRates i
+                        host.Finish(i, (if backendFailed then RunStatus.Failed else RunStatus.Ok))
+
+                        if backendFailed then
+                            failed <- true
 
                     if results.Count > 1 then
                         let first = snd results[0]
@@ -255,7 +276,6 @@ let private run (argv: string[]) : int =
                              else
                                  "the ids differ (different classes may)")
 
-                    host.Finish(if failed then RunStatus.Failed else RunStatus.Ok)
                     if failed then 1 else 0
             with
             | :? Qwen3WeightsException as e ->

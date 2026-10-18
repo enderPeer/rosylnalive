@@ -299,18 +299,21 @@ module Cli =
                 a.Write r
                 b.Write r
 
-    /// The telemetry of one command: an optional run log (RunLog contract) with one node per backend, n0 creating the
-    /// run, and a collector per node for the rates the command prints. Telemetry never changes a value.
-    type RunHost(kind: string, title: string, runLog: bool, parameters: (string * string) list) =
+    /// The telemetry of one command: with --run-log, one run log (RunLog contract) per backend, so each run has one
+    /// ExecutionClass and the inference report's headline rates are that class's alone; and a collector per backend
+    /// for the rates the command prints. `titleFor` and `parametersFor` give a backend's run title and parameters.
+    /// Dispose finishes, as aborted, any run the command did not finish. Telemetry never changes a value.
+    type RunHost
+        (kind: string, titleFor: string -> string, runLog: bool, parametersFor: string -> (string * string) list) =
         let collectors = Dictionary<int, Collector>()
-        let runs = List<RunContext>()
-        let mutable dir: string option = None
+        let runs = Dictionary<int, RunContext>()
 
-        /// The run folder, once a node has started.
-        member _.Directory = dir
+        /// The run folders started so far, in backend order.
+        member _.Directories =
+            runs |> Seq.sortBy _.Key |> Seq.map _.Value.Directory |> List.ofSeq
 
-        /// Makes node `i`'s facade ambient until disposed (`i` = 0 creates the run).
-        member _.Install(i: int, xclass: ExecutionClass) : IDisposable =
+        /// Makes backend `i`'s facade ambient until disposed; with --run-log it starts that backend's run.
+        member _.Install(i: int, backend: string, xclass: ExecutionClass) : IDisposable =
             let collector = Collector()
             collectors[i] <- collector
 
@@ -318,31 +321,18 @@ module Cli =
                 Telemetry.install (Telemetry.ofSink collector)
             else
                 let run =
-                    match dir with
-                    | None ->
-                        let r =
-                            RunContext.Create(
-                                { RunOptions.create kind title with
-                                    ExecutionClass = Some xclass
-                                    GitSha = gitSha ()
-                                    Params = parameters
-                                }
-                            )
+                    RunContext.Create(
+                        { RunOptions.create kind (titleFor backend) with
+                            ExecutionClass = Some xclass
+                            GitSha = gitSha ()
+                            Params = parametersFor backend
+                        }
+                    )
 
-                        dir <- Some r.Directory
-                        r
-                    | Some d ->
-                        RunContext.Join(
-                            d,
-                            { JoinOptions.create (NodeId.parse (Invariant.format $"n{i}")) with
-                                ExecutionClass = Some xclass
-                            }
-                        )
-
-                runs.Add run
+                runs[i] <- run
                 Telemetry.install (Telemetry.ofSink (TeeSink(run.Sink, collector)))
 
-        /// Prints node i's prefill and decode rates, from its model.forward spans (as the inference report does).
+        /// Prints backend i's prefill and decode rates, from its model.forward spans (as the inference report does).
         member _.PrintRates(i: int) =
             let line (phase: string) =
                 let calls, tokens, ns = collectors[i].Rate phase
@@ -361,14 +351,18 @@ module Cli =
             | [] -> ()
             | xs -> printfn "  speed: %s" (String.concat "; " xs)
 
-        /// Finishes every node, joined ones first and the creator (which writes the manifest) last.
-        member _.Finish(status: RunStatus) =
-            for r in Seq.rev runs do
+        /// Finishes backend i's run, if it has one, and prints where it is.
+        member _.Finish(i: int, status: RunStatus) =
+            match runs.TryGetValue i with
+            | true, r ->
                 r.Finish status
+                printfn "  run log: %s (render it with: lrm report %s)" r.Directory (Path.GetFileName r.Directory)
+            | _ -> ()
 
-            match dir with
-            | Some d -> printfn "run log: %s (render it with: lrm report %s)" d (Path.GetFileName d)
-            | None -> ()
+        interface IDisposable with
+            member _.Dispose() =
+                for r in runs.Values do
+                    (r :> IDisposable).Dispose()
 
 let private list (_: string[]) =
     for f in all () do

@@ -14,8 +14,11 @@ type ForwardResult =
     }
 
 /// A model bound to one backend's ops, with the handle type hidden: what `lrm forward`, `lrm generate` and the
-/// backend registry (Commands/Backends.fs) work with. Code that needs the op seam itself uses IForwardOps.
+/// backend registry (Commands/Backends.fs) work with. Code that needs the op seam itself uses IForwardOps. The runner
+/// owns its ops: Dispose releases them (a GPU's weights and heap), so callers `use` it.
 type IQwenRunner =
+    inherit IDisposable
+
     /// The registry name, such as cpu-f32.
     abstract Backend: string
     abstract ExecutionClass: ExecutionClass
@@ -23,7 +26,8 @@ type IQwenRunner =
     abstract Model: Qwen3Model
     abstract MaxContext: int
 
-    /// A prefill of `ids` from position 0 into a new cache of exactly ids.Length positions.
+    /// A prefill of `ids` from position 0 into a new cache of exactly ids.Length positions, released before it
+    /// returns; the results are on the host. The ops' plan must cover the rows and the taps.
     abstract Forward: ids: int[] * taps: TapFilter * head: HeadRows -> ForwardResult
 
     /// Greedy.run on these ops.
@@ -31,9 +35,11 @@ type IQwenRunner =
 
 [<RequireQualifiedAccess>]
 module QwenRunner =
-    /// A runner over any ops.
+    /// A runner over any ops; it owns them and disposes them with itself.
     let ofOps (backend: string) (model: Qwen3Model) (ops: IForwardOps<'t>) : IQwenRunner =
         { new IQwenRunner with
+            member _.Dispose() = ops.Dispose()
+
             member _.Backend = backend
             member _.ExecutionClass = ops.ExecutionClass
             member _.DType = ops.DType
@@ -41,7 +47,7 @@ module QwenRunner =
             member _.MaxContext = ops.MaxContext
 
             member _.Forward(ids, taps, head) =
-                let cache = KvCache.create ops model (Stage.whole model.Config) (max 1 ids.Length)
+                use cache = KvCache.create ops model (Stage.whole model.Config) (max 1 ids.Length)
                 let store = TapStore<'t>(taps)
 
                 let logits =
@@ -72,6 +78,7 @@ type OpsFactory =
         /// The registry name, such as cpu-f32 or vulkan; for a CPU or GPU backend it is the ExecutionBackend name.
         Name: string
         Summary: string
+        /// Binds the backend to verified weights under a plan (OpsOptions); the caller disposes the runner.
         Create: Qwen3Weights -> OpsOptions -> IQwenRunner
     }
 

@@ -65,7 +65,7 @@ let tests =
                     "digest"
 
                 // CpuOps builds the same table for its MaxContext.
-                let ops = CpuOps<float32>(tinyWeights.Value, tinyOptions ())
+                use ops = new CpuOps<float32>(tinyWeights.Value, tinyOptions ())
                 Expect.equal (ops.RopeTable.Digest()) (t.Digest()) "CpuOps table"
 
             testCase "the Qwen3-0.6B table for positions 0..8191 has the ReferenceOracles digest and entries"

@@ -1,12 +1,25 @@
 /// The run log of M2a's tiny-model acceptance (ReportTemplates, parity). The acceptance tests report through the
-/// facade; this module also writes their records to LRM_DATA/runs/<runId>, so `lrm report <runId>` renders the parity
-/// report of the Qwen forward from a real run. The run is created by the first acceptance test that runs, with one
-/// node per CPU class: n0 (the creator) is cpu-f64, n1 is cpu-f32. Main finishes it when the exe ends.
+/// facade, and this module also writes their records to a real run log. The run is created by the first acceptance
+/// test that runs, with one node per CPU class: n0 (the creator) is cpu-f64, n1 is cpu-f32. Main finishes it when the
+/// exe ends.
+///
+/// Where the run goes: with LRM_WRITE_PARITY_RUN=1 it is kept under LRM_DATA/runs/<runId>, so `lrm report <runId>`
+/// renders the parity report from it (docs/reports/parity/README.md). Otherwise it goes to a temporary folder that
+/// `finish` deletes, so routine test runs by every agent on the shared machine leave nothing in LRM_DATA.
 module Lrm.Models.Qwen.Tests.ParityRun
 
 open System
 open Lrm.Core
 open Lrm.Telemetry
+open Lrm.Models.Qwen.Tests.Common
+
+/// The variable that keeps the parity run under LRM_DATA/runs.
+[<Literal>]
+let KeepVariable = "LRM_WRITE_PARITY_RUN"
+
+/// True when this process keeps its parity run (LRM_WRITE_PARITY_RUN=1).
+let keeps () =
+    Environment.GetEnvironmentVariable KeepVariable = "1"
 
 /// Every span on both facades, ended together.
 type private TeeSpan(a: ISpan, b: ISpan) =
@@ -62,16 +75,25 @@ type private Tee(a: ITelemetry, b: ITelemetry) =
         member _.Child(attrs) =
             Tee(a.Child attrs, b.Child attrs) :> ITelemetry
 
-type private Runs = { F64: RunContext; F32: RunContext }
+type private Runs =
+    {
+        F64: RunContext
+        F32: RunContext
+        /// The temporary runs folder that finish deletes, when the run is not kept.
+        Temp: string option
+    }
 
 let private gate = obj ()
 let mutable private runs: Runs option = None
 
 let private create () =
+    let temp = if keeps () then None else Some(tempDir "parity-runs")
+
     let f64 =
         RunContext.Create(
             { RunOptions.create "parity" "Tiny model: the Qwen forward (M2a) on cpu-f64 and cpu-f32" with
                 ExecutionClass = Some(ExecutionClass.forCpu ExecutionBackend.CpuF64)
+                RunsRoot = temp
                 GitSha = Lrm.Testing.Env.commit ()
                 Params =
                     [
@@ -92,8 +114,10 @@ let private create () =
             }
         )
 
-    printfn "parity run log: %s" f64.Directory
-    { F64 = f64; F32 = f32 }
+    if temp.IsNone then
+        printfn "parity run log: %s" f64.Directory
+
+    { F64 = f64; F32 = f32; Temp = temp }
 
 let private get () =
     lock gate (fun () ->
@@ -130,4 +154,5 @@ let finish (exitCode: int) =
             // Finish closes each node's events file; the creator (n0) also writes the final manifest.
             r.F32.Finish status
             r.F64.Finish status
+            r.Temp |> Option.iter deleteDir
             runs <- None)

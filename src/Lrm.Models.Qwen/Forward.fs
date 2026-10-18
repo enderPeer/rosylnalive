@@ -86,27 +86,12 @@ module Forward =
 
         out
 
-    /// Runs one stage over T rows at positions pos0 .. pos0 + T - 1 (ForwardOpsAndQwenModel, "runStage").
-    ///
-    /// - The input is token ids for the stage that starts at layer 0, else the residual stream [T, hidden] that the
-    ///   previous stage returned, in the ops' DType (fp32 on every fp32 class).
-    /// - pos0 is at most cache.Length, and pos0 + T at most cache.MaxPos. The stage writes cache rows pos0 .. pos0 +
-    ///   T - 1 of each of its layers and sets cache.Length to pos0 + T; a pos0 below Length rewrites from there (a
-    ///   replay). If the call raises, cache.Length is pos0.
-    /// - The result is the residual stream after the stage's last layer, or, for the stage with the head, the
-    ///   logits ([T, vocab] for HeadRows.All, [1, vocab] for HeadRows.Last).
-    /// - Taps named by ActivationNames go to options.Taps when it wants them, as snapshots (IForwardOps.Tap).
-    let runStage
-        (ops: IForwardOps<'t>)
-        (model: Qwen3Model)
-        (stage: Stage)
-        (cache: KvCache<'t>)
-        (pos0: int)
-        (input: StageInput<'t>)
-        (options: ForwardOptions<'t>)
-        : 't =
-        let c = model.Config
+    /// The checks every forward makes before any op: the stage, its cache and the positions (ForwardException).
+    let private checkCache (c: Qwen3Config) (stage: Stage) (cache: KvCache<'t>) (pos0: int) (rows: int) =
         Stage.validate c stage
+
+        if cache.IsDisposed then
+            raise (ForwardException(sprintf "the cache of stage %d was disposed" stage.Index))
 
         if cache.FirstLayer <> stage.FirstLayer || cache.LayerCount <> stage.LayerCount then
             raise (
@@ -119,21 +104,6 @@ module Forward =
                         stage.LastLayer
                 )
             )
-
-        let rows =
-            match input with
-            | StageInput.Ids ids when stage.Embeds -> ids.Length
-            | StageInput.Hidden h when not stage.Embeds -> ops.Rows h
-            | StageInput.Ids _ ->
-                raise (
-                    ForwardException(
-                        sprintf
-                            "stage %d starts at layer %d: its input is the residual stream, not ids"
-                            stage.Index
-                            stage.FirstLayer
-                    )
-                )
-            | StageInput.Hidden _ -> raise (ForwardException "the stage that starts at layer 0 takes token ids")
 
         if rows < 1 then
             raise (ForwardException "a forward needs at least one row")
@@ -153,6 +123,79 @@ module Forward =
             raise (
                 ForwardException(
                     sprintf "positions %d .. %d do not fit a cache of %d positions" pos0 (pos0 + rows - 1) cache.MaxPos
+                )
+            )
+
+    /// Runs one stage over T rows at positions pos0 .. pos0 + T - 1 (ForwardOpsAndQwenModel, "runStage").
+    ///
+    /// - The input is token ids for the stage that starts at layer 0, else the residual stream [T, hidden] that the
+    ///   previous stage returned, in the ops' DType (fp32 on every fp32 class).
+    /// - pos0 is at most cache.Length, and pos0 + T at most cache.MaxPos. The stage writes cache rows pos0 .. pos0 +
+    ///   T - 1 of each of its layers and sets cache.Length to pos0 + T; a pos0 below Length rewrites from there (a
+    ///   replay). If an op raises, cache.Length is pos0.
+    /// - Every check runs before the first op, so a refused call changes nothing. The ops then see BeginForward (which
+    ///   refuses a call outside their plan), the ops of the static order and EndForward (with the result, or None
+    ///   when an op raised).
+    /// - The result is the residual stream after the stage's last layer, or, for the stage with the head, the
+    ///   logits ([T, vocab] for HeadRows.All, [1, vocab] for HeadRows.Last).
+    /// - Taps named by ActivationNames go to options.Taps when it wants them, as snapshots (IForwardOps.Tap). A
+    ///   filter naming anything else is refused.
+    let runStage
+        (ops: IForwardOps<'t>)
+        (model: Qwen3Model)
+        (stage: Stage)
+        (cache: KvCache<'t>)
+        (pos0: int)
+        (input: StageInput<'t>)
+        (options: ForwardOptions<'t>)
+        : 't =
+        let c = model.Config
+        Stage.validate c stage
+
+        let rows =
+            match input with
+            | StageInput.Ids ids when stage.Embeds -> ids.Length
+            | StageInput.Hidden h when not stage.Embeds ->
+                let cols = ops.Cols h
+
+                if cols <> c.Hidden then
+                    raise (
+                        ForwardException(
+                            sprintf
+                                "stage %d takes the residual stream [T, %d]; the input has %d columns"
+                                stage.Index
+                                c.Hidden
+                                cols
+                        )
+                    )
+
+                ops.Rows h
+            | StageInput.Ids _ ->
+                raise (
+                    ForwardException(
+                        sprintf
+                            "stage %d starts at layer %d: its input is the residual stream, not ids"
+                            stage.Index
+                            stage.FirstLayer
+                    )
+                )
+            | StageInput.Hidden _ -> raise (ForwardException "the stage that starts at layer 0 takes token ids")
+
+        checkCache c stage cache pos0 rows
+
+        let filter =
+            match options.Taps with
+            | Some store -> store.Filter
+            | None -> TapFilter.Off
+
+        match TapFilter.unknown c.Layers filter with
+        | [] -> ()
+        | names ->
+            raise (
+                ForwardException(
+                    sprintf
+                        "no ActivationNames tap is called %s"
+                        (names |> List.map (sprintf "'%s'") |> String.concat ", ")
                 )
             )
 
@@ -189,51 +232,73 @@ module Forward =
 
             x
 
+        let body () =
+            let mutable x =
+                match input with
+                | StageInput.Ids ids ->
+                    let e = tap "embed.out" (ops.Embed ids)
+                    meter (Op.Embed(int64 rows, int64 c.Hidden, DType.BF16))
+                    e
+                | StageInput.Hidden h -> h
+
+            for i in stage.FirstLayer .. stage.LastLayer do
+                use _ =
+                    Telemetry.span
+                        LayerSpan
+                        [
+                            Attr.int TelemetryKeys.Layer i
+                            Attr.str "phase" phase
+                            Attr.int "tokens" rows
+                        ]
+
+                use _ = Telemetry.scope [ Attr.int TelemetryKeys.Layer i ]
+                x <- layer ops model cache i pos0 rows tap x
+
+            if not head then
+                x
+            else
+                // The final norm runs on every row (the FLOP registry's forward); the head on the rows asked for.
+                let f = tap "final_norm.out" (ops.RmsNorm(x, model.Params.Norm, c.RmsNormEps))
+
+                let h, headRows =
+                    match options.Head with
+                    | HeadRows.All -> f, rows
+                    | HeadRows.Last -> (if rows = 1 then f else ops.LastRow f), 1
+
+                let logits = tap "logits" (ops.MatMul(h, model.Params.LmHead))
+
+                if Telemetry.enabled () then
+                    meter (Op.RmsNorm(int64 rows, int64 c.Hidden, DType.BF16))
+                    meter (Op.MatMul(int64 headRows, int64 c.Vocab, int64 c.Hidden, DType.F32, DType.BF16, DType.F32))
+                    Metering.tokens "model.tokens" (float rows) []
+
+                span.Add(Attr.int "head_rows" headRows)
+                logits
+
+        // A call the plan refuses changes nothing.
+        ops.BeginForward
+            {
+                Stage = stage
+                Rows = rows
+                Pos0 = pos0
+                Head = options.Head
+                Taps = filter
+            }
+
+        // The rows from pos0 on are rewritten from here: while the stage runs, and after it raises, only rows
+        // 0 .. pos0 - 1 are valid.
         cache.Length <- pos0
 
-        let mutable x =
-            match input with
-            | StageInput.Ids ids ->
-                let e = tap "embed.out" (ops.Embed ids)
-                meter (Op.Embed(int64 rows, int64 c.Hidden, DType.BF16))
-                e
-            | StageInput.Hidden h -> h
+        let result =
+            try
+                body ()
+            with _ ->
+                ops.EndForward None
+                reraise ()
 
-        for i in stage.FirstLayer .. stage.LastLayer do
-            use _ =
-                Telemetry.span
-                    LayerSpan
-                    [
-                        Attr.int TelemetryKeys.Layer i
-                        Attr.str "phase" phase
-                        Attr.int "tokens" rows
-                    ]
-
-            use _ = Telemetry.scope [ Attr.int TelemetryKeys.Layer i ]
-            x <- layer ops model cache i pos0 rows tap x
-
+        ops.EndForward(Some result)
         cache.Length <- pos0 + rows
-
-        if not head then
-            x
-        else
-            // The final norm runs on every row (the FLOP registry's forward); the head on the rows asked for.
-            let f = tap "final_norm.out" (ops.RmsNorm(x, model.Params.Norm, c.RmsNormEps))
-
-            let h, headRows =
-                match options.Head with
-                | HeadRows.All -> f, rows
-                | HeadRows.Last -> (if rows = 1 then f else ops.LastRow f), 1
-
-            let logits = tap "logits" (ops.MatMul(h, model.Params.LmHead))
-
-            if Telemetry.enabled () then
-                meter (Op.RmsNorm(int64 rows, int64 c.Hidden, DType.BF16))
-                meter (Op.MatMul(int64 headRows, int64 c.Vocab, int64 c.Hidden, DType.F32, DType.BF16, DType.F32))
-                Metering.tokens "model.tokens" (float rows) []
-
-            span.Add(Attr.int "head_rows" headRows)
-            logits
+        result
 
     /// The whole model as one stage: a prefill at pos0 = cache.Length = 0, or a decode or chunk after it.
     let run
@@ -248,7 +313,9 @@ module Forward =
 
     /// Several stages in order, each with its own cache, handing the residual stream through `transfer` at every
     /// boundary (a cluster sends it over the network; `hostRoundTrip` reads it back and uploads it, as a node does).
-    /// The stages must cover the model in order. Returns the last stage's logits.
+    /// The stages must cover the model in order, and every cache is checked before the first stage runs. Returns the
+    /// last stage's logits. If a stage or a transfer raises, every cache's Length is pos0: the rows from pos0 on are
+    /// valid in none of them.
     let runStages
         (ops: IForwardOps<'t>)
         (model: Qwen3Model)
@@ -283,17 +350,26 @@ module Forward =
         if caches.Length <> stages.Length then
             invalidArg "caches" (sprintf "%d caches for %d stages" caches.Length stages.Length)
 
+        let pairs = List.zip stages caches |> Array.ofList
+
+        for s, cache in pairs do
+            checkCache c s cache pos0 ids.Length
+
         let mutable input = StageInput.Ids ids
         let mutable out = Unchecked.defaultof<'t>
 
-        let pairs = List.zip stages caches |> Array.ofList
+        try
+            for i in 0 .. pairs.Length - 1 do
+                let s, cache = pairs[i]
+                out <- runStage ops model s cache pos0 input options
 
-        for i in 0 .. pairs.Length - 1 do
-            let s, cache = pairs[i]
-            out <- runStage ops model s cache pos0 input options
+                if i < pairs.Length - 1 then
+                    input <- StageInput.Hidden(transfer out)
+        with _ ->
+            for _, cache in pairs do
+                cache.Length <- pos0
 
-            if i < pairs.Length - 1 then
-                input <- StageInput.Hidden(transfer out)
+            reraise ()
 
         out
 
