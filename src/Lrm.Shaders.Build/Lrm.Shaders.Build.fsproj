@@ -2,6 +2,7 @@
   <!-- Owner: R4. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
     <Compile Include="Compiler.fs" />
+    <Compile Include="SpirvChecks.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 </Project>

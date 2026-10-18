@@ -59,6 +59,16 @@ module SourceConvention =
             "SamplerState", "kernels use no samplers"
             "IncrementCounter", "counters are not allowed"
             "DecrementCounter", "counters are not allowed"
+            "SV_DispatchThreadID", "use SV_GroupID with LRM_GROUP_LINEAR, so folded grids stay correct"
+            "numthreads", "use LRM_NUMTHREADS(<kernel>)"
+            "vk", "SPIR-V-only intrinsics are not allowed: both targets compile one body"
+        ]
+
+    /// Scalar types a kernel or helper must not use, with the reason. Their vector (`T2` to `T4`) and matrix (`T1x1`
+    /// to `T4x4`) forms are refused too. The SPIR-V inspector refuses the same widths (rules `16-bit-types` and
+    /// `scalar-width`), so a kernel that uses them fails the lint before either target compiles.
+    let forbiddenTypes =
+        [
             "half", "16-bit types are not allowed"
             "min16float", "16-bit types are not allowed"
             "min10float", "16-bit types are not allowed"
@@ -68,10 +78,22 @@ module SourceConvention =
             "float16_t", "16-bit types are not allowed"
             "int16_t", "16-bit types are not allowed"
             "uint16_t", "16-bit types are not allowed"
-            "SV_DispatchThreadID", "use SV_GroupID with LRM_GROUP_LINEAR, so folded grids stay correct"
-            "numthreads", "use LRM_NUMTHREADS(<kernel>)"
-            "vk", "SPIR-V-only intrinsics are not allowed: both targets compile one body"
+            "double", "64-bit types are not allowed: shaderFloat64 is not a recipe feature"
+            "float64_t", "64-bit types are not allowed: shaderFloat64 is not a recipe feature"
+            "int64_t", "64-bit types are not allowed: shaderInt64 is not a recipe feature"
+            "uint64_t", "64-bit types are not allowed: shaderInt64 is not a recipe feature"
         ]
+
+    let private vectorOrMatrix =
+        Regex(@"^[1-4](x[1-4])?$", RegexOptions.CultureInvariant)
+
+    /// The forbidden scalar type an identifier names, as itself or as a vector or matrix of it.
+    let private forbiddenType (id: string) =
+        forbiddenTypes
+        |> List.tryFind (fun (t, _) ->
+            id = t
+            || (id.StartsWith(t, StringComparison.Ordinal)
+                && vectorOrMatrix.IsMatch(id.Substring t.Length)))
 
     /// Identifier prefixes a kernel or helper must not use, with the reason.
     let forbiddenPrefixes =
@@ -124,6 +146,11 @@ module SourceConvention =
         for word, why in forbidden do
             if ids.Contains word then
                 p.Add(sprintf "'%s' is not allowed: %s" word why)
+
+        for id in ids do
+            match forbiddenType id with
+            | Some(_, why) -> p.Add(sprintf "'%s' is not allowed: %s" id why)
+            | None -> ()
 
         for prefix, why in forbiddenPrefixes do
             for id in ids do

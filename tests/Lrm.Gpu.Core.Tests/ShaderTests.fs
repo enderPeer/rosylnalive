@@ -236,6 +236,19 @@ let tests =
                 rejects "ResourceDescriptorHeap" (add "RWByteAddressBuffer b = ResourceDescriptorHeap[0];")
                 rejects "'half'" (add "half h;")
                 rejects "16-bit" (add "uint16_t u;")
+                rejects "'half4' is not allowed: 16-bit" (add "half4 h;")
+                rejects "'min16float2x2' is not allowed: 16-bit" (add "min16float2x2 h;")
+                rejects "'double' is not allowed: 64-bit" (add "double d;")
+                rejects "'double3' is not allowed: 64-bit" (add "double3 d;")
+                rejects "'float64_t' is not allowed: 64-bit" (add "float64_t d;")
+                rejects "'int64_t' is not allowed: 64-bit" (add "int64_t d;")
+                rejects "'uint64_t2' is not allowed: 64-bit" (add "uint64_t2 d;")
+
+                Expect.equal
+                    (SourceConvention.lint k (add "static const uint doubled = 2; static const float halfway = 0.5;"))
+                    []
+                    "identifiers that only start with a type name"
+
                 rejects "WaveActiveSum" (add "float s = WaveActiveSum(1.0);")
                 rejects "QuadReadAcrossX" (add "float s = QuadReadAcrossX(1.0);")
                 rejects "InterlockedAdd" (add "void f() { uint o; InterlockedAdd(o, 1, o); }")

@@ -1,6 +1,6 @@
 # HeapLayoutAndTensorTable contract
 
-Owner: R4 (R4a). Status: v1, frozen at the contracts-v1 tag. Consumers: the GPU backends (D1, V1, R5), the CPU device and conformance harness (E1), the kernels (K1 to K3) and the executor (X1). Code: `src/Lrm.Gpu.Core/HeapLayout.fs`, `src/Lrm.Gpu.Core/TensorTable.fs`. Tests: `tests/Lrm.Gpu.Core.Tests/HeapLayoutTests.fs`, `TensorTableTests.fs`.
+Owner: R4 (R4a wrote v1; R4b v1.1). Status: v1.1 (additive over v1): the Vulkan slot mapping follows R1's recipe in general form (VulkanHeapRecipe). Consumers: the GPU backends (D1, V1, R5), the CPU device and conformance harness (E1), the kernels (K1 to K3) and the executor (X1). Code: `src/Lrm.Gpu.Core/HeapLayout.fs`, `src/Lrm.Gpu.Core/TensorTable.fs`; the shader side of the Vulkan mapping is `SpirvBinding` in `src/Lrm.Gpu.Core/Spirv.fs` (ShaderBuildAndSourceConvention). Tests: `tests/Lrm.Gpu.Core.Tests/HeapLayoutTests.fs`, `TensorTableTests.fs`.
 
 Every GPU backend has **one resource heap of 64 descriptor slots, written once at startup**. Slot 0 holds the tensor table; slots 1 to 63 hold pages, the buffers of the memory arenas. Kernels never see a descriptor index directly: they receive 32-bit tensor tokens, look the token's row up in the table, and get the slot and byte offset from the row. One mechanism serves every kernel on both APIs.
 
@@ -14,9 +14,15 @@ Every GPU backend has **one resource heap of 64 descriptor slots, written once a
 | Page | at most 1 GiB, a multiple of 64 KiB | `Heap.MaxPageBytes`, `Heap.PageGranularity` |
 | Allocation alignment | 256 bytes (HeapPlanner) | `Heap.AllocationAlignment` |
 
-- **Slot mapping, Vulkan.** The resource heap holds the 64 descriptors at stride 16: slot *i* is at byte `16·i` (`Heap.vulkanDescriptorOffset`). The driver's reserved range follows them, 64-byte aligned, at byte 1024 (`Heap.vulkanReservedRangeOffset`); the heap is `1024 + reservedRangeBytes` bytes (`Heap.vulkanHeapBytes`). The reserved range is never written. A device whose buffer descriptors do not fit in 16 bytes is rejected. R1's ADR (VulkanHeapRecipe) records the remaining mapping values; V1 implements them.
+- **Slot mapping, Vulkan** (VulkanHeapRecipe section 3; `Heap.vulkanGeometry limits`):
+  - slot *i* is at byte *i* × `bufferDescriptorSize` from `heapRange.address` (`Heap.vulkanSlotOffset`), which is also the mapping's `heapArrayStride`, so `g_buf[i]` in a kernel is slot *i*;
+  - the driver's reserved range follows the 64 slots, at the slot area aligned up to max(64, `bufferDescriptorAlignment`, `imageDescriptorAlignment`), and is `minResourceHeapReservedRange` bytes long. The heap is that offset plus the range, and must fit `maxResourceHeapSize`;
+  - on the RTX 4080 (driver 616.92) this is slot *i* at `16·i`, the reserved range at byte 1,024 for 96,768 bytes, and a heap of 97,792 bytes. The v1 helpers `Heap.vulkanDescriptorOffset`, `Heap.vulkanReservedRangeOffset` and `Heap.vulkanHeapBytes` are this case (`Heap.rtx4080VulkanLimits`); V1 queries the limits and uses `Heap.vulkanGeometry`;
+  - the reserved range is never read or written after the first bind;
+  - a device whose buffer descriptors do not fit in 16 bytes is still rejected (GpuBackendInterface requirements), because that is the tested case;
+  - VulkanHeapRecipe records the remaining values (memory types, features, the heap base alignment); V1 implements them.
 - **Slot mapping, D3D12.** Slot *i* is descriptor index *i* (`Heap.d3d12DescriptorIndex`) of one shader-visible CBV/SRV/UAV heap of exactly 64 descriptors. Every page is a raw UAV: `DXGI_FORMAT_R32_TYPELESS`, `D3D12_BUFFER_UAV_FLAG_RAW`, `FirstElement` 0 and `NumElements` = bytes / 4. The table in slot 0 is a raw UAV of 1 MiB.
-- **Unused slots** (after the last page) hold null descriptors, written once like the others. Kernels never touch them: no table row names them.
+- **Unused slots** (after the last page) are written once like the others. On D3D12 they hold null descriptors. Vulkan has no null descriptors without `robustness2`, so there they hold the descriptor of a small dummy page (VulkanHeapRecipe). Kernels never touch them: no table row names them.
 - **Why 1 GiB.** A byte address inside a page is below 2³⁰, so `offset + 4·index` stays below 2³¹ for every in-page element and kernels compute addresses in u32 without overflow. Large arenas use several pages.
 
 ## Arenas
@@ -129,8 +135,15 @@ Count 155,582,464; flags `Contiguous | ReadOnly` = 3; debug id `0xac43d4fc`.
 
 Count 14,336; flags `Contiguous | View` = 5; debug id `0x1186fdd4`.
 
+**V1, the Vulkan heap geometry** (VulkanHeapRecipe KAT-2). Limits: `bufferDescriptorSize` 16, `bufferDescriptorAlignment` 8, `imageDescriptorAlignment` 32, `minResourceHeapReservedRange` 96,768, `maxResourceHeapSize` 33,554,432. Geometry: stride 16, slot area 1,024, reserved range at 1,024 for 96,768 bytes, heap 97,792 bytes. A second case, 24-byte descriptors with `imageDescriptorAlignment` 2,048: slot area 1,536 and the reserved range at 2,048. `HeapLayoutTests.fs` checks both, and every rejection.
+
 **The null row:** 64 zero bytes. **The table image:** row 0 zero, row 1 at bytes 64..127, row 2 at 128..191, the rest zero.
 
 ## Verification
 
-The cpu tier checks: frozen arena codes and names; the fixed numbers; both slot mappings; every `ofPages` rejection; the planner's placements, alignment, page rounding and contract order; the reserved arenas; vectors T1 and T2; every row rule; the bf16 extent rounding; table tokens, sealing, the image layout and the 16,383-row capacity; placements and views. E1's CpuDevice enforces the same rules at run time, and D1 and V1 check heap writes equal the slot count.
+The cpu tier checks: frozen arena codes and names; the fixed numbers; both slot mappings; vector V1, that the stride-16 helpers equal the RTX 4080 geometry, and every geometry rejection; every `ofPages` rejection; the planner's placements, alignment, page rounding and contract order; the reserved arenas; vectors T1 and T2; every row rule; the bf16 extent rounding; table tokens, sealing, the image layout and the 16,383-row capacity; placements and views. E1's CpuDevice enforces the same rules at run time, and D1 and V1 check heap writes equal the slot count.
+
+## Change log
+
+- **v1** (R4a, PR #10): first version.
+- **v1.1, additive** (R4b, PR #12): the Vulkan slot mapping in the recipe's general form (`Heap.vulkanGeometry`, `Heap.vulkanSlotOffset`, `Heap.rtx4080VulkanLimits`, vector V1); unused Vulkan slots hold a dummy page's descriptor instead of a null one. The v1 helpers keep their values.
