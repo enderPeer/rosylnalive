@@ -34,8 +34,11 @@ type Point =
         K: int64
         /// The fastest warm dispatch.
         TimeNs: int64
-        /// One dispatch alone after the GPU idled, when the bench timed it (cold_ns).
+        /// The slowest dispatch alone after the GPU idled, when the bench timed it (cold_ns).
         ColdNs: int64 option
+        /// The fastest of those cold dispatches (cold_fast_ns).
+        ColdFastNs: int64 option
+        ColdSamples: int64 option
         IdleMs: int64 option
         /// Whether X1 dispatches this many rows (x1_dispatch); only those are held to the budget.
         X1: bool
@@ -70,6 +73,8 @@ let build (log: RunLog) : Scope =
                 K = i64 e "k"
                 TimeNs = i64 e "time_ns"
                 ColdNs = e.TryInt "cold_ns"
+                ColdFastNs = e.TryInt "cold_fast_ns"
+                ColdSamples = e.TryInt "cold_samples"
                 IdleMs = e.TryInt "idle_ms"
                 X1 = defaultArg (e.TryBool "x1_dispatch") true
                 Flops = e.Value
@@ -133,6 +138,12 @@ let build (log: RunLog) : Scope =
         |> List.tryPick _.IdleMs
         |> Option.map (fun ms -> Fmt.duration (float ms * 1e6))
         |> Option.defaultValue "an idle gap"
+
+    let samples =
+        cold
+        |> List.tryPick _.ColdSamples
+        |> Option.map Invariant.i64
+        |> Option.defaultValue "1"
 
     let lmCap =
         points
@@ -252,6 +263,7 @@ let build (log: RunLog) : Scope =
          | Some p -> Fmt.pct (float p.BudgetNs / budgetNs)
          | None -> "n/a")
     |> Scope.value "idle" idle
+    |> Scope.value "cold_samples" samples
     |> Scope.value
         "lm_head_cap"
         (match lmCap with
@@ -313,7 +325,7 @@ let build (log: RunLog) : Scope =
                      Title = "lm_head from idle clocks"
                      Subtitle =
                          Invariant.format
-                             $"One dispatch alone after {idle} idle, against the fastest warm one; X1 dispatches only the rows left of the band"
+                             $"The slowest and fastest of {samples} dispatches, each alone after {idle} idle, and the fastest warm one; X1 dispatches only the rows left of the band"
                      XLabel = "m, rows of x (log)"
                      YLabel = "time (log)"
                      XFormat = NumFormat.Pow10
@@ -324,9 +336,15 @@ let build (log: RunLog) : Scope =
                      Series =
                          [
                              {
-                                 Name = "cold"
-                                 Color = Color.Warning
+                                 Name = "cold, slowest"
+                                 Color = Color.Serious
                                  Points = lm |> List.choose (fun p -> p.ColdNs |> Option.map (fun c -> at p, float c))
+                             }
+                             {
+                                 Name = "cold, fastest"
+                                 Color = Color.Warning
+                                 Points =
+                                     lm |> List.choose (fun p -> p.ColdFastNs |> Option.map (fun c -> at p, float c))
                              }
                              {
                                  Name = "warm"
@@ -365,7 +383,7 @@ let build (log: RunLog) : Scope =
                      Title = "Cold dispatches X1 makes"
                      Subtitle =
                          Invariant.format
-                             $"The points nearest the budget that X1 dispatches: one dispatch after {idle} idle, and the fastest warm one (budget 100 ms)"
+                             $"The points nearest the budget that X1 dispatches: the slowest of {samples} dispatches, each after {idle} idle, and the fastest warm one (budget 100 ms)"
                      CategoryLabel = "shape and m"
                      ValueLabel = "time"
                      ValueFormat = NumFormat.Duration
@@ -373,8 +391,8 @@ let build (log: RunLog) : Scope =
                      Series =
                          [
                              {
-                                 Name = "cold"
-                                 Color = Color.Warning
+                                 Name = "cold, slowest"
+                                 Color = Color.Serious
                                  Values = xs |> List.map (fun p -> float (defaultArg p.ColdNs 0L))
                              }
                              {
@@ -395,7 +413,8 @@ let build (log: RunLog) : Scope =
                 "n", Common.R
                 "k", Common.R
                 "Warm", Common.R
-                "Cold", Common.R
+                "Cold, slowest", Common.R
+                "Cold, fastest", Common.R
                 "FLOP/s", Common.R
                 "Traffic", Common.R
                 "Of budget", Common.R
@@ -410,6 +429,9 @@ let build (log: RunLog) : Scope =
                      Fmt.int p.K
                      Fmt.duration (float p.TimeNs)
                      (match p.ColdNs with
+                      | Some c -> Fmt.duration (float c)
+                      | None -> "")
+                     (match p.ColdFastNs with
                       | Some c -> Fmt.duration (float c)
                       | None -> "")
                      Fmt.siWith "FLOP/s" p.Flops

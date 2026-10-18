@@ -9,9 +9,11 @@
 ///   dispatches this many rows, ADR K2-0001).
 /// - **Cold dispatches** (bench tier): the points closest to the budget (lm_head at every m, the projections at
 ///   m = 4,000) are also timed, after the whole warm sweep, as one dispatch alone after the GPU has idled `IdleMs`,
-///   so it starts from idle clocks, as a conformance case or X1's first dispatch after host work does. The gauges
-///   carry it as `cold_ns` and `idle_ms`. The budget is judged on the slower of warm and cold, for the points X1
-///   dispatches (`dispatched`: lm_head only up to `LmHeadMaxRows`).
+///   so it starts from idle clocks, as a conformance case or X1's first dispatch after host work does. Whether the
+///   clocks have dropped after the gap varies, so each point takes `ColdSamples` such dispatches and keeps the
+///   slowest. The gauges carry it as `cold_ns`, with `cold_fast_ns`, `cold_samples` and `idle_ms`. The budget is
+///   judged on the slower of warm and cold, for the points X1 dispatches (`dispatched`: lm_head only up to
+///   `LmHeadMaxRows`).
 /// - **Batch invariance across calls** (gpu tier): per shape, one activation matrix and one weight; rows computed by
 ///   an m = 512 call, an m = 37 call and m = 1 calls (views of the same rows) must be bit-identical, and equal to
 ///   CpuRef F32 (Rows.dotBf16) bit for bit as measured on the class. Records: `gpu.matmul.batch_invariance` and
@@ -85,6 +87,10 @@ let WarmUpMs = 1000
 /// and one after 3 s did not (ADR K2-0001).
 [<Literal>]
 let IdleMs = 3000
+
+/// Cold dispatches per point, each after its own idle gap; the slowest is the point's cold time.
+[<Literal>]
+let ColdSamples = 2
 
 /// The m values measured per shape: decode, small batches, prefill chunks up to 4,000; lm_head up to 1,024 rows
 /// (its 1,024 x 151,936 output is 622 MB), past X1's cap of LmHeadMaxRows.
@@ -161,8 +167,10 @@ type Point =
         /// The fastest of the warm dispatches.
         BestNs: int64
         MedianNs: int64
-        /// One dispatch alone after the GPU idled IdleMs, for the points of coldRowsOf.
+        /// The slowest of ColdSamples dispatches, each alone after the GPU idled IdleMs, for the points of coldRowsOf.
         ColdNs: int64 option
+        /// The fastest of those cold dispatches.
+        ColdFastNs: int64 option
         Flops: int64
         Bytes: int64
     }
@@ -420,15 +428,20 @@ let private warmUp (backend: IGpuBackend) (p: Planned) =
 
         backend.Wait(backend.Submit commands) |> ignore
 
-/// One dispatch alone, submitted after the GPU has idled IdleMs (nothing of this process runs on it meanwhile).
-let private measureCold (backend: IGpuBackend) (p: Planned) (s: Shape) (m: int) : int64 =
-    Threading.Thread.Sleep IdleMs
-    let commands = backend.Begin()
-    Kernels.MatmulBf16w.dispatch commands (args p.X p.Weights[s.Name] p.Y m s)
+/// ColdSamples dispatches, each alone and submitted after the GPU has idled IdleMs (nothing of this process runs on it
+/// meanwhile), sorted.
+let private measureCold (backend: IGpuBackend) (p: Planned) (s: Shape) (m: int) : int64 list =
+    [
+        for _ in 1..ColdSamples do
+            Threading.Thread.Sleep IdleMs
+            let commands = backend.Begin()
+            Kernels.MatmulBf16w.dispatch commands (args p.X p.Weights[s.Name] p.Y m s)
 
-    match dispatchNs (backend.Wait(backend.Submit commands)) with
-    | [ t ] -> t
-    | ts -> failwithf "a cold dispatch gave %d dispatch timers (TimeDispatches is off?)" ts.Length
+            match dispatchNs (backend.Wait(backend.Submit commands)) with
+            | [ t ] -> t
+            | ts -> failwithf "a cold dispatch gave %d dispatch timers (TimeDispatches is off?)" ts.Length
+    ]
+    |> List.sort
 
 /// One point of the warm sweep: one warm-up dispatch and Reps timed ones in one command list.
 let private measure (backend: IGpuBackend) (p: Planned) (s: Shape) (m: int) : Point =
@@ -463,6 +476,7 @@ let private measure (backend: IGpuBackend) (p: Planned) (s: Shape) (m: int) : Po
         BestNs = timed.Head
         MedianNs = timed[timed.Length / 2]
         ColdNs = None
+        ColdFastNs = None
         Flops = cost.Flops
         Bytes = cost.BytesMoved
     }
@@ -484,11 +498,13 @@ let private record (backend: IGpuBackend) (point: Point) =
             Attr.int "reps" Reps
             Attr.int64 "budget_ns" Budget
             Attr.bool "x1_dispatch" (dispatched s point.M)
-            match point.ColdNs with
-            | Some c ->
+            match point.ColdNs, point.ColdFastNs with
+            | Some c, Some f ->
                 Attr.int64 "cold_ns" c
+                Attr.int64 "cold_fast_ns" f
+                Attr.int "cold_samples" ColdSamples
                 Attr.int "idle_ms" IdleMs
-            | None -> ()
+            | _ -> ()
         ]
 
     Telemetry.gauge "gpu.matmul.throughput" point.FlopsPerSecond "flop/s" attrs
@@ -774,8 +790,11 @@ let runOn (backend: IGpuBackend) (invarianceOnly: bool) (loaded: IGpuBackend -> 
         [
             for pt in warm ->
                 if List.contains pt.M (coldRowsOf pt.Shape) then
+                    let cold = measureCold backend p pt.Shape pt.M
+
                     { pt with
-                        ColdNs = Some(measureCold backend p pt.Shape pt.M)
+                        ColdNs = Some(List.last cold)
+                        ColdFastNs = Some(List.head cold)
                     }
                 else
                     pt
@@ -793,9 +812,9 @@ let runOn (backend: IGpuBackend) (invarianceOnly: bool) (loaded: IGpuBackend -> 
             (float pt.BestNs / 1e6)
             (pt.FlopsPerSecond / 1e9)
             (pt.BytesPerSecond / 1e9)
-            (match pt.ColdNs with
-             | Some c -> Invariant.format $"  cold {float c / 1e6:F3} ms"
-             | None -> "")
+            (match pt.ColdNs, pt.ColdFastNs with
+             | Some c, Some f -> Invariant.format $"  cold {float c / 1e6:F3} ms (fastest {float f / 1e6:F3} ms)"
+             | _ -> "")
 
     let inv = shapes |> List.map (invariance backend p)
 

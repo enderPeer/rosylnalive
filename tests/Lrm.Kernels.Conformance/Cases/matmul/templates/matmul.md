@@ -12,7 +12,7 @@
 
 ## Throughput
 
-Each point is the faster of {{value reps}} back-to-back dispatches after one warm-up, from the backend's `gpu.dispatch` timers: the GPU is warm. FLOPs and traffic are the FLOP registry's cost of the matmul (`OpCost.ofOp`): 2mnk, and every element of x and y in fp32 and of w in bf16 once.
+Each point is the fastest of {{value reps}} back-to-back dispatches after one warm-up, from the backend's `gpu.dispatch` timers: the GPU is warm. FLOPs and traffic are the FLOP registry's cost of the matmul (`OpCost.ofOp`): 2mnk, and every element of x and y in fp32 and of w in bf16 once.
 
 {{chart throughput}}
 
@@ -22,7 +22,7 @@ Each point is the faster of {{value reps}} back-to-back dispatches after one war
 
 ## Cold dispatches
 
-A conformance case, or X1's first dispatch after host work, starts while the GPU idles at low clocks. So the points nearest the budget (lm_head at every m, the projections at m = 4,000) are also timed as one dispatch alone after {{value idle}} idle. The budget is judged on the slower of warm and cold, and only for what X1 dispatches: the projections up to 4,000 rows and lm_head up to its row cap. lm_head is measured past the cap to show why the cap is there.
+A conformance case, or X1's first dispatch after host work, starts while the GPU idles at low clocks. So after the warm sweep, the points nearest the budget (lm_head at every m, the projections at m = 4,000) are also timed as single dispatches, each alone after {{value idle}} idle. Whether the clocks have dropped by then varies, so each point takes {{value cold_samples}} of them (one if the log does not say) and keeps the slowest. The budget is judged on the slower of warm and cold, and only for what X1 dispatches: the projections up to 4,000 rows and lm_head up to its row cap. lm_head is measured past the cap to show why the cap is there.
 
 {{chart lm_head_cold}}
 
@@ -30,7 +30,7 @@ A conformance case, or X1's first dispatch after host work, starts while the GPU
 
 ## All points
 
-Warm is the faster of the back-to-back dispatches, cold the dispatch after the idle gap; "Of budget" is the slower of the two.
+Warm is the fastest of the back-to-back dispatches; cold is the slowest and the fastest of the dispatches after an idle gap. "Of budget" is the slower of warm and the slowest cold dispatch.
 
 {{table points}}
 
