@@ -1251,31 +1251,52 @@ def compare_tree(root: str, files: dict, max_paths: int = 40) -> list[str]:
 
 
 class RunLog:
-    """A minimal emitter of TelemetryFacade records from Python tools. It follows the facade's naming rules and the
-    natural RunLog mapping in docs/contracts/telemetry-facade.md; T1's RunLog contract is authoritative and this
-    writer follows it once merged. Timestamps go only to the run log, never into goldens."""
+    """A writer of T1's RunLog contract (docs/contracts/run-log.md, schema lrm.run/1) for the Python tools, which cannot
+    call the F# facade. It writes LRM_DATA/runs/<runId>/manifest.json and events.n0.jsonl: a run.node header, the
+    records (TelemetryFacade naming rules; golden.compare per ComparatorsAndGoldenReader), and a run.end trailer, so
+    `lrm report <runId>` renders them (the parity template by default). Timestamps go only to the run log, never into
+    goldens. close(status) finishes the run; a run that ends without close is finished as aborted at exit."""
 
-    def __init__(self, tool: str, enabled: bool = True, component: str = "goldens"):
+    KINDS = ("span", "counter", "gauge", "histogram", "event", "gpu", "meter", "check")
+
+    def __init__(self, tool: str, enabled: bool = True, component: str = "goldens", kind: str = "parity",
+                 title: str | None = None, params: dict | None = None):
         self.enabled = enabled
         self.seq = 0
         self.span_id = 0
         self.stack = []
         self.base = [("component", component), ("tool", tool)]
         self.path = None
+        self.status = None
         if enabled:
-            now = time.gmtime()
-            self.run_id = time.strftime("%Y%m%d-%H%M%S", now) + "-" + f"{secrets.randbits(32):08x}"
+            if not self._valid_safe(kind):
+                raise GoldenError(f"run kind {kind!r} is not a safe name")
+            now = time.time_ns()
+            self.run_id = time.strftime("%Y%m%d-%H%M%S", time.gmtime(now / 1e9)) + "-" + f"{secrets.randbits(32):08x}"
             self.dir = os.path.join(data_root(), "runs", self.run_id)
-            os.makedirs(self.dir, exist_ok=True)
+            os.makedirs(self.dir, exist_ok=False)
+            self.manifest = {
+                "schema": "lrm.run/1",
+                "runId": self.run_id,
+                "kind": kind,
+                "title": title or f"{tool} (tools/goldens)",
+                "status": "running",
+                "createdUtc": self._iso(now),
+                "endedUtc": None,
+                "node": "n0",
+                "synthetic": False,
+                "gitSha": self._git_sha(),
+                "executionClass": None,
+                "driver": None,
+                "params": dict(sorted({"tool": tool, **{k: str(v) for k, v in (params or {}).items()}}.items())),
+            }
+            self._write_manifest()
             self.path = os.path.join(self.dir, "events.n0.jsonl")
-            self._f = open(self.path, "w", encoding="utf-8", newline="\n")
-            manifest = {"schema": "lrm.run/1", "runId": self.run_id, "tool": tool, "nodes": ["n0"],
-                        "started": time.strftime("%Y-%m-%dT%H:%M:%SZ", now),
-                        "provisional": "Python emitter in tools/goldens; T1 owns the RunLog contract"}
-            write_bytes(os.path.join(self.dir, "manifest.json"), json_bytes(manifest))
+            self._f = open(self.path, "x", encoding="utf-8", newline="\n")
+            self._line("event", "run.node", 0.0, "", {"role": "creator"}, t=now)
             import atexit
 
-            atexit.register(self.close)  # a run that stops on an error still leaves a readable log
+            atexit.register(self.close, "aborted")  # a run that stops on an error still leaves a readable log
 
     @staticmethod
     def _valid(name: str) -> bool:
@@ -1283,29 +1304,101 @@ class RunLog:
 
         return bool(re.fullmatch(r"[a-z][a-z0-9_]*(\.[a-z0-9_]+)*", name)) and len(name) <= 128
 
+    @staticmethod
+    def _valid_safe(name: str) -> bool:
+        import re
+
+        return bool(re.fullmatch(r"[a-z0-9][a-z0-9._-]{0,63}", name or "")) and not name.endswith(".")
+
+    @staticmethod
+    def _iso(ns: int) -> str:
+        ms = (ns // 1_000_000) % 1000
+        return time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(ns // 1_000_000_000)) + f".{ms:03d}Z"
+
+    @staticmethod
+    def _git_sha():
+        import subprocess
+
+        try:
+            r = subprocess.run(["git", "-C", REPO_ROOT, "rev-parse", "HEAD"], capture_output=True, text=True, timeout=10)
+            sha = r.stdout.strip()
+            return sha if r.returncode == 0 and len(sha) == 40 else None
+        except (OSError, subprocess.SubprocessError):
+            return None
+
+    @staticmethod
+    def _text(s: str) -> str:
+        """A JSON string as the contract writes it: UTF-8, short escapes, other controls as lowercase \\u00xx, and
+        U+2028 and U+2029 escaped."""
+        return json.dumps(s, ensure_ascii=False).replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
+
+    @staticmethod
+    def _r(f: float) -> str:
+        """The shortest round-trip text of a finite float, with an upper-case exponent as .NET's R format writes it."""
+        return repr(float(f)).replace("e", "E")
+
+    def _value(self, v) -> str:
+        if isinstance(v, bool):
+            return "true" if v else "false"
+        if isinstance(v, int):
+            return str(v)
+        if isinstance(v, float):
+            if math.isnan(v):
+                return '{"$f":"NaN"}'
+            if math.isinf(v):
+                return '{"$f":"Infinity"}' if v > 0 else '{"$f":"-Infinity"}'
+            return self._r(v)  # always holds '.' or 'E', so it reads back as a float
+        return self._text(str(v))
+
+    def _write_manifest(self):
+        text = json.dumps(self.manifest, indent=2, ensure_ascii=False) + "\n"
+        tmp = os.path.join(self.dir, "manifest.json.tmp")
+        with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+        os.replace(tmp, os.path.join(self.dir, "manifest.json"))
+
+    def _line(self, kind, name, value, unit, attrs, duration=0, t=None, span=0, parent=0):
+        if math.isnan(value):
+            x = '"NaN"'
+        elif math.isinf(value):
+            x = '"Infinity"' if value > 0 else '"-Infinity"'
+        else:
+            x = self._r(value)
+            x = x[:-2] if x.endswith(".0") else x
+        a = {}
+        if span:
+            a["$span"] = span
+        if parent:
+            a["$parent"] = parent
+        for k, v in attrs.items():
+            a[k] = v  # a repeated key keeps its first position and takes its last value
+        body = ",".join(f"{self._text(k)}:{self._value(v)}" for k, v in a.items())
+        line = (f'{{"v":1,"t":{t if t is not None else time.time_ns()},"k":"{kind}","n":{self._text(name)},'
+                f'"d":{int(duration)},"x":{x},"u":{self._text(unit)},"node":"n0","seq":{self.seq},"a":{{{body}}}}}')
+        self._f.write(line + "\n")
+        self._f.flush()
+        self.seq += 1
+
     def _write(self, kind, name, value, unit, attrs, duration=0, t=None, span=0):
-        if not self.enabled:
+        if not self.enabled or self.status is not None:
             return
+        if kind not in self.KINDS:
+            raise GoldenError(f"telemetry kind {kind!r} is not valid")
         if not self._valid(name):
             raise GoldenError(f"telemetry name {name!r} is not valid")
-        a = {}
+        merged = {}
         for k, v in self.base + list(attrs.items()):
             if not self._valid(k):
                 raise GoldenError(f"telemetry key {k!r} is not valid")
-            a[k] = v
-        if span:
-            a["span_id"] = span
-        a["parent_id"] = self.stack[-1] if self.stack else 0
-        self.seq += 1
-        rec = {"v": 1, "t": t if t is not None else time.time_ns(), "k": kind, "n": name, "d": duration, "x": value,
-               "u": unit, "node": "n0", "seq": self.seq, "a": a}
-        self._f.write(json.dumps(rec, sort_keys=True, ensure_ascii=True) + "\n")
-        self._f.flush()
+            merged[k] = v
+        parent = self.stack[-1] if self.stack else 0
+        self._line(kind, name, float(value), unit, merged, duration=duration, t=t, span=span, parent=parent)
 
     @contextlib.contextmanager
     def span(self, name: str, **attrs):
         self.span_id += 1
         sid = self.span_id
+        parent = self.stack[-1] if self.stack else 0
         t0 = time.time_ns()
         c0 = time.perf_counter_ns()
         self.stack.append(sid)
@@ -1314,7 +1407,10 @@ class RunLog:
         finally:
             self.stack.pop()
             d = time.perf_counter_ns() - c0
-            self._write("span", name, float(d), "ns", attrs, duration=d, t=t0, span=sid)
+            if self.enabled and self.status is None:
+                merged = dict(self.base)
+                merged.update(attrs)
+                self._line("span", name, float(d), "ns", merged, duration=d, t=t0, span=sid, parent=parent)
 
     def gauge(self, name, value, unit="", **attrs):
         self._write("gauge", name, float(value), unit, attrs)
@@ -1326,12 +1422,25 @@ class RunLog:
         self._write("check", name, 1.0 if passed else 0.0, "", attrs)
 
     def compare(self, passed: bool, metric: str, measured: float, bound: float | None, **attrs):
-        """One golden.compare Check: the metric, the measured value and its bound go in the attributes."""
+        """One golden.compare Check (ComparatorsAndGoldenReader): metric, measured and, when there is one, bound and
+        its direction first, then the caller's keys. A measurement (an e_ref) has no bound."""
         extra = {"metric": metric, "measured": float(measured)}
         if bound is not None:
             extra["bound"] = float(bound)
+            extra["direction"] = "le"
         self.check("golden.compare", passed, **extra, **attrs)
 
-    def close(self):
-        if self.enabled and not self._f.closed:
-            self._f.close()
+    def close(self, status: str = "ok"):
+        """Writes the run.end trailer and the final manifest (status ok, failed or aborted). Later calls do nothing."""
+        if not self.enabled or self.status is not None:
+            return
+        if status not in ("ok", "failed", "aborted"):
+            raise GoldenError(f"run status {status!r} is not ok, failed or aborted")
+        self.status = status
+        now = time.time_ns()
+        records = self.seq  # the trailer's own seq: every record before it, the header included
+        self._line("event", "run.end", 0.0, "", {"status": status, "records": records, "dropped": 0, "invalid": 0}, t=now)
+        self._f.close()
+        self.manifest["status"] = status
+        self.manifest["endedUtc"] = self._iso(now)
+        self._write_manifest()
