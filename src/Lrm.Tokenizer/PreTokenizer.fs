@@ -35,6 +35,9 @@ type private Scratch(size: int) =
     member val Off: int[] = Array.zeroCreate (size + 1) with get, set
     member val Cls: CharClass[] = Array.zeroCreate size with get, set
 
+    /// True while a split on this thread reads the arrays (a piece callback that splits again gets fresh ones).
+    member val InUse = false with get, set
+
     [<ThreadStatic; DefaultValue>]
     static val mutable private current: Scratch
 
@@ -43,10 +46,12 @@ type private Scratch(size: int) =
     static member Kept = 1 <<< 16
 
     static member Get(length: int) =
-        if length > Scratch.Kept then
-            Scratch length
+        let s0 = Scratch.current
+
+        if length > Scratch.Kept || (not (isNull s0) && s0.InUse) then
+            Scratch(max length 1)
         else
-            let mutable s = Scratch.current
+            let mutable s = s0
 
             if isNull s then
                 s <- Scratch 256
@@ -164,11 +169,15 @@ let split (text: string) (piece: int -> int -> unit) =
 
     off[n] <- text.Length
     let mutable p = 0
+    s.InUse <- true
 
-    while p < n do
-        let e = matchEnd cp cls n p
-        piece off[p] (off[e] - off[p])
-        p <- e
+    try
+        while p < n do
+            let e = matchEnd cp cls n p
+            piece off[p] (off[e] - off[p])
+            p <- e
+    finally
+        s.InUse <- false
 
 /// The pieces of `text` as strings.
 let pieces (text: string) : string list =

@@ -76,6 +76,20 @@ let private splitTests =
 
             testCase "the empty text has no pieces"
             <| fun () -> Expect.isEmpty (PreTokenizer.pieces "") "no pieces"
+
+            testCase "a piece callback may split again on the same thread"
+            <| fun () ->
+                let outer = "Hello world, it's 12 o'clock"
+                let got = ResizeArray<string * string list>()
+
+                PreTokenizer.split outer (fun start length ->
+                    let piece = outer.Substring(start, length)
+                    got.Add(piece, PreTokenizer.pieces (piece + " x")))
+
+                Expect.equal [ for p, _ in got -> p ] (PreTokenizer.pieces outer) "the outer split is intact"
+
+                for p, inner in got do
+                    Expect.equal inner (PreTokenizer.pieces (p + " x")) p
         ]
 
 let private byteTests =
