@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="parity-greedy-0-margins-title parity-greedy-0-margins-desc">
+<title id="parity-greedy-0-margins-title">Smallest top-2 margin over the greedy steps</title>
+<desc id="parity-greedy-0-margins-desc">Bar chart of top-1 minus top-2 logit for 8 prompt values, 2 series.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="379" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Smallest top-2 margin over the greedy steps</text>
+<text class="t2" x="16" y="45" font-size="12">Per prompt and oracle; a gate prompt needs at least max(0.05, 4·τ_logit) (ReferenceOracles)</text>
+<rect class="f0" x="19" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="38" y="66" font-size="12">torch32</text>
+<rect class="f1" x="100.28" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="119.28" y="66" font-size="12">torch64p</text>
+<line class="grid" x1="41.84" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="33.84" y="338" font-size="11" text-anchor="end">0.0</text>
+<line class="grid" x1="41.84" y1="255.33" x2="696" y2="255.33" stroke-width="1"/>
+<text class="t3" x="33.84" y="259.33" font-size="11" text-anchor="end">0.2</text>
+<line class="grid" x1="41.84" y1="176.67" x2="696" y2="176.67" stroke-width="1"/>
+<text class="t3" x="33.84" y="180.67" font-size="11" text-anchor="end">0.4</text>
+<line class="grid" x1="41.84" y1="98" x2="696" y2="98" stroke-width="1"/>
+<text class="t3" x="33.84" y="102" font-size="11" text-anchor="end">0.6</text>
+<text class="t3" x="41.84" y="88" font-size="11" text-anchor="start">top-1 minus top-2 logit</text>
+<text class="t3" x="368.92" y="370" font-size="11" text-anchor="middle">prompt</text>
+<text class="t3" x="82.73" y="351" font-size="11" text-anchor="middle">g01</text>
+<path class="f0" d="M71.23 334V291.92Q71.23 287.92 75.23 287.92H78.23Q82.23 287.92 82.23 291.92V334Z"><title>g01, torch32: 0.1172</title></path>
+<path class="f1" d="M83.23 334V291.92Q83.23 287.92 87.23 287.92H90.23Q94.23 287.92 94.23 291.92V334Z"><title>g01, torch64p: 0.1172</title></path>
+<text class="t3" x="164.5" y="351" font-size="11" text-anchor="middle">g02</text>
+<path class="f0" d="M153 334V199.6Q153 195.6 157 195.6H160Q164 195.6 164 199.6V334Z"><title>g02, torch32: 0.3519</title></path>
+<path class="f1" d="M165 334V199.6Q165 195.6 169 195.6H172Q176 195.6 176 199.6V334Z"><title>g02, torch64p: 0.3519</title></path>
+<text class="t3" x="246.27" y="351" font-size="11" text-anchor="middle">g03</text>
+<path class="f0" d="M234.77 334V244.12Q234.77 240.12 238.77 240.12H241.77Q245.77 240.12 245.77 244.12V334Z"><title>g03, torch32: 0.2387</title></path>
+<path class="f1" d="M246.77 334V244.12Q246.77 240.12 250.77 240.12H253.77Q257.77 240.12 257.77 244.12V334Z"><title>g03, torch64p: 0.2387</title></path>
+<text class="t3" x="328.04" y="351" font-size="11" text-anchor="middle">g04</text>
+<path class="f0" d="M316.54 334V168.2Q316.54 164.2 320.54 164.2H323.54Q327.54 164.2 327.54 168.2V334Z"><title>g04, torch32: 0.4317</title></path>
+<path class="f1" d="M328.54 334V168.2Q328.54 164.2 332.54 164.2H335.54Q339.54 164.2 339.54 168.2V334Z"><title>g04, torch64p: 0.4317</title></path>
+<text class="t3" x="409.81" y="351" font-size="11" text-anchor="middle">g05</text>
+<path class="f0" d="M398.31 334V128.61Q398.31 124.61 402.31 124.61H405.31Q409.31 124.61 409.31 128.61V334Z"><title>g05, torch32: 0.5324</title></path>
+<path class="f1" d="M410.31 334V128.61Q410.31 124.61 414.31 124.61H417.31Q421.31 124.61 421.31 128.61V334Z"><title>g05, torch64p: 0.5324</title></path>
+<text class="t3" x="491.58" y="351" font-size="11" text-anchor="middle">g06</text>
+<path class="f0" d="M480.08 334V170.77Q480.08 166.77 484.08 166.77H487.08Q491.08 166.77 491.08 170.77V334Z"><title>g06, torch32: 0.4252</title></path>
+<path class="f1" d="M492.08 334V170.77Q492.08 166.77 496.08 166.77H499.08Q503.08 166.77 503.08 170.77V334Z"><title>g06, torch64p: 0.4252</title></path>
+<text class="t3" x="573.35" y="351" font-size="11" text-anchor="middle">g07</text>
+<path class="f0" d="M561.85 334V133.99Q561.85 129.99 565.85 129.99H568.85Q572.85 129.99 572.85 133.99V334Z"><title>g07, torch32: 0.5187</title></path>
+<path class="f1" d="M573.85 334V133.99Q573.85 129.99 577.85 129.99H580.85Q584.85 129.99 584.85 133.99V334Z"><title>g07, torch64p: 0.5187</title></path>
+<text class="t3" x="655.12" y="351" font-size="11" text-anchor="middle">g08</text>
+<path class="f0" d="M643.62 334V200.05Q643.62 196.05 647.62 196.05H650.62Q654.62 196.05 654.62 200.05V334Z"><title>g08, torch32: 0.3507</title></path>
+<path class="f1" d="M655.62 334V200.05Q655.62 196.05 659.62 196.05H662.62Q666.62 196.05 666.62 200.05V334Z"><title>g08, torch64p: 0.3507</title></path>
+<line class="axis" x1="41.84" y1="334" x2="696" y2="334" stroke-width="1"/>
+</svg>

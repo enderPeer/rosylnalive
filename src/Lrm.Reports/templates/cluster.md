@@ -1,26 +1,36 @@
-{{! cluster: filled by Lrm.Reports.Builders.Cluster from cluster.unit and cluster.step spans and cluster.* events (ReportTemplates contract). }}
+{{! cluster: filled by Lrm.Reports.Builders.Cluster from C1's cluster.* records (ClusterProtocol "Telemetry"; ReportTemplates contract). }}
 # Cluster: {{value run.title}}
 
 {{value run.banner}}
 {{value verdict}}
 
-| Work units | Reissued | Nodes lost | Divergences | Replica digests equal |
-| ---: | ---: | ---: | ---: | ---: |
-| {{value units}} | {{value reissued}} | {{value lost}} | {{value divergences}} | {{value digests}} |
+| Outcome | Work units | Cross-checked | Reissued | Nodes lost | Divergences | Epoch |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| {{value status}} | {{value units}} | {{value cross_checked}} | {{value reissued}} | {{value lost}} | {{value divergences}} | {{value epoch}} |
+
+Run digest: {{value digest}}
 
 ## Pipeline
 
-Green units were accepted, grey ones are matching duplicates from the other replica, amber ones were reissued after a node loss, and red ones were cut off when their node died.
+Each bar is a work unit the coordinator accepted, drawn on the node whose result it took, from the assignment to the acceptance. Green units were accepted from their first assignment; amber ones were reissued to another node after the first missed its deadline. Markers are node losses, kills, restarts and demotions.
 
 {{chart gantt}}
 
 {{chart step_latency}}
+
+{{chart deadlines}}
+
+{{chart latency}}
 
 ## Nodes
 
 {{chart busy}}
 
 {{table nodes}}
+
+### Counters
+
+{{table counters}}
 
 ### Cluster events
 

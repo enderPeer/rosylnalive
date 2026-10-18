@@ -637,12 +637,15 @@ let tests =
 
                 let nodeRows =
                     cluster.Markdown.Split('\n')
-                    |> Array.filter (fun l -> Regex.IsMatch(l, "^\\| s[01][ab] \\||^\\| spare \\|"))
+                    |> Array.filter (fun l -> Regex.IsMatch(l, "^\\| (s[01][ab]|spare) \\| [0-9]+ \\|"))
 
-                Expect.isNonEmpty nodeRows "node rows"
+                Expect.equal nodeRows.Length 5 "node rows: s0a, s0b and the spare on stage 0, s1a and s1b on stage 1"
 
                 for row in nodeRows do
-                    Expect.isFalse (row.EndsWith "| 0 B |") ("bytes sent: " + row)
+                    // Node | Stage | Backend | Assigned | ...: every node of the pipeline was assigned work.
+                    let cells = row.Split('|') |> Array.map _.Trim()
+                    Expect.notEqual cells[4] "0" ("assigned: " + row)
+                    Expect.notEqual cells[3] "n/a" ("backend from the node's class: " + row)
 
                 let inference = render "inference"
                 Expect.isFalse (inference.Markdown.Contains "| 0 ns |") "GPU time in the metering table"
