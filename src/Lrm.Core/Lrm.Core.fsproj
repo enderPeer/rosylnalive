@@ -1,6 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: S1. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
+    <Compile Include="Invariant.fs" />
+    <Compile Include="Hash.fs" />
+    <Compile Include="Canonical.fs" />
+    <Compile Include="DType.fs" />
+    <Compile Include="Numerics.fs" />
+    <Compile Include="Rng.fs" />
+    <Compile Include="Ids.fs" />
+    <Compile Include="LrmPaths.fs" />
+    <Compile Include="Telemetry.fs" />
+    <Compile Include="ExecutionClass.fs" />
     <Compile Include="Process.fs" />
   </ItemGroup>
 </Project>
