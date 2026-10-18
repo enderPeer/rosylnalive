@@ -16,16 +16,17 @@ The executor implements `IForwardOps<GpuTensor>` (ForwardOpsAndQwenModel) on any
 | `ExecPlan`, `StagePlan` | The whole plan: layout, sealed table, tokens |
 | `GpuOps`, `GpuTensor` | Pass two: the ops and their handle |
 | `GpuBackendFactory.create` | An `OpsFactory` (the registry entry) for a GPU backend |
+| `GpuBackendUnavailableException` | A registry runner whose backend cannot run the executor (a `ForwardException`) |
 
 ## Creating the executor
 
 `GpuForwardOps.create backend shaders weights options` (and `createWith exec backend shaders weights options`, which returns the `GpuOps` with its plan) does, in order:
 
-1. **Pass one**, `ExecPlan.build weights.Model options exec`: refuses with `ArgumentException` an `OpsOptions` that `OpsOptions.validate` refuses, a `GpuExecOptions` whose budgets are below 1, a plan whose T exceeds 65,535 rows (the grid y of one `embed_gather_bf16` dispatch), and any tensor larger than one 1 GiB page (for example the logits of HeadRows.All at more than 1,766 rows of Qwen3-0.6B). A table beyond 16,383 rows or a layout beyond 63 pages raises `GpuContractException` from R4a's checks.
+1. **Pass one**, `ExecPlan.build weights.Model options exec`: refuses with `ArgumentException` an `OpsOptions` that `OpsOptions.validate` refuses, a `GpuExecOptions` whose budgets or `MaxLogitsRows` are below 1, a plan whose T exceeds 65,535 rows (the grid y of one `embed_gather_bf16` dispatch), and any tensor larger than one 1 GiB page (for example the activations pool of Qwen3-0.6B at 40,000 rows). The head's logits never are: they are planned at `LogitsRows` rows (below). A table beyond 16,383 rows or a layout beyond 63 pages raises `GpuContractException` from R4a's checks.
 2. **Kernels.** `backend.LoadKernels shaders`. Every kernel the executor dispatches (`ExecPlan.kernels`: `embed_gather_bf16`, `rmsnorm_rows`, `rope_apply`, `silu_mul`, `add`, `copy_rows`, `argmax_rows`, `matmul_bf16w`, `attention_gqa_causal`) must be in the loaded set; otherwise `GpuContractException` names the missing ones.
 3. **The class**, `backend.ExecutionClass`, is the ops' `ExecutionClass` (known once kernels are loaded).
 4. **The heap and the table.** `backend.CreateHeap plan.Layout`, then `WriteTable plan.Table`, exactly once.
-5. **The weights**, streamed from the memory-mapped checkpoint (`Qwen3Weights.Span`, no host copy) with `IGpuHeap.Upload` in chunks of at most 64 MiB; a bf16 tensor of odd length gets its last word padded with zero. The tied lm_head is the embedding's tensor (one copy).
+5. **The weights the planned stages read**, streamed from the memory-mapped checkpoint (`Qwen3Weights.Span`, no host copy) with `IGpuHeap.Upload` in chunks of at most 64 MiB; a bf16 tensor of odd length gets its last word padded with zero. The tied lm_head is the embedding's tensor (one copy). A plan of some stages of a split holds only their layers' weights, the embedding when a stage embeds or has the tied head, and the final norm with the head: a pipeline node that plans stage 1 of Qwen3-0.6B split at 14 uploads 717 MiB, not 1,137 MiB.
 6. **T_spec**, CpuRef's RoPE table for positions 0 .. MaxContext − 1 (`RopeConstants.table`), as two f32 tensors `[MaxContext, head_dim / 2]`.
 
 With `exec.OwnsBackend` (the default, and always for registry entries) the ops own the backend: `Dispose` disposes it, and a failed create disposes it before the exception leaves. Creation runs inside a `gpu.exec.create` span with `component` = `executor`.
@@ -37,30 +38,31 @@ With `exec.OwnsBackend` (the default, and always for registry entries) the ops o
 | `TimeDispatches` | true | A GPU timer around every dispatch, reported at `Wait` as `gpu.dispatch` (below), while the ambient telemetry is enabled. Create the backend without `DeviceOptions.TimeDispatches`, or each dispatch is reported twice |
 | `AttentionPairsPerDispatch` | 2^20 | The most query-key pairs per head one attention dispatch covers (ADR K3-0001, decision 8) |
 | `MatMulMacsPerDispatch` | 64 · 151,936 · 1,024 | The most multiply-adds (rows · n · k) one matmul dispatch covers: Qwen3-0.6B's lm_head at 64 rows (ADR K2-0001) |
+| `MaxLogitsRows` | `Int32.MaxValue` | The most rows of a HeadRows.All forward on the stage with the head. The plan's `LogitsRows` is min(T, `MaxLogitsRows`, the rows of f32 logits one 1 GiB page holds: 1,766 for Qwen3-0.6B). A plan that only decodes greedily sets 1 and keeps no `[T, vocab]` logits |
 | `OwnsBackend` | true | Dispose disposes the backend |
 
 ## Pass one: the plan
 
 **The static order.** `StaticOrder.trace model stage T head taps` runs `Forward.runStage` itself over `TraceOps`, an `IForwardOps` of shapes that computes nothing, under the no-op telemetry facade. It records every call: each compute op (Embed, RmsNorm, MatMul, Rope, KvWrite, Attention, SiluMul, Add, LastRow) with its parameters (weight name, eps, heads, attention shape) and where each input comes from (`ValueRef.Value p`, the result of compute op p; `Input`, a handle from outside the forward; `Cache layer`), and each Tap. The executor therefore never restates the model's layer order: the plan is the forward's own.
 
-**Variants.** Each planned stage is traced from position 0 at the plan's largest T, `min(MaxRows, MaxContext)`, with the plan's tap filter: the variant `all` with `HeadRows.All`; for the stage with the head and T above 1 also `last` with `HeadRows.Last`, whose order adds LastRow before lm_head. A forward of `Rows` rows uses `last` exactly when its stage has the head, its head is `Last` and `Rows` > 1. The op order depends on nothing else (ForwardOpsAndQwenModel, "A static order"), and positions and row counts are only the scalars of the dispatches.
+**Variants.** Each planned stage is traced from position 0 at the plan's largest T, `min(MaxRows, MaxContext)`, with the plan's tap filter: the variant `all` with `HeadRows.All`; for the stage with the head and T above 1 also `last` with `HeadRows.Last`, whose order adds LastRow before lm_head. A forward of `Rows` rows uses `last` exactly when its stage has the head, its head is `Last` and `Rows` > 1, so a decode step (one row) always runs `all`. The op order depends on nothing else (ForwardOpsAndQwenModel, "A static order"), and positions and row counts are only the scalars of the dispatches. The head's result in `all` holds `LogitsRows` rows (Options), in `last` one row.
 
 **Liveness.** Each call has a sequence number in its trace, taps included. A result's last use is the latest call that reads it (an op input or a tap); the stage's result (what the forward returns) lives on.
 
 **Memory.**
 - **Activations.** Each planned stage has its own pool in the Activations arena. The variant's results are placed in op order, first fit at 256-byte alignment among the results still live, each at its capacity `[T, cols]` (`[1, cols]` after LastRow). So two results live at the same time never share a byte, an op's result never overlaps its inputs, and the pool is the largest set of results live together, not the whole forward. The pool holds the largest of the stage's variants. Qwen3-0.6B at 900 rows needs 42.2 MiB.
-- **Logits.** The result of the stage with the head lives at the start of that stage's logits pool in the Logits arena, which also holds `argmax_rows`' output, u32 `[max(T, MaxContext)]`.
-- **Taps.** One snapshot per tap the plan records and the stage produces, f32 `[T, cols]`, in the Taps arena, per stage.
+- **Logits.** The result of the stage with the head lives at the start of that stage's logits pool in the Logits arena, `[LogitsRows, vocab]` (the `all` head) or `[1, vocab]` (the `last` head), whichever is larger. The arena also holds `argmax_rows`' output, u32 `[max(T, MaxContext)]`.
+- **Taps.** One snapshot per tap the plan records and the stage produces, f32 `[T, cols]` (a tap of the logits at most `LogitsRows` rows), in the Taps arena, per stage.
 - **KV cache.** Per planned stage and layer, `2 · Caches` tensors f32 `[MaxContext, KvDim]` in the KvCache arena.
 - **Scratch.** The ids of a forward, u32 `[T]`, and the upload buffer, f32 `[T, hidden]`.
-- **Weights** (bf16, read only) and **Rope** (T_spec, read only).
+- **Weights** (bf16, read only: the tensors the planned stages' variants read, above) and **Rope** (T_spec, read only).
 
 `HeapPlanner` places every allocation (pages of at most 1 GiB, never straddled) and builds the layout; arenas without allocations have no pages (Taps when the plan records none).
 
 **FirstClobber.** For each result, the sequence number of the first later op whose result overlaps it in the pool (none for the stage's result). A handle of a result is readable until the forward records that op.
 
 **The table.** Rows are added in a fixed order, so the same model, OpsOptions and GpuExecOptions give the same layout and the same `SealedTable.Id`:
-1. the weights in canonical order, under their safetensors names, `ReadOnly`;
+1. the weights the planned stages read, in canonical order, under their safetensors names, `ReadOnly`;
 2. `rope.cos`, `rope.sin` (`ReadOnly`); `scratch.ids`, `scratch.upload`; `logits.argmax`;
 3. per stage `s<i>`, in OpsOptions.Stages order: the cache tensors `s<i>.kv.L<layer>.<j>`; the pool `s<i>.pool` and the logits pool `s<i>.logits`; every result of every variant as a view of its pool (`TensorFlags.View`), named `s<i>.<variant>.<op>.<Op>[.<weight>]`, with dims `[rows, cols]` at capacity; the chunk views of every split matmul (below), `….c<n>.x` and `….c<n>.y`; the tap snapshots `s<i>.tap.<name>`.
 
@@ -68,7 +70,7 @@ With `exec.OwnsBackend` (the default, and always for registry entries) the ops o
 
 `GpuOps` keeps every rule of the seam (ForwardOpsAndQwenModel, "Lifetimes and the plan") exactly as CpuOps does, with the same exceptions. On top of them:
 
-- **BeginForward** refuses a call outside the plan with `ForwardException` before any op: an unplanned stage, rows outside 1 .. MaxRows, positions beyond MaxContext, taps the plan's filter does not cover. It ends the previous result and taps of the stage, picks the variant, and opens one command list for the forward.
+- **BeginForward** refuses a call outside the plan with `ForwardException` before any op: an unplanned stage, rows outside 1 .. MaxRows, positions beyond MaxContext, taps the plan's filter does not cover, and a forward of the stage with the head that runs `all` over more than `LogitsRows` rows (HeadRows.All; `last` serves every row count). It ends the previous result and taps of the stage, picks the variant, and opens one command list for the forward. CpuOps has no `LogitsRows`: a long prompt whose every logits row is wanted runs as a chunked prefill through the cache, chunks of at most `LogitsRows` rows, which is bit-identical to one prefill (BatchInvariance; the p2 chunking check below).
 - **The static order is enforced.** Each compute op must be the variant's next op, with the same parameters and the planned inputs (a result of this forward by its op, an outside handle, or a cache tensor of the planned layer). Anything else raises `ForwardException` ("departs from the static plan"), as does EndForward with another handle than the planned result or before every op ran. Forward.runStage meets this by construction; other code that drives the ops must call them in the same order.
 - **Reused bytes.** A handle of a result of the current forward whose FirstClobber op has been recorded raises `ForwardException` ("overwritten after its last planned use") wherever it is used. Forward.runStage never does it; a caller reading intermediates mid-forward can.
 - **Ops to kernels.** Every op records typed ArgBlocks (`Kernels.g.fs`); kernels take every size from their fields, and the tokens are capacities:
@@ -89,7 +91,7 @@ With `exec.OwnsBackend` (the default, and always for registry entries) the ops o
 - **Barriers.** Before each dispatch, a global `Barrier` when it reads bytes a dispatch since the last barrier writes, or writes bytes one reads or writes (byte ranges of the rows each dispatch touches). Disjoint chunks of one tensor need none. A `Copy` is a full barrier on both sides (GpuBackendInterface), so it resets the tracking, and so does a new command list.
 - **Chunking.** `Chunking.matmul budget m n k`: dispatches of `matmulRows` rows each, `budget / (n · k)` rounded down to a multiple of the kernel's 64-row tile when at least 64, and at least 1. Chunk c ≥ 1 reads and writes the plan's chunk views, which start c · rows rows into x and y. `Chunking.attention budget rows past`: in order from q_row0 = 0, each dispatch takes the most rows whose pairs `n · (past + q_row0) + n · (n + 1) / 2` stay within the budget, and at least one. Rows are batch-invariant (BatchInvariance), so a split changes no bit.
 - **Submission.** EndForward with the result submits the list and waits; the result and the taps then stay valid until the stage's next BeginForward. EndForward None drops the list unsubmitted. `Read`, `ReadRows` and `Argmax` submit and wait for whatever is recorded first (also inside a forward), then download.
-- **NewCache** takes a free tensor of the stage's and layer's pool, or raises `ForwardException` when that layer's `2 · Caches` tensors are all live, and writes `rows · KvDim` zero floats into it with uploads. `ReleaseCache` returns it. The limit is per layer (CpuOps counts per stage), which is the same for every cache `KvCache.create` makes: one K and one V per layer.
+- **NewCache** takes a free tensor of the stage's and layer's pool, or raises `ForwardException` ("layer L of stage S holds 2 · Caches cache tensors already, the plan's limit") when that layer's `2 · Caches` tensors are all live, and writes `rows · KvDim` zero floats into it with uploads. `ReleaseCache` returns it. The limit is per layer (CpuOps counts per stage), which is the same for every cache `KvCache.create` makes: one K and one V per layer.
 - **Upload** takes an f32 `[rows, cols]` host tensor of at most `T · hidden` elements into `scratch.upload` (`ArgumentException` for another dtype or rank, `ForwardException` when it does not fit); it lives until the next forward ends, and a second upload ends the first.
 - **Dispose** disposes the backend (with `OwnsBackend`); every call afterwards raises `ObjectDisposedException`, except `ReleaseCache`, which does nothing.
 
@@ -115,9 +117,11 @@ The forward's own records (`model.forward`, `model.layer`, `model.flops`, `model
 | `cpu-device` | a CpuDevice (E1) with the runner's threads, preserve, CpuRef's NaN and barrier checks on |
 | `d3d12` | Direct3D 12 (D1), the first accepted adapter of `Backend.tryCreate` |
 
-Each is `GpuBackendFactory.create backend summary exec shaders device`: every runner creates a fresh backend for its options and owns it. `vulkan` is registered by X1b once Lrm.Gpu.Vulkan (V1) has a provider. So `lrm forward` and `lrm generate` take `--backend cpu-device` (and `d3d12` once the shader set holds K1 to K3's kernels).
+Each is `GpuBackendFactory.create backend summary exec shaders device`: every runner creates a fresh backend for its options and owns it. A `GpuContractException` while the device or the ops are created (no accepted adapter, a loaded shader set without a kernel the executor dispatches, a table or heap the backend refuses) becomes a `GpuBackendUnavailableException`: a `ForwardException` whose message names the backend and the cause, with the backend's exception as `Cause`. `lrm forward` and `lrm generate` print it as one line and exit with 1. A plan the executor refuses stays an `ArgumentException`.
 
-`lrm exec-plan [--model DIR|tiny|qwen3-0.6b] [--max-rows N] [--max-context N] [--taps none|all|NAMES] [--caches N] [--split LAYER]` prints the plan for a model's `config.json` without weights or a device: the arenas and pages, the table rows, and per stage and variant the ops, the pool and the dispatches of a prefill of the largest T and of a decode step.
+**A plan change.** X1a's row in the plan lists `vulkan` among the registered backends. It is not registered here: Lrm.Gpu.Vulkan (V1) has no provider yet, so X1b registers `vulkan` in this file once V1's provider lands. Until then `lrm forward` and `lrm generate` take `--backend cpu-device` and `d3d12` (`d3d12` runs once the shader set holds K1 to K3's kernels, which `main` has; on a shader set without them it is refused at creation with the one-line error above).
+
+`lrm exec-plan [--model DIR|tiny|qwen3-0.6b] [--max-rows N] [--max-context N] [--taps none|all|NAMES] [--caches N] [--split LAYER [--stage I]] [--max-logits-rows N]` prints the plan for a model's `config.json` without weights or a device: the arenas and pages, the table rows, and per stage and variant the ops, the pool and the dispatches of a prefill of the largest T the variant serves (for the `all` head at most `LogitsRows` rows) and of a decode step (`all` only: a decode step never runs `last`). `--stage I` plans only stage I of the split, as a pipeline node does; `--max-logits-rows` sets `GpuExecOptions.MaxLogitsRows`.
 
 ## Vectors
 
@@ -150,6 +154,14 @@ Computed independently in Python from the rules above; `PlanTests` checks them.
 
 The table has 1,416 rows: 310 weights, 2 rope, 2 scratch, 1 argmax, 112 cache tensors, 2 pools, 959 results (479 of `all`, 480 of `last`) and 28 chunk views (lm_head of `all`, 14 x and 14 y). A prefill of 900 rows makes 549 dispatches on `all` (211 matmul) and 536 on `last`; a decode step makes 535. The activations pool (44,236,800 bytes) is the planner's own figure, checked against the plan, not computed independently.
 
+**Qwen3-0.6B, more plans from its config:**
+
+| Plan | Vector |
+| --- | --- |
+| Stage 1 of a split at 14 alone (layers 14 .. 27, the final norm, the tied head) | 156 weights, the weights arena 751,697,920 bytes in one page |
+| MaxRows and MaxContext 2,048, defaults | `LogitsRows` 1,766; logits arena 1,073,348,608 bytes; a `logits` tap of 1,766 rows, `final_norm.out` of 2,048 |
+| The same with `MaxLogitsRows` 1 | `LogitsRows` 1; logits arena 655,360 bytes |
+
 ## Acceptance (measured, informative)
 
 On the development machine (32 threads, .NET 10.0.13, CpuDevice preserve with barrier checks), class `cpu-device cpu, .NET 10.0.13, win-x64+avx2+fma`:
@@ -170,8 +182,8 @@ On the development machine (32 threads, .NET 10.0.13, CpuDevice preserve with ba
 
 `tests/Lrm.Gpu.Exec.Tests`, cpu tier:
 - **Acceptance** (`ParityTests`): every check of the table above, each a `golden.compare` `exact` self-test in the acceptance run (`AcceptanceRun`; kept under `LRM_DATA/runs` with `LRM_WRITE_EXEC_RUN=1`).
-- **The plan** (`PlanTests`): the tiny model's static order; a property over random plans of the tiny model (positions, rows, one or two stages, tap filters, caches, budgets): ops per variant, homes, alignment, views and their offsets, last uses and FirstClobber, results live together sharing no byte, results never overlapping their inputs, chunk views for every split matmul, tap snapshots, the cache pool, every table row valid, and the same layout and table id when built again; the chunking vectors; Qwen3-0.6B's plan against the vectors; the refusals.
-- **The seam** (`SeamTests`): calls outside the plan refused before any op; ops outside a forward and cache ops inside one; the lifetimes of intermediates, results, taps, failed forwards and uploads; two stages with and without the host; the cache limit and zeroed caches; departures from the static order; reading reused bytes; a missing kernel refused and the backend disposed; Dispose; the registry's cpu-device runner against cpu-f32; no reference to a concrete backend.
+- **The plan** (`PlanTests`): the tiny model's static order; a property over random plans of the tiny model (positions, rows, the whole model, both stages of a split or one alone, tap filters, caches, budgets, `MaxLogitsRows`): ops per variant, homes, alignment, views and their offsets, last uses and FirstClobber, results live together sharing no byte, results never overlapping their inputs, chunk views for every split matmul, tap snapshots within their source, the head's logits at `LogitsRows`, exactly the weights the planned stages read (from the model's layer names), the cache pool, every table row valid, and the same layout and table id when built again; the chunking vectors; Qwen3-0.6B's plans against the vectors; the refusals.
+- **The seam** (`SeamTests`): calls outside the plan refused before any op; ops outside a forward and cache ops inside one; the lifetimes of intermediates, results, taps, failed forwards and uploads; two stages with and without the host; the cache limit and zeroed caches; departures from the static order; reading reused bytes; an All-head forward beyond `LogitsRows` refused before any op while the last-row head, a decode step and an All head within it (with its logits tap) equal cpu-f32; each stage of a split planned alone holding only its weights and equal to cpu-f32 on the host's residual; a missing kernel refused and the backend disposed; a registry runner reporting a missing kernel or a missing device as one `GpuBackendUnavailableException`; Dispose; the registry's cpu-device runner against cpu-f32; no reference to a concrete backend.
 - **Telemetry** (`TelemetryTests`): a real run log with a `gpu.dispatch` per dispatch carrying every kernel, both layers, every step, both phases and the backend, 19 dispatches per layer of a decode step, `mem.arena` for every arena with its lowercase name, `gpu.exec.create`, the model spans; the arenas of ops created before the run; telemetry changing no value.
 
 Model tier: Qwen3-0.6B (`ModelTests`). The GPU tiers are X1b's.
