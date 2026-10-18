@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    R1 spike (throwaway): VK_EXT_descriptor_heap set/binding -> heap mapping and push data on the RTX 4080, compared
+    with the same HLSL on D3D12. Under spikes/**, so it is not in the project graph, the solution, CI or fantomas
+    (ProjectGraph contract); Directory.Build.props marks it LrmIsSpike and skips the reference guard. Run it as a test
+    exe: see README.md.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="src/Native.fs" />
+    <Compile Include="src/Layout.fs" />
+    <Compile Include="src/Vk.fs" />
+    <Compile Include="src/Heap.fs" />
+    <Compile Include="src/Shaders.fs" />
+    <Compile Include="src/VkRunner.fs" />
+    <Compile Include="src/D3D12Runner.fs" />
+    <Compile Include="src/Cases.fs" />
+    <Compile Include="src/RunLog.fs" />
+    <Compile Include="src/Report.fs" />
+    <Compile Include="src/Main.fs" />
+    <None Include="hlsl/*.hlsl;hlsl/*.hlsli" CopyToOutputDirectory="PreserveNewest" LinkBase="hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Lrm.Core/Lrm.Core.fsproj" />
+    <ProjectReference Include="../../src/Lrm.Gpu.Vulkan.Interop/Lrm.Gpu.Vulkan.Interop.fsproj" />
+    <ProjectReference Include="../../tests/Lrm.Testing/Lrm.Testing.fsproj" />
+  </ItemGroup>
+</Project>
