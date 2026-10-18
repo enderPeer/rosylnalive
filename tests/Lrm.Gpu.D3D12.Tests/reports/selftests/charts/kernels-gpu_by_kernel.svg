@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="254" viewBox="0 0 720 254" role="img" aria-labelledby="kernels-gpu_by_kernel-title kernels-gpu_by_kernel-desc">
+<title id="kernels-gpu_by_kernel-title">GPU time by kernel</title>
+<desc id="kernels-gpu_by_kernel-desc">Bar chart of GPU time for 5 kernel values, 1 series.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="254" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="253" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">GPU time by kernel</text>
+<text class="t2" x="16" y="45" font-size="12">Sum of gpu.dispatch durations over the run</text>
+<line class="grid" x1="97.04" y1="78" x2="97.04" y2="208" stroke-width="1"/>
+<line class="grid" x1="232.78" y1="78" x2="232.78" y2="208" stroke-width="1"/>
+<line class="grid" x1="368.52" y1="78" x2="368.52" y2="208" stroke-width="1"/>
+<line class="grid" x1="504.26" y1="78" x2="504.26" y2="208" stroke-width="1"/>
+<line class="grid" x1="640" y1="78" x2="640" y2="208" stroke-width="1"/>
+<text class="t3" x="97.04" y="225" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="232.78" y="225" font-size="11" text-anchor="middle">10 ms</text>
+<text class="t3" x="368.52" y="225" font-size="11" text-anchor="middle">20 ms</text>
+<text class="t3" x="504.26" y="225" font-size="11" text-anchor="middle">30 ms</text>
+<text class="t3" x="640" y="225" font-size="11" text-anchor="middle">40 ms</text>
+<text class="t3" x="97.04" y="68" font-size="11" text-anchor="start">kernel</text>
+<text class="t3" x="368.52" y="244" font-size="11" text-anchor="middle">GPU time</text>
+<text class="t2" x="89.04" y="95" font-size="12" text-anchor="end">scale_f32</text>
+<path class="f4" d="M97.04 83H556.21Q560.21 83 560.21 87V95Q560.21 99 556.21 99H97.04Z"><title>scale_f32, d3d12: 34.12 ms</title></path>
+<text class="t2" x="566.21" y="95" font-size="11">34.12 ms</text>
+<text class="t2" x="89.04" y="121" font-size="12" text-anchor="end">groups_echo</text>
+<path class="f4" d="M97.04 109H100.24Q103.44 109 103.44 112.2V121.8Q103.44 125 100.24 125H97.04Z"><title>groups_echo, d3d12: 471.84 µs</title></path>
+<text class="t2" x="109.44" y="121" font-size="11">471.84 µs</text>
+<text class="t2" x="89.04" y="147" font-size="12" text-anchor="end">table_echo</text>
+<path class="f4" d="M97.04 135H97.25Q97.46 135 97.46 135.21V150.79Q97.46 151 97.25 151H97.04Z"><title>table_echo, d3d12: 30.72 µs</title></path>
+<text class="t2" x="103.46" y="147" font-size="11">30.72 µs</text>
+<text class="t2" x="89.04" y="173" font-size="12" text-anchor="end">bf16_unpack</text>
+<path class="f4" d="M97.04 161H97.12Q97.21 161 97.21 161.08V176.92Q97.21 177 97.12 177H97.04Z"><title>bf16_unpack, d3d12: 12.29 µs</title></path>
+<text class="t2" x="103.21" y="173" font-size="11">12.29 µs</text>
+<text class="t2" x="89.04" y="199" font-size="12" text-anchor="end">args_echo</text>
+<path class="f4" d="M97.04 187H97.11Q97.18 187 97.18 187.07V202.93Q97.18 203 97.11 203H97.04Z"><title>args_echo, d3d12: 10.24 µs</title></path>
+<text class="t2" x="103.18" y="199" font-size="11">10.24 µs</text>
+<line class="axis" x1="97.04" y1="78" x2="97.04" y2="78" stroke-width="1"/>
+<line class="axis" x1="97.04" y1="78" x2="97.04" y2="208" stroke-width="1"/>
+</svg>
