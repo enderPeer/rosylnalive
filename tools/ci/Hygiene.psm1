@@ -21,19 +21,35 @@ $script:Changelog = 'docs/contracts/CHANGELOG.md'
 
 # ---- results ------------------------------------------------------------------------------------
 
+# Record names and metric keys follow the TelemetryFacade naming rule (dot-separated segments of a-z, 0-9 and _, each
+# starting with a letter; at most 128 characters), and metrics are numbers, booleans or short strings, so T1's reports
+# and dashboard can ingest the hygiene summary as Check records with attributes. test-hygiene.ps1 enforces the rule.
+$script:TelemetryName = [regex]::new('^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$')
+function Test-TelemetryName([string]$Name) { $Name.Length -ge 1 -and $Name.Length -le 128 -and $script:TelemetryName.IsMatch($Name) }
+
 function New-HygieneResult([string]$Check) {
     [pscustomobject]@{
         Check    = $Check
         Findings = [Collections.Generic.List[object]]::new()
         Metrics  = [ordered]@{}
+        Summary  = ''
     }
 }
+
+# hygiene.<check> with '-' as '_' (hygiene.contract_label).
+function Get-RecordName($Result) { 'hygiene.' + $Result.Check.Replace('-', '_') }
 
 function Add-Finding($Result, [ValidateSet('error', 'warning', 'note')][string]$Severity, [string]$Message) {
     $Result.Findings.Add([pscustomobject]@{ Severity = $Severity; Message = $Message })
 }
 
 function Get-FindingCount($Result, [string]$Severity) { @($Result.Findings | Where-Object Severity -EQ $Severity).Count }
+
+# One line for people: the result's Summary, else its metrics.
+function Get-ResultText($Result) {
+    if ($Result.Summary) { return $Result.Summary }
+    @($Result.Metrics.GetEnumerator() | ForEach-Object { "$($_.Key) $($_.Value)" }) -join '; '
+}
 
 function Write-HygieneResult($Result) {
     foreach ($f in $Result.Findings) {
@@ -42,20 +58,21 @@ function Write-HygieneResult($Result) {
     }
     $errors = Get-FindingCount $Result 'error'
     $warnings = Get-FindingCount $Result 'warning'
-    $metrics = @($Result.Metrics.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ', '
-    if ($errors -gt 0) { Write-Host "$($Result.Check): FAILED ($errors error(s), $warnings warning(s)) $metrics" -ForegroundColor Red }
-    else { Write-Host "$($Result.Check): OK ($warnings warning(s)) $metrics" -ForegroundColor Green }
+    $text = Get-ResultText $Result
+    if ($errors -gt 0) { Write-Host "$($Result.Check): FAILED ($errors error(s), $warnings warning(s)): $text" -ForegroundColor Red }
+    else { Write-Host "$($Result.Check): OK ($warnings warning(s)): $text" -ForegroundColor Green }
 }
 
-# The record a check contributes to artifacts/hygiene/summary.json (schema lrm.hygiene-summary/1). Its name follows
-# the TelemetryFacade naming rules (hygiene.<check>), and passed/errors/warnings mirror a Check record.
+# The record a check contributes to artifacts/hygiene/summary.json (schema lrm.hygiene-summary/1): a Check record in
+# the TelemetryFacade sense (name, passed) with the metrics as its attributes.
 function ConvertTo-HygieneRecord($Result, [double]$DurationMs = 0) {
     [ordered]@{
-        name       = "hygiene.$($Result.Check)"
+        name       = Get-RecordName $Result
         passed     = (Get-FindingCount $Result 'error') -eq 0
         errors     = Get-FindingCount $Result 'error'
         warnings   = Get-FindingCount $Result 'warning'
         durationMs = [math]::Round($DurationMs, 1)
+        summary    = Get-ResultText $Result
         metrics    = $Result.Metrics
         findings   = @($Result.Findings | ForEach-Object { [ordered]@{ severity = $_.Severity; message = $_.Message } })
     }
@@ -231,7 +248,10 @@ function Test-Ownership {
         elseif ($owners.Count -gt 1) { $multi++; Add-Finding $r error "$p is owned by several families ($($owners -join ', ')); globs must not overlap" }
     }
     $r.Metrics['tracked'] = $Tracked.Count
-    if ($unowned -or $multi) { $r.Metrics['unowned'] = $unowned; $r.Metrics['multiOwned'] = $multi }
+    $r.Metrics['unowned'] = $unowned
+    $r.Metrics['multi_owned'] = $multi
+    $coverage = if ($unowned -or $multi) { "$($Tracked.Count) files, $unowned unowned, $multi owned twice" } else { "$($Tracked.Count) files, each owned by one family" }
+    $r.Summary = $coverage
 
     if (-not $Branch) {
         Add-Finding $r note 'no branch given: only map coverage was checked'
@@ -240,6 +260,7 @@ function Test-Ownership {
     $b = Resolve-Branch $Map $Branch
     $r.Metrics['branch'] = $Branch
     $r.Metrics['changed'] = $Changes.Count
+    $r.Summary = "$coverage; branch $Branch ($($b.Kind))"
     switch ($b.Kind) {
         'invalid' {
             Add-Finding $r error "branch '$Branch' does not follow ws/<id>-<slug>, ws/<id>-fix-<slug> or int/<slug>"
@@ -287,6 +308,7 @@ function Test-Ownership {
         }
     }
     $r.Metrics['outside'] = $outside
+    $r.Summary = "$coverage; branch $Branch (family $family): $($Changes.Count) changed, $outside outside the family"
     $r
 }
 
@@ -317,6 +339,8 @@ function Test-Layering {
     if ($code -ne 0 -and (Get-FindingCount $r 'error') -eq 0) {
         Add-Finding $r error "gen-project-graph.ps1 -Check exited $code`: $($lines -join ' | ')"
     }
+    $r.Metrics['rule_errors'] = Get-FindingCount $r 'error'
+    $r.Summary = if ($r.Metrics.Contains('projects')) { "$($r.Metrics['projects']) projects, every rule holds, generated files up to date" } else { "$(Get-FindingCount $r 'error') error(s) in the project graph" }
     $r
 }
 
@@ -329,7 +353,12 @@ function Read-HygieneConfig([string]$Path) {
     [pscustomobject]@{
         DefaultMaxFileBytes = [long]$s.defaultMaxFileBytes
         FileLimits          = @(foreach ($f in @($s.fileLimits)) { [void](ConvertTo-GlobRegex $f.glob); [pscustomobject]@{ Glob = [string]$f.glob; Max = [long]$f.maxFileBytes; Why = [string]$f.why } })
-        Budgets             = @(foreach ($b in @($s.budgets)) { [void](ConvertTo-GlobRegex $b.glob); [pscustomobject]@{ Glob = [string]$b.glob; Max = [long]$b.maxTotalBytes; Why = [string]$b.why } })
+        Budgets             = @(foreach ($b in @($s.budgets)) {
+                [void](ConvertTo-GlobRegex $b.glob)
+                $name = [string](Get-Prop $b 'name')
+                if ($name -cnotmatch '^[a-z][a-z0-9_]*$') { throw "${Path}: budget '$($b.glob)' needs a name of a-z, 0-9 and _ (a telemetry key segment)" }
+                [pscustomobject]@{ Name = $name; Glob = [string]$b.glob; Max = [long]$b.maxTotalBytes; Why = [string]$b.why }
+            })
         Forbidden           = @(foreach ($f in @($s.forbidden)) {
                 [pscustomobject]@{ Glob = [string]$f.glob; Set = (Split-Globs (@([string]$f.glob) + @(Get-Prop $f 'except' @() | ForEach-Object { "!$_" }))); Why = [string]$f.why }
             })
@@ -371,15 +400,20 @@ function Test-Sizes {
         if ($size -gt $limit) { Add-Finding $r error "$path is $(Format-Bytes $size) ($size bytes), over the $(Format-Bytes $limit) limit: $why" }
         foreach ($b in $Config.Budgets) { if (Test-Glob $path $b.Glob) { $totals[$b.Glob] += $size } }
     }
+    $r.Metrics['files'] = $Entries.Count
+    $r.Metrics['total_bytes'] = $total
+    if ($largest) { $r.Metrics['largest_path'] = $largest.Path; $r.Metrics['largest_bytes'] = $largest.Size }
+    $budgetText = @()
     foreach ($b in $Config.Budgets) {
         $t = $totals[$b.Glob]
         $pct = if ($b.Max -gt 0) { [string]::Format([Globalization.CultureInfo]::InvariantCulture, '{0:0.0}', 100.0 * $t / $b.Max) } else { '0' }
-        $r.Metrics["budget[$($b.Glob)]"] = "$(Format-Bytes $t) of $(Format-Bytes $b.Max) ($pct%)"
+        $r.Metrics["budget.$($b.Name).bytes"] = $t
+        $r.Metrics["budget.$($b.Name).max_bytes"] = $b.Max
+        $budgetText += "$($b.Glob) $(Format-Bytes $t) of $(Format-Bytes $b.Max) ($pct%)"
         if ($t -gt $b.Max) { Add-Finding $r error "files under $($b.Glob) total $(Format-Bytes $t) ($t bytes), over the $(Format-Bytes $b.Max) budget: $($b.Why)" }
     }
-    $r.Metrics['files'] = $Entries.Count
-    $r.Metrics['totalBytes'] = $total
-    if ($largest) { $r.Metrics['largest'] = "$($largest.Path) ($(Format-Bytes $largest.Size))" }
+    $largestText = if ($largest) { "; largest $($largest.Path) ($(Format-Bytes $largest.Size))" } else { '' }
+    $r.Summary = "$($Entries.Count) files, $(Format-Bytes $total)$largestText; budgets: $($budgetText -join ', ')"
     $r
 }
 
@@ -393,7 +427,7 @@ function Test-Sizes {
 function Test-Eol {
     param([object[]]$Entries = @())
     $r = New-HygieneResult 'eol'
-    $counts = [ordered]@{ lf = 0; none = 0; binary = 0; crlfCheckout = 0 }
+    $counts = [ordered]@{ lf = 0; none = 0; binary = 0; crlf_checkout = 0 }
     foreach ($e in $Entries) {
         $i = [string]$e.Index; $w = [string]$e.Worktree; $a = ([string]$e.Attr).Trim(); $p = [string]$e.Path
         $binaryAttr = $a -cmatch '(^|\s)-text(\s|$)'
@@ -408,13 +442,14 @@ function Test-Eol {
         }
         elseif ($i -ceq 'lf') { $counts.lf++ }
         elseif ($i -ceq 'none' -or $i -ceq '') { $counts.none++ }
-        if ($crlfAttr) { $counts.crlfCheckout++ }
+        if ($crlfAttr) { $counts.crlf_checkout++ }
         elseif ($w -cin @('crlf', 'mixed') -and -not $binaryAttr) {
             Add-Finding $r warning "$p has $w line endings in the working tree only (the index is LF); check it out again or run git add --renormalize $p"
         }
     }
     $r.Metrics['files'] = $Entries.Count
     foreach ($k in $counts.Keys) { $r.Metrics[$k] = $counts[$k] }
+    $r.Summary = "$($Entries.Count) files: $($counts.lf) LF, $($counts.none) without line endings, $($counts.binary) binary, $($counts.crlf_checkout) CRLF by attribute"
     $r
 }
 
@@ -453,9 +488,11 @@ function Test-ContractLabel {
     $touched = @($Changes | Where-Object { Test-ContractFile $Map $_.Path })
     $texts = @($touched | Where-Object { $_.Path -cmatch '^docs/contracts/[^/]+\.md$' })
     $r.Metrics['frozen'] = $Frozen
-    $r.Metrics['contractFilesChanged'] = $touched.Count
+    $r.Metrics['contract_files_changed'] = $touched.Count
+    $r.Metrics['labels_known'] = $LabelsKnown
+    $state = if ($Frozen) { "$tag exists" } else { "$tag not tagged yet" }
+    $r.Summary = "$state; $($touched.Count) contract file(s) changed; labels $(if ($LabelsKnown) { 'known' } else { 'unknown' })"
     if (-not $LabelsKnown) {
-        $r.Metrics['labels'] = 'unknown'
         if ($touched.Count -and $Frozen) {
             Add-Finding $r warning "PR labels are unknown (not a pull request), so the '$label' label was not checked for: $(@($touched.Path) -join ', ')"
         }
@@ -464,6 +501,7 @@ function Test-ContractLabel {
     }
     $hasLabel = $Labels -ccontains $label
     $r.Metrics['labelled'] = $hasLabel
+    $r.Summary = "$state; $($touched.Count) contract file(s) changed; '$label' label $(if ($hasLabel) { 'set' } else { 'not set' })"
     if ($Frozen -and $touched.Count -and -not $hasLabel) {
         Add-Finding $r error "contract files changed after $tag without the '$label' label: $(@($touched.Path) -join ', ')"
     }
