@@ -312,6 +312,8 @@ def main() -> int:
     for name, per in sorted(results["greedy"].items()):
         for oracle, g in sorted(per.items()):
             log.gauge("goldens.greedy.min_margin", g["min_margin"], "", prompt=name, oracle=oracle)
+            log.gauge("goldens.greedy.min_margin_f32_ulps", g["min_margin_f32_ulps"], "ulp", prompt=name, oracle=oracle)
+            log.check("goldens.greedy.f32_argmax_agrees", g["f32_argmax_agrees_every_step"], prompt=name, oracle=oracle)
     total = sum(len(b) for b in files.values())
     for n, b in sorted(files.items()):
         log.gauge("goldens.file_bytes", len(b), "B", file=f"{OUT_REL}/{n}")
