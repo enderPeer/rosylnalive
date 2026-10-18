@@ -275,6 +275,8 @@ try {
     Test-Script 'ownership-changelog-rewrite' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-rewrite', '-Base', 'main', '-Head', 'ws/O1-fixture-rewrite') 1 'is shared append-only'
     Test-Script 'ownership-move-into-other-family' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-move', '-Base', 'main', '-Head', 'ws/O1-fixture-move') 1 'src/Lrm\.Core/README\.md is owned by family S1, not by family O1 \(branch ws/O1-fixture-move, status A\)'
     Test-Script 'ownership-changelog-insert' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-insert', '-Base', 'main', '-Head', 'ws/O1-fixture-insert') 1 'inserts lines after line [34] of 5; entries are appended at the end'
+    # Checked out, as CI checks out the PR head: the working tree then holds the branch's own (self-granted) map.
+    Git $o @('checkout', '-q', 'ws/O1-fixture-self-grant')
     Test-Script 'ownership-self-granted-map' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-self-grant', '-Base', 'main', '-Head', 'ws/O1-fixture-self-grant', '-Labels', '') 1 '(?s)(?=.*docs/ownership\.json is a governance path)(?=.*src/Lrm\.Core/Hash\.fs is owned by family S1, not by family O1)'
     Test-Script 'ownership-self-grant-with-exception' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-self-grant', '-Base', 'main', '-Head', 'ws/O1-fixture-self-grant', '-Labels', 'ownership-exception') 1 '(?s)(?=.*docs/ownership\.json is a governance path)(?=.*not O1; accepted by the .ownership-exception. label)'
     Test-Script 'ownership-checker-edit' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-checker', '-Base', 'main', '-Head', 'ws/O1-fixture-checker', '-Labels', 'ownership-exception') 1 'tools/ci/Hygiene\.psm1 is a governance path'
@@ -286,6 +288,7 @@ try {
     Test-Script 'hygiene-unknown-check' 'hygiene.ps1' @('-RepoRoot', $o, '-Only', 'ownership,typo', '-OutDir', $hygOut) 2 'unknown check\(s\) .typo.'
     Test-Script 'hygiene-single-check' 'hygiene.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-append', '-Base', 'main', '-Head', 'ws/O1-fixture-append', '-Labels', '', '-Only', 'ownership', '-OutDir', $hygOut) 0 'hygiene\.ownership \| pass'
     Git $o @('tag', '-d', 'contracts-v1')
+    Git $o @('checkout', '-q', 'ws/O1-fixture-move')
     Test-Script 'ownership-current-branch' 'check-ownership.ps1' @('-RepoRoot', $o, '-Base', 'main') 1 'branch ws/O1-fixture-move \(family O1\)'
 
     # Layering: the script itself on an unmodified copy and on the hand-written reference.
