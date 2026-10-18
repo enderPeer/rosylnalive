@@ -329,13 +329,20 @@ module Device =
 
     /// Creates the recipe's logical device on `physical`: Vulkan 1.4, VK_EXT_descriptor_heap (plus what `options`
     /// adds), the five features over FeatureChain, and one queue of the recipe's family. Raises VulkanException
-    /// when vkCreateDevice fails and InvalidOperationException when the device lacks the extension or a family.
+    /// when vkCreateDevice fails and InvalidOperationException when the device is not Vulkan 1.4 or lacks the
+    /// extension or the queue family. Run DeviceCheck first: it says why a device does not qualify.
     let create (instance: Instance) (physical: VkPhysicalDevice) (options: DeviceOptions) : Device =
         use span =
             Telemetry.span "gpu.device.create" [ Attr.str TelemetryKeys.Backend "vulkan" ]
 
         let props = instance.Properties physical
         let available = instance.DeviceExtensions physical
+
+        // The creation chain holds Vulkan 1.2 and 1.3 structs and maintenance5: valid only on a 1.4 device.
+        if not (VkVersion.atLeast VkVersion.VK_API_VERSION_1_4 props.apiVersion) then
+            invalidOp (
+                sprintf "%s has Vulkan %s, not 1.4" props.deviceName.AsString (VkVersion.toString props.apiVersion)
+            )
 
         if not (available.ContainsKey VkConst.VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME) then
             invalidOp (sprintf "%s does not support VK_EXT_descriptor_heap" props.deviceName.AsString)
