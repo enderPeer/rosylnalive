@@ -36,24 +36,25 @@
   "vkxml": {
     "managedBy": "bootstrap",
     "kind": "file",
-    "approval": "pending",
-    "approvalNote": "AP-1: asked of the user on 2026-10-17. Until it is approved, bootstrap skips this entry and never downloads it.",
+    "approval": "approved",
+    "approvalNote": "AP-1: approved by the user on 2026-10-18 (download locally and on CI runners).",
     "version": "1.4.365",
     "url": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Docs/v1.4.365/xml/vk.xml",
     "size": 3341644,
-    "sha256": null,
+    "sha256": "4ab953836756807a93cee72bc3c63554826b445af43003e0d7d7e876818428ca",
     "install": "toolchain/vulkan/1.4.365/vk.xml",
-    "note": "Read as data by tools/vkgen (R2). The sha256 is pinned when the download is approved (bootstrap -Only vkxml -ComputePins -AllowDownload prints it)."
+    "note": "Read as data by tools/vkgen (R2). The sha256 is pinned when the download is approved (bootstrap -Only vkxml -ComputePins -AllowDownload prints it).",
+    "verified": "2026-10-18: git blob 622e018b9bea847e7da2457d99c2f73a031ea081 and size equal GitHub's record of xml/vk.xml at tag v1.4.365."
   },
   "vkheaders": {
     "managedBy": "bootstrap",
     "kind": "zip",
-    "approval": "pending",
-    "approvalNote": "AP-1: asked of the user on 2026-10-17. Until it is approved, bootstrap skips this entry and never downloads it.",
+    "approval": "approved",
+    "approvalNote": "AP-1: approved by the user on 2026-10-18 (download locally and on CI runners).",
     "version": "1.4.365",
     "url": "https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v1.4.365.zip",
-    "size": null,
-    "sha256": null,
+    "size": 3474503,
+    "sha256": "767d80b0c6506f90b85e1515eb5998299aecd0d16e3c5a373246efede770ac6f",
     "download": "downloads/vulkan-headers-1.4.365/Vulkan-Headers-1.4.365.zip",
     "stripTopFolder": true,
     "extract": [
@@ -61,13 +62,14 @@
       "include/*"
     ],
     "install": "toolchain/vulkan-headers/1.4.365",
-    "note": "Used only by the cl.exe ABI oracle (tools/abi-oracle/vulkan). Size and sha256 are pinned when approved (bootstrap -Only vkheaders -ComputePins -AllowDownload prints them)."
+    "note": "Used only by the cl.exe ABI oracle (tools/abi-oracle/vulkan). Size and sha256 are pinned when approved (bootstrap -Only vkheaders -ComputePins -AllowDownload prints them).",
+    "verified": "2026-10-18: all 53 include/ and LICENSE blobs in the archive equal GitHub's tree of tag v1.4.365. GitHub-generated archives are not guaranteed byte-stable; if this hash ever changes upstream, bootstrap fails loudly and the pin is re-verified the same way."
   },
   "tokenizer": {
     "managedBy": "bootstrap",
     "kind": "file",
-    "approval": "pending",
-    "approvalNote": "AP-1: the download on CI runners was asked of the user on 2026-10-17. Until it is approved, bootstrap never downloads it. A local copy, which came with the verified weights, is verified against the pins on every run.",
+    "approval": "approved",
+    "approvalNote": "AP-1: approved by the user on 2026-10-18, including the download on CI runners. A local copy, which came with the verified weights, is verified against the pins on every run.",
     "version": "c1899de289a04d12100db370d81485cdf75e47ca",
     "url": "https://huggingface.co/Qwen/Qwen3-0.6B/resolve/c1899de289a04d12100db370d81485cdf75e47ca/tokenizer.json",
     "size": 11422654,
