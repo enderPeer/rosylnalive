@@ -33,10 +33,22 @@ Passing cases out of all cases, per kernel and backend.
 
 The mode each shader backend measured with the `scale_f32` denormal probe right after loading its kernels (GpuBackendInterface). It is fixed within an execution class, and it decides what bit-exact means for a kernel that does fp32 arithmetic (KernelAbiAndCatalog, kernel rules).
 
-| Backend | Node | fp32 denormals | Bit-exact fp32 arithmetic means |
-| --- | --- | --- | --- |
-| vulkan | n0 | flush | equal to CpuRef with every fp32 denormal input and result set to zero of the same sign |
-| d3d12 | n1 | preserve | equal to CpuRef as it is |
+| Backend | Node | Blob | fp32 denormals | Bit-exact fp32 arithmetic means |
+| --- | --- | --- | --- | --- |
+| vulkan | n0 |  | flush | equal to CpuRef with every fp32 denormal input and result set to zero of the same sign |
+| d3d12 | n1 |  | preserve | equal to CpuRef as it is |
+
+The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush give, and what each measurement returned.
+
+| Input | Preserve | Flush | vulkan n0 | d3d12 n1 |
+| --- | --- | --- | --- | --- |
+| `3f800000` | 3f000000 | 3f000000 | 3f000000 | 3f000000 |
+| `01000000` | 00800000 | 00800000 | 00800000 | 00800000 |
+| `00800000` | 00400000 | 00000000 | 00000000 | 00400000 |
+| `80800000` | 80400000 | 80000000 | 80000000 | 80400000 |
+| `00000002` | 00000001 | 00000000 | 00000000 | 00000001 |
+| `807ffffe` | 803fffff | 80000000 | 80000000 | 803fffff |
+| `00400000` | 00200000 | 00000000 | 00000000 | 00200000 |
 
 ## GPU time
 

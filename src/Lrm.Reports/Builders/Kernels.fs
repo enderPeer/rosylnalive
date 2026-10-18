@@ -300,20 +300,25 @@ let build (log: RunLog) : Scope =
     let overBudget = dispatches |> List.filter (fun e -> float e.DurationNs >= budgetNs)
 
     // The fp32 denormal mode each shader backend measured (GpuBackendInterface, gpu.fp32_denormals): the last
-    // measurement per node and backend, in backend order. It fixes what "bit-exact" means for fp32 arithmetic
-    // (KernelAbiAndCatalog, kernel rules).
-    let denormalRows =
+    // measurement per node, backend and blob, in backend order. It fixes what "bit-exact" means for fp32 arithmetic
+    // (KernelAbiAndCatalog, kernel rules). `blob` names a probe on another blob than the backend's own, such as a
+    // control built without -denorm.
+    let denormals =
         log.Named "gpu.fp32_denormals"
         |> List.filter (fun e -> e.Kind = TelemetryKind.Event)
-        |> List.groupBy (fun e -> backendOfEvent e, e.Node)
-        |> List.map (fun ((backend, node), es) -> backend, node, List.last es)
-        |> List.sortBy (fun (backend, node, _) -> orderIn backendOrder backend, node)
-        |> List.map (fun (backend, node, e) ->
+        |> List.groupBy (fun e -> backendOfEvent e, e.Node, defaultArg (e.TryStr "blob") "")
+        |> List.map (fun ((backend, node, blob), es) -> backend, node, blob, List.last es)
+        |> List.sortBy (fun (backend, node, blob, _) -> orderIn backendOrder backend, node, blob)
+
+    let denormalRows =
+        denormals
+        |> List.map (fun (backend, node, blob, e) ->
             let mode = defaultArg (e.TryStr "mode") ""
 
             [
                 backend
                 node
+                blob
                 mode
                 (match mode with
                  | "preserve" -> "equal to CpuRef as it is"
@@ -321,6 +326,47 @@ let build (log: RunLog) : Scope =
                  | "mixed" -> "elements whose input or result is a denormal compare within the class only"
                  | _ -> "unknown mode")
             ])
+
+    // The probe's bit table, from the words Fp32Denormals.recordProbe records: one row per input word, the results
+    // preserve and flush give, and one column per measurement.
+    let words (e: RunEvent) (key: string) =
+        e.TryStr key
+        |> Option.map (fun t -> t.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        |> Option.defaultValue [||]
+
+    let measured =
+        denormals
+        |> List.filter (fun (_, _, _, e) -> (words e "results").Length > 0 && (words e "inputs").Length > 0)
+
+    let wordRows =
+        match measured with
+        | [] -> []
+        | (_, _, _, first) :: _ ->
+            let inputs = words first "inputs"
+            let preserve = words first "expected_preserve"
+            let flush = words first "expected_flush"
+            let at (xs: string[]) i = if i < xs.Length then xs[i] else ""
+
+            [
+                for i in 0 .. inputs.Length - 1 ->
+                    [
+                        "`" + inputs[i] + "`"
+                        at preserve i
+                        at flush i
+                        yield! measured |> List.map (fun (_, _, _, e) -> at (words e "results") i)
+                    ]
+            ]
+
+    let wordColumns =
+        [
+            "Input", L
+            "Preserve", L
+            "Flush", L
+            yield!
+                measured
+                |> List.map (fun (backend, node, blob, _) ->
+                    (backend + " " + node + (if blob = "" then "" else ", " + blob)), L)
+        ]
 
     runScope log
     |> Scope.value
@@ -365,10 +411,12 @@ let build (log: RunLog) : Scope =
             [
                 "Backend", L
                 "Node", L
+                "Blob", L
                 "fp32 denormals", L
                 "Bit-exact fp32 arithmetic means", L
             ]
             denormalRows)
+    |> Scope.table "denormal_words" (table wordColumns wordRows)
     |> Scope.chart "gpu_by_kernel" byKernel
     |> Scope.chart "timeline" timeline
     |> Scope.chart "timeline_zoom" timelineZoom
