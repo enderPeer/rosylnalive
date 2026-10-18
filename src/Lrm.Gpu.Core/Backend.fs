@@ -167,10 +167,6 @@ module Requirements =
     [<Literal>]
     let VulkanDescriptorHeap = "requires VK_EXT_descriptor_heap"
 
-    /// Vulkan: every SPIR-V blob declares DenormPreserve 32 (shaderDenormPreserveFloat32).
-    [<Literal>]
-    let VulkanDenormPreserve = "requires shaderDenormPreserveFloat32"
-
     /// Vulkan: the 64 descriptors sit at stride 16, so a buffer descriptor must fit in 16 bytes.
     [<Literal>]
     let VulkanDescriptorSize = "requires buffer descriptors of at most 16 bytes"
@@ -424,3 +420,88 @@ module GpuTelemetry =
     let timers (backend: ExecutionBackend) (results: TimerResult list) =
         for r in results do
             Telemetry.gpuInterval r.Name r.GpuStartNs r.DurationNs (backendAttr backend :: r.Attrs)
+
+    /// Event, once per backend after LoadKernels: the measured fp32 denormal mode; attrs backend, mode.
+    [<Literal>]
+    let Fp32Denormals = "gpu.fp32_denormals"
+
+/// How a device treats fp32 denormals in kernel arithmetic, as measured by the scale_f32 probe
+/// (GpuBackendInterface contract). It is a property of the ExecutionClass: fixed for one device, driver and blob set.
+[<RequireQualifiedAccess>]
+type Fp32DenormalMode =
+    /// Denormal inputs and results are kept, as on the CPU reference.
+    | Preserve
+    /// Denormal inputs and results become zero of the same sign.
+    | Flush
+    /// Neither model explains the probe (for example inputs flushed but results kept).
+    | Mixed
+
+/// The fp32 denormal probe (GpuBackendInterface contract): scale_f32 with a = ProbeScale over probeInputs. Backends
+/// run it right after LoadKernels, classify the result bits and record the mode; it never rejects a device.
+[<RequireQualifiedAccess>]
+module Fp32Denormals =
+    /// The scale factor of the probe dispatch.
+    [<Literal>]
+    let ProbeScale = 0.5f
+
+    /// The probe's input bits: normal controls, normal inputs with denormal results, and denormal inputs.
+    let probeInputs: uint32[] =
+        [|
+            0x3F800000u // 1.0 -> 0.5 (control)
+            0x01000000u // 2^-125 -> the smallest normal (control)
+            0x00800000u // the smallest normal -> a denormal result
+            0x80800000u // its negative
+            0x00000002u // a denormal input -> the smallest denormal
+            0x807FFFFEu // a negative denormal input
+            0x00400000u // a denormal input, 2^-127
+        |]
+
+    let name (mode: Fp32DenormalMode) =
+        match mode with
+        | Fp32DenormalMode.Preserve -> "preserve"
+        | Fp32DenormalMode.Flush -> "flush"
+        | Fp32DenormalMode.Mixed -> "mixed"
+
+    let private isDenormal (bits: uint32) =
+        bits &&& 0x7F800000u = 0u && bits &&& 0x007FFFFFu <> 0u
+
+    /// A denormal becomes zero of the same sign; other values are unchanged.
+    let flushBits (bits: uint32) =
+        if isDenormal bits then bits &&& 0x80000000u else bits
+
+    let private scale (bits: uint32) =
+        BitConverter.SingleToUInt32Bits(BitConverter.UInt32BitsToSingle bits * ProbeScale)
+
+    /// The result bits the probe must give in `mode` (Preserve or Flush; Mixed has no single answer).
+    let expected (mode: Fp32DenormalMode) : uint32[] =
+        match mode with
+        | Fp32DenormalMode.Preserve -> probeInputs |> Array.map scale
+        | Fp32DenormalMode.Flush -> probeInputs |> Array.map (flushBits >> scale >> flushBits)
+        | Fp32DenormalMode.Mixed -> invalidArg "mode" "mixed has no single expected result"
+
+    /// The mode the probe's result bits show; raises GpuContractException when the controls are wrong (the probe
+    /// itself failed) or the length differs.
+    let classify (results: uint32[]) : Fp32DenormalMode =
+        if isNull results || results.Length <> probeInputs.Length then
+            Fail.contract "the fp32 denormal probe needs %d results" probeInputs.Length
+
+        let preserve = expected Fp32DenormalMode.Preserve
+
+        if results[0] <> preserve[0] || results[1] <> preserve[1] then
+            Fail.contract "the fp32 denormal probe's normal controls are wrong: scale_f32 itself failed"
+
+        if results = preserve then
+            Fp32DenormalMode.Preserve
+        elif results = expected Fp32DenormalMode.Flush then
+            Fp32DenormalMode.Flush
+        else
+            Fp32DenormalMode.Mixed
+
+    /// Emits gpu.fp32_denormals for a backend's measured mode.
+    let record (backend: ExecutionBackend) (mode: Fp32DenormalMode) =
+        Telemetry.event
+            GpuTelemetry.Fp32Denormals
+            [
+                Attr.str TelemetryKeys.Backend (ExecutionBackend.name backend)
+                Attr.str "mode" (name mode)
+            ]

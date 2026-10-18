@@ -43,14 +43,43 @@ A linear kernel addresses its work through its **logical group** `LRM_GROUP_LINE
 4. **Aliasing.** When two data tokens overlap in memory and one of them is written, the written field must list the other in its catalog `alias`, and the two must span exactly the same bytes (same slot, offset and extent). Two written tokens never overlap. A declared alias means "in place": the kernel reads each element before it writes it.
 5. **Grid.** The catalog grid, folded as above; word 0 of the dispatched block is the physical x.
 
-Kernel-specific argument checks (for example `n` against the tensors' element counts, or `kv_heads` dividing `q_heads`) belong to each kernel's emulator in E1's CpuDevice, which raises on them; GPU kernels assume them.
+The kernel-specific argument rules (element counts and the other rules below) are not part of `Dispatch.prepare`: E1's CpuDevice checks them in each kernel's emulator, and GPU kernels assume them.
+
+## Tensor access: flat tokens, sizes from the fields
+
+**Every v1 kernel treats each data token as a flat, contiguous array of its dtype.** Element *i* of a token is at byte `offset + i * size` of the row's slot (a bf16 element is half *i* mod 2 of the u32 word at `offset + 4 * floor(i / 2)`), for 0 <= *i* < `count`, the row's element count (word 12). The shape of the work comes **only from the kernel's u32 fields** (`n`, `rows`, `cols`, `m`, `k`, `q_row0`, `past`, ...). A kernel **never reads the rank, dims or strides of a data token**; only a `meta` token's row is read as a row (`table_echo`).
+
+- **Bracketed shapes are layouts, not dims.** In the kernel tables below, a shape such as `Input [rows, cols]` or `Queries [tokens, q_heads * head_dim]` says how the kernel indexes the flat array (row-major, element `r * cols + c`). It is not a statement about the token's dims.
+- **A token's count is a capacity.** A token may hold more elements than one dispatch uses. The table is sealed once at startup (HeapLayoutAndTensorTable), so the executor (X1) creates max-size tokens (for example activations for the longest prefill chunk, the KV cache for `max_pos`) and passes the actual sizes of each dispatch (decode with T = 1, prefill, chunked prefill) in the fields. A row's dims describe the tensor for hosts, tools and debugging; kernels do not depend on them.
+- **Contiguous.** Rule 3 above requires the `Contiguous` flag on every data token, so a token's extent is exactly its `count` elements.
+
+**Minimum element counts.** For each dispatch, every data token must hold at least the elements the kernel touches, computed in int64 from the fields; `x >= e` means that token's `count` is at least `e`. The other argument rules complete each kernel's preconditions. E1's CpuDevice checks both before it emulates a kernel and raises `GpuContractException` on a violation; GPU kernels assume them and never check. The grid rule already makes every grid dimension at least 1 (for example `n >= 1` for `scale_f32`, `rows * cols >= 1` for `copy_rows`).
+
+| Kernel | Minimum element counts | Other argument rules |
+| --- | --- | --- |
+| `scale_f32` | x, y >= n | |
+| `table_echo` | y >= 16 | |
+| `args_echo` | y >= 32 | |
+| `groups_echo` | y >= groups | |
+| `bf16_unpack` | x, y >= n | |
+| `embed_gather_bf16` | ids >= rows; table >= vocab * cols; y >= rows * cols | |
+| `rmsnorm_rows` | x, y >= rows * cols; w >= cols | cols >= 1 |
+| `rope_apply` | x, y >= rows * head_dim; cos_table, sin_table >= (pos0 + rows / heads) * (head_dim / 2) | heads >= 1 and divides rows; head_dim even and at least 2 |
+| `silu_mul` | gate, up, y >= n | |
+| `add` | a, b, y >= n | |
+| `copy_rows` | src >= (src_row0 + rows - 1) * src_stride + cols; dst >= (dst_row0 + rows - 1) * dst_stride + cols | src and dst have the same dtype; cols <= dst_stride when rows > 1 (destination rows never overlap) |
+| `argmax_rows` | x >= rows * cols; y >= rows | cols >= 1 |
+| `matmul_bf16w` | x >= m * k; w >= n * k; y >= m * n | |
+| `attention_gqa_causal` | q, y >= (q_row0 + rows) * q_heads * head_dim; k, v >= (past + rows) * kv_heads * head_dim | kv_heads >= 1 and divides q_heads; head_dim >= 1 |
 
 ## Kernel rules
 
 Every kernel in the catalog obeys these rules. DXC, the source lint (ShaderBuildAndSourceConvention), R4b's SPIR-V inspector and E1's conformance harness check them.
 
 - **No float atomics**; in v1, no atomics at all. **No wave or quad operations** (the wave size differs between vendors). **No counters, no typed views, no 16-bit types.** Resources only through `LRM_BUF`, `lrm_buf` and `lrm_tensor`.
-- **groupshared at most 32 KiB**, enforced by DXC's validator for `cs_6_6`.
+- **One body for both targets.** No conditional compilation and no compiler macros such as `__spirv__` (the source lint), so DXIL and SPIR-V compile the same code.
+- **groupshared at most 32 KiB**, enforced by DXC's validator for `cs_6_6`. Because both targets compile one body, the SPIR-V blob declares the same groupshared variables; R4b's SPIR-V inspector also sums the Workgroup-storage variables of every SPIR-V blob against 32 KiB (the RTX 4080 would allow 48 KiB, so the device would not catch it).
+- **fp32 denormals are class-dependent.** The CPU reference keeps denormals. The DXIL blobs declare `fp32-denorm-mode=preserve`; the SPIR-V blobs declare no float-controls mode, so a Vulkan device may flush. Each backend measures its mode with the denormal probe and records it (GpuBackendInterface); within one ExecutionClass it is fixed, so run-to-run bit identity is unaffected. For a kernel that does fp32 arithmetic, "bit-exact" against the CPU means equal to the CPU result **computed in the class's measured mode**: for `preserve`, CpuRef as it is; for `flush`, CpuRef with every fp32 denormal input and result replaced by zero of the same sign; for `mixed`, elements whose input or result is a denormal are compared within the class only. Kernels that only move bits (`bf16_unpack`, `embed_gather_bf16`, `copy_rows` and the echo selftests) are bit-exact in every mode. E1's harness and KernelBounds (O2) apply this rule; toleranced bounds must cover a flushed denormal, an absolute error below 2^-126 per flushed value.
 - **Every dispatch finishes in under 100 ms** on the reference GPU (the faster of two runs, ConformanceHarness), far from TDR limits. Callers split long work: the executor chunks prefill attention with `q_row0` and `past`.
 - **x at most 65,535**, through folding as above.
 - **Determinism.** A kernel's output is a function of its inputs and arguments only. Thread groups write disjoint outputs and never race. Reductions follow BatchInvariance.
@@ -266,8 +295,8 @@ Causal GQA attention, one group per (query row, q head), fixed 64-key blocks wit
 
 ### Notes for the kernel owners
 
-- **Selftests (R4).** Backends and E1 run them first. `scale_f32` and `bf16_unpack` are bit-exact against the CPU. `table_echo` checks the table decode, the null row included. `args_echo` checks that all 32 words arrive, word 0 included. `groups_echo` with `groups` above 65,535 checks folding, and that the extra groups write nothing.
-- **K1.** `embed_gather_bf16`, `add`, `copy_rows` and the `argmax_rows` index are bit-exact (KernelBounds). `rope_apply` is table driven and never evaluates sin or cos; the tables are CpuRef's `ropeTable` (pinned `inv_freq`). `argmax_rows` returns the lowest index of the maximum, and `0xFFFFFFFF` for a row that holds a NaN, which the host turns into an error as CpuRef raises.
+- **Selftests (R4).** Backends and E1 run them first. `scale_f32` and `bf16_unpack` are bit-exact against the CPU (`scale_f32` in the class's denormal mode, kernel rules); `scale_f32` is also the denormal probe (GpuBackendInterface). `table_echo` checks the table decode, the null row included. `args_echo` checks that all 32 words arrive, word 0 included. `groups_echo` with `groups` above 65,535 checks folding, and that the extra groups write nothing.
+- **K1.** `embed_gather_bf16`, `add`, `copy_rows` and the `argmax_rows` index are bit-exact (KernelBounds; `add` and `argmax_rows` in the class's denormal mode). Every K1 to K3 kernel reads its tokens as flat arrays and takes its sizes from its fields (tensor access, above). `rope_apply` is table driven and never evaluates sin or cos; the tables are CpuRef's `ropeTable` (pinned `inv_freq`). `argmax_rows` returns the lowest index of the maximum, and `0xFFFFFFFF` for a row that holds a NaN, which the host turns into an error as CpuRef raises.
 - **K2.** `matmul_bf16w` uses the PyTorch Linear layout: `w` is `[n, k]`. Each output accumulates p = 0..k-1 sequentially in increasing order with `mad`, whatever m is (BatchInvariance), so M = 1 rows equal the same rows at M = 37 and M = 512.
 - **K3.** `attention_gqa_causal`: query row i of the dispatch reads q row `q_row0 + i`, writes y row `q_row0 + i`, has position `past + i` and attends key positions 0 to `past + i`. Query head h uses kv head `h / (q_heads / kv_heads)`. Key blocks of 64 start at position 0, whatever `past` and `q_row0` are, so decode, prefill and chunked prefill agree.
 
@@ -288,4 +317,4 @@ Folding edge cases: X = 65,535 gives (65535, 1, 1); X = 65,536 gives (32768, 2, 
 
 ## Verification
 
-The cpu tier checks: vectors A1 to A4; f32 bit preservation; the byte round trip; a property that folded grids cover the logical grid with fewer than y' extra groups; the grid edge cases; the frozen kernel list, threads and grids; the catalog hash, and that docs do not change it; that the generated files are diff-clean and parse back to `Kernels.catalog`; the parser's strictness; every catalog rule; field words; the set of linear kernels; typed encode and decode; and every dispatch rule, through RecordingBackend. E1 decodes real blocks in CpuDevice; R4b checks the SPIR-V push offsets.
+The cpu tier checks: vectors A1 to A4; f32 bit preservation; the byte round trip; a property that folded grids cover the logical grid with fewer than y' extra groups; the grid edge cases; the frozen kernel list, threads and grids; the catalog hash, and that docs do not change it; that the generated files are diff-clean and parse back to `Kernels.catalog`; the parser's strictness; every catalog rule; field words; the set of linear kernels; typed encode and decode; and every dispatch rule, through RecordingBackend. E1 decodes real blocks in CpuDevice and checks the minimum element counts and argument rules; R4b checks the SPIR-V push offsets and groupshared size.

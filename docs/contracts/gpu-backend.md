@@ -95,8 +95,28 @@ type IGpuBackendProvider =
 - **`Backend.tryCreate options`** creates a backend on device `Index`, which must be accepted, or else on the first accepted device of that backend. It returns `Error` with the reasons when there is none. `BackendRegistry` is the same as a value, for tests.
 - **`DeviceOptions`.** `Debug` enables the API's debug or validation layer when it is installed. `TimeDispatches` brackets every dispatch with timestamps and reports it as `gpu.dispatch`.
 - **Requirements** (`Requirements`, also the rejection texts):
-  - Vulkan: `VK_EXT_descriptor_heap` (required; devices without it are rejected), the features of R1's ADR (VulkanHeapRecipe), buffer descriptors of at most 16 bytes, 128 bytes of push data, and `shaderDenormPreserveFloat32` (VkPhysicalDeviceFloatControlsProperties, core in Vulkan 1.2), because every SPIR-V blob declares `DenormPreserve 32`; V1 rejects a device without it and confirms with `scale_f32` on denormal inputs.
-  - D3D12: shader model 6.6 and resource binding tier 3 (`ResourceDescriptorHeap` indexing), and the 32 root constants of the canonical root signature. Every DXIL blob declares `fp32-denorm-mode=preserve` (shader model 6.2 and later); D1 confirms with `scale_f32` on denormal inputs that the device preserves them.
+  - Vulkan: `VK_EXT_descriptor_heap` (required; devices without it are rejected), the features of R1's ADR (VulkanHeapRecipe), buffer descriptors of at most 16 bytes, and 128 bytes of push data. fp32 denormal support is **not** a requirement: the SPIR-V blobs declare no float-controls execution mode (ShaderBuildAndSourceConvention), so a device such as the RTX 4080, which reports `shaderDenormPreserveFloat32 = false` under driver 616.92, is accepted. Its denormal behaviour is measured instead (below).
+  - D3D12: shader model 6.6 and resource binding tier 3 (`ResourceDescriptorHeap` indexing), and the 32 root constants of the canonical root signature. Every DXIL blob declares `fp32-denorm-mode=preserve` (shader model 6.2 and later); the probe below confirms it.
+
+### fp32 denormals (measured, never a rejection)
+
+Whether a device keeps fp32 denormals in kernel arithmetic is fixed by its device, driver and blobs, so it is a property of the ExecutionClass. Every shader backend measures it right after `LoadKernels`, with the probe in `Fp32Denormals`:
+
+1. Dispatch `scale_f32` with `a = Fp32Denormals.ProbeScale` (0.5) over the 7 inputs `Fp32Denormals.probeInputs`, and download the 7 results.
+2. `Fp32Denormals.classify` returns `Preserve` when the bits equal the CPU's (`expected Preserve`), `Flush` when they equal the CPU's with every denormal input and result replaced by zero of the same sign (`expected Flush`), and `Mixed` otherwise. Wrong normal controls raise `GpuContractException`, because then `scale_f32` itself failed.
+3. Emit `gpu.fp32_denormals` (`Fp32Denormals.record`) and keep the mode in the run's device record, next to the ExecutionClass.
+
+| Input bits | `Preserve` result | `Flush` result |
+| --- | --- | --- |
+| `3f800000` (1.0, control) | `3f000000` | `3f000000` |
+| `01000000` (control) | `00800000` | `00800000` |
+| `00800000` | `00400000` | `00000000` |
+| `80800000` | `80400000` | `80000000` |
+| `00000002` | `00000001` | `00000000` |
+| `807ffffe` | `803fffff` | `80000000` |
+| `00400000` | `00200000` | `00000000` |
+
+D1 expects `Preserve` (the blobs declare it) and reports any other mode to the integrator as a finding. V1 records whatever the device gives. Bit-exact claims involving denormals are class-dependent (KernelAbiAndCatalog, kernel rules), so neither mode fails a gate by itself.
 
 ## The GPU fill rule (ExecutionClass)
 
@@ -126,6 +146,7 @@ Every backend reports through the ambient telemetry facade with reserved names (
 | `gpu.dispatch` | GpuInterval | each dispatch, with `TimeDispatches` | `backend`, `kernel` |
 | timer names (`gpu.*`) | GpuInterval | each timer, at `Wait` | `backend`, the timer's attributes |
 | `gpu.wait` | Span | host time blocked in `Wait` | `backend` |
+| `gpu.fp32_denormals` | Event | once per shader backend, after the denormal probe | `backend`, `mode` (`preserve`, `flush`, `mixed`) |
 
 `Completion.Timers` lists the same results: timers in the order they were opened, then the `gpu.dispatch` timings. Telemetry never changes a value.
 
@@ -151,4 +172,4 @@ Driver strings: `d3d12Driver 9007199255791260` = `32.0.16.1692`; `vulkanDriver "
 
 ## Verification
 
-The cpu tier checks, through RecordingBackend and the embedded shader set: vector G1 and the driver strings; that `fill` takes the hash of the backend's own target; the class before and after `LoadKernels`; the once-only rules; recorded dispatches with folded grids and word 0; every dispatch rule; aliasing; byte-exact uploads, downloads and copies; the transfer and copy rules; single-use command lists; nested timers with their deterministic timings; the telemetry names and values; and the registry. D1 and V1 run the same interface rules on hardware, E1 on CpuDevice.
+The cpu tier checks, through RecordingBackend and the embedded shader set: vector G1 and the driver strings; that `fill` takes the hash of the backend's own target; the class before and after `LoadKernels`; the once-only rules; recorded dispatches with folded grids and word 0; every dispatch rule; aliasing; byte-exact uploads, downloads and copies; the transfer and copy rules; single-use command lists; nested timers with their deterministic timings; the telemetry names and values; the registry; and the denormal probe's expected results, classification and event. D1 and V1 run the same interface rules on hardware, E1 on CpuDevice.

@@ -12,10 +12,12 @@ Every kernel is written once in HLSL 2021 and compiled by **one pinned compiler*
 | Target | Arguments (recorded in the manifest and hashed) |
 | --- | --- |
 | DXIL | `-T cs_6_6 -E main -HV 2021 -O3 -WX -denorm preserve` |
-| SPIR-V | `-T cs_6_6 -E main -HV 2021 -O3 -WX -denorm preserve -spirv -fspv-target-env=vulkan1.3` |
+| SPIR-V | `-T cs_6_6 -E main -HV 2021 -O3 -WX -spirv -fspv-target-env=vulkan1.3` |
 | Root signature | `-T rootsig_1_1 -E LRM_ROOTSIG` |
 
-The build adds `-I include`, `-Fo <blob>` and the source path, relative to `src/Lrm.Shaders`; the blobs do not depend on the checkout path (verified with the pinned DXC). `-WX` makes every warning an error. **`-denorm preserve`** keeps fp32 denormals on both targets (DXIL `fp32-denorm-mode=preserve`, SPIR-V `DenormPreserve 32`), as on the CPU reference, so the bit-exact kernels (KernelBounds) never depend on a driver's flush-to-zero choice. No 16-bit types are enabled.
+The build adds `-I include`, `-Fo <blob>` and the source path, relative to `src/Lrm.Shaders`; the blobs do not depend on the checkout path (verified with the pinned DXC). `-WX` makes every warning an error. No 16-bit types are enabled.
+
+- **fp32 denormals.** DXIL gets **`-denorm preserve`** (`fp32-denorm-mode=preserve`, shader model 6.2 and later), as on the CPU reference. SPIR-V gets **no `-denorm`**: it would declare `OpCapability DenormPreserve` and `OpExecutionMode main DenormPreserve 32`, which the Vulkan spec allows only on devices with `shaderDenormPreserveFloat32` (VUID-RuntimeSpirv-shaderDenormPreserveFloat32-06297), and the RTX 4080 reports `false` under driver 616.92. The SPIR-V blobs therefore declare no float-controls mode, and each backend measures its denormal mode with the probe (GpuBackendInterface); bit-exact claims involving denormals are class-dependent (KernelAbiAndCatalog). The cpu tier checks that every SPIR-V blob has no denorm capability and LocalSize as its only execution mode.
 
 ## The build (LrmCompileShaders)
 
@@ -24,13 +26,18 @@ The build adds `-I include`, `-Fo <blob>` and the source path, relative to `src/
 1. verifies the pinned DXC (above);
 2. loads the catalog and refuses stale generated files (KernelAbiAndCatalog);
 3. requires every `.hlsl` under `hlsl/` to be a catalog kernel at its catalog path; catalog kernels without a source are listed as **missing**;
-4. lints every source against the convention below;
-5. compiles each kernel to DXIL and SPIR-V, in parallel, through a **content-keyed cache**: the key is `Canonical.hash "lrm.shader-cache/1"` over the DXC version, the target and its flags, and the path and bytes of the source and of every header it can include. A kernel whose key is unchanged is not recompiled;
+4. lints every kernel source and every helper header (`.hlsli` under `hlsl/`) against the convention below, and checks that each helper a kernel includes exists beside it and that no helper has the name of a file in `include/`;
+5. compiles each kernel to DXIL and SPIR-V, in parallel, through a **content-keyed cache**: the key is `Canonical.hash "lrm.shader-cache/2"` over the DXC version, the target and its flags, and the path and bytes of every file in the kernel's **include closure**: the source, the helpers it includes, and every file under `include/` (subfolders included). The convention makes that list exact: a kernel includes only `lrm.hlsli` and helpers beside it, and helpers include nothing. A kernel whose key is unchanged is not recompiled;
 6. checks every blob: DXIL is a DXBC container with a DXIL part, **signed** (non-zero container digest, written by the validator), with the catalog's numthreads in its PSV0 part; SPIR-V is a module with exactly one `LocalSize` equal to the catalog's threads;
 7. compiles `rootsig/rootsig.hlsl` and fails unless `rootsig.bin` equals the canonical bytes;
 8. writes the blobs, `rootsig.bin` and `shaders.manifest.json` to `$(IntermediateOutputPath)shaders/`, and removes blobs of kernels that no longer exist.
 
-The target's inputs are the sources, headers, the root signature, `catalog.json`, `Kernels.g.fs`, `toolchain.json`, the tool, the DXC executable and a DXC stamp (`dxc.stamp`: the DXC path, its pinned version line and the file's write time, rewritten only when one of them changes); its output is the manifest. **A no-change rebuild skips the target, so dxc never starts**, and pointing the build at another DXC always reruns the compile step, which then refuses it. The outputs are embedded as resources named `lrm.shaders/<path>`: `shaders.manifest.json`, `rootsig.bin`, `dxil/<kernel>.dxil` and `spirv/<kernel>.spv`.
+The target's inputs are the sources, the helpers, every file under `include/`, the root signature, `catalog.json`, `Kernels.g.fs`, `toolchain.json`, every assembly in the tool's folder (the tool, and `Lrm.Gpu.Core` with the lint, catalog and manifest code, whose implementation changes reference assemblies would otherwise hide), the DXC executable and two stamps, each rewritten only when its text changes:
+
+- `sources.stamp` lists the input files, so **adding, deleting or renaming** a source or header reruns the compile step, which then prunes the blobs of kernels that are gone (a timestamp check alone never sees a deleted file);
+- `dxc.stamp` holds the DXC path, its pinned version line, and the name and write time of every file beside `dxc.exe` (`dxc.exe`, `dxcompiler.dll`, `dxil.dll`, `dxv.exe`, the four SHA-256 pins).
+
+Its output is the manifest. **A no-change rebuild skips the target, so dxc never starts**; pointing the build at another DXC, or replacing a DXC file in place, always reruns the compile step, which then refuses it. So an incremental build embeds the same set as a clean build of the same tree (CI checks this after editing headers and after adding and deleting a file). The outputs are embedded as resources named `lrm.shaders/<path>`: `shaders.manifest.json`, `rootsig.bin`, `dxil/<kernel>.dxil` and `spirv/<kernel>.spv`.
 
 `Lrm.Shaders.Shaders.embedded ()` reads the set once. Loading (`ShaderSet.ofManifest`) verifies every blob's SHA-256 against the manifest, that the root signature is canonical, and that both ShaderSetHash values reproduce; any mismatch raises `GpuContractException`.
 
@@ -107,15 +114,25 @@ The one header every kernel includes first.
 
 ## The source convention
 
-One kernel per file, at its catalog path, with entry point `main`. The build's lint (`SourceConvention.lint`) checks, on the source without comments:
+One kernel per file, at its catalog path, with entry point `main`. A kernel may include **helper headers**: `.hlsli` files beside it, a family's own helpers (for example `hlsl/kernels/basic/rows.hlsli`). The build lints every kernel (`SourceConvention.lint`) and every helper under `hlsl/` (`SourceConvention.lintHelper`), on the text without comments. Both follow the **code rules**:
 
-- the first include is `"lrm.hlsli"`; other includes are `.hlsli` files beside the kernel (a family's own helpers), never paths;
-- `LRM_ARGS(<kernel>)` and `LRM_NUMTHREADS(<kernel>)` each exactly once, for this kernel, and exactly one `void main(...)`;
-- no `#pragma`, no `#undef`, no macro named `LRM_*` or `lrm_*`, and no `[[vk::...]]` attributes;
-- none of these identifiers: `ResourceDescriptorHeap`, `SamplerDescriptorHeap`, `NonUniformResourceIndex`, `register`, `cbuffer`, `tbuffer`, `ConstantBuffer`, `ByteAddressBuffer`, `StructuredBuffer`, `RWStructuredBuffer`, `AppendStructuredBuffer`, `ConsumeStructuredBuffer`, `Buffer`, `RWBuffer`, `SamplerState`, `IncrementCounter`, `DecrementCounter`, `half`, `min16float`, `min10float`, `min16int`, `min12int`, `min16uint`, `float16_t`, `int16_t`, `uint16_t`, `SV_DispatchThreadID`, `numthreads`;
-- no identifier starting with `Wave`, `Quad`, `Interlocked`, `Texture` or `RWTexture`.
+- the only directives are `#include` (kernels only) and `#define`; no `#pragma`, no `#undef`, no other directive, and **no conditional compilation** (`#if`, `#ifdef`, `#ifndef`, `#elif`, `#else`, `#endif`), so both targets compile one body;
+- no macro named `LRM_*` or `lrm_*`, and no `[[vk::...]]` attributes;
+- none of these identifiers: `ResourceDescriptorHeap`, `SamplerDescriptorHeap`, `NonUniformResourceIndex`, `register`, `cbuffer`, `tbuffer`, `ConstantBuffer`, `ByteAddressBuffer`, `StructuredBuffer`, `RWStructuredBuffer`, `AppendStructuredBuffer`, `ConsumeStructuredBuffer`, `Buffer`, `RWBuffer`, `SamplerState`, `IncrementCounter`, `DecrementCounter`, `half`, `min16float`, `min10float`, `min16int`, `min12int`, `min16uint`, `float16_t`, `int16_t`, `uint16_t`, `SV_DispatchThreadID`, `numthreads`, `vk` (SPIR-V-only intrinsics such as `vk::RawBufferLoad`);
+- no identifier starting with `Wave`, `Quad`, `Interlocked`, `Texture`, `RWTexture` or `__` (compiler macros such as `__spirv__`).
 
-So a kernel reaches arguments only through `LRM_ARGS`, memory only through `LRM_BUF`, `lrm_buf` and `lrm_tensor`, and groups only through `SV_GroupID` (with `LRM_GROUP_LINEAR`), `SV_GroupThreadID` and `SV_GroupIndex`. DXC enforces the rest: groupshared at most 32 KiB (the validator for `cs_6_6`) and warnings as errors.
+A **kernel** also:
+
+- includes `"lrm.hlsli"` first and once; every other include is a helper beside the kernel, named by a plain file name that ends in `.hlsli` and does not start with `lrm` (never a path), and the build checks that the file exists;
+- uses `LRM_ARGS(<kernel>)` and `LRM_NUMTHREADS(<kernel>)` each exactly once, for this kernel, and defines exactly one `void main(...)`.
+
+A **helper** also:
+
+- has a file name that ends in `.hlsli`, does not start with `lrm` and is not the name of a file in `include/` (DXC searches the including file's folder first, so a helper may never shadow `lrm.hlsli` or `lrm_args.g.hlsli`);
+- **includes nothing**: the kernel includes `lrm.hlsli` first and then each helper it uses;
+- has no `LRM_ARGS`, no `LRM_NUMTHREADS` and no `main`.
+
+So a kernel's include closure is its source, its helpers and `include/`, which is exactly what the cache key hashes. A kernel reaches arguments only through `LRM_ARGS`, memory only through `LRM_BUF`, `lrm_buf` and `lrm_tensor`, and groups only through `SV_GroupID` (with `LRM_GROUP_LINEAR`), `SV_GroupThreadID` and `SV_GroupIndex`. DXC enforces the rest: groupshared at most 32 KiB (the validator for `cs_6_6`; SPIR-V compiles the same body, and R4b's inspector also sums its Workgroup variables) and warnings as errors.
 
 ## Vectors
 
@@ -125,13 +142,21 @@ So a kernel reaches arguments only through `LRM_ARGS`, memory only through `LRM_
 
 **The contracts-v1 build** (the five selftests; the nine K1 to K3 kernels are missing), recomputed independently in Python from the manifest:
 - DXIL ShaderSetHash `b12cabbf300be63253a5e5bf1dbba6aa6fd34d0ef3a6f4303e712ae6f148f4be`
-- SPIR-V ShaderSetHash `1314aecfa4f538c7352c47354b816a2feadfcf04fefb22f900d8a5bf5e29a46c`
+- SPIR-V ShaderSetHash `a1a15c99c3fb545f908085c72e58afeeca4563dee6e546eca0e359d4c06064c9` (built without `-denorm preserve`; the earlier draft's `1314aecf...` had it)
 - `rootsig.bin` SHA-256 `a54491c90354dcc8625ff97a8828a57eb4ad512ff605af44011067b236cc6972`
 
 These two hashes change with every kernel K1 to K3 add; they are recorded here as the contracts-v1 baseline, not as constants.
 
 ## Verification
 
-- **cpu tier** (`ShaderTests.fs`): the canonical root signature (constant, embedded bytes and decoded fields); the embedded set loads and verifies; every catalog kernel is built or missing; every DXIL blob is a signed DXBC container with the catalog's numthreads; every SPIR-V blob has the catalog's LocalSize; the manifest regenerates byte for byte; vector S1; that the hash covers blobs, compiler, catalog and flags; that a tampered blob or hash is refused; that the selftests are lint-clean; and that the lint rejects each forbidden construct.
-- **CI** (`check-shaders.ps1`, after the Release build): generated files are current; a clean rebuild into a fresh folder gives a byte-identical manifest (ShaderSetHash reproduces); a no-change rebuild skips `LrmCompileShadersCore`; a missing DXC and a DXC with another version line both fail. The DXC regression step keeps checking the bindless facts this design relies on.
-- **R4b** (contracts-v1.1): the SPIR-V inspector checks one resource variable at set 0 binding 0, push-block offsets equal to the catalog, LocalSize, and no float atomics or 16-bit types.
+- **cpu tier** (`ShaderTests.fs`): the canonical root signature (constant, embedded bytes and decoded fields); the embedded set loads and verifies; every catalog kernel is built or missing; every DXIL blob is a signed DXBC container with the catalog's numthreads; every SPIR-V blob has the catalog's LocalSize; the DXIL flags declare `-denorm preserve`, and the SPIR-V flags and blobs declare no denormal mode; the manifest regenerates byte for byte; vector S1; that the hash covers blobs, compiler, catalog and flags; that a tampered blob or hash is refused; that the selftests are lint-clean; and that the kernel and helper lints reject each forbidden construct (among them a wave op and a path include in a helper).
+- **CI** (`check-shaders.ps1`, after the Release build):
+  1. generated files are current;
+  2. a clean rebuild into a fresh folder gives a byte-identical manifest (ShaderSetHash reproduces);
+  3. a no-change rebuild skips `LrmCompileShadersCore`;
+  4. adding a helper file reruns the target, and deleting it reruns the target again, after which the manifest equals a clean compile;
+  5. on a scratch copy of the shader tree: editing a header in an `include/` subfolder, and editing a kernel's helper, each gives an incremental compile equal to a clean compile; deleting a kernel source prunes its blobs; and the build refuses a helper that uses a wave op or includes a path;
+  6. a missing DXC and a DXC with another version line both fail.
+
+  The DXC regression step keeps checking the bindless facts this design relies on.
+- **R4b** (contracts-v1.1): the SPIR-V inspector checks one resource variable at set 0 binding 0, push-block offsets equal to the catalog, LocalSize, no float atomics or 16-bit types, and at most 32 KiB of Workgroup-storage variables in total.

@@ -101,7 +101,7 @@ A token is a u32 row index. **Token 0 is the null token**; real tokens are 1 to 
 
 ## Kernel access (lrm.hlsli)
 
-`lrm_tensor(token)` loads the four `uint4` words of row `token` from slot 0 at byte `64·token` and returns them as `lrm_tensor_t`, in row order. `lrm_load_f32`, `lrm_store_f32`, `lrm_load_u32`, `lrm_load_bf16` and the other accessors take an element index from the tensor's start. Because the slot comes from the table and the token from the argument block, **every descriptor index is dynamically uniform**; there is no `NonUniformResourceIndex` (ShaderBuildAndSourceConvention).
+`lrm_tensor(token)` loads the four `uint4` words of row `token` from slot 0 at byte `64·token` and returns them as `lrm_tensor_t`, in row order. `lrm_load_f32`, `lrm_store_f32`, `lrm_load_u32`, `lrm_load_bf16` and the other accessors take an element index from the tensor's start. A kernel reads only a data token's slot and offset: it indexes the token as a flat array and takes every size from its arguments, never from the row's rank, dims or strides. The element count is a capacity, which E1 checks against the arguments (KernelAbiAndCatalog, tensor access). Because the slot comes from the table and the token from the argument block, **every descriptor index is dynamically uniform**; there is no `NonUniformResourceIndex` (ShaderBuildAndSourceConvention).
 
 ## Vectors
 

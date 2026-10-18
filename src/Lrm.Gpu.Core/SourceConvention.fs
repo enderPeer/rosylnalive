@@ -5,9 +5,12 @@ open System.Text
 open System.Text.RegularExpressions
 
 /// The kernel source convention (ShaderBuildAndSourceConvention contract), checked by the shader build before DXC
-/// runs. One kernel per file at its catalog path: the first include is "lrm.hlsli"; arguments come only from
-/// LRM_ARGS(<kernel>) and resources only from LRM_BUF, lrm_buf and lrm_tensor; LRM_NUMTHREADS(<kernel>) gives
-/// numthreads; one entry point, void main(...). DXC enforces the rest (groupshared at most 32 KiB, -WX).
+/// runs. One kernel per file at its catalog path: the first include is "lrm.hlsli", the others are helper headers
+/// beside the kernel; arguments come only from LRM_ARGS(<kernel>) and resources only from LRM_BUF, lrm_buf and
+/// lrm_tensor; LRM_NUMTHREADS(<kernel>) gives numthreads; one entry point, void main(...). Helper headers (.hlsli
+/// under hlsl/) follow the same code rules and include nothing, so a kernel's include closure is its own source, the
+/// helpers it names and include/. There is no conditional compilation, so both targets compile one body. DXC
+/// enforces the rest (groupshared at most 32 KiB, -WX).
 [<RequireQualifiedAccess>]
 module SourceConvention =
     /// Removes // and /* */ comments, keeping line breaks, so the checks see only code.
@@ -36,7 +39,7 @@ module SourceConvention =
 
         sb.ToString()
 
-    /// Identifiers a kernel must not use, with the reason.
+    /// Identifiers a kernel or helper must not use, with the reason.
     let forbidden =
         [
             "ResourceDescriptorHeap", "use LRM_BUF or lrm_buf"
@@ -67,9 +70,10 @@ module SourceConvention =
             "uint16_t", "16-bit types are not allowed"
             "SV_DispatchThreadID", "use SV_GroupID with LRM_GROUP_LINEAR, so folded grids stay correct"
             "numthreads", "use LRM_NUMTHREADS(<kernel>)"
+            "vk", "SPIR-V-only intrinsics are not allowed: both targets compile one body"
         ]
 
-    /// Identifier prefixes a kernel must not use, with the reason.
+    /// Identifier prefixes a kernel or helper must not use, with the reason.
     let forbiddenPrefixes =
         [
             "Wave", "wave ops are not allowed"
@@ -77,6 +81,7 @@ module SourceConvention =
             "Interlocked", "atomics are not allowed"
             "Texture", "typed views are not allowed"
             "RWTexture", "typed views are not allowed"
+            "__", "compiler macros such as __spirv__ are not allowed: both targets compile one body"
         ]
 
     let private identifier =
@@ -85,63 +90,34 @@ module SourceConvention =
     let private includeLine =
         Regex("^#\\s*include\\s+\"([^\"]+)\"$", RegexOptions.CultureInvariant)
 
-    /// The convention violations of one kernel source; empty when it is clean.
-    let lint (k: KernelSpec) (text: string) : string list =
-        let code = stripComments text
-        let p = ResizeArray<string>()
-        let lines = code.Split('\n') |> Array.map _.Trim()
-        let includes = ResizeArray<string>()
+    let private directiveName = Regex(@"^([A-Za-z_]*)", RegexOptions.CultureInvariant)
 
-        for t in lines do
-            if t.StartsWith "#" then
-                let directive = t.Substring(1).TrimStart()
+    let private conditionals = set [ "if"; "ifdef"; "ifndef"; "elif"; "else"; "endif" ]
 
-                if directive.StartsWith "include" then
-                    let m = includeLine.Match t
+    /// The code lines (comments removed, trimmed) and the preprocessor directives among them, as (name, line).
+    let private directives (code: string) =
+        code.Split('\n')
+        |> Array.map _.Trim()
+        |> Array.filter (fun t -> t.StartsWith "#")
+        |> Array.map (fun t -> directiveName.Match(t.Substring(1).TrimStart()).Groups[1].Value, t)
+        |> List.ofArray
 
-                    if not m.Success then
-                        p.Add(sprintf "unsupported include: %s" t)
-                    else
-                        let name = m.Groups[1].Value
-                        includes.Add name
-
-                        if
-                            name <> "lrm.hlsli"
-                            && (name.Contains "/" || name.Contains "\\" || not (name.EndsWith ".hlsli"))
-                        then
-                            p.Add(sprintf "include \"%s\": only lrm.hlsli and .hlsli files beside the kernel" name)
-                elif directive.StartsWith "pragma" then
-                    p.Add "#pragma is not allowed (flags come from the build)"
-                elif directive.StartsWith "undef" then
-                    p.Add "#undef is not allowed"
-                elif Regex.IsMatch(directive, @"^define\s+(LRM_|lrm_)") then
+    /// The checks that kernels and helpers share: directives other than #include, attributes and identifiers.
+    let private codeProblems (code: string) (p: ResizeArray<string>) =
+        for name, line in directives code do
+            match name with
+            | "include" -> ()
+            | "define" ->
+                if Regex.IsMatch(line, @"^#\s*define\s+(LRM_|lrm_)", RegexOptions.CultureInvariant) then
                     p.Add "macros named LRM_* or lrm_* belong to lrm.hlsli"
-
-        if includes.Count = 0 || includes[0] <> "lrm.hlsli" then
-            p.Add "the first include must be \"lrm.hlsli\""
+            | "pragma" -> p.Add "#pragma is not allowed (flags come from the build)"
+            | "undef" -> p.Add "#undef is not allowed"
+            | c when conditionals.Contains c ->
+                p.Add(sprintf "#%s is not allowed: no conditional compilation, both targets compile one body" c)
+            | _ -> p.Add(sprintf "unsupported directive: %s (only #include and #define)" line)
 
         if code.Contains "[[vk::" then
             p.Add "[[vk::...]] attributes belong to lrm.hlsli"
-
-        let count (pattern: string) =
-            Regex.Matches(code, pattern, RegexOptions.CultureInvariant).Count
-
-        let name = Regex.Escape k.Name
-
-        if
-            count @"\bLRM_ARGS\s*\(" <> 1
-            || count (@"\bLRM_ARGS\s*\(\s*" + name + @"\s*\)") <> 1
-        then
-            p.Add(sprintf "the source must use LRM_ARGS(%s) exactly once, and no other LRM_ARGS" k.Name)
-
-        if
-            count @"\bLRM_NUMTHREADS\s*\(" <> 1
-            || count (@"\bLRM_NUMTHREADS\s*\(\s*" + name + @"\s*\)") <> 1
-        then
-            p.Add(sprintf "the source must use LRM_NUMTHREADS(%s) exactly once, and no other LRM_NUMTHREADS" k.Name)
-
-        if count @"\bvoid\s+main\s*\(" <> 1 then
-            p.Add "the source must define exactly one entry point, void main(...)"
 
         let ids = identifier.Matches code |> Seq.map _.Value |> Set.ofSeq
 
@@ -153,5 +129,101 @@ module SourceConvention =
             for id in ids do
                 if id.StartsWith(prefix, StringComparison.Ordinal) && id.Length > prefix.Length then
                     p.Add(sprintf "'%s' is not allowed: %s" id why)
+
+    let private count (code: string) (pattern: string) =
+        Regex.Matches(code, pattern, RegexOptions.CultureInvariant).Count
+
+    /// True for a helper header name a kernel may include: a plain file name ending in .hlsli that does not start
+    /// with "lrm" (so it can never shadow lrm.hlsli or lrm_args.g.hlsli in DXC's include search).
+    let isHelperName (name: string) =
+        not (String.IsNullOrEmpty name)
+        && not (name.Contains "/" || name.Contains "\\")
+        && name.EndsWith(".hlsli", StringComparison.Ordinal)
+        && name.Length > ".hlsli".Length
+        && not (name.StartsWith("lrm", StringComparison.OrdinalIgnoreCase))
+
+    /// The quoted includes of a source in order, comments removed; malformed include lines are left out (the lint
+    /// reports them).
+    let includes (text: string) : string list =
+        directives (stripComments text)
+        |> List.choose (fun (name, line) ->
+            if name = "include" then
+                let m = includeLine.Match line
+                if m.Success then Some m.Groups[1].Value else None
+            else
+                None)
+
+    /// The helper headers a kernel includes: every include after "lrm.hlsli", as written (names beside the kernel).
+    let helpers (text: string) : string list =
+        includes text |> List.filter ((<>) "lrm.hlsli") |> List.distinct
+
+    /// The convention violations of one kernel source; empty when it is clean.
+    let lint (k: KernelSpec) (text: string) : string list =
+        let code = stripComments text
+        let p = ResizeArray<string>()
+
+        for name, line in directives code do
+            if name = "include" && not (includeLine.Match line).Success then
+                p.Add(sprintf "unsupported include: %s" line)
+
+        let incs = includes text
+
+        for name in incs do
+            if name <> "lrm.hlsli" && not (isHelperName name) then
+                p.Add(
+                    sprintf
+                        "include \"%s\": only lrm.hlsli and .hlsli helpers beside the kernel (a plain name, not starting with lrm)"
+                        name
+                )
+
+        match incs with
+        | "lrm.hlsli" :: rest when not (List.contains "lrm.hlsli" rest) -> ()
+        | "lrm.hlsli" :: _ -> p.Add "\"lrm.hlsli\" is included more than once"
+        | _ -> p.Add "the first include must be \"lrm.hlsli\""
+
+        codeProblems code p
+        let name = Regex.Escape k.Name
+
+        if
+            count code @"\bLRM_ARGS\s*\(" <> 1
+            || count code (@"\bLRM_ARGS\s*\(\s*" + name + @"\s*\)") <> 1
+        then
+            p.Add(sprintf "the source must use LRM_ARGS(%s) exactly once, and no other LRM_ARGS" k.Name)
+
+        if
+            count code @"\bLRM_NUMTHREADS\s*\(" <> 1
+            || count code (@"\bLRM_NUMTHREADS\s*\(\s*" + name + @"\s*\)") <> 1
+        then
+            p.Add(sprintf "the source must use LRM_NUMTHREADS(%s) exactly once, and no other LRM_NUMTHREADS" k.Name)
+
+        if count code @"\bvoid\s+main\s*\(" <> 1 then
+            p.Add "the source must define exactly one entry point, void main(...)"
+
+        List.ofSeq p |> List.distinct
+
+    /// The convention violations of one helper header (`fileName` is its name, for example "rows.hlsli"); empty when
+    /// it is clean. A helper follows the kernels' code rules, includes nothing (the kernel includes lrm.hlsli first and
+    /// then its helpers), and declares no arguments, numthreads or entry point.
+    let lintHelper (fileName: string) (text: string) : string list =
+        let code = stripComments text
+        let p = ResizeArray<string>()
+
+        if not (isHelperName fileName) then
+            p.Add(sprintf "helper '%s': a helper is a .hlsli file whose name does not start with lrm" fileName)
+
+        for name, _ in directives code do
+            if name = "include" then
+                p.Add "#include is not allowed in a helper: the kernel includes lrm.hlsli and each helper itself"
+
+        codeProblems code p
+
+        if count code @"\bLRM_ARGS\s*\(" > 0 then
+            p.Add "LRM_ARGS belongs to the kernel source"
+
+        if count code @"\bLRM_NUMTHREADS\s*\(" > 0 then
+            p.Add "LRM_NUMTHREADS belongs to the kernel source"
+
+        if count code @"\bmain\s*\(" > 0 then
+            p.Add "the entry point main belongs to the kernel source"
 
         List.ofSeq p |> List.distinct
