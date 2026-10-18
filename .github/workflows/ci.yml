@@ -77,6 +77,10 @@ jobs:
       - name: Release build
         run: dotnet build Lrm.slnx -c Release --nologo --no-restore
 
+      # R4a: catalog codegen diff, reproducible ShaderSetHash, incremental shader build, pinned DXC only.
+      - name: Shader checks
+        run: ./src/Lrm.Shaders.Build/check-shaders.ps1
+
       - name: Tests (cpu tier)
         run: ./tools/test.ps1 -Tier cpu -NoBuild -FailOnFocusedTests
 
