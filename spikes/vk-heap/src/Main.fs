@@ -1,7 +1,9 @@
 /// R1 spike entry point: an Expecto exe on Lrm.Testing's runner, so GPU groups hold the per-backend mutex.
 ///   LRM_TEST_TIER=cpu dotnet artifacts/bin/VkHeapSpike/release/VkHeapSpike.dll   (layouts, DXC, SPIR-V, CPU refs)
 ///   LRM_TEST_TIER=gpu dotnet artifacts/bin/VkHeapSpike/release/VkHeapSpike.dll   (d3d12 group, then vulkan group)
-/// The gpu tier writes spikes/vk-heap/results/{results.md,dispatch-gpu-us.svg} and a run log under LRM_DATA/runs.
+/// The gpu tier writes a run log under LRM_DATA/runs and results.md plus dispatch-gpu-us.svg under the --results
+/// directory (artifacts/spike-results/gpu by default). Only --update-committed-results also copies them into
+/// spikes/vk-heap/results.
 module VkHeapSpike.Main
 
 open System
@@ -50,24 +52,34 @@ let runAndCheck (gpu: Heap.IGpu) (c: Case) =
     for (start, ns) in List.zip o.GpuStartNs o.GpuNs do
         Telemetry.gpuInterval "gpu.dispatch" start (int64 ns) a
 
+    // Per run: inputs and poison up, readbacks down.
     let bytes =
         (c.Job.Uploads |> List.sumBy (fun u -> int64 u.Data.Length))
+        + (c.Job.Writes |> List.sumBy (fun w -> int64 w.Length))
         + (c.Job.Readbacks |> List.sumBy (fun r -> int64 r.Length))
 
     Telemetry.meter "gpu.bytes_moved" (float (2L * bytes)) TelemetryUnits.Bytes a
 
     Telemetry.check
         "gpu.spike.case"
-        (o.Mismatches = 0 && o.RunTwiceIdentical)
+        (o.Mismatches = 0 && o.PoisonWordsLeft = 0 && o.RunTwiceIdentical)
         (a
          @ [
              Attr.bool "gating" c.Gating
              Attr.int "mismatches" o.Mismatches
+             Attr.int "poison_words_left" o.PoisonWordsLeft
              Attr.bool "run_twice_identical" o.RunTwiceIdentical
              Attr.str "digest" o.Digest
          ])
 
     record gpu.Label o
+
+    if o.PoisonWordsLeft <> 0 then
+        failwithf
+            "%s %s: %d output words still hold the poison, so the dispatch did not write them"
+            gpu.Label
+            c.Name
+            o.PoisonWordsLeft
 
     if not o.RunTwiceIdentical then
         failwithf "%s %s: run 1 and run 2 differ" gpu.Label c.Name
@@ -99,6 +111,59 @@ let caseTestsWhere (keep: Case -> bool) (label: string) (gpu: Lazy<#Heap.IGpu>) 
     ]
 
 let caseTests label gpu = caseTestsWhere (fun _ -> true) label gpu
+
+/// Negative-control outcomes per configuration label: (case, sabotage, caught).
+let negatives = ConcurrentDictionary<string, (string * string * bool) list>()
+
+/// The negative control: every case, sabotaged by removing its dispatches (all of them, and each one of a chain in
+/// turn), must fail its checks on this configuration. It shows that a pass on this configuration is evidence that
+/// the configuration's own dispatches wrote the result.
+let negativeControlTest (keep: Case -> bool) (label: string) (gpu: Lazy<#Heap.IGpu>) =
+    testCase (label + ": negative control, every case fails with its dispatches removed") (fun () ->
+        let g = gpu.Force()
+
+        let outcomes =
+            [
+                for c in cases.Force() do
+                    if keep c then
+                        for (variant, s) in sabotaged c do
+                            let o = runCaseTagged ("negative." + variant + ".") g s
+                            let ok = caught variant c o
+
+                            Telemetry.check
+                                "gpu.spike.negative_control"
+                                ok
+                                (attrsOf label
+                                 @ [
+                                     Attr.str TelemetryKeys.Kernel c.Kernel
+                                     Attr.str TelemetryKeys.Case c.Name
+                                     Attr.str "sabotage" variant
+                                     Attr.int "mismatches" o.Mismatches
+                                     Attr.int "poison_words_left" o.PoisonWordsLeft
+                                     Attr.bool "run_twice_identical" o.RunTwiceIdentical
+                                 ])
+
+                            yield c.Name, variant, ok, o
+            ]
+
+        negatives[label] <- [ for (c, v, ok, _) in outcomes -> c, v, ok ]
+
+        let missed =
+            [
+                for (c, v, ok, o) in outcomes do
+                    if not ok then
+                        yield
+                            sprintf
+                                "%s %s: mismatches %d, poison left %d, run twice identical %b"
+                                c
+                                v
+                                o.Mismatches
+                                o.PoisonWordsLeft
+                                o.RunTwiceIdentical
+            ]
+
+        if not missed.IsEmpty then
+            failwithf "%s: sabotaged runs that the checks did not catch:\n%s" label (String.concat "\n" missed))
 
 // ---------------- cpu tier ----------------
 
@@ -336,6 +401,43 @@ cl /nologo /c /W4 /WX /std:c11 /Fo\"%s\" \"%s\"
                 "9207d7eb28680a098c73dbe536d1ff7b94311dc417b9a385e0af6660683e93ca"
                 "KAT-5 digest")
 
+        testCase "cases: every write region is poisoned apart from the inputs, and every readback is a write" (fun () ->
+            match cases.Force() |> List.collect regionProblems with
+            | [] -> ()
+            | problems -> failwithf "region problems:\n%s" (String.concat "\n" problems))
+
+        testCase "cases: no two cases expect the same output bytes" (fun () ->
+            let digests =
+                cases.Force()
+                |> List.map (fun c -> c.Name, (Hash.sha256 (Array.concat c.Expected)).Hex)
+
+            for (name, d) in digests do
+                let same =
+                    digests |> List.filter (fun (n, e) -> e = d && n <> name) |> List.map fst
+
+                Expect.isEmpty same (name + ": another case expects the same bytes"))
+
+        testCase "poison: signalling NaNs unequal to the expected word, different per configuration and run" (fun () ->
+            for c in cases.Force() do
+                let _, pa = poisoned (poisonSeed "vulkan/explicit/bar" c.Name "1") c
+                let _, pb = poisoned (poisonSeed "vulkan/explicit/bar" c.Name "2") c
+                let _, pc = poisoned (poisonSeed "d3d12" c.Name "1") c
+
+                for (k, e) in List.indexed c.Expected do
+                    let e = Native.words e
+                    let p = pa[k]
+                    Expect.equal p.Length e.Length (c.Name + ": one poison word per output word")
+
+                    for i in 0 .. p.Length - 1 do
+                        if p[i] = e[i] then
+                            failwithf "%s: poison equals the expected word at %d" c.Name i
+
+                        if p[i] &&& 0x7FC00000u <> 0x7F800000u || p[i] &&& 0x003FFFFFu = 0u then
+                            failwithf "%s: poison 0x%08x at %d is not a signalling NaN" c.Name p[i] i
+
+                    Expect.notEqual pa[k] pb[k] (c.Name + ": run 1 and run 2 poisons differ")
+                    Expect.notEqual pa[k] pc[k] (c.Name + ": configurations get different poisons"))
+
         testCase "cpu refs: known answers" (fun () ->
             Expect.equal (scaleRef [| 2.0f; -4.0f |] 0.5f) [| 1.0f; -2.0f |] "scale"
             Expect.equal (Bf16.widenBits 0x3F80us) 0x3F800000u "bf16 1.0"
@@ -387,6 +489,7 @@ let d3d12Tests =
                         f.TimestampFrequency
                 ))
             yield! caseTests "d3d12" d3d12
+            negativeControlTest (fun _ -> true) "d3d12" d3d12
             testCase "d3d12: teardown" (fun () ->
                 if d3d12.IsValueCreated then
                     (d3d12.Value :> IDisposable).Dispose())
@@ -416,6 +519,15 @@ let vkControlLazies =
         c, lazy (new VulkanConfig(vkContext.Force(), shaders.Force(), Explicit, Bar, Some c)))
 
 let observations = ConcurrentDictionary<string, HeapObservation>()
+
+/// The configurations in run order, with their labels.
+let orderedConfigs =
+    [
+        for (v, p) in vkConfigs ->
+            sprintf "vulkan/%s/%s" (variantName v) (placementName p), vkConfigLazies[(v, p)]
+    ]
+
+let controlLabel (c: MappingControl) = "vulkan/explicit/bar+" + c.Suffix
 
 let vulkanTests =
     testSequenced
@@ -503,9 +615,7 @@ let vulkanTests =
                         f.MaxStorageBufferRange
                 ))
 
-            for ((v, p), cfg) in Map.toList vkConfigLazies |> List.sortBy (fun ((v, p), _) -> vkConfigs |> List.findIndex ((=) (v, p))) do
-                let label = sprintf "vulkan/%s/%s" (variantName v) (placementName p)
-
+            for (label, cfg) in orderedConfigs do
                 testCase (label + ": pipelines with a NULL layout and the set 0 binding 0 mapping") (fun () ->
                     let c = cfg.Force()
                     let o = c.Observe()
@@ -521,6 +631,34 @@ let vulkanTests =
                          ]))
 
                 yield! caseTests label cfg
+
+            for (ctl, cfg) in vkControlLazies do
+                yield! caseTestsWhere (fun c -> controlSubset.Contains c.Name) (controlLabel ctl) cfg
+
+            testCase "cross-backend: every vulkan configuration equals d3d12 bit for bit" (fun () ->
+                match results.TryGetValue "d3d12" with
+                | false, _ -> skiptest "the d3d12 group did not run in this process"
+                | true, d ->
+                    for KeyValue(label, outs) in results do
+                        if label.StartsWith "vulkan/" then
+                            for o in outs do
+                                match d |> List.tryFind (fun x -> x.Case = o.Case) with
+                                | Some x when o.Gating ->
+                                    Expect.equal o.Digest x.Digest (sprintf "%s %s equals d3d12" label o.Case)
+                                | Some x ->
+                                    notes.Enqueue(
+                                        sprintf
+                                            "%s %s (informational) vs d3d12: %s"
+                                            label
+                                            o.Case
+                                            (if o.Digest = x.Digest then "identical" else "different")
+                                    )
+                                | None -> ())
+
+            // Untimed work comes after every timed case, so the timed jobs run in one short burst: a few seconds into
+            // a mostly idle run the driver drops the GPU from P0 to P5, which roughly doubles dispatch times.
+            for (label, cfg) in orderedConfigs do
+                negativeControlTest (fun _ -> true) label cfg
 
                 testCase (label + ": teardown") (fun () ->
                     if cfg.IsValueCreated then
@@ -543,33 +681,11 @@ let vulkanTests =
                         (cfg.Value :> IDisposable).Dispose())
 
             for (ctl, cfg) in vkControlLazies do
-                let label = sprintf "vulkan/explicit/bar+%s" ctl.Suffix
+                negativeControlTest (fun c -> controlSubset.Contains c.Name) (controlLabel ctl) cfg
 
-                yield! caseTestsWhere (fun c -> controlSubset.Contains c.Name) label cfg
-
-                testCase (label + ": teardown") (fun () ->
+                testCase (controlLabel ctl + ": teardown") (fun () ->
                     if cfg.IsValueCreated then
                         (cfg.Value :> IDisposable).Dispose())
-
-            testCase "cross-backend: every vulkan configuration equals d3d12 bit for bit" (fun () ->
-                match results.TryGetValue "d3d12" with
-                | false, _ -> skiptest "the d3d12 group did not run in this process"
-                | true, d ->
-                    for KeyValue(label, outs) in results do
-                        if label.StartsWith "vulkan/" then
-                            for o in outs do
-                                match d |> List.tryFind (fun x -> x.Case = o.Case) with
-                                | Some x when o.Gating ->
-                                    Expect.equal o.Digest x.Digest (sprintf "%s %s equals d3d12" label o.Case)
-                                | Some x ->
-                                    notes.Enqueue(
-                                        sprintf
-                                            "%s %s (informational) vs d3d12: %s"
-                                            label
-                                            o.Case
-                                            (if o.Digest = x.Digest then "identical" else "different")
-                                    )
-                                | None -> ())
 
             testCase "vulkan: teardown" (fun () ->
                 if vkContext.IsValueCreated then
@@ -581,13 +697,22 @@ let tiers: TestTiers =
         Cpu = cpuTests
         Gpu = [ Backend.D3D12, [ d3d12Tests ]; Backend.Vulkan, [ vulkanTests ] ] }
 
-let writeReport (runId: RunId) =
+/// The flag that also copies the report into the committed spikes/vk-heap/results. It is the spike's own argument,
+/// removed before the rest goes to the runner and Expecto.
+[<Literal>]
+let UpdateCommittedFlag = "--update-committed-results"
+
+/// The report directory: the runner's --results directory when given, else artifacts/spike-results/gpu.
+let reportDir (argv: string[]) =
+    match argv |> Array.pairwise |> Array.tryFind (fun (a, _) -> a = "--results") with
+    | Some(_, d) -> Path.GetFullPath d
+    | None -> Path.Combine(Env.repoRoot (), "artifacts", "spike-results", "gpu")
+
+let writeReport (runId: RunId) (dirs: string list) =
     let configs =
         [ for label in order -> { Report.Label = label; Report.Outcomes = results[label] } ]
 
     if not configs.IsEmpty then
-        let dir = Path.Combine(Env.repoRoot (), "spikes", "vk-heap", "results")
-
         let header =
             [
                 sprintf "Run `%s` (run log under `LRM_DATA/runs/%s`)" runId.Value runId.Value
@@ -595,12 +720,23 @@ let writeReport (runId: RunId) =
                 yield! Report.groupNotes (notes |> Seq.distinct |> List.ofSeq)
             ]
 
-        Report.write dir header configs
-        printfn "r1-spike: wrote %s" dir
+        let negativeRows =
+            [
+                for label in order do
+                    match negatives.TryGetValue label with
+                    | true, xs -> yield label, xs
+                    | _ -> ()
+            ]
+
+        for dir in dirs do
+            Report.write dir header configs negativeRows
+            printfn "r1-spike: wrote %s" dir
 
 [<EntryPoint>]
 let main argv =
     Process.init ()
+    let updateCommitted = argv |> Array.contains UpdateCommittedFlag
+    let argv = argv |> Array.filter ((<>) UpdateCommittedFlag)
 
     let gpuTier =
         Env.tryGet "LRM_TEST_TIER" = Some "gpu"
@@ -648,6 +784,12 @@ let main argv =
         if not classes.IsEmpty then
             RunLog.addClasses runId classes
 
-        writeReport runId
+        writeReport
+            runId
+            [
+                reportDir argv
+                if updateCommitted then
+                    Path.Combine(Env.repoRoot (), "spikes", "vk-heap", "results")
+            ]
 
         code

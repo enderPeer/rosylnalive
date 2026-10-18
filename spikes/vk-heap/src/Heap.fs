@@ -230,6 +230,11 @@ type Job =
     {
         Uploads: Upload list
         Dispatches: Dispatch list
+        /// Every region the dispatches write, intermediates included. Each run first overwrites all of them with a
+        /// poison pattern (Cases.poisoned), so a dispatch that writes nothing cannot pass on bytes an earlier run or
+        /// configuration left behind.
+        Writes: Readback list
+        /// The regions copied back to the host, in order; each is also one of the Writes.
         Readbacks: Readback list
     }
 
@@ -241,6 +246,10 @@ type JobResult =
         /// The start of each dispatch in the queue's GPU timestamp domain, in ns.
         DispatchGpuStartNs: int64 list
     }
+
+/// True when two byte ranges of the same slot share at least one byte.
+let overlaps (slotA: int, offsetA: int64, lengthA: int64) (slotB: int, offsetB: int64, lengthB: int64) =
+    slotA = slotB && offsetA < offsetB + lengthB && offsetB < offsetA + lengthA
 
 /// One backend configuration that can run jobs: a device, the heap written once, and the kernels.
 type IGpu =
