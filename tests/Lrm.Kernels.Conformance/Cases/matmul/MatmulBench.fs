@@ -9,12 +9,18 @@
 ///   an m = 512 call, an m = 37 call and m = 1 calls (views of the same rows) must be bit-identical, and equal to
 ///   CpuRef F32 (Rows.dotBf16) bit for bit as measured on the class. Records: `gpu.matmul.batch_invariance` and
 ///   `gpu.matmul.cpuref_exact` checks.
+/// - **Arithmetic probes** (both): whether the class's mad is fused (one rounding per step, as CpuRef's
+///   FusedMultiplyAdd) and whether the steps run in increasing p, each from a two- or three-element dot product whose
+///   result tells them apart; `gpu.matmul.probe` checks with `probe`, `expected` and `result` (informational: the
+///   bound is KernelBounds, not these). The fp32 denormal probe of GpuBackendInterface runs first, so the run log has
+///   the class's `gpu.fp32_denormals`.
 ///
 /// Both run under the backend's mutex through Lrm.Testing (`tests`), and `run` writes a run log of kind `kernels`
 /// that `lrm report` renders. This module has no `cases` value, so Discovery does not read it.
 module Lrm.Kernels.Conformance.Cases.MatmulBench
 
 open System
+open System.Reflection
 open System.Runtime.InteropServices
 open System.Threading.Tasks
 open Expecto
@@ -141,6 +147,43 @@ type Invariance =
         Detail: string
     }
 
+/// A dot product whose result tells two arithmetic choices apart (m = n = 1).
+type Probe =
+    {
+        Name: string
+        X: uint32[]
+        W: uint16[]
+        /// CpuRef F32's bits: one fused multiply-add per step, in increasing p, from +0.
+        Expected: uint32
+        /// The bits of the other choice.
+        Other: uint32
+        Doc: string
+    }
+
+/// The arithmetic probes. `fused`: x = (-(1 + 2^-7 + 2^-23), 1 + 2^-23), w = (1, 1 + 2^-7); the second product is
+/// 1 + 2^-7 + 2^-23 + 2^-30, which needs 31 bits, so a fused step gives 2^-30 and a rounded product gives 0. `order`:
+/// x = (1, 2^24, -2^24), w = (1, 1, 1); in increasing p, 1 + 2^24 rounds to 2^24 (ties to even) and the sum is +0; in
+/// decreasing p it is 1.
+let probes =
+    [
+        {
+            Name = "fused"
+            X = [| 0xBF810001u; 0x3F800001u |]
+            W = [| 0x3F80us; 0x3F81us |]
+            Expected = 0x30800000u
+            Other = 0x00000000u
+            Doc = "mad is one fused multiply-add per step (2^-30), not a rounded product and a sum (0)"
+        }
+        {
+            Name = "order"
+            X = [| 0x3F800000u; 0x4B800000u; 0xCB800000u |]
+            W = [| 0x3F80us; 0x3F80us; 0x3F80us |]
+            Expected = 0x00000000u
+            Other = 0x3F800000u
+            Doc = "the steps run in increasing p (+0), not in decreasing p (1)"
+        }
+    ]
+
 type private Planned =
     {
         Heap: IGpuHeap
@@ -154,6 +197,11 @@ type private Planned =
         Table: SealedTable
         Inputs: Map<string, uint16[]>
         XData: float32[]
+        /// The fp32 denormal probe's input and output (scale_f32).
+        DenormalX: TensorToken
+        DenormalY: TensorToken
+        /// The arithmetic probes with their x, w and y (m = n = 1).
+        Probes: (Probe * TensorToken * TensorToken * TensorToken) list
     }
 
 let private maxN = shapes |> List.map _.N |> List.max
@@ -181,6 +229,18 @@ let private plan (backend: IGpuBackend) =
 
     let pRows =
         planner.Allocate(ArenaKind.Scratch, 4L * int64 invarianceRows.Length * int64 maxN)
+
+    let denormalN = int64 Fp32Denormals.probeInputs.Length
+    let pdx = planner.Allocate(ArenaKind.Scratch, 4L * denormalN)
+    let pdy = planner.Allocate(ArenaKind.Scratch, 4L * denormalN)
+
+    let pProbes =
+        probes
+        |> List.map (fun pr ->
+            pr,
+            planner.Allocate(ArenaKind.Scratch, 4L * int64 pr.X.Length),
+            planner.Allocate(ArenaKind.Scratch, Heap.alignUp 4L (2L * int64 pr.W.Length)),
+            planner.Allocate(ArenaKind.Scratch, 4L))
 
     let layout = planner.Build()
     let tt = TensorTable layout
@@ -223,9 +283,42 @@ let private plan (backend: IGpuBackend) =
         ]
         |> Map.ofList
 
+    let dx =
+        tt.Add("k2.bench/denormal.x", pdx, DType.F32, [ denormalN ], TensorFlags.ReadOnly)
+
+    let dy =
+        tt.Add("k2.bench/denormal.y", pdy, DType.F32, [ denormalN ], TensorFlags.None)
+
+    let probeTokens =
+        pProbes
+        |> List.map (fun (pr, px, pw, py) ->
+            pr,
+            tt.Add("k2.bench/probe." + pr.Name + ".x", px, DType.F32, [ int64 pr.X.Length ], TensorFlags.ReadOnly),
+            tt.Add("k2.bench/probe." + pr.Name + ".w", pw, DType.BF16, [ int64 pr.W.Length ], TensorFlags.ReadOnly),
+            tt.Add("k2.bench/probe." + pr.Name + ".y", py, DType.F32, [ 1L ], TensorFlags.None))
+
     let table = tt.Seal()
     let heap = backend.CreateHeap layout
     heap.WriteTable table
+
+    let upload (p: Placement) (words: uint32[]) =
+        heap.Upload(layout.SlotOf(p.Arena, p.Page), p.Offset, MemoryMarshal.AsBytes(ReadOnlySpan words))
+
+    upload pdx Fp32Denormals.probeInputs
+
+    for pr, px, pw, _ in pProbes do
+        upload px pr.X
+        // bf16 pairs in u32 words, element 2e in the low half; an odd count is padded with +0.
+        upload
+            pw
+            (Array.init ((pr.W.Length + 1) / 2) (fun e ->
+                let hi =
+                    if 2 * e + 1 < pr.W.Length then
+                        uint32 pr.W[2 * e + 1]
+                    else
+                        0u
+
+                uint32 pr.W[2 * e] ||| (hi <<< 16)))
 
     let xData = Data.f32 0x4B32424E43480000UL xs
     heap.Upload(layout.SlotOf(px.Arena, px.Page), px.Offset, MemoryMarshal.AsBytes(ReadOnlySpan xData))
@@ -250,6 +343,9 @@ let private plan (backend: IGpuBackend) =
         Table = table
         Inputs = inputs
         XData = xData
+        DenormalX = dx
+        DenormalY = dy
+        Probes = probeTokens
     }
 
 let private args (x: TensorToken) (w: TensorToken) (y: TensorToken) (m: int) (s: Shape) : Kernels.MatmulBf16wArgs =
@@ -431,6 +527,86 @@ type Result =
         Invariance: Invariance list
     }
 
+/// The commit this assembly was built from (the SDK stamps it after '+' in the informational version). Env.commit
+/// reads the entry assembly, which is fsi when bench.fsx runs this module.
+let private commit () =
+    match typeof<Shape>.Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>() with
+    | null -> None
+    | v ->
+        let s = v.InformationalVersion
+        let plus = s.IndexOf '+'
+
+        if plus >= 0 && plus < s.Length - 1 then
+            Some(s.Substring(plus + 1))
+        else
+            None
+
+/// The fp32 denormal probe of GpuBackendInterface (scale_f32, a = 0.5), recorded as gpu.fp32_denormals.
+let private denormalProbe (backend: IGpuBackend) (p: Planned) =
+    let commands = backend.Begin()
+
+    Kernels.ScaleF32.dispatch
+        commands
+        {
+            X = p.DenormalX
+            Y = p.DenormalY
+            N = uint32 Fp32Denormals.probeInputs.Length
+            A = Fp32Denormals.ProbeScale
+        }
+
+    backend.Wait(backend.Submit commands) |> ignore
+    let row = p.Table.Row p.DenormalY
+    let bytes = Array.zeroCreate<byte>(4 * Fp32Denormals.probeInputs.Length)
+    p.Heap.Download(row.Slot, int64 row.ByteOffset, Span bytes)
+    let words = MemoryMarshal.Cast<byte, uint32>(ReadOnlySpan bytes).ToArray()
+    Fp32Denormals.recordProbe backend.ExecutionClass.Backend words
+
+/// The arithmetic probes: each result against CpuRef F32's bits and the other choice's.
+let private runProbes (backend: IGpuBackend) (p: Planned) =
+    let commands = backend.Begin()
+
+    for pr, x, w, y in p.Probes do
+        Kernels.MatmulBf16w.dispatch
+            commands
+            {
+                X = x
+                W = w
+                Y = y
+                M = 1u
+                N = 1u
+                K = uint32 pr.X.Length
+            }
+
+    backend.Wait(backend.Submit commands) |> ignore
+
+    [
+        for pr, _, _, y in p.Probes do
+            let row = p.Table.Row y
+            let bytes = Array.zeroCreate<byte> 4
+            p.Heap.Download(row.Slot, int64 row.ByteOffset, Span bytes)
+            let result = BitConverter.ToUInt32(bytes, 0)
+
+            let verdict =
+                if result = pr.Expected then "as CpuRef F32"
+                elif result = pr.Other then "the other choice"
+                else "neither"
+
+            Telemetry.check
+                "gpu.matmul.probe"
+                (result = pr.Expected)
+                [
+                    Attr.str TelemetryKeys.Kernel Kernels.MatmulBf16w.Name
+                    Attr.str TelemetryKeys.Backend (ExecutionBackend.name backend.ExecutionClass.Backend)
+                    Attr.str "probe" pr.Name
+                    Attr.str "expected" (pr.Expected.ToString("x8"))
+                    Attr.str "other" (pr.Other.ToString("x8"))
+                    Attr.str "result" (result.ToString("x8"))
+                    Attr.str "detail" (pr.Doc + ": " + verdict)
+                ]
+
+            pr, result
+    ]
+
 /// A device of a GPU backend, through its provider (Discovery, as the conformance suites find it).
 let private create (provider: IGpuBackendProvider) : IGpuBackend =
     let registry = BackendRegistry()
@@ -463,7 +639,7 @@ let runOn (backend: IGpuBackend) (invarianceOnly: bool) (loaded: IGpuBackend -> 
                    else
                        "matmul_bf16w throughput on " + name) with
                 ExecutionClass = Some cls
-                GitSha = Env.commit ()
+                GitSha = commit ()
                 Params =
                     [
                         "source", "tests/Lrm.Kernels.Conformance/Cases/matmul/MatmulBench.fs (K2)"
@@ -477,6 +653,11 @@ let runOn (backend: IGpuBackend) (invarianceOnly: bool) (loaded: IGpuBackend -> 
     printfn "matmul bench run log (%s): %s" name run.Directory
     use _ = run.Install()
     let p = plan backend
+    let mode = denormalProbe backend p
+    printfn "  fp32 denormals: %s" (Fp32Denormals.name mode)
+
+    for pr, result in runProbes backend p do
+        printfn "  probe %-6s %08x (CpuRef F32 %08x, the other choice %08x)" pr.Name result pr.Expected pr.Other
 
     let points =
         if invarianceOnly then
