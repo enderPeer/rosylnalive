@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    R5 spike (throwaway): in-box WARP as a d3d12-warp backend, made of D1's D3D12Backend on the adapter that
+    IDXGIFactory4::EnumWarpAdapter returns; D1's selftests and E1's conformance harness on it. Under spikes/**, so it is
+    not in the project graph, the solution, CI or fantomas (ProjectGraph contract); Directory.Build.props marks it
+    LrmIsSpike, so it references projects directly. Run it as a test exe: see README.md.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!--
+      Native pointers to stack locals reach the interop (ADR R3-0001): no tail calls, as for every GPU project. The
+      root sets Tailcalls only for projects in the graph; a spike sets it itself.
+    -->
+    <Tailcalls>false</Tailcalls>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="src/Affinity.fs" />
+    <Compile Include="src/Relabel.fs" />
+    <Compile Include="src/WarpAdapter.fs" />
+    <Compile Include="src/WarpBackend.fs" />
+    <Compile Include="src/Control.fs" />
+    <Compile Include="src/Common.fs" />
+    <Compile Include="src/CpuTests.fs" />
+    <Compile Include="src/GpuTests.fs" />
+    <Compile Include="src/Main.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Lrm.Core/Lrm.Core.fsproj" />
+    <ProjectReference Include="../../src/Lrm.Gpu.Core/Lrm.Gpu.Core.fsproj" />
+    <ProjectReference Include="../../src/Lrm.Gpu.D3D12.Interop/Lrm.Gpu.D3D12.Interop.fsproj" />
+    <ProjectReference Include="../../src/Lrm.Gpu.D3D12/Lrm.Gpu.D3D12.fsproj" />
+    <ProjectReference Include="../../src/Lrm.Shaders/Lrm.Shaders.fsproj" />
+    <ProjectReference Include="../../src/Lrm.Tensor/Lrm.Tensor.fsproj" />
+    <ProjectReference Include="../../src/Lrm.Telemetry/Lrm.Telemetry.fsproj" />
+    <ProjectReference Include="../../tests/Lrm.Testing/Lrm.Testing.fsproj" />
+    <ProjectReference Include="../../tests/Lrm.Kernels.Conformance/Lrm.Kernels.Conformance.fsproj" />
+  </ItemGroup>
+</Project>
