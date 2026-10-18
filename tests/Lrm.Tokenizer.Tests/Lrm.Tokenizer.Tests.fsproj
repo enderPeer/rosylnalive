@@ -1,6 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: M1. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
+    <Compile Include="TokenizerRun.fs" />
+    <Compile Include="Common.fs" />
+    <Compile Include="PreTokenizerTests.fs" />
+    <Compile Include="UnicodeTests.fs" />
+    <Compile Include="ToyTests.fs" />
+    <Compile Include="CorpusTests.fs" />
+    <Compile Include="Bench.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 </Project>
