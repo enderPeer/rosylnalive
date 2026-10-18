@@ -1,0 +1,197 @@
+// Snippets written for the LRM tokenizer corpus. Each one is separated by a line holding only %%.
+// The generator turns every snippet and every line into cases, with LF, CRLF, tab and space-run variants.
+%%
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Lrm.Samples;
+
+public static class MathUtil
+{
+    public static int Add(int a, int b) => a + b;
+
+    public static long Factorial(int n)
+    {
+        if (n < 0) throw new ArgumentOutOfRangeException(nameof(n));
+        long acc = 1L;
+        for (var i = 2; i <= n; i++) acc *= i;
+        return acc;
+    }
+}
+%%
+public sealed record Point(double X, double Y)
+{
+    public double Length => Math.Sqrt(X * X + Y * Y);
+    public static Point operator +(Point a, Point b) => new(a.X + b.X, a.Y + b.Y);
+    public override string ToString() => $"({X:F2}, {Y:F2})";
+}
+%%
+var words = new[] { "alpha", "beta", "gamma", "delta" };
+var grouped = words
+    .Where(w => w.Length > 4)
+    .GroupBy(w => w[0])
+    .Select(g => new { Key = g.Key, Count = g.Count() })
+    .OrderByDescending(x => x.Count)
+    .ToList();
+foreach (var item in grouped)
+    Console.WriteLine($"{item.Key}: {item.Count}");
+%%
+public async Task<string> FetchAsync(HttpClient client, Uri uri, CancellationToken ct = default)
+{
+    using var response = await client.GetAsync(uri, ct).ConfigureAwait(false);
+    response.EnsureSuccessStatusCode();
+    return await response.Content.ReadAsStringAsync(ct);
+}
+%%
+static string Describe(object? o) => o switch
+{
+    null => "null",
+    int i when i < 0 => "negative int",
+    int i => $"int {i}",
+    string { Length: 0 } => "empty string",
+    string s => $"string of {s.Length}",
+    IEnumerable<int> xs => $"ints, sum {xs.Sum()}",
+    _ => o.GetType().Name,
+};
+%%
+/// <summary>
+/// Returns the index of <paramref name="value"/> in <paramref name="span"/>, or -1.
+/// </summary>
+/// <typeparam name="T">The element type; must implement <see cref="IEquatable{T}"/>.</typeparam>
+public static int IndexOf<T>(ReadOnlySpan<T> span, T value) where T : IEquatable<T>
+{
+    for (int i = 0; i < span.Length; i++)
+    {
+        if (span[i].Equals(value)) return i;
+    }
+    return -1;
+}
+%%
+#nullable enable
+#if DEBUG
+    Debug.Assert(count >= 0, "count must not be negative");
+#elif TRACE
+    Trace.WriteLine("release build");
+#else
+    // nothing
+#endif
+#pragma warning disable CS8618
+#region Fields
+private readonly Dictionary<string, List<int>> _index = new(StringComparer.Ordinal);
+#endregion
+%%
+const int Mask = 0x7FFF_FFFF;
+const long Big = 9_223_372_036_854_775_807L;
+const ulong UBig = 0xFFFF_FFFF_FFFF_FFFFUL;
+const float Eps = 1e-6f;
+const double Pi = 3.141_592_653_589_793d;
+const decimal Price = 19.99m;
+var bits = 0b1010_0101;
+var ch = '\u00e9';
+var tab = '\t';
+var quote = '\'';
+var nul = '\0';
+uint x = 42u; x <<= 3; x >>= 1; x >>>= 2; x ^= 0xFFu;
+%%
+var path = @"C:\Users\end\dev\lrm-data\models";
+var multi = """
+    {
+      "name": "lrm",
+      "layers": 28
+    }
+    """;
+var interp = $$"""{"value": {{value}}}""";
+var verbatimInterp = $@"{path}\{fileName}.json";
+string? maybe = null;
+var len = maybe?.Length ?? 0;
+maybe ??= "default";
+%%
+[StructLayout(LayoutKind.Sequential, Pack = 8)]
+public unsafe struct VkBufferCreateInfo
+{
+    public uint sType;
+    public void* pNext;
+    public ulong flags;
+    public ulong size;
+    public uint usage;
+    public fixed byte reserved[16];
+}
+
+[DllImport("vulkan-1.dll", CallingConvention = CallingConvention.Winapi)]
+static extern int vkCreateBuffer(nint device, VkBufferCreateInfo* info, nint alloc, ulong* buffer);
+%%
+public interface IForwardOps<T> where T : unmanaged
+{
+    void RmsNorm(ReadOnlySpan<T> x, ReadOnlySpan<ushort> w, Span<T> y, float eps);
+    void MatMulBf16W(ReadOnlySpan<T> x, ReadOnlySpan<ushort> w, Span<T> y, int m, int n, int k);
+    T Dot(ReadOnlySpan<T> a, ReadOnlySpan<T> b);
+}
+
+file sealed class Counter
+{
+    private int _value;
+    public int Next() => Interlocked.Increment(ref _value);
+    public required string Name { get; init; }
+}
+%%
+Span<byte> buffer = stackalloc byte[256];
+ref int first = ref MemoryMarshal.GetReference(numbers);
+var slice = numbers[1..^1];
+var last = numbers[^1];
+var (q, r) = Math.DivRem(17, 5);
+int[] arr = [1, 2, 3, .. rest];
+Func<int, int, int> mul = static (a, b) => a * b;
+Action<string> log = Console.WriteLine;
+var tuple = (Name: "Ada", Year: 1815);
+if (tuple is { Year: > 1800 and < 1900 }) Console.WriteLine("19th century");
+%%
+try
+{
+    checked { var overflow = int.MaxValue + one; }
+}
+catch (OverflowException ex) when (ex.Message.Contains("overflow"))
+{
+    goto retry;
+}
+finally
+{
+    lock (_gate) { _attempts++; }
+}
+retry:
+    yield return default!;
+%%
+public class Matrix
+{
+    private readonly float[,] _cells;
+    public Matrix(int rows, int cols) => _cells = new float[rows, cols];
+    public float this[int r, int c] { get => _cells[r, c]; set => _cells[r, c] = value; }
+    public int Rows => _cells.GetLength(0);
+    public event EventHandler<int>? Changed;
+    protected virtual void OnChanged(int row) => Changed?.Invoke(this, row);
+    ~Matrix() { }
+}
+%%
+// Identifiers in other scripts are legal C#.
+var größe = 3;
+var 名前 = "値";
+var παράμετρος = 2.5;
+var переменная = größe * 2;
+Console.WriteLine($"{名前}: {παράμετρος + переменная}");
+%%
+	if (x > 0)
+	{
+		return x;   	// tab, spaces, tab
+	}
+	else	{ return -x; }
+%%
+namespace Lrm.Core
+{
+    using static System.Math;
+
+    internal static class Rope
+    {
+        // freq = f32(f32(pos) * invFreq); cos = f32(cos(f64 freq))
+        public static float Cos(int pos, float invFreq) => (float)Cos((double)((float)pos * invFreq));
+    }
+}

@@ -1,0 +1,52 @@
+# Lines written for the LRM tokenizer corpus, one case per line; lines starting with # are comments.
+# German
+Die Größe des Modells beträgt 0,6 Milliarden Parameter.
+Straße, Maß, Fuß und Spaß schreiben sich mit ß; GROSSBUCHSTABEN kennen auch ẞ.
+Ärger über Öl? Übermäßig! Äpfel, Öfen, Übungen.
+Fußgängerüberwegsampelschaltungsprüfung ist ein langes Wort.
+Der Übersetzer prüft jede Zeile: „Anführungszeichen“ und ‚einfache‘ und »Guillemets«.
+Größenänderung um 25 % am 18.10.2026 um 14:30 Uhr.
+# Chinese
+你好，世界！
+机器学习模型的推理需要大量的矩阵乘法。
+编译器把源代码转换成中间语言，然后再生成机器码。
+这个函数返回两个整数的和。
+臺灣的繁體中文和简体中文不同。
+“引号”、《书名号》、【括号】和……省略号。
+第一章：张量、梯度与优化器
+# Japanese
+こんにちは、世界。
+コンパイラはソースコードを中間言語に変換します。
+漢字とひらがなとカタカナを混ぜて書きます。
+ｶﾀｶﾅ（半角）とカタカナ（全角）。
+ラーメン、コーヒー、データベース。
+「かぎかっこ」と『二重かぎかっこ』。
+令和八年十月十八日、東京は晴れ。
+# Korean
+안녕하세요, 세계!
+컴파일러는 소스 코드를 중간 언어로 변환합니다.
+# Russian
+Привет, мир! Компилятор преобразует исходный код.
+Ёжик в тумане; ёлка; ЁЛКА.
+# Greek
+Καλημέρα κόσμε· ο μεταγλωττιστής μετατρέπει τον πηγαίο κώδικα.
+# Arabic
+مرحبا بالعالم، المترجم يحول الشيفرة المصدرية.
+# Hebrew
+שלום עולם, המהדר ממיר את קוד המקור.
+# Hindi
+नमस्ते दुनिया, कंपाइलर स्रोत कोड को बदलता है।
+# Thai
+สวัสดีชาวโลก คอมไพเลอร์แปลงซอร์สโค้ด
+# Vietnamese
+Xin chào thế giới, trình biên dịch chuyển đổi mã nguồn.
+# Turkish (dotted and dotless i)
+İstanbul'da ılık bir gün; ISPARTA, ıspanak, İZMİR.
+# Polish, Czech, Icelandic, French, Spanish
+Zażółć gęślą jaźń. Příliš žluťoučký kůň. Þórður ægir. Où est l'élève ? ¿Dónde está el niño? ¡Olé!
+# Mixed with code
+var 名前 = "値"; // コメント
+string grüße = "Grüße aus München"; // 德语注释
+Console.WriteLine("Привет, " + 名前 + "! 👋");
+# Mixed scripts in one word
+abcабвαβγ一二三アイウ

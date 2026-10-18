@@ -1,0 +1,1028 @@
+{
+  "about": "Tiny Qwen3 (2 layers, hidden 64, GQA 4/2, head_dim 32, vocab 256) with torch32 and torch64p goldens. Consumers: O2 (CpuRef per op), M2a (forward, greedy), X1 and C2 (tiny-model CI paths), Phase 2 (grads, AdamW).",
+  "adamw": {
+    "from": "bf16 weights widened to float32",
+    "grads": "grads_f32.safetensors",
+    "hparams": {
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "eps": 1e-08,
+      "lr": 0.001,
+      "weight_decay": 0.1
+    },
+    "names": "param/<name>, exp_avg/<name>, exp_avg_sq/<name>",
+    "options": "foreach=False, fused=False, amsgrad=False, maximize=False",
+    "steps": 1
+  },
+  "double_run": {
+    "attempts": [
+      {
+        "digest_a": "3592fafde816e87d394b7b6085815a5b0ecf1a24c540f15ffd567a978d895cce",
+        "digest_b": "3592fafde816e87d394b7b6085815a5b0ecf1a24c540f15ffd567a978d895cce",
+        "identical": true,
+        "threads": 8
+      }
+    ],
+    "digest": "3592fafde816e87d394b7b6085815a5b0ecf1a24c540f15ffd567a978d895cce",
+    "identical": true,
+    "threads": 8
+  },
+  "env": {
+    "cpu_capability": "AVX2",
+    "deterministic_algorithms": true,
+    "library_sources": {
+      "transformers/cache_utils.py": "17b4aff340ca287cd248d179819db77e775f857678f17088528f1e14227773c2",
+      "transformers/generation/utils.py": "7944240ff1ee27a7b3acc16571b7a480cc14f16e7222aeb1a79d289ebc96e3ea",
+      "transformers/masking_utils.py": "ef6f77df4c9bd9bbe93e21c8fe03c830b461d21dc1c6013cc2690f248cf1dee8",
+      "transformers/modeling_rope_utils.py": "6a0727073e080e163d0287e15fc1acb90035e9a9df9cb19a13b632a40abfac24",
+      "transformers/models/qwen3/configuration_qwen3.py": "49d9ccd0f29ccd977b93dba2004f84b867891b3d0509b71fd8ba3ed01054e64d",
+      "transformers/models/qwen3/modeling_qwen3.py": "ca9535e36ea4e689c76d7d753b91aec9ea00da837fbf223c8ea4c01a3b50cac0"
+    },
+    "machine": "AMD64",
+    "mkl": true,
+    "os": "Windows",
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "threads": 8,
+    "torch_config_sha256": "a29c96e46c8d9375db30335ca82560abddfa6ce33cf55c1440eca5d188898eb1",
+    "venv_lock": {
+      "file": "tools/goldens/requirements.lock",
+      "matches": true,
+      "sha256": "4541c53d833e82da1b5c959008b0e03620f68d9522a6519176da6fb3c86a6190"
+    },
+    "versions": {
+      "numpy": "2.4.6",
+      "python": "3.11.9",
+      "safetensors": "0.8.0",
+      "tokenizers": "0.23.3",
+      "torch": "2.14.1+cpu",
+      "transformers": "5.20.1"
+    }
+  },
+  "eos": {
+    "eos_token_id": 7,
+    "generate": "GenerationConfig(do_sample=False, max_new_tokens=64, eos_token_id=None) with model.generation_config replaced by GenerationConfig() for the call; min_new_tokens never used",
+    "ignored": true,
+    "manual_loop": "never checks EOS"
+  },
+  "files": [
+    {
+      "bytes": 1389704,
+      "location": "repo",
+      "path": "goldens/tiny/g1/adamw_f32.safetensors",
+      "role": "adamw_f32",
+      "sha256": "02b9b9b51e64ef57b36414a58d9538986db183de156d0d2459abaa55d00cc3f2"
+    },
+    {
+      "bytes": 189784,
+      "location": "repo",
+      "path": "goldens/tiny/g1/fwd_f32.p0.safetensors",
+      "role": "fwd_f32",
+      "sha256": "dc6c5b228f825c0cd395926ca57db3f3fd811a9c05a1c5846e0178c6175102a1"
+    },
+    {
+      "bytes": 17528,
+      "location": "repo",
+      "path": "goldens/tiny/g1/fwd_f32.p1.safetensors",
+      "role": "fwd_f32",
+      "sha256": "48ccfe3fa489005663004a313f7640a6864d132ad4af5f6ab84748d819dd5963"
+    },
+    {
+      "bytes": 72456,
+      "location": "repo",
+      "path": "goldens/tiny/g1/fwd_f32.p2.safetensors",
+      "role": "fwd_f32",
+      "sha256": "5166676083b3b89ede813828e7a81118c89c5544e7ac8189bde8348a65bf9723"
+    },
+    {
+      "bytes": 376176,
+      "location": "repo",
+      "path": "goldens/tiny/g1/fwd_f64p.p0.safetensors",
+      "role": "fwd_f64p",
+      "sha256": "f763f306f04db7d57baf26bff916ffd66388248d32f35313d95121fd9bd61543"
+    },
+    {
+      "bytes": 31896,
+      "location": "repo",
+      "path": "goldens/tiny/g1/fwd_f64p.p1.safetensors",
+      "role": "fwd_f64p",
+      "sha256": "2398deda05014e71c1c009a39f328d7f4a8e53d3ba629beaf343c226b29bfd7f"
+    },
+    {
+      "bytes": 144144,
+      "location": "repo",
+      "path": "goldens/tiny/g1/fwd_f64p.p2.safetensors",
+      "role": "fwd_f64p",
+      "sha256": "a3e0e79cfcefe4049bd5a7057f7bb99ad4f536d1a95686c32be199183b950eb3"
+    },
+    {
+      "bytes": 463156,
+      "location": "repo",
+      "path": "goldens/tiny/g1/grads_f32.safetensors",
+      "role": "grads_f32",
+      "sha256": "0d1c6a8904dbee08052285c978da0578e0bae1b4936f349ab473fd6946a86ee9"
+    },
+    {
+      "bytes": 923712,
+      "location": "repo",
+      "path": "goldens/tiny/g1/grads_f64p.safetensors",
+      "role": "grads_f64p",
+      "sha256": "510dfdb311eeac305e5c64c39bf9e6dfbcefc40bddc33f5e519eb6a3393dd3ba"
+    },
+    {
+      "bytes": 4776,
+      "location": "repo",
+      "path": "goldens/tiny/g1/greedy.safetensors",
+      "role": "greedy",
+      "sha256": "35e5c085445b67cafaba5d9d00be5f0152ac6fb0fdaf562de15f6ab0e2d126e5"
+    },
+    {
+      "bytes": 14,
+      "location": "repo",
+      "path": "goldens/tiny/g1/model/REVISION",
+      "role": "model",
+      "sha256": "a9695526b61bb8b86a031c47688d03850c0e5a8a6001ede3c3bcff3a837ed793"
+    },
+    {
+      "bytes": 237,
+      "location": "repo",
+      "path": "goldens/tiny/g1/model/SHA256SUMS",
+      "role": "model",
+      "sha256": "6b99a414917f185c345b79a07fda72aa54fa66ca8a775d7cf6883b328a307bb2"
+    },
+    {
+      "bytes": 705,
+      "location": "repo",
+      "path": "goldens/tiny/g1/model/config.json",
+      "role": "model",
+      "sha256": "b4a2dd5f6c4c344f9d1988dc462ff55f0ad54e4bef3a000aef706e086fa97834"
+    },
+    {
+      "bytes": 232760,
+      "location": "repo",
+      "path": "goldens/tiny/g1/model/model.safetensors",
+      "role": "model",
+      "sha256": "7ade5616bee29bf1008e4a2902cd7aa6b334e3571aa978356d7adfe08e058b2e"
+    },
+    {
+      "bytes": 65920,
+      "location": "repo",
+      "path": "goldens/tiny/g1/rope.safetensors",
+      "role": "rope",
+      "sha256": "3d7ce7aace29df73637297728cc8e4d7d2fb30afd43cd773876d470d46bca80b"
+    }
+  ],
+  "generator": {
+    "command": "pwsh tools/goldens/run.ps1 make_tiny.py",
+    "files": {
+      "tools/goldens/common.py": "236c33403fb3ed1b5ccf82dca2f6131056b64bea731f700ef8f0237b99b73dec",
+      "tools/goldens/make_tiny.py": "6d573782d52a74a587c0bb6ac91eade70d487bd41203cd437989b2f70a664639",
+      "tools/goldens/selftest.py": "b1cdc002c6146855502436cc11c8a20a075518ad0f0596af9cb374ca43360af3",
+      "tools/goldens/tiny_model.py": "2665abe710c4f31ace7132be33f08bc0ab09729d26df5dd7fed0886ae9b9b0b3"
+    }
+  },
+  "grads": {
+    "loss": "mean over t < T-1 of cross_entropy(logits[t], ids[t+1]) in the model dtype",
+    "loss_torch32": 9.09073543548584,
+    "loss_torch64p": 9.09073585996146,
+    "prompt": "p0"
+  },
+  "greedy": {
+    "min_margin_rule": 0.05,
+    "prompts": {
+      "p0": {
+        "torch32": {
+          "control_without_neutral_model_config": {
+            "eos_token_id_leaked": 7,
+            "new_tokens": 10,
+            "stops_at_eos": true
+          },
+          "distinct_tokens": 31,
+          "eos_first_step": 9,
+          "f32_argmax_agrees_every_step": true,
+          "generate_argmax_dtype": "float32",
+          "generate_effective_config": {
+            "do_sample": false,
+            "eos_token_id": null,
+            "max_new_tokens": 64,
+            "min_new_tokens": null,
+            "num_beams": 1,
+            "pad_token_id": null,
+            "repetition_penalty": 1.0,
+            "temperature": 1.0,
+            "top_k": 50,
+            "top_p": 1.0
+          },
+          "manual_equals_generate": true,
+          "manual_equals_no_cache": true,
+          "min_margin": 0.05673789978027344,
+          "min_margin_f32_ulps": 59494.0
+        },
+        "torch64p": {
+          "equals_torch32": true,
+          "f32_argmax_agrees_every_step": true,
+          "generate_argmax_dtype": "float32",
+          "generate_effective_config": {
+            "do_sample": false,
+            "eos_token_id": null,
+            "max_new_tokens": 64,
+            "min_new_tokens": null,
+            "num_beams": 1,
+            "pad_token_id": null,
+            "repetition_penalty": 1.0,
+            "temperature": 1.0,
+            "top_k": 50,
+            "top_p": 1.0
+          },
+          "manual_equals_generate": true,
+          "manual_equals_no_cache": true,
+          "min_margin": 0.05673670202086356,
+          "min_margin_f32_ulps": 59492.74405822903
+        }
+      },
+      "p1": {
+        "torch32": {
+          "control_without_neutral_model_config": {
+            "eos_token_id_leaked": 7,
+            "new_tokens": 64,
+            "stops_at_eos": false
+          },
+          "distinct_tokens": 4,
+          "eos_first_step": null,
+          "f32_argmax_agrees_every_step": true,
+          "generate_argmax_dtype": "float32",
+          "generate_effective_config": {
+            "do_sample": false,
+            "eos_token_id": null,
+            "max_new_tokens": 64,
+            "min_new_tokens": null,
+            "num_beams": 1,
+            "pad_token_id": null,
+            "repetition_penalty": 1.0,
+            "temperature": 1.0,
+            "top_k": 50,
+            "top_p": 1.0
+          },
+          "manual_equals_generate": true,
+          "manual_equals_no_cache": true,
+          "min_margin": 0.0977940559387207,
+          "min_margin_f32_ulps": 205089.0
+        },
+        "torch64p": {
+          "equals_torch32": true,
+          "f32_argmax_agrees_every_step": true,
+          "generate_argmax_dtype": "float32",
+          "generate_effective_config": {
+            "do_sample": false,
+            "eos_token_id": null,
+            "max_new_tokens": 64,
+            "min_new_tokens": null,
+            "num_beams": 1,
+            "pad_token_id": null,
+            "repetition_penalty": 1.0,
+            "temperature": 1.0,
+            "top_k": 50,
+            "top_p": 1.0
+          },
+          "manual_equals_generate": true,
+          "manual_equals_no_cache": true,
+          "min_margin": 0.09779430492559094,
+          "min_margin_f32_ulps": 205089.52216331288
+        }
+      }
+    },
+    "steps": 64
+  },
+  "guards": {
+    "env": {
+      "HF_HUB_DISABLE_TELEMETRY": "1",
+      "HF_HUB_OFFLINE": "1",
+      "TOKENIZERS_PARALLELISM": "false",
+      "TRANSFORMERS_OFFLINE": "1",
+      "USE_HUB_KERNELS": "0"
+    },
+    "hf_hub_offline": true,
+    "hub_is_offline_mode": true,
+    "hub_kernels_enabled": false,
+    "kernels_importable": false,
+    "python_isolated": true
+  },
+  "kind": "tiny-model",
+  "measurements": {
+    "e_ref_max_p0": 7.443795537104866e-07,
+    "e_ref_relL2_torch32_vs_torch64p": {
+      "p0": {
+        "L0.attn.k_norm.out": 1.5019955447594853e-07,
+        "L0.attn.k_proj.out": 1.4309901883216735e-07,
+        "L0.attn.k_rope": 1.516266269872338e-07,
+        "L0.attn.o_proj.in": 2.1267194884551484e-07,
+        "L0.attn.o_proj.out": 2.974693501837851e-07,
+        "L0.attn.q_norm.out": 1.4964048688661487e-07,
+        "L0.attn.q_proj.out": 1.4568450681248558e-07,
+        "L0.attn.q_rope": 1.552802604918316e-07,
+        "L0.attn.v_cache": 1.473766999368771e-07,
+        "L0.attn.v_proj.out": 1.473766999368771e-07,
+        "L0.input_layernorm.out": 4.964665223135616e-08,
+        "L0.mlp.down.in": 5.494924621501513e-07,
+        "L0.mlp.down.out": 5.593694415402139e-07,
+        "L0.mlp.gate.out": 3.723881150495426e-07,
+        "L0.mlp.up.out": 3.6443346328761655e-07,
+        "L0.out": 4.1289338816509805e-07,
+        "L0.post_attention_layernorm.out": 3.24805933860429e-07,
+        "L0.resid_mid": 2.969327152356157e-07,
+        "L1.attn.k_norm.out": 4.5815454989464927e-07,
+        "L1.attn.k_proj.out": 4.498413577905404e-07,
+        "L1.attn.k_rope": 4.589890379304386e-07,
+        "L1.attn.o_proj.in": 4.453378146511054e-07,
+        "L1.attn.o_proj.out": 4.5544605306714705e-07,
+        "L1.attn.q_norm.out": 4.909196911235606e-07,
+        "L1.attn.q_proj.out": 4.880393597959019e-07,
+        "L1.attn.q_rope": 4.93983194935712e-07,
+        "L1.attn.v_cache": 4.62009834589306e-07,
+        "L1.attn.v_proj.out": 4.62009834589306e-07,
+        "L1.input_layernorm.out": 4.3811632202173085e-07,
+        "L1.mlp.down.in": 7.017133147175189e-07,
+        "L1.mlp.down.out": 7.443795537104866e-07,
+        "L1.mlp.gate.out": 4.7176164572635746e-07,
+        "L1.mlp.up.out": 5.177401447024158e-07,
+        "L1.out": 4.941903295116236e-07,
+        "L1.post_attention_layernorm.out": 4.549368371987482e-07,
+        "L1.resid_mid": 4.4303696593590675e-07,
+        "embed.out": 0.0,
+        "final_norm.out": 5.147751231370105e-07,
+        "logits": 5.440831483930202e-07
+      },
+      "p1": {
+        "L0.attn.k_norm.out": 1.1328278366394704e-07,
+        "L0.attn.k_proj.out": 8.534462746810725e-08,
+        "L0.attn.k_rope": 1.1328278366394704e-07,
+        "L0.attn.o_proj.in": 8.819549698409416e-08,
+        "L0.attn.o_proj.out": 1.2152977939332043e-07,
+        "L0.attn.q_norm.out": 9.561733666372802e-08,
+        "L0.attn.q_proj.out": 9.078086179107391e-08,
+        "L0.attn.q_rope": 9.561733666372802e-08,
+        "L0.attn.v_cache": 8.819549698409416e-08,
+        "L0.attn.v_proj.out": 8.819549698409416e-08,
+        "L0.input_layernorm.out": 4.065525029784382e-08,
+        "L0.mlp.down.in": 2.3002033745852376e-07,
+        "L0.mlp.down.out": 2.471290953399734e-07,
+        "L0.mlp.gate.out": 1.5295014604685779e-07,
+        "L0.mlp.up.out": 1.3658621943038951e-07,
+        "L0.out": 1.4709492295086719e-07,
+        "L0.post_attention_layernorm.out": 1.2215498042140136e-07,
+        "L0.resid_mid": 1.2145571643926763e-07,
+        "L1.attn.k_norm.out": 1.8731774686148618e-07,
+        "L1.attn.k_proj.out": 1.5686271844942724e-07,
+        "L1.attn.k_rope": 1.8731774686148618e-07,
+        "L1.attn.o_proj.in": 2.0605849963369337e-07,
+        "L1.attn.o_proj.out": 2.4664463018708666e-07,
+        "L1.attn.q_norm.out": 1.694671191926553e-07,
+        "L1.attn.q_proj.out": 1.5984506080837473e-07,
+        "L1.attn.q_rope": 1.694671191926553e-07,
+        "L1.attn.v_cache": 2.0605849963369342e-07,
+        "L1.attn.v_proj.out": 2.0605849963369342e-07,
+        "L1.input_layernorm.out": 1.596071360187321e-07,
+        "L1.mlp.down.in": 3.75009015428053e-07,
+        "L1.mlp.down.out": 2.9458507467279993e-07,
+        "L1.mlp.gate.out": 2.008694332776745e-07,
+        "L1.mlp.up.out": 2.0293245493704686e-07,
+        "L1.out": 2.0224371643979496e-07,
+        "L1.post_attention_layernorm.out": 1.9562551612675374e-07,
+        "L1.resid_mid": 1.9753369516642155e-07,
+        "embed.out": 0.0,
+        "final_norm.out": 2.0108230935494062e-07,
+        "logits": 1.9189388588283927e-07
+      },
+      "p2": {
+        "logits": 6.687036817650409e-07
+      }
+    },
+    "grads_relL2_torch32_vs_torch64p": {
+      "model.embed_tokens.weight": 1.0014149635632238e-06,
+      "model.layers.0.input_layernorm.weight": 9.375596469965943e-07,
+      "model.layers.0.mlp.down_proj.weight": 1.0404132883105006e-06,
+      "model.layers.0.mlp.gate_proj.weight": 1.0888991355120719e-06,
+      "model.layers.0.mlp.up_proj.weight": 1.1796849311045988e-06,
+      "model.layers.0.post_attention_layernorm.weight": 8.336416438529418e-07,
+      "model.layers.0.self_attn.k_norm.weight": 9.325477829281228e-07,
+      "model.layers.0.self_attn.k_proj.weight": 9.113672571464592e-07,
+      "model.layers.0.self_attn.o_proj.weight": 1.043669266153488e-06,
+      "model.layers.0.self_attn.q_norm.weight": 9.655470633271113e-07,
+      "model.layers.0.self_attn.q_proj.weight": 9.254239501378539e-07,
+      "model.layers.0.self_attn.v_proj.weight": 1.0906130367406994e-06,
+      "model.layers.1.input_layernorm.weight": 1.0351788137071073e-06,
+      "model.layers.1.mlp.down_proj.weight": 9.29642802530417e-07,
+      "model.layers.1.mlp.gate_proj.weight": 9.86561563716102e-07,
+      "model.layers.1.mlp.up_proj.weight": 8.695524431262907e-07,
+      "model.layers.1.post_attention_layernorm.weight": 8.416090885177334e-07,
+      "model.layers.1.self_attn.k_norm.weight": 1.4938303433643957e-06,
+      "model.layers.1.self_attn.k_proj.weight": 1.5087466496179493e-06,
+      "model.layers.1.self_attn.o_proj.weight": 8.045513943643619e-07,
+      "model.layers.1.self_attn.q_norm.weight": 1.3149376217224199e-06,
+      "model.layers.1.self_attn.q_proj.weight": 1.4180885412983761e-06,
+      "model.layers.1.self_attn.v_proj.weight": 9.819367679367e-07,
+      "model.norm.weight": 4.659302849438965e-07
+    }
+  },
+  "model": {
+    "eos_rule": "eos_token_id is the first token of p0's torch32 greedy output first emitted at step >= 8 (and not bos_token_id), so a decoder that stops at EOS cannot match the 64-step golden",
+    "eos_token_id": 7,
+    "files": {
+      "REVISION": "a9695526b61bb8b86a031c47688d03850c0e5a8a6001ede3c3bcff3a837ed793",
+      "SHA256SUMS": "6b99a414917f185c345b79a07fda72aa54fa66ca8a775d7cf6883b328a307bb2",
+      "config.json": "b4a2dd5f6c4c344f9d1988dc462ff55f0ad54e4bef3a000aef706e086fa97834",
+      "model.safetensors": "7ade5616bee29bf1008e4a2902cd7aa6b334e3571aa978356d7adfe08e058b2e"
+    },
+    "path": "goldens/tiny/g1/model",
+    "revision": "local:tiny-g1",
+    "weights": {
+      "dtype": "BF16",
+      "lm_head": "absent: tied to model.embed_tokens.weight",
+      "rng": "DetRng(seed, streamOf(\"tiny-g1/<name>\")): Irwin-Hall(12) normal z; matrix scale*z, norm scale*(1+z/4); float32 then Bf16.narrowRne",
+      "scales": {
+        "model.embed_tokens.weight": [
+          "matrix",
+          0.1
+        ],
+        "model.layers.0.input_layernorm.weight": [
+          "norm",
+          1.0
+        ],
+        "model.layers.0.mlp.down_proj.weight": [
+          "matrix",
+          0.1767766952966369
+        ],
+        "model.layers.0.mlp.gate_proj.weight": [
+          "matrix",
+          0.125
+        ],
+        "model.layers.0.mlp.up_proj.weight": [
+          "matrix",
+          0.125
+        ],
+        "model.layers.0.post_attention_layernorm.weight": [
+          "norm",
+          1.0
+        ],
+        "model.layers.0.self_attn.k_norm.weight": [
+          "norm",
+          1.0
+        ],
+        "model.layers.0.self_attn.k_proj.weight": [
+          "matrix",
+          0.125
+        ],
+        "model.layers.0.self_attn.o_proj.weight": [
+          "matrix",
+          0.1767766952966369
+        ],
+        "model.layers.0.self_attn.q_norm.weight": [
+          "norm",
+          1.0
+        ],
+        "model.layers.0.self_attn.q_proj.weight": [
+          "matrix",
+          0.125
+        ],
+        "model.layers.0.self_attn.v_proj.weight": [
+          "matrix",
+          0.125
+        ],
+        "model.layers.1.input_layernorm.weight": [
+          "norm",
+          1.0
+        ],
+        "model.layers.1.mlp.down_proj.weight": [
+          "matrix",
+          0.1767766952966369
+        ],
+        "model.layers.1.mlp.gate_proj.weight": [
+          "matrix",
+          0.125
+        ],
+        "model.layers.1.mlp.up_proj.weight": [
+          "matrix",
+          0.125
+        ],
+        "model.layers.1.post_attention_layernorm.weight": [
+          "norm",
+          1.0
+        ],
+        "model.layers.1.self_attn.k_norm.weight": [
+          "norm",
+          1.0
+        ],
+        "model.layers.1.self_attn.k_proj.weight": [
+          "matrix",
+          0.125
+        ],
+        "model.layers.1.self_attn.o_proj.weight": [
+          "matrix",
+          0.1767766952966369
+        ],
+        "model.layers.1.self_attn.q_norm.weight": [
+          "norm",
+          1.0
+        ],
+        "model.layers.1.self_attn.q_proj.weight": [
+          "matrix",
+          0.125
+        ],
+        "model.layers.1.self_attn.v_proj.weight": [
+          "matrix",
+          0.125
+        ],
+        "model.norm.weight": [
+          "norm",
+          4.0
+        ]
+      },
+      "seed": 1,
+      "tensors": 24
+    }
+  },
+  "oracles": {
+    "torch32": {
+      "attn_implementation": "eager",
+      "dtype": "float32",
+      "load": "from_pretrained(dtype=float32)",
+      "patches": [],
+      "role": "spec"
+    },
+    "torch64p": {
+      "attn_implementation": "eager",
+      "dtype": "float64",
+      "load": "from_pretrained(dtype=float32), then .double()",
+      "patches": [
+        {
+          "diff": "--- original\n+++ patched\n@@ -2,3 +2,2 @@\n     input_dtype = hidden_states.dtype\n-    hidden_states = hidden_states.to(torch.float32)\n     variance = hidden_states.pow(2).mean(-1, keepdim=True)\n",
+          "id": "rmsnorm-input-dtype",
+          "kind": "source-edit",
+          "original_sha256": "d676bfe9af0e524dad25c11faa7c7c4c625df3d426848208d100949dd659b0a0",
+          "patched_sha256": "f2542ca16cd498cedb92435389221bc6b94eea9776dd2393d005b9a77d9fa501",
+          "target": "transformers.models.qwen3.modeling_qwen3.Qwen3RMSNorm.forward",
+          "what": "Qwen3RMSNorm.forward stays in the input dtype: the float32 upcast line is removed."
+        },
+        {
+          "diff": "--- original\n+++ patched\n@@ -17,3 +17,3 @@\n \n-    attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query.dtype)\n+    attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=query.dtype).to(query.dtype)\n     attn_weights = nn.functional.dropout(attn_weights, p=dropout, training=module.training)\n",
+          "id": "softmax-query-dtype",
+          "kind": "source-edit",
+          "original_sha256": "cb34ccea28710ae8d5d94a241b704ea3d974048f85372f0b1b3c2a8a2ef1ee20",
+          "patched_sha256": "02103b7158557496b8c480b4bbf53898fed434b17c182bac085e7b5a8d98779b",
+          "target": "transformers.models.qwen3.modeling_qwen3.eager_attention_forward",
+          "what": "eager_attention_forward runs softmax in query.dtype instead of float32."
+        },
+        {
+          "id": "rope-t-spec",
+          "kind": "replace",
+          "original_sha256": "2b71104c384d7ed6ff8dc560fa34c53862a9bcbe05a2f639ec7224b9f8e34a29",
+          "patched_sha256": "bc1c8a1ddc258af96bdfa051ed47b7d9a5365896cf0ac45ff7fae187ae07e0e4",
+          "source": "def _rotary_forward_t_spec(self, x, position_ids):\n    \"\"\"torch64p RoPE: returns T_spec widened to x.dtype. The table is pinned on the module (lrm_t_spec).\"\"\"\n    tab = getattr(self, \"lrm_t_spec\", None)\n    if tab is None:\n        raise GoldenError(\"torch64p rotary embedding has no pinned T_spec table\")\n    cos_h, sin_h = tab  # float32 [max_pos, head_dim/2]\n    if int(position_ids.max()) >= cos_h.shape[0] or int(position_ids.min()) < 0:\n        raise GoldenError(\"position outside the pinned T_spec table\")\n    c = cos_h[position_ids]\n    s = sin_h[position_ids]\n    cos = torch.cat((c, c), dim=-1)\n    sin = torch.cat((s, s), dim=-1)\n    return cos.to(dtype=x.dtype), sin.to(dtype=x.dtype)\n",
+          "target": "transformers.models.qwen3.modeling_qwen3.Qwen3RotaryEmbedding.forward",
+          "what": "Qwen3RotaryEmbedding.forward returns T_spec (torch fp32 inv_freq bits, f32 angles, f32 of the correctly rounded f64 cos/sin) widened to the input dtype."
+        }
+      ],
+      "role": "truth"
+    }
+  },
+  "prompt_rule": "candidate k = 0, 1, ... of NextInt(1, 256) draws from DetRng(1, streamOf(\"tiny-g1/prompt/<name>/<k>\")); greedy prompts take the first k whose torch32 top-2 margin is >= 0.05 at all 64 steps",
+  "prompts": [
+    {
+      "candidate": 1,
+      "dumps": "taps",
+      "ids": [
+        52,
+        134,
+        173,
+        130,
+        236,
+        105,
+        188,
+        194,
+        155,
+        227,
+        174,
+        203,
+        226
+      ],
+      "length": 13,
+      "name": "p0"
+    },
+    {
+      "candidate": 3,
+      "dumps": "taps",
+      "ids": [
+        151
+      ],
+      "length": 1,
+      "name": "p1"
+    },
+    {
+      "candidate": 0,
+      "dumps": "logits",
+      "ids": [
+        27,
+        205,
+        104,
+        43,
+        51,
+        25,
+        236,
+        23,
+        179,
+        125,
+        5,
+        47,
+        135,
+        251,
+        161,
+        26,
+        124,
+        82,
+        226,
+        160,
+        170,
+        74,
+        122,
+        52,
+        214,
+        175,
+        211,
+        190,
+        177,
+        92,
+        123,
+        6,
+        187,
+        112,
+        50,
+        41,
+        128,
+        139,
+        192,
+        216,
+        245,
+        168,
+        137,
+        131,
+        30,
+        157,
+        128,
+        85,
+        87,
+        208,
+        7,
+        122,
+        182,
+        13,
+        177,
+        219,
+        182,
+        46,
+        181,
+        190,
+        203,
+        99,
+        91,
+        125,
+        252,
+        183,
+        58,
+        120,
+        79,
+        232
+      ],
+      "length": 70,
+      "name": "p2"
+    }
+  ],
+  "rope": {
+    "head_dim": 32,
+    "inv_freq_bits": [
+      "3f800000",
+      "3ed7e89b",
+      "3e361887",
+      "3d99940d",
+      "3d0186e3",
+      "3c5a7bf2",
+      "3bb8449c",
+      "3b1b690d",
+      "3a83126f",
+      "39dd1725",
+      "393a7753",
+      "389d43a4",
+      "3804a2b2",
+      "375fba4f",
+      "36bcb0c1",
+      "361f23e4"
+    ],
+    "inv_freq_source": "transformers Qwen3RotaryEmbedding.compute_default_rope_parameters (float32)",
+    "max_pos": 512,
+    "t_spec": "freq = f32(f32(pos) * inv_freq); cos, sin = f32(correctly rounded f64 cos, sin of freq); [max_pos, head_dim/2]",
+    "t_spec_stats": {
+      "crosscheck": {
+        "cos": {
+          "crt_f64_mismatches": 0,
+          "entries": 8192,
+          "full_mpmath_mismatches": 0,
+          "numpy_f64_mismatches": 0,
+          "torch32_f32_mismatches": 471,
+          "torch_f64_mismatches": 0
+        },
+        "sin": {
+          "crt_f64_mismatches": 0,
+          "entries": 8192,
+          "full_mpmath_mismatches": 0,
+          "numpy_f64_mismatches": 0,
+          "torch32_f32_mismatches": 239,
+          "torch_f64_mismatches": 0
+        }
+      },
+      "resolved_with_mpmath": {
+        "cos": {
+          "resolved_with_mpmath": 0
+        },
+        "sin": {
+          "resolved_with_mpmath": 0
+        }
+      }
+    },
+    "theta": 1000000
+  },
+  "schema": "lrm.golden/1",
+  "selftests": {
+    "attention_fp64": {
+      "bound": 1e-13,
+      "lengths": {
+        "13": {
+          "patched_relL2": 3.4068744301501237e-16,
+          "unpatched_relL2": 6.993104810851499e-08
+        },
+        "70": {
+          "patched_relL2": 4.544056313978002e-16,
+          "unpatched_relL2": 1.0347188901302783e-07
+        }
+      },
+      "measured": 4.544056313978002e-16,
+      "metric": "relL2",
+      "negative_control_fails": true,
+      "passed": true,
+      "unpatched_min_relL2": 6.993104810851499e-08,
+      "what": "patched fp64 attention layer (tiny layer 0) vs hand-written fp64 attention"
+    },
+    "bf16_rne": {
+      "passed": true,
+      "random_patterns": 1044410,
+      "vectors": 17,
+      "what": "bf16 RNE: LrmCore vectors, and agreement with torch .to(bfloat16) on random float32 patterns"
+    },
+    "rmsnorm_fp64": {
+      "bound": 1e-15,
+      "measured": 1.1821761876464124e-16,
+      "metric": "relL2",
+      "negative_control_fails": true,
+      "passed": true,
+      "unpatched_min_relL2": 5.4876736511482577e-08,
+      "what": "patched fp64 Qwen3RMSNorm vs hand-written fp64 RMSNorm (rows at 1e-3, 1 and 1e3 scale)",
+      "widths": {
+        "1024": {
+          "patched_relL2": 1.068215390571717e-16,
+          "unpatched_relL2": 5.4876736511482577e-08
+        },
+        "128": {
+          "patched_relL2": 1.1281364461680252e-16,
+          "unpatched_relL2": 6.273956302882427e-08
+        },
+        "32": {
+          "patched_relL2": 9.062457037739674e-17,
+          "unpatched_relL2": 6.588705219634801e-08
+        },
+        "64": {
+          "patched_relL2": 1.1821761876464124e-16,
+          "unpatched_relL2": 5.54739674749536e-08
+        }
+      }
+    },
+    "rng_kats": {
+      "passed": true,
+      "what": "Philox4x32-10, DetRng words and positions, streamOf (LrmCore vectors)"
+    },
+    "rope_t_spec": {
+      "crosscheck": {
+        "cos": {
+          "crt_f64_mismatches": 0,
+          "entries": 8192,
+          "full_mpmath_mismatches": 0,
+          "numpy_f64_mismatches": 0,
+          "torch32_f32_mismatches": 471,
+          "torch_f64_mismatches": 0
+        },
+        "sin": {
+          "crt_f64_mismatches": 0,
+          "entries": 8192,
+          "full_mpmath_mismatches": 0,
+          "numpy_f64_mismatches": 0,
+          "torch32_f32_mismatches": 239,
+          "torch_f64_mismatches": 0
+        }
+      },
+      "passed": true,
+      "patched_rotary_equals_t_spec": true,
+      "what": "patched Qwen3RotaryEmbedding returns T_spec widened; T_spec equals full mpmath; libm cross-check"
+    },
+    "safetensors": {
+      "passed": true,
+      "real_data_offset": 35560,
+      "real_entries": 311,
+      "real_header_rebuilt": true,
+      "round_trip": true,
+      "what": "safetensors writer: round trip (own reader and safetensors 0.8.0) and the Qwen3-0.6B header rebuilt"
+    },
+    "tiny_fp64_forward": {
+      "bound": 1e-13,
+      "measured": 1.5881643758411594e-15,
+      "metric": "relL2",
+      "passed": true,
+      "what": "torch64p tiny-model taps vs a hand-written numpy fp64 forward",
+      "worst_tap": "L1.mlp.down.out"
+    }
+  },
+  "set": "tiny",
+  "taps": {
+    "cache_check": {
+      "p0": {
+        "cache_check_torch32": {
+          "k_rope_equals_cache": true,
+          "layers": 2,
+          "v_cache_equals_cache": true
+        },
+        "cache_check_torch64p": {
+          "k_rope_equals_cache": true,
+          "layers": 2,
+          "v_cache_equals_cache": true
+        }
+      },
+      "p1": {
+        "cache_check_torch32": {
+          "k_rope_equals_cache": true,
+          "layers": 2,
+          "v_cache_equals_cache": true
+        },
+        "cache_check_torch64p": {
+          "k_rope_equals_cache": true,
+          "layers": 2,
+          "v_cache_equals_cache": true
+        }
+      },
+      "p2": {
+        "cache_check_torch32": {
+          "k_rope_equals_cache": true,
+          "layers": 2,
+          "v_cache_equals_cache": true
+        },
+        "cache_check_torch64p": {
+          "k_rope_equals_cache": true,
+          "layers": 2,
+          "v_cache_equals_cache": true
+        }
+      }
+    },
+    "methods": {
+      "L{i}.attn.k_norm.out": {
+        "method": "hook",
+        "module": "model.layers.{i}.self_attn.k_norm"
+      },
+      "L{i}.attn.k_proj.out": {
+        "method": "hook",
+        "module": "model.layers.{i}.self_attn.k_proj"
+      },
+      "L{i}.attn.k_rope": {
+        "function": "transformers.models.qwen3.modeling_qwen3.apply_rotary_pos_emb[1]",
+        "method": "wrap"
+      },
+      "L{i}.attn.o_proj.in": {
+        "method": "prehook",
+        "module": "model.layers.{i}.self_attn.o_proj"
+      },
+      "L{i}.attn.o_proj.out": {
+        "method": "hook",
+        "module": "model.layers.{i}.self_attn.o_proj"
+      },
+      "L{i}.attn.q_norm.out": {
+        "method": "hook",
+        "module": "model.layers.{i}.self_attn.q_norm"
+      },
+      "L{i}.attn.q_proj.out": {
+        "method": "hook",
+        "module": "model.layers.{i}.self_attn.q_proj"
+      },
+      "L{i}.attn.q_rope": {
+        "function": "transformers.models.qwen3.modeling_qwen3.apply_rotary_pos_emb[0]",
+        "method": "wrap"
+      },
+      "L{i}.attn.v_cache": {
+        "method": "hook",
+        "module": "model.layers.{i}.self_attn.v_proj"
+      },
+      "L{i}.attn.v_proj.out": {
+        "method": "hook",
+        "module": "model.layers.{i}.self_attn.v_proj"
+      },
+      "L{i}.input_layernorm.out": {
+        "method": "hook",
+        "module": "model.layers.{i}.input_layernorm"
+      },
+      "L{i}.mlp.down.in": {
+        "method": "prehook",
+        "module": "model.layers.{i}.mlp.down_proj"
+      },
+      "L{i}.mlp.down.out": {
+        "method": "hook",
+        "module": "model.layers.{i}.mlp.down_proj"
+      },
+      "L{i}.mlp.gate.out": {
+        "method": "hook",
+        "module": "model.layers.{i}.mlp.gate_proj"
+      },
+      "L{i}.mlp.up.out": {
+        "method": "hook",
+        "module": "model.layers.{i}.mlp.up_proj"
+      },
+      "L{i}.out": {
+        "method": "hook",
+        "module": "model.layers.{i}"
+      },
+      "L{i}.post_attention_layernorm.out": {
+        "method": "hook",
+        "module": "model.layers.{i}.post_attention_layernorm"
+      },
+      "L{i}.resid_mid": {
+        "method": "prehook",
+        "module": "model.layers.{i}.post_attention_layernorm"
+      },
+      "embed.out": {
+        "method": "hook",
+        "module": "model.embed_tokens"
+      },
+      "final_norm.out": {
+        "method": "hook",
+        "module": "model.norm"
+      },
+      "logits": {
+        "method": "hook",
+        "module": "lm_head"
+      }
+    },
+    "names": [
+      "embed.out",
+      "L0.input_layernorm.out",
+      "L0.attn.q_proj.out",
+      "L0.attn.k_proj.out",
+      "L0.attn.v_proj.out",
+      "L0.attn.q_norm.out",
+      "L0.attn.k_norm.out",
+      "L0.attn.q_rope",
+      "L0.attn.k_rope",
+      "L0.attn.v_cache",
+      "L0.attn.o_proj.in",
+      "L0.attn.o_proj.out",
+      "L0.resid_mid",
+      "L0.post_attention_layernorm.out",
+      "L0.mlp.gate.out",
+      "L0.mlp.up.out",
+      "L0.mlp.down.in",
+      "L0.mlp.down.out",
+      "L0.out",
+      "L1.input_layernorm.out",
+      "L1.attn.q_proj.out",
+      "L1.attn.k_proj.out",
+      "L1.attn.v_proj.out",
+      "L1.attn.q_norm.out",
+      "L1.attn.k_norm.out",
+      "L1.attn.q_rope",
+      "L1.attn.k_rope",
+      "L1.attn.v_cache",
+      "L1.attn.o_proj.in",
+      "L1.attn.o_proj.out",
+      "L1.resid_mid",
+      "L1.post_attention_layernorm.out",
+      "L1.mlp.gate.out",
+      "L1.mlp.up.out",
+      "L1.mlp.down.in",
+      "L1.mlp.down.out",
+      "L1.out",
+      "final_norm.out",
+      "logits"
+    ],
+    "shapes": "[T, features], row-major, HF head order",
+    "tap.method": "wrap",
+    "wrapper": "transformers.models.qwen3.modeling_qwen3.apply_rotary_pos_emb (q_rope, k_rope)"
+  },
+  "threads": 8,
+  "tie_probe": {
+    "cases": 40,
+    "lowest_index_on_ties": true
+  },
+  "version": "g1"
+}
