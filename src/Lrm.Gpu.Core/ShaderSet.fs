@@ -367,9 +367,8 @@ module ShaderSet =
 
         Encoding.UTF8.GetString(ms.ToArray()) + "\n"
 
-    /// Reads a manifest and its resources. Raises GpuContractException when the schema is wrong, a blob's SHA-256
-    /// differs from the manifest, the root signature is not canonical, or a recomputed ShaderSetHash differs.
-    let ofManifest (json: string) (readResource: string -> byte[]) : ShaderSet =
+    /// ofManifest without the mapping of parse errors to GpuContractException.
+    let private ofManifestUnchecked (json: string) (readResource: string -> byte[]) : ShaderSet =
         use doc = JsonDocument.Parse json
         let r = doc.RootElement
 
@@ -442,3 +441,15 @@ module ShaderSet =
                 Fail.contract "shader manifest: the %s ShaderSetHash does not reproduce" (ShaderTarget.name t)
 
         set
+
+    /// Reads a manifest and its resources. Raises GpuContractException when the manifest is malformed or has another
+    /// schema, a blob's SHA-256 differs from the manifest, the root signature is not canonical, or a recomputed
+    /// ShaderSetHash differs.
+    let ofManifest (json: string) (readResource: string -> byte[]) : ShaderSet =
+        try
+            ofManifestUnchecked json readResource
+        with
+        | :? JsonException as e -> Fail.contract "shader manifest is not valid JSON: %s" e.Message
+        | :? Collections.Generic.KeyNotFoundException as e -> Fail.contract "shader manifest: %s" e.Message
+        | :? InvalidOperationException as e -> Fail.contract "shader manifest: %s" e.Message
+        | :? FormatException as e -> Fail.contract "shader manifest: %s" e.Message

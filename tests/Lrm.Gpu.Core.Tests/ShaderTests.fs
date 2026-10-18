@@ -202,6 +202,16 @@ let tests =
                 let otherHash = text.Replace(dxilHash, (Hash.sha256Utf8 "other").Hex)
                 Expect.notEqual otherHash text "the hash is in the manifest"
 
+                raisesContract "not valid JSON" (fun () -> ShaderSet.ofManifest "{" Shaders.readResource |> ignore)
+
+                raisesContract "shader manifest" (fun () ->
+                    ShaderSet.ofManifest (text.Replace("\"targets\"", "\"targetz\"")) Shaders.readResource
+                    |> ignore)
+
+                raisesContract "schema" (fun () ->
+                    ShaderSet.ofManifest (text.Replace("lrm.shaders/1", "lrm.shaders/2")) Shaders.readResource
+                    |> ignore)
+
                 raisesContract "does not reproduce" (fun () ->
                     ShaderSet.ofManifest otherHash Shaders.readResource |> ignore)
 
