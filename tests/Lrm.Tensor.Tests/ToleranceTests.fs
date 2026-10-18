@@ -205,6 +205,14 @@ let tests =
                     (fun () -> KernelBounds.check "matmul_bf16w" a a None |> ignore)
                     "relative kernels need CpuRef64"
 
+                Expect.throwsT<ArgumentException>
+                    (fun () ->
+                        let b = (a :> IHostTensor).ToBytes()
+
+                        KernelBounds.checkExact "matmul_bf16w" 4 (ReadOnlySpan b) (ReadOnlySpan b)
+                        |> ignore)
+                    "relative kernels have no exact check"
+
                 Expect.equal
                     (KernelBounds.attrs diff |> List.map _.Key)
                     [ "kernel"; "bound_kind"; "measured"; "bound"; "ref_error"; "elements" ]
