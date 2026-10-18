@@ -1,10 +1,10 @@
 # Kernels: Conformance on d3d12
 
 
-**PASS.** All 63 conformance cases pass. Every dispatch is under the 100 ms budget.
+**PASS.** All 64 conformance cases pass. Every dispatch is under the 100 ms budget.
 
-- Conformance cases: 63, failed: 0
-- GPU dispatches: 250, total GPU time 93.79 ms
+- Conformance cases: 64, failed: 0
+- GPU dispatches: 254, total GPU time 44.69 ms
 
 ## Conformance matrix
 
@@ -12,7 +12,7 @@ Passing cases out of all cases, per kernel and backend.
 
 | Kernel | Family | d3d12 |
 | --- | --- | --- |
-| attention_gqa_causal | attention | ✓ 35/35 |
+| attention_gqa_causal | attention | ✓ 36/36 |
 | scale_f32 | elementwise | ✓ 11/11 |
 | bf16_unpack | memory | ✓ 5/5 |
 | args_echo | other | ✓ 2/2 |
@@ -61,39 +61,39 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Kernel | Backend | Layer | Step | Duration | Of budget |
 | --- | --- | ---: | ---: | ---: | ---: |
-| attention_gqa_causal | d3d12 |  |  | 18.23 ms | 18.2% |
-| attention_gqa_causal | d3d12 |  |  | 18.23 ms | 18.2% |
-| attention_gqa_causal | d3d12 |  |  | 11.53 ms | 11.5% |
-| attention_gqa_causal | d3d12 |  |  | 10.60 ms | 10.6% |
-| attention_gqa_causal | d3d12 |  |  | 6.34 ms | 6.3% |
-| attention_gqa_causal | d3d12 |  |  | 4.69 ms | 4.7% |
-| attention_gqa_causal | d3d12 |  |  | 1.54 ms | 1.5% |
-| attention_gqa_causal | d3d12 |  |  | 1.43 ms | 1.4% |
-| attention_gqa_causal | d3d12 |  |  | 1.28 ms | 1.3% |
-| attention_gqa_causal | d3d12 |  |  | 1.28 ms | 1.3% |
+| attention_gqa_causal | d3d12 |  |  | 9.88 ms | 9.9% |
+| attention_gqa_causal | d3d12 |  |  | 9.88 ms | 9.9% |
+| attention_gqa_causal | d3d12 |  |  | 3.44 ms | 3.4% |
+| attention_gqa_causal | d3d12 |  |  | 2.68 ms | 2.7% |
+| attention_gqa_causal | d3d12 |  |  | 2.65 ms | 2.7% |
+| attention_gqa_causal | d3d12 |  |  | 2.64 ms | 2.6% |
+| attention_gqa_causal | d3d12 |  |  | 960.51 µs | 1.0% |
+| attention_gqa_causal | d3d12 |  |  | 693.25 µs | 0.7% |
+| attention_gqa_causal | d3d12 |  |  | 624.64 µs | 0.6% |
+| attention_gqa_causal | d3d12 |  |  | 622.59 µs | 0.6% |
 
 ## Run
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-131421-a93dfcb4` |
+| Run | `20261018-134200-f1727848` |
 | Title | Conformance on d3d12 |
 | Kind | kernels |
 | Status | ok |
-| Started | 2026-10-18T13:14:21.642Z |
-| Ended | 2026-10-18T13:14:32.007Z |
+| Started | 2026-10-18T13:42:00.876Z |
+| Ended | 2026-10-18T13:42:09.389Z |
 | Execution class | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders a9ac4697732f |
 | Class id | `35e521522c3b` |
 | Driver | 32.0.16.1692 |
-| Commit | `7817370b1fb3988a09ca2d39dfb1511103bba389` |
+| Commit | `7d1ff2354129ffe2a01a05e8773f0868135c795b` |
 | Nodes | 1 |
-| Records | 3,862 |
+| Records | 3,941 |
 | Synthetic | no |
 
 | Parameter | Value |
 | --- | --- |
 | backend | d3d12 |
-| cases | 87 |
+| cases | 88 |
 | device | NVIDIA GeForce RTX 4080 |
 | source | tests/Lrm.Kernels.Conformance (ConformanceHarness) |
 
@@ -101,7 +101,7 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| n0 | creator | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders a9ac4697732f | 3,862 | ok | 0 |
+| n0 | creator | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders a9ac4697732f | 3,941 | ok | 0 |
 
 ### Log problems
 

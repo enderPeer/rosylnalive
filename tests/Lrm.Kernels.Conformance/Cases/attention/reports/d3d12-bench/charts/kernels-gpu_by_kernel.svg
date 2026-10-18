@@ -21,8 +21,8 @@
 <text class="t3" x="146" y="68" font-size="11" text-anchor="start">kernel</text>
 <text class="t3" x="393" y="140" font-size="11" text-anchor="middle">GPU time</text>
 <text class="t2" x="138" y="95" font-size="12" text-anchor="end">attention_gqa_causal</text>
-<path class="f4" d="M146 83H547.37Q551.37 83 551.37 87V95Q551.37 99 547.37 99H146Z"><title>attention_gqa_causal, d3d12: 2.05 s</title></path>
-<text class="t2" x="557.37" y="95" font-size="11">2.05 s</text>
+<path class="f4" d="M146 83H569.93Q573.93 83 573.93 87V95Q573.93 99 569.93 99H146Z"><title>attention_gqa_causal, d3d12: 2.17 s</title></path>
+<text class="t2" x="579.93" y="95" font-size="11">2.17 s</text>
 <line class="axis" x1="146" y1="78" x2="146" y2="78" stroke-width="1"/>
 <line class="axis" x1="146" y1="78" x2="146" y2="104" stroke-width="1"/>
 </svg>

@@ -27,9 +27,9 @@
 ///
 /// **Why no larger dispatch is gated.** The harness times each case on a GPU that has idled through the case's CPU
 /// references, and the RTX 4080 then runs the dispatch at its idle clock (210 to 700 MHz instead of about 2.8 GHz, up
-/// to 13 times slower; ADR K3-0001). So every case here takes at most about 4 ms on a warm GPU. Larger chunks, the
-/// 4096-token prefill in one dispatch and the 65,535-query grid are timed warm by the bench
-/// (bench/attention-bench.fsx).
+/// to 14 times slower; ADR K3-0001). So every case here takes at most about 4 ms on a warm GPU. Larger chunks, longer
+/// prefills in one dispatch and the 65,535-query grid are timed by the bench (bench/attention-bench.fsx), warm and
+/// cold.
 ///
 /// **The causal mask and the rows are poisoned.** Every cache row after the last key a dispatch may read (positions
 /// past + rows onwards, 64 of them, so the rest of the last block too) and every q row the dispatch does not own (the

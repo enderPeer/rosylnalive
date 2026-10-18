@@ -13,31 +13,31 @@
 <line class="grid" x1="541.2" y1="78" x2="541.2" y2="234" stroke-width="1"/>
 <line class="grid" x1="640" y1="78" x2="640" y2="234" stroke-width="1"/>
 <text class="t3" x="146" y="251" font-size="11" text-anchor="middle">0</text>
-<text class="t3" x="244.8" y="251" font-size="11" text-anchor="middle">20 ms</text>
-<text class="t3" x="343.6" y="251" font-size="11" text-anchor="middle">40 ms</text>
-<text class="t3" x="442.4" y="251" font-size="11" text-anchor="middle">60 ms</text>
-<text class="t3" x="541.2" y="251" font-size="11" text-anchor="middle">80 ms</text>
-<text class="t3" x="640" y="251" font-size="11" text-anchor="middle">100 ms</text>
+<text class="t3" x="244.8" y="251" font-size="11" text-anchor="middle">10 ms</text>
+<text class="t3" x="343.6" y="251" font-size="11" text-anchor="middle">20 ms</text>
+<text class="t3" x="442.4" y="251" font-size="11" text-anchor="middle">30 ms</text>
+<text class="t3" x="541.2" y="251" font-size="11" text-anchor="middle">40 ms</text>
+<text class="t3" x="640" y="251" font-size="11" text-anchor="middle">50 ms</text>
 <text class="t3" x="146" y="68" font-size="11" text-anchor="start">kernel</text>
 <text class="t3" x="393" y="270" font-size="11" text-anchor="middle">GPU time</text>
 <text class="t2" x="138" y="95" font-size="12" text-anchor="end">attention_gqa_causal</text>
-<path class="f4" d="M146 83H585.12Q589.12 83 589.12 87V95Q589.12 99 585.12 99H146Z"><title>attention_gqa_causal, d3d12: 89.70 ms</title></path>
-<text class="t2" x="595.12" y="95" font-size="11">89.70 ms</text>
+<path class="f4" d="M146 83H561.91Q565.91 83 565.91 87V95Q565.91 99 561.91 99H146Z"><title>attention_gqa_causal, d3d12: 42.50 ms</title></path>
+<text class="t2" x="571.91" y="95" font-size="11">42.50 ms</text>
 <text class="t2" x="138" y="121" font-size="12" text-anchor="end">groups_echo</text>
-<path class="f4" d="M146 109H157.78Q161.78 109 161.78 113V121Q161.78 125 157.78 125H146Z"><title>groups_echo, d3d12: 3.19 ms</title></path>
-<text class="t2" x="167.78" y="121" font-size="11">3.19 ms</text>
+<path class="f4" d="M146 109H157.85Q161.85 109 161.85 113V121Q161.85 125 157.85 125H146Z"><title>groups_echo, d3d12: 1.60 ms</title></path>
+<text class="t2" x="167.85" y="121" font-size="11">1.60 ms</text>
 <text class="t2" x="138" y="147" font-size="12" text-anchor="end">scale_f32</text>
-<path class="f4" d="M146 135H147.34Q148.67 135 148.67 136.34V149.66Q148.67 151 147.34 151H146Z"><title>scale_f32, d3d12: 541.28 µs</title></path>
-<text class="t2" x="154.67" y="147" font-size="11">541.28 µs</text>
+<path class="f4" d="M146 135H147.73Q149.47 135 149.47 136.73V149.27Q149.47 151 147.73 151H146Z"><title>scale_f32, d3d12: 350.72 µs</title></path>
+<text class="t2" x="155.47" y="147" font-size="11">350.72 µs</text>
 <text class="t2" x="138" y="173" font-size="12" text-anchor="end">bf16_unpack</text>
-<path class="f4" d="M146 161H146.62Q147.24 161 147.24 161.62V176.38Q147.24 177 146.62 177H146Z"><title>bf16_unpack, d3d12: 251.90 µs</title></path>
-<text class="t2" x="153.24" y="173" font-size="11">251.90 µs</text>
+<path class="f4" d="M146 161H146.84Q147.69 161 147.69 161.84V176.16Q147.69 177 146.84 177H146Z"><title>bf16_unpack, d3d12: 170.85 µs</title></path>
+<text class="t2" x="153.69" y="173" font-size="11">170.85 µs</text>
 <text class="t2" x="138" y="199" font-size="12" text-anchor="end">table_echo</text>
-<path class="f4" d="M146 187H146.16Q146.33 187 146.33 187.16V202.84Q146.33 203 146.16 203H146Z"><title>table_echo, d3d12: 66.56 µs</title></path>
-<text class="t2" x="152.33" y="199" font-size="11">66.56 µs</text>
+<path class="f4" d="M146 187H146.21Q146.42 187 146.42 187.21V202.79Q146.42 203 146.21 203H146Z"><title>table_echo, d3d12: 43.01 µs</title></path>
+<text class="t2" x="152.42" y="199" font-size="11">43.01 µs</text>
 <text class="t2" x="138" y="225" font-size="12" text-anchor="end">args_echo</text>
-<path class="f4" d="M146 213H146.08Q146.17 213 146.17 213.08V228.92Q146.17 229 146.08 229H146Z"><title>args_echo, d3d12: 33.79 µs</title></path>
-<text class="t2" x="152.17" y="225" font-size="11">33.79 µs</text>
+<path class="f4" d="M146 213H146.1Q146.2 213 146.2 213.1V228.9Q146.2 229 146.1 229H146Z"><title>args_echo, d3d12: 20.48 µs</title></path>
+<text class="t2" x="152.2" y="225" font-size="11">20.48 µs</text>
 <line class="axis" x1="146" y1="78" x2="146" y2="78" stroke-width="1"/>
 <line class="axis" x1="146" y1="78" x2="146" y2="234" stroke-width="1"/>
 </svg>
