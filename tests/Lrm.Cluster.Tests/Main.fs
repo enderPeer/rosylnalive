@@ -13,6 +13,7 @@ let tiers: TestTiers =
                 CoordinatorTests.tests
                 SimulationTests.tests
                 TransportTests.tests
+                RunLogTests.tests
             ]
     }
 

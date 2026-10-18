@@ -245,7 +245,7 @@ The fake job `{ Seed; Lanes; Steps; Stages; PromptBytes; HiddenBytes }` mimics t
 
 ## Telemetry
 
-The cluster reports through the Lrm.Core facade with the reserved `cluster.*` names. The coordinator's records carry `component = cluster.coordinator`, `node = coord`; a node's carry `component = cluster.node` and its name. In the simulator, records are timed on virtual time.
+The cluster reports through the Lrm.Core facade with the reserved `cluster.*` names. The coordinator's records carry `component = cluster.coordinator`, `node = coord`; a node's carry `component = cluster.node` and its name. In the simulator, records are timed on virtual time. The cluster report (ReportTemplates, `cluster`) reads these names; the cpu tier writes one simulated chaos run (n5 killed, stage 1 lagging) as a `cluster` run log under `LRM_DATA/runs` (`tests/Lrm.Cluster.Tests/RunLogTests.fs`), so `lrm report <runId>` renders it.
 
 | Name | Kind | Unit | Attributes | Meaning |
 | --- | --- | --- | --- | --- |

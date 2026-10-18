@@ -96,6 +96,7 @@
   </ItemGroup>
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Cluster.Tests'">
     <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Cluster/Lrm.Cluster.fsproj" LrmGraph="true" />
+    <ProjectReference Include="$(LrmRepoRoot)src/Lrm.Telemetry/Lrm.Telemetry.fsproj" LrmGraph="true" />
     <ProjectReference Include="$(LrmRepoRoot)tests/Lrm.Testing/Lrm.Testing.fsproj" LrmGraph="true" />
   </ItemGroup>
   <ItemGroup Condition="'$(LrmGraphName)' == 'Lrm.Core.Tests'">
