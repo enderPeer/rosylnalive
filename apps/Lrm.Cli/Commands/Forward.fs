@@ -271,7 +271,7 @@ let private run (argv: string[]) : int =
                             ),
                             p.Has "run-log",
                             [
-                                "model", w.Dir
+                                "model", Cli.displayPath w.Dir
                                 "revision", w.Revision.Text
                                 "model_sha256", w.Sha256.Hex
                                 "prompt", source
