@@ -2,7 +2,7 @@
 ///
 /// - **Throughput** (bench tier): every Qwen3-0.6B weight shape at m from 1 (decode) to 4,000 (the longest prefill
 ///   chunk), lm_head up to 1,024 rows. Each point is one warm-up dispatch and `Reps` timed ones in one command list;
-///   the faster time decides. Records: the backend's `gpu.dispatch` intervals, and one `gpu.matmul.throughput` gauge
+///   the fastest decides. Records: the backend's `gpu.dispatch` intervals, and one `gpu.matmul.throughput` gauge
 ///   (flop/s, the FLOP registry's 2mnk) and one `gpu.matmul.bandwidth` gauge (B/s, the registry's minimum traffic) per
 ///   point, with `kernel`, `shape`, `m`, `n`, `k`, `time_ns` and `budget_ns`.
 /// - **Batch invariance across calls** (gpu tier): per shape, one activation matrix and one weight; rows computed by
@@ -15,8 +15,10 @@
 ///   bound is KernelBounds, not these). The fp32 denormal probe of GpuBackendInterface runs first, so the run log has
 ///   the class's `gpu.fp32_denormals`.
 ///
-/// Both run under the backend's mutex through Lrm.Testing (`tests`), and `run` writes a run log of kind `kernels`
-/// that `lrm report` renders. This module has no `cases` value, so Discovery does not read it.
+/// `gpu ()` (the cross-call check and the probes) and `bench ()` (all of it) are TestTiers lists, so Lrm.Testing's
+/// runner holds the backend's mutex; bench.fsx runs them until the conformance exe's tiers list them. `runOn` writes a
+/// run log of kind `kernels` that `lrm report` renders, and report.fsx renders templates/matmul.md from the same log.
+/// This module has no `cases` value, so Discovery does not read it.
 module Lrm.Kernels.Conformance.Cases.MatmulBench
 
 open System
@@ -424,6 +426,16 @@ let private download (p: Planned) (token: TensorToken) (elements: int64) : uint3
     p.Heap.Download(row.Slot, int64 row.ByteOffset, Span bytes)
     MemoryMarshal.Cast<byte, uint32>(ReadOnlySpan bytes).ToArray()
 
+/// A signalling-NaN word no matmul of finite inputs produces: the outputs of the cross-call check hold it before the
+/// dispatches, so a word still holding it was never written.
+[<Literal>]
+let private Poison = 0x7FBADBADu
+
+let private poison (p: Planned) (token: TensorToken) (elements: int64) =
+    let row = p.Table.Row token
+    let words = Array.create (int elements) Poison
+    p.Heap.Upload(row.Slot, int64 row.ByteOffset, MemoryMarshal.AsBytes(ReadOnlySpan words))
+
 /// CpuRef F32's bits of row r of x times w (Rows.dotBf16, the reference of matmul_bf16w).
 let private cpuRefRow (p: Planned) (s: Shape) (r: int) : uint32[] =
     let w = p.Inputs[s.Name]
@@ -444,6 +456,12 @@ let private cpuRefRow (p: Planned) (s: Shape) (r: int) : uint32[] =
 
 let private invariance (backend: IGpuBackend) (p: Planned) (s: Shape) : Invariance =
     let w = p.Weights[s.Name]
+    poison p p.YFull (512L * int64 s.N)
+    poison p p.Y37 (37L * int64 s.N)
+
+    for r in invarianceRows do
+        poison p (snd p.RowViews[s.Name, r]) (int64 s.N)
+
     let commands = backend.Begin()
     Kernels.MatmulBf16w.dispatch commands (args p.X w p.YFull 512 s)
     Kernels.MatmulBf16w.dispatch commands (args p.X w p.Y37 37 s)
@@ -464,6 +482,9 @@ let private invariance (backend: IGpuBackend) (p: Planned) (s: Shape) : Invarian
         let alone = download p yv (int64 s.N)
         let inFull = Array.sub full (r * s.N) s.N
 
+        let unwritten =
+            Array.append alone inFull |> Array.filter ((=) Poison) |> Array.length
+
         let d512 =
             Array.fold2 (fun acc a b -> if a = b then acc else acc + 1L) 0L alone inFull
 
@@ -478,8 +499,11 @@ let private invariance (backend: IGpuBackend) (p: Planned) (s: Shape) : Invarian
         let dRef =
             Array.fold2 (fun acc a b -> if a = b then acc else acc + 1L) 0L alone reference
 
-        diffs <- diffs + d512 + d37
+        diffs <- diffs + d512 + d37 + int64 unwritten
         refDiffs <- refDiffs + dRef
+
+        if unwritten > 0 then
+            notes.Add(Invariant.format $"row {r}: {unwritten} word(s) still hold the poison (never written)")
 
         if d512 + d37 > 0L then
             notes.Add(Invariant.format $"row {r}: {d512} differ from m = 512, {d37} from m = 37")

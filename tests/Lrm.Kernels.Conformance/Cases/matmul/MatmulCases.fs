@@ -7,7 +7,8 @@
 /// Batch invariance across calls: all cases of one Qwen shape share one weight and the first rows of one activation
 /// matrix, so row r is the same row of the same inputs in the m = 1, 37, 512 and 4,000 cases. Within each case the
 /// harness's splits recompute single rows (m = 1) and the middle third alone, and they must equal the whole case bit
-/// for bit; across cases, every row is compared with the one CpuRef F32 reference of that row.
+/// for bit. Across separate calls, MatmulBench's cross-call check compares rows of m = 1, 37 and 512 calls bit for bit
+/// (the harness judges each case on its own).
 ///
 /// The m = 512 and m = 4,000 prefills and lm_head are GPU-only: CpuRef F32 and F64 of them cost tens of G
 /// multiply-adds, which the cpu tier (CI, four emulation threads) does not spend. Decode and m = 37 of every projection
