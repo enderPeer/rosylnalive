@@ -1,6 +1,6 @@
 # ShaderBuildAndSourceConvention contract
 
-Owner: R4. R4a wrote v1; R4b finalized the SPIR-V binding (`LRM_BUF` on SPIR-V) and added the SPIR-V inspector as v1.1, following R1's ADR (VulkanHeapRecipe, `docs/decisions/R1-heap-recipe.md`). Status: v1.1 (additive over v1), for the contracts-v1.1 tag. Consumers: the kernels (K1 to K3), the backends (D1, V1, R5), E1 and X1. Code: `src/Lrm.Shaders/` (`include/lrm.hlsli`, `rootsig/rootsig.hlsl`, `hlsl/**`, `Lrm.Shaders.lrm.targets`, `Shaders.fs`), `src/Lrm.Shaders.Build/` (with the inspector fixtures in `fixtures/spirv/`) and `src/Lrm.Gpu.Core/ShaderSet.fs`, `SourceConvention.fs`, `Spirv.fs` (`Spirv`, `SpirvBinding`) and `SpirvInspector.fs`. Tests: `tests/Lrm.Gpu.Core.Tests/ShaderTests.fs`, `SpirvTests.fs`; CI step `src/Lrm.Shaders.Build/check-shaders.ps1`.
+Owner: R4. R4a wrote v1; R4b finalized the SPIR-V binding (`LRM_BUF` on SPIR-V) and added the SPIR-V inspector as v1.1, following R1's ADR (VulkanHeapRecipe, `docs/decisions/R1-heap-recipe.md`). Status: v1.1, for the contracts-v1.1 tag. It is additive for every existing kernel (no blob changed) and tightens the rules for new ones: the SPIR-V inspector, and 64-bit types in the lint. The tag waits until VulkanHeapRecipe section 7 describes the argument block below (a contract-change requested of R1). Consumers: the kernels (K1 to K3), the backends (D1, V1, R5), E1 and X1. Code: `src/Lrm.Shaders/` (`include/lrm.hlsli`, `rootsig/rootsig.hlsl`, `hlsl/**`, `Lrm.Shaders.lrm.targets`, `Shaders.fs`), `src/Lrm.Shaders.Build/` (with the inspector fixtures in `fixtures/spirv/`, and the on-device check `typed-args-spike.ps1`) and `src/Lrm.Gpu.Core/ShaderSet.fs`, `SourceConvention.fs`, `Spirv.fs` (`Spirv`, `SpirvBinding`) and `SpirvInspector.fs`. Tests: `tests/Lrm.Gpu.Core.Tests/ShaderTests.fs`, `SpirvTests.fs`; CI step `src/Lrm.Shaders.Build/check-shaders.ps1`.
 
 Every kernel is written once in HLSL 2021 and compiled by **one pinned compiler** to both targets. The compiled set is embedded in `Lrm.Shaders` with a manifest, and its **ShaderSetHash** enters every GPU ExecutionClass.
 
@@ -138,12 +138,26 @@ R1's spike ran both SPIR-V binding variants on the RTX 4080 (driver 616.92) thro
 `SpirvBinding.resolve size slot` is heapOffset + (binding − firstBinding + *slot*) × heapArrayStride, which is *slot* × `bufferDescriptorSize`. The geometry of the heap itself (the reserved range and the heap size) is `Heap.vulkanGeometry` (HeapLayoutAndTensorTable).
 
 **The argument block type.**
-- VulkanHeapRecipe section 7 describes the spike's own block, `struct { uint4 d[8]; }`, read as `d[k >> 2][k & 3]`.
-- LRM keeps the generated per-kernel blocks of KernelAbiAndCatalog: `lrm_args_<kernel>`, with `uint lrm_groups_x` and then one 32-bit scalar per catalog field.
-- Both layouts put argument word *k* at byte 4·*k*, so the shader reads the same bytes. The typed block also names and types every word, and the inspector checks those against the catalog.
-- The spike's pitfall, a flat `uint d[32]` that DXIL packs into 500 bytes, concerns arrays. Scalar members pack at 4-byte offsets in the D3D cbuffer layout: DXC reports `args_echo`'s block as 128 bytes, with word 31 at offset 124. DXC's push-constant layout also puts them at 4·*k*.
-- A block that declares fewer than 32 words is legal on both APIs: D3D12 sets all 32 root constants, and Vulkan pushes all 128 bytes.
-- **Run on the device.** R4b swapped LRM's own `scale_f32.hlsl` and `args_echo.hlsl` (with `lrm.hlsli` and `lrm_args.g.hlsli`) into a scratch copy of R1's spike. Their typed blocks are 20 and 128 bytes. The spike's gpu tier then passed 124 of 124 on the RTX 4080 (driver 616.92, D3D12 UMD 32.0.16.1692; run `20261018-014350-8e09b518`, spike ShaderSetHash `39566d87…`): every gating case was bit-exact against the CPU on D3D12 and on all 9 Vulkan configurations, and every negative control was caught.
+- LRM uses the generated per-kernel blocks of KernelAbiAndCatalog: `lrm_args_<kernel>`, with `uint lrm_groups_x` and then one 32-bit scalar per catalog field. Argument word *k* is member *k*, at byte 4·*k* in the D3D cbuffer layout and in DXC's push-constant layout.
+- Push data and root constants are always the whole 128-byte ArgBlock, whatever size the block declares. A block of fewer than 32 words is legal on both APIs: D3D12 sets all 32 root constants, and Vulkan pushes all 128 bytes.
+- The typed block names and types every word, and the inspector checks those against the catalog (rule `push-block`).
+- **This differs from VulkanHeapRecipe v1, section 7.** That section describes the spike's own block, `struct { uint4 d[8]; }` read as `d[k >> 2][k & 3]`, and its rule 2 asks for one push member at Offset 0, ArrayStride 16, 128 bytes.
+  - Both layouts put word *k* at byte 4·*k*, so the device reads the same bytes (the run below).
+  - But a module that follows section 7 fails the `push-block` rule, and LRM's modules fail section 7's rule 2.
+  - R4b has asked R1 for a contract-change of section 7 and of the matching lines of the ADR (the text is in PR #12): the push block is `lrm_args_<kernel>`, member *i* at Offset 4·*i*, at most 128 bytes, and push data is always the whole 128 bytes.
+  - **contracts-v1.1 is tagged only once the two texts agree.**
+- The spike's pitfall, a flat `uint d[32]` that DXIL packs into 500 bytes, concerns arrays. Scalar members pack at 4-byte offsets in the D3D cbuffer layout: DXC reports `args_echo`'s block as 128 bytes, with word 31 at offset 124.
+- **Run on the device.** `src/Lrm.Shaders.Build/typed-args-spike.ps1` runs LRM's blocks through R1's spike, and anyone can rerun it:
+  1. It exports R1's spike with `git archive`: HEAD once R1 has merged, `origin/ws/R1-vk-heap-spike` before that. The checkout does not change.
+  2. It replaces the spike's `scale_f32.hlsl` and `args_echo.hlsl` with LRM's selftests and puts `lrm.hlsli` and `lrm_args.g.hlsli` beside them. Their typed blocks are 20 and 128 bytes. `table_echo` and `bf16_unpack` stay the spike's own, because their arguments and offsets differ.
+  3. It builds the spike and runs its gpu tier. The mutexes are taken through Lrm.Testing, and the GPU part takes about 5 s.
+
+  **Result** on the RTX 4080 (Vulkan driver 616.92, D3D12 UMD 32.0.16.1692), with the spike at `41df1b0`: run `20261018-021142-c850f044`, spike ShaderSetHash `39566d87…`, gpu tier 124 of 124.
+  - All 85 gating checks are bit-exact against the CPU, with one digest per case across D3D12 and the 8 Vulkan configurations (two binding variants by three heap placements, and two mapping controls).
+  - No poison word is left, every case is identical across its two runs, and all 106 negative controls are caught.
+  - The only case that differs from the CPU is the informational `scale_f32.edges` (denormals and NaN; KernelAbiAndCatalog's denormal rule).
+  - The spike's report shows that the swap took effect: its emulated variant now has 1 aliased variable in `args_echo` and `scale_f32`, against 2 and 3 with the spike's own sources.
+  - An earlier run from a hand-made copy (`20261018-014350-8e09b518`) gave the same result.
 
 **Flags.** The SPIR-V arguments must contain `-spirv` and `-fspv-target-env=vulkan1.3`. They must contain none of the flags below (`SpirvBinding.forbiddenSpirvFlags`), and the build refuses them before it compiles.
 
@@ -165,22 +179,22 @@ R1's spike ran both SPIR-V binding variants on the RTX 4080 (driver 616.92) thro
 
 | Rule | What must hold | Why |
 | --- | --- | --- |
-| `module` | A well-formed module: version 1.6 (`0x00010600`, which `-fspv-target-env=vulkan1.3` emits), exactly one `OpMemoryModel Logical GLSL450`, every literal string terminated, every instruction with its operands | Another target or addressing model leaves the binding model, for example `PhysicalStorageBuffer64` from `vk::RawBufferLoad` |
+| `module` | A well-formed module: version 1.6 (`0x00010600`, which `-fspv-target-env=vulkan1.3` emits), schema 0, exactly one `OpMemoryModel Logical GLSL450`, every literal string terminated, every instruction with its operands. Every id the inspector reads is above 0 and below the header's bound: the result ids of types, constants, variables, functions, labels and the instructions it follows, and the targets of names, decorations, the entry point and execution modes. Each of those result ids is defined once, and no decoration is applied twice to one target or member | Another target or addressing model leaves the binding model, for example `PhysicalStorageBuffer64` from `vk::RawBufferLoad`. A repeated decoration could carry a second `Binding`, `DescriptorSet` or `Offset` that disagrees with the one the rules read. An id outside the bound marks an invalid module |
 | `capabilities` | Every capability is one of Shader, RuntimeDescriptorArray and StorageBufferArrayDynamicIndexing; Shader and RuntimeDescriptorArray are present | The recipe's device enables exactly its five features (VulkanHeapRecipe section 1). Any other capability (Float16, Int64, ShaderNonUniform, GroupNonUniform*, DenormPreserve, Image1D, ...) could need a feature the device lacks |
 | `extensions` | Only `OpExtension "SPV_EXT_descriptor_indexing"` and `OpExtInstImport "GLSL.std.450"` | DXC declares descriptor indexing for `g_buf[]` (core since SPIR-V 1.5). GLSL.std.450 holds `exp`, `rsqrt`, `mad` (Fma) and the other math |
-| `entry-point` | Exactly one `OpEntryPoint`: GLCompute, named `main` | One kernel per blob, with entry point `main` |
-| `execution-mode` | Exactly one execution mode: `LocalSize`, equal to the catalog's threads | numthreads must match the catalog. No float-controls mode (`DenormPreserve`) and no `LocalSizeId` |
+| `entry-point` | Exactly one `OpEntryPoint`: GLCompute, named `main`, naming a function of the module | One kernel per blob, with entry point `main` |
+| `execution-mode` | Exactly one execution mode: `LocalSize` on the entry point, equal to the catalog's threads. Nothing is decorated `BuiltIn WorkgroupSize`, whatever the target | numthreads must match the catalog. A `WorkgroupSize` constant takes precedence over `LocalSize`, so it would set another size. No float-controls mode (`DenormPreserve`) and no `LocalSizeId` |
 | `resource` | Exactly one module-scope variable has a `DescriptorSet` or `Binding` decoration, and it is `g_buf[]`: storage class StorageBuffer; set 0, binding 0 (`SpirvBinding`); not `NonWritable`, on the variable or on a member of its block; a pointer to a runtime array of `Block` structs whose one member, at `Offset` 0, is a runtime array of u32 with `ArrayStride` 4 (`RWByteAddressBuffer`). There is no other StorageBuffer variable | The mapping covers set 0, binding 0 only, so any other variable would be unbound |
 | `push-block` | Exactly one PushConstant variable: a `Block` struct named `type.ConstantBuffer.lrm_args_<kernel>`, with 1 + F members for F catalog fields. Member *i* is at `Offset` 4·*i*, is named `lrm_groups_x` (*i* = 0) or after the catalog field, and is u32 (word 0, `token`, `u32`), i32 (`i32`) or f32 (`f32`). It spans at most 128 bytes | The push data is the ArgBlock. Offsets, names and types tie the blob to the catalog and to `LRM_ARGS(<kernel>)` |
 | `storage-class` | Module-scope variables only in StorageBuffer, PushConstant, Input, Workgroup and Private storage; variables inside functions only in Function storage | No Uniform (cbuffers), UniformConstant (images), Output or other storage |
-| `built-ins` | Every Input variable is a built-in: `WorkgroupId`, `LocalInvocationId` or `LocalInvocationIndex` | Kernels take only `SV_GroupID`, `SV_GroupThreadID` and `SV_GroupIndex`. `GlobalInvocationId` (`SV_DispatchThreadID`) is wrong on folded grids |
+| `built-ins` | Every Input variable is a built-in: `WorkgroupId`, `LocalInvocationId` or `LocalInvocationIndex`. Every other `BuiltIn` decoration is on an Input variable or a member of an Input block (WorkgroupSize falls under `execution-mode`) | Kernels take only `SV_GroupID`, `SV_GroupThreadID` and `SV_GroupIndex`. `GlobalInvocationId` (`SV_DispatchThreadID`) is wrong on folded grids |
 | `float-atomics` | No atomic instruction on a float: `OpAtomicFAddEXT`, `OpAtomicFMinEXT`, `OpAtomicFMaxEXT`, or any other atomic whose result, pointee or value is a float | The order of float atomics is not deterministic. `InterlockedExchange` on a float compiles to `OpAtomicExchange %float`, which needs no extra capability, so only this rule sees it (fixture `float_atomic`) |
 | `atomics` | No other atomic instruction (`OpAtomicLoad` to `OpAtomicXor`, `OpAtomicFlagTestAndSet`, `OpAtomicFlagClear`) | KernelAbiAndCatalog v1 allows no atomics at all |
 | `16-bit-types` | No `OpTypeInt 16` or `OpTypeFloat 16`, and no 16-bit capability (`Float16Buffer`, `Float16`, `Int16`, the 16-bit storage capabilities) | No 16-bit types |
 | `scalar-width` | Every other `OpTypeInt` and `OpTypeFloat` is 32 bits | No 8-bit or 64-bit scalars: `shaderInt64` and `shaderFloat64` are not recipe features |
 | `wave-ops` | No group, non-uniform group or subgroup instruction (opcodes 261 to 271, 333 to 366 and 4421 to 4432) | The wave size differs between vendors |
 | `typed-views` | No `OpTypeImage`, `OpTypeSampler` or `OpTypeSampledImage` | No typed views or samplers |
-| `workgroup-size` | The Workgroup variables total at most 32,768 bytes: scalars by width, vectors and arrays by count, structs by the sum of their members. A size that cannot be computed (a spec-constant length, a runtime array) is a finding | KernelAbiAndCatalog's 32 KiB. DXC's SPIR-V backend does not enforce it, and the RTX 4080 would allow 48 KiB (fixture `groupshared_40k`) |
+| `workgroup-size` | The Workgroup variables total at most 32,768 bytes: scalars by width, vectors and arrays by count, structs by the sum of their members, with overflow checks, so a huge nested array cannot wrap around to a small size. A size that cannot be computed is a finding: a spec-constant length, a runtime array, a length below 1, or more than 2^63 − 1 bytes | KernelAbiAndCatalog's 32 KiB. DXC's SPIR-V backend does not enforce it, and the RTX 4080 would allow 48 KiB (fixture `groupshared_40k`) |
 
 **Facts.** A report also carries what the inspector read (`SpirvFacts`):
 - the version, the capabilities, the extensions and the instruction sets;
@@ -239,7 +253,8 @@ One kernel per file, at its catalog path, with entry point `main`. A kernel may 
 
 - the only directives are `#include` (kernels only) and `#define`; no `#pragma`, no `#undef`, no other directive, and **no conditional compilation** (`#if`, `#ifdef`, `#ifndef`, `#elif`, `#else`, `#endif`), so both targets compile one body;
 - no macro named `LRM_*` or `lrm_*`, and no `[[vk::...]]` attributes;
-- none of these identifiers: `ResourceDescriptorHeap`, `SamplerDescriptorHeap`, `NonUniformResourceIndex`, `register`, `cbuffer`, `tbuffer`, `ConstantBuffer`, `ByteAddressBuffer`, `StructuredBuffer`, `RWStructuredBuffer`, `AppendStructuredBuffer`, `ConsumeStructuredBuffer`, `Buffer`, `RWBuffer`, `SamplerState`, `IncrementCounter`, `DecrementCounter`, `half`, `min16float`, `min10float`, `min16int`, `min12int`, `min16uint`, `float16_t`, `int16_t`, `uint16_t`, `SV_DispatchThreadID`, `numthreads`, `vk` (SPIR-V-only intrinsics such as `vk::RawBufferLoad`);
+- none of these identifiers: `ResourceDescriptorHeap`, `SamplerDescriptorHeap`, `NonUniformResourceIndex`, `register`, `cbuffer`, `tbuffer`, `ConstantBuffer`, `ByteAddressBuffer`, `StructuredBuffer`, `RWStructuredBuffer`, `AppendStructuredBuffer`, `ConsumeStructuredBuffer`, `Buffer`, `RWBuffer`, `SamplerState`, `IncrementCounter`, `DecrementCounter`, `SV_DispatchThreadID`, `numthreads`, `vk` (SPIR-V-only intrinsics such as `vk::RawBufferLoad`);
+- none of these scalar types, nor their vector (`T2` to `T4`) or matrix (`T1x1` to `T4x4`) forms: the 16-bit `half`, `min16float`, `min10float`, `min16int`, `min12int`, `min16uint`, `float16_t`, `int16_t` and `uint16_t`, and (v1.1) the 64-bit `double`, `float64_t`, `int64_t` and `uint64_t`. The SPIR-V inspector refuses the same widths (`16-bit-types`, `scalar-width`), so a kernel that uses one fails the lint before DXC runs, the same way for both targets;
 - no identifier starting with `Wave`, `Quad`, `Interlocked`, `Texture`, `RWTexture` or `__` (compiler macros such as `__spirv__`).
 
 A **kernel** also:
@@ -296,7 +311,7 @@ These two hashes change with every kernel K1 to K3 add; they are recorded here a
   - that `lrm.hlsli` declares the final binding, without the provisional marker;
   - that the reader parses every embedded blob and writes it back byte for byte, and rejects truncated, misaligned, big-endian, zero-count and magic-less input; and literal strings;
   - that every embedded blob passes, and that its facts match the catalog and the binding; and the selftest facts above;
-  - word-level mutations of a real blob, at least one per rule (51 at v1.1), each of which must break exactly its rules;
+  - word-level mutations of a real blob, at least one per rule (66 at v1.1), each of which must break exactly its rules;
   - a blob inspected as another kernel, and a blob of a kernel outside the catalog;
   - the rule names, the telemetry records and the Markdown table.
 - **CI** (`check-shaders.ps1`, after the Release build):
@@ -310,12 +325,13 @@ These two hashes change with every kernel K1 to K3 add; they are recorded here a
   8. every fixture breaks exactly the rules it expects (`spirv-fixtures`).
 
   The DXC regression step keeps checking the bindless facts this design relies on.
+- **gpu, local only** (`typed-args-spike.ps1`): LRM's typed argument blocks through R1's spike, as "The argument block type" describes. CI has no GPU, so the result is recorded there and in PR #12.
 
 ## Change log
 
 - **v1** (R4a, PR #10): first version, with the SPIR-V binding provisional.
-- **v1.1, additive** (R4b, PR #12):
+- **v1.1** (R4b, PR #12). Additive for every existing kernel: no blob changed, and both ShaderSetHash values are the v1 ones. It tightens the rules for new kernels:
   - the SPIR-V binding is final (R1's ADR, VulkanHeapRecipe): `g_buf[]` at set 0 binding 0, the `SpirvBinding` mapping values and the forbidden flags;
-  - the typed per-kernel argument blocks stay, with the reasons above;
-  - the SPIR-V inspector (16 rules) runs in the shader build, the cpu tier and CI, with 18 DXC fixtures, and emits `gpu.shader.spirv_check`, `gpu.shader.push_bytes` and `gpu.shader.workgroup_bytes`;
-  - no blob changed: both ShaderSetHash values are the v1 ones.
+  - the typed per-kernel argument blocks stay, with the reasons above and the on-device check `typed-args-spike.ps1`. VulkanHeapRecipe section 7 is to be amended to match before the tag (requested of R1);
+  - the SPIR-V inspector (16 rules) runs in the shader build, the cpu tier and CI, with 18 DXC fixtures and 66 mutations, and emits `gpu.shader.spirv_check`, `gpu.shader.push_bytes` and `gpu.shader.workgroup_bytes`;
+  - the source lint also refuses the 64-bit scalar types, and the vector and matrix forms of the 16-bit and 64-bit types.
