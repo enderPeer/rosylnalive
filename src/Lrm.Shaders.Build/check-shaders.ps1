@@ -233,3 +233,6 @@ if ($env:GITHUB_STEP_SUMMARY) { $text | Out-File -FilePath $env:GITHUB_STEP_SUMM
 
 if ($failures.Count -gt 0) { Write-Host "check-shaders: FAILED ($($failures.Count) check(s))" -ForegroundColor Red; exit 1 }
 Write-Host 'check-shaders: OK'
+# The negative checks above run a failing dxc on purpose; GitHub's pwsh wrapper exits with $LASTEXITCODE, so
+# end with an explicit success code.
+exit 0
