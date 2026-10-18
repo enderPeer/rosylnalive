@@ -23,10 +23,10 @@ _No rows._
 
 | Node | Arena | Peak | Last | Samples |
 | --- | --- | ---: | ---: | ---: |
-| n0 | weights | 1.40 GiB | 128.00 KiB | 11 |
-| n0 | activations | 1.00 GiB | 320.00 KiB | 15 |
-| n0 | scratch | 576.00 KiB | 576.00 KiB | 11 |
-| n0 | table | 1.00 MiB | 1.00 MiB | 17 |
+| n0 | weights | 1.40 GiB | 128.00 KiB | 12 |
+| n0 | activations | 1.00 GiB | 320.00 KiB | 20 |
+| n0 | scratch | 576.00 KiB | 576.00 KiB | 12 |
+| n0 | table | 1.00 MiB | 1.00 MiB | 22 |
 
 ## Metering
 
@@ -34,24 +34,24 @@ Resource use attributed to node, component and stage (layers summed). Wall time 
 
 | Node | Component | Stage | Wall (self) | GPU | FLOPs | Bytes moved | Tokens | Records |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| n0 | (none) |  | 2.09 s | 34.72 ms | 0 | 5.64 GiB | 0 | 20,896 |
+| n0 | (none) |  | 2.78 s | 64.62 ms | 0 | 5.63 GiB | 0 | 23,291 |
 
 ## Run
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-051521-4e953457` |
+| Run | `20261018-055325-c51ed242` |
 | Title | D3D12 backend: selftests, probe, soak and transfers (D1) |
 | Kind | kernels |
 | Status | ok |
-| Started | 2026-10-18T05:15:21.370Z |
-| Ended | 2026-10-18T05:15:33.793Z |
+| Started | 2026-10-18T05:53:25.737Z |
+| Ended | 2026-10-18T05:53:39.028Z |
 | Execution class | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders b12cabbf300b |
 | Class id | `9469669b5935` |
 | Driver | 32.0.16.1692 |
-| Commit | `2095ab0bfc468e33185c07f77892179623b88fb4` |
+| Commit | `0e5e4b923dc59e6e671916fba5528037bd672d83` |
 | Nodes | 1 |
-| Records | 21,279 |
+| Records | 26,020 |
 | Synthetic | no |
 
 | Parameter | Value |
@@ -65,7 +65,7 @@ Resource use attributed to node, component and stage (layers summed). Wall time 
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| n0 | creator | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders b12cabbf300b | 21,279 | ok | 0 |
+| n0 | creator | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders b12cabbf300b | 26,020 | ok | 0 |
 
 ### Log problems
 

@@ -4,7 +4,7 @@
 No conformance cases were recorded. Every dispatch is under the 100 ms budget.
 
 - Conformance cases: 0, failed: 0
-- GPU dispatches: 20,083, total GPU time 34.65 ms
+- GPU dispatches: 20,086, total GPU time 34.55 ms
 
 ## Conformance matrix
 
@@ -55,32 +55,32 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 | Kernel | Backend | Layer | Step | Duration | Of budget |
 | --- | --- | ---: | ---: | ---: | ---: |
 | groups_echo | d3d12 |  |  | 66.56 µs | 0.1% |
-| groups_echo | d3d12 |  | 1 | 65.54 µs | 0.1% |
 | groups_echo | d3d12 |  | 2 | 65.54 µs | 0.1% |
 | groups_echo | d3d12 |  | 1 | 65.54 µs | 0.1% |
 | groups_echo | d3d12 |  | 2 | 65.54 µs | 0.1% |
 | groups_echo | d3d12 |  | 4 | 65.54 µs | 0.1% |
-| groups_echo | d3d12 |  | 1 | 65.54 µs | 0.1% |
-| scale_f32 | d3d12 |  |  | 4.00 µs | 0.0% |
-| scale_f32 | d3d12 |  |  | 3.94 µs | 0.0% |
-| scale_f32 | d3d12 |  |  | 3.07 µs | 0.0% |
+| groups_echo | d3d12 |  | 1 | 64.51 µs | 0.1% |
+| groups_echo | d3d12 |  | 1 | 64.51 µs | 0.1% |
+| scale_f32 | d3d12 |  | 1 | 4.10 µs | 0.0% |
+| scale_f32 | d3d12 |  |  | 3.97 µs | 0.0% |
+| scale_f32 | d3d12 |  |  | 3.30 µs | 0.0% |
 
 ## Run
 
 | Field | Value |
 | --- | --- |
-| Run | `20261018-051521-4e953457` |
+| Run | `20261018-055325-c51ed242` |
 | Title | D3D12 backend: selftests, probe, soak and transfers (D1) |
 | Kind | kernels |
 | Status | ok |
-| Started | 2026-10-18T05:15:21.370Z |
-| Ended | 2026-10-18T05:15:33.793Z |
+| Started | 2026-10-18T05:53:25.737Z |
+| Ended | 2026-10-18T05:53:39.028Z |
 | Execution class | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders b12cabbf300b |
 | Class id | `9469669b5935` |
 | Driver | 32.0.16.1692 |
-| Commit | `2095ab0bfc468e33185c07f77892179623b88fb4` |
+| Commit | `0e5e4b923dc59e6e671916fba5528037bd672d83` |
 | Nodes | 1 |
-| Records | 21,279 |
+| Records | 26,020 |
 | Synthetic | no |
 
 | Parameter | Value |
@@ -94,7 +94,7 @@ The probe's words (`scale_f32`, a = 0.5): each input, what preserve and flush gi
 
 | Node | Role | Execution class | Records | Finished | Dropped |
 | --- | --- | --- | ---: | --- | ---: |
-| n0 | creator | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders b12cabbf300b | 21,279 | ok | 0 |
+| n0 | creator | d3d12 pci:10de:2704, 32.0.16.1692, win-x64 shaders b12cabbf300b | 26,020 | ok | 0 |
 
 ### Log problems
 
