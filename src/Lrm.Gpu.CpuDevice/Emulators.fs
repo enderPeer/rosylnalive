@@ -52,25 +52,52 @@ type internal EmuContext =
     member c.Linear(gx: int, gy: int) =
         int64 gy * int64 c.Args.GroupsX + int64 gx
 
+/// The NaN rule of the fp32 arithmetic kernels scale_f32 and add (ConformanceHarness contract, "fp32 denormals and
+/// NaN"): when an operand is a NaN, the result is the first NaN operand in field order (x before a, a before b) with its
+/// quiet bit set. That is what x64's mulss and addss return with the operands in that order, but the JIT may swap the
+/// operands of a commutative operation, and tiered compilation changes its choice partway through a process; with two
+/// NaN operands of different payloads the bits would then change between runs. The rule is applied with integer
+/// operations, so the bits are a function of the input bits alone. Without a NaN operand the float32 operation decides
+/// (inf * 0 and inf - inf give the platform's default NaN).
+[<RequireQualifiedAccess>]
+module internal Fp32Arith =
+    let inline private isNaN (bits: uint32) = bits &&& 0x7FFFFFFFu > 0x7F800000u
+
+    /// The result bits of `op` on the bits of two fp32 operands, by the NaN rule.
+    let inline private apply ([<InlineIfLambda>] op: float32 -> float32 -> float32) (a: uint32) (b: uint32) =
+        if isNaN a then
+            a ||| 0x00400000u
+        elif isNaN b then
+            b ||| 0x00400000u
+        else
+            BitConverter.SingleToUInt32Bits(op (BitConverter.UInt32BitsToSingle a) (BitConverter.UInt32BitsToSingle b))
+
+    /// a * b, by the NaN rule.
+    let mul (a: uint32) (b: uint32) = apply (fun x y -> x * y) a b
+
+    /// a + b, by the NaN rule.
+    let add (a: uint32) (b: uint32) = apply (fun x y -> x + y) a b
+
 /// One emulator per catalog kernel (KernelAbiAndCatalog). Each runs one physical thread group, as the HLSL kernel would:
 /// it derives its logical group exactly as the kernel does (LRM_GROUP_LINEAR on linear kernels, so a folded grid's extra
 /// groups find no work and return), and computes its elements with CpuRef F32's row kernels (Lrm.Tensor.CpuReference
-/// Rows), so CpuDevice equals CpuRef F32 bit for bit. Kernels that only move bits do it with integer operations, so
-/// every pattern (NaN payloads, denormals) passes unchanged. Read tokens are reached only through read-only spans.
+/// Rows), so CpuDevice equals CpuRef F32 bit for bit; scale_f32 and add are one float32 operation per element under
+/// the NaN rule (Fp32Arith). Kernels that only move bits do it with integer operations, so every pattern (NaN payloads,
+/// denormals) passes unchanged. Read tokens are reached only through read-only spans.
 [<RequireQualifiedAccess>]
 module internal Emulators =
     let private scaleF32 (c: EmuContext) (gx: int) (gy: int) (_: int) =
         let g = c.Linear(gx, gy)
         let n = c.I64 "n"
-        let a = c.F "a"
-        let x = (c.View "x").RF32
-        let y = (c.View "y").F32
+        let a = c.U "a"
+        let x = (c.View "x").RU32
+        let y = (c.View "y").U32
 
         for t in 0 .. c.ThreadsX - 1 do
             let i = g * int64 c.ThreadsX + int64 t
 
             if i < n then
-                y[int i] <- x[int i] * a
+                y[int i] <- Fp32Arith.mul x[int i] a
 
     let private tableEcho (c: EmuContext) (_: int) (_: int) (_: int) =
         let row = c.MetaRow "src"
@@ -172,10 +199,13 @@ module internal Emulators =
         let struct (lo, len) = elements c (c.Linear(gx, gy)) (c.I64 "n")
 
         if len > 0 then
-            Rows.add<float32>
-                ((c.View "a").RF32.Slice(lo, len))
-                ((c.View "b").RF32.Slice(lo, len))
-                ((c.View "y").F32.Slice(lo, len))
+            let a = (c.View "a").RU32
+            let b = (c.View "b").RU32
+            let y = (c.View "y").U32
+
+            // Element by element, each read before its write: y may alias a.
+            for i in lo .. lo + len - 1 do
+                y[i] <- Fp32Arith.add a[i] b[i]
 
     let private copyRows (c: EmuContext) (gx: int) (gy: int) (_: int) =
         let g = c.Linear(gx, gy)

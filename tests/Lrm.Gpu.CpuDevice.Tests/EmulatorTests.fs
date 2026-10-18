@@ -40,6 +40,84 @@ let private kernelTests =
 
                 eqBits (f.F32("y", 1000)) (x |> Array.map (fun v -> v * -0.75f)) "y = a * x"
 
+            testCase "scale_f32 and add: a NaN operand gives the first NaN operand, quieted, in every run for 1.5 s"
+            <| fun () ->
+                // The NaN rule (ConformanceHarness contract): x before a, a before b. Without it, x64's choice between
+                // two NaN operands follows the JIT's operand order, which tiered compilation changes within a process.
+                let n = 600
+
+                let x =
+                    Array.init n (fun i -> [| 0x7FC00001u; 0xFFC00005u; 0x7F800001u; 0x3F800000u |][i % 4])
+
+                let b =
+                    Array.init n (fun i -> [| 0x7FC00002u; 0x7F800006u; 0xFFC00003u; 0x7FC00004u |][i % 4])
+
+                let quiet (w: uint32) = w ||| 0x00400000u
+
+                let wantScale =
+                    x
+                    |> Array.map (fun w ->
+                        if w &&& 0x7FFFFFFFu > 0x7F800000u then
+                            quiet w
+                        else
+                            0x7FC00003u)
+
+                let wantAdd = Array.map2 (fun a b -> if a = 0x3F800000u then b else quiet a) x b
+
+                let f =
+                    fixture
+                        [
+                            t "x" DType.F32 600L
+                            t "b" DType.F32 600L
+                            t "y" DType.F32 600L
+                            t "z" DType.F32 600L
+                        ]
+
+                f.UploadU32("x", x)
+                f.UploadU32("b", b)
+
+                // Long enough for tiered compilation to recompile the emulators (with dynamic PGO) mid-loop.
+                let clock = Diagnostics.Stopwatch.StartNew()
+                let mutable i = 0
+
+                while i < 2000 || (clock.ElapsedMilliseconds < 1500L && i < 50000) do
+                    if i % 200 = 0 then
+                        Threading.Thread.Sleep 20
+
+                    f.Run(fun c ->
+                        Kernels.ScaleF32.dispatch
+                            c
+                            {
+                                X = f.Token "x"
+                                Y = f.Token "y"
+                                N = uint32 n
+                                A = BitConverter.UInt32BitsToSingle 0x7FC00003u
+                            }
+
+                        Kernels.Add.dispatch
+                            c
+                            {
+                                A = f.Token "x"
+                                B = f.Token "b"
+                                Y = f.Token "z"
+                                N = uint32 n
+                            })
+                    |> ignore
+
+                    let y = f.Words("y", n)
+                    let z = f.Words("z", n)
+
+                    if y <> wantScale || z <> wantAdd then
+                        failtestf
+                            "run %d: scale_f32 element 0 is %08x (want %08x), add element 0 is %08x (want %08x)"
+                            i
+                            y[0]
+                            wantScale[0]
+                            z[0]
+                            wantAdd[0]
+
+                    i <- i + 1
+
             testCase "table_echo, args_echo and groups_echo"
             <| fun () ->
                 let f = fixture [ t "src" DType.BF16 30L; t "y" DType.U32 64L ]

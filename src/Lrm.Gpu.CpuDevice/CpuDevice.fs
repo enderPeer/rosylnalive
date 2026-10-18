@@ -102,10 +102,16 @@ module internal ByteSets =
             small.Runs |> Seq.exists (fun struct (lo, hi) -> big.Overlaps(lo, hi))
 
 /// The host memory of a CpuDevice heap: the table buffer (slot 0, 1 MiB) and one array per page, each allocated on first
-/// use and filled with the uninitialized word.
+/// use and filled with the uninitialized word. After Release every access raises ObjectDisposedException, so freed
+/// memory is never quietly allocated again.
 [<Sealed>]
 type internal DeviceMemory(layout: HeapLayout, uninitialized: uint32) =
     let buffers: byte[][] = Array.zeroCreate Heap.SlotCount
+    let mutable released = false
+
+    let checkLive () =
+        if released then
+            raise (ObjectDisposedException "CpuDeviceBackend")
 
     let fresh (bytes: int64) =
         let b = GC.AllocateUninitializedArray<byte>(int bytes)
@@ -114,6 +120,8 @@ type internal DeviceMemory(layout: HeapLayout, uninitialized: uint32) =
 
     /// The buffer of a slot: the table (slot 0) or a page of the layout.
     member _.Buffer(slot: int) : byte[] =
+        checkLive ()
+
         match buffers[slot] with
         | null ->
             let size =
@@ -128,14 +136,49 @@ type internal DeviceMemory(layout: HeapLayout, uninitialized: uint32) =
         | b -> b
 
     /// The buffer of a slot when something has touched it, else null.
-    member _.TryBuffer(slot: int) : byte[] = buffers[slot]
+    member _.TryBuffer(slot: int) : byte[] =
+        checkLive ()
+        buffers[slot]
 
     /// The word an untouched buffer holds.
     member _.Uninitialized = uninitialized
 
     /// Frees every buffer.
     member _.Release() =
+        released <- true
         Array.fill buffers 0 buffers.Length null
+
+/// Host transfers and copies on top of the shared checks (Dispatch.checkTransfer, Dispatch.checkCopy), whose
+/// `offset + bytes > size` wraps for an offset near Int64.MaxValue: once those checks pass (offset and size
+/// non-negative), the end is compared as `offset > size - bytes`, which cannot overflow, so such a range raises
+/// GpuContractException here instead of an ArgumentOutOfRangeException from the copy.
+[<RequireQualifiedAccess>]
+module internal Ranges =
+    let transfer (layout: HeapLayout) (allowTable: bool) (slot: int) (offset: int64) (bytes: int64) =
+        Dispatch.checkTransfer layout allowTable slot offset bytes
+
+        let size =
+            if slot = Heap.TableSlot then
+                Heap.TableBytes
+            else
+                (layout.Page slot).Bytes
+
+        if offset > size - bytes then
+            Fail.contract
+                "transfer in slot %d: %d bytes at offset %d are past the %d-byte buffer"
+                slot
+                bytes
+                offset
+                size
+
+    let copy (layout: HeapLayout) (source: BufferRange) (destination: BufferRange) =
+        Dispatch.checkCopy layout source destination
+
+        for what, r in [ "source", source; "destination", destination ] do
+            let page = (layout.Page r.Slot).Bytes
+
+            if r.Offset > page - r.Bytes then
+                Fail.contract "copy %s: %d bytes at offset %d are past the %d-byte page" what r.Bytes r.Offset page
 
 [<RequireQualifiedAccess>]
 module internal Fp32Model =
@@ -245,6 +288,11 @@ type CpuDeviceBackend(info: DeviceInfo, options: DeviceOptions, cpu: CpuDeviceOp
     let checkLive () =
         if disposed then
             raise (ObjectDisposedException "CpuDeviceBackend")
+
+    /// Raises ObjectDisposedException after Dispose: every call of the backend, its heap, its kernel set and its
+    /// command lists starts here (ConformanceHarness contract, "CpuDevice"), so a use after Dispose fails on CpuDevice
+    /// as it would touch freed memory on a GPU.
+    member internal _.CheckLive() = checkLive ()
 
     /// The version of the emulators, part of the kernel set's hash.
     static member EmulatorVersion = 1
@@ -464,7 +512,9 @@ type CpuDeviceBackend(info: DeviceInfo, options: DeviceOptions, cpu: CpuDeviceOp
         s
 
     interface IGpuBackend with
-        member _.Info = info
+        member _.Info =
+            checkLive ()
+            info
 
         member _.ExecutionClass =
             checkLive ()
@@ -512,8 +562,13 @@ type CpuDeviceBackend(info: DeviceInfo, options: DeviceOptions, cpu: CpuDeviceOp
 
             let set =
                 { new IKernelSet with
-                    member _.ShaderSetHash = hash
-                    member _.Contains(k: KernelId) = has k
+                    member _.ShaderSetHash =
+                        checkLive ()
+                        hash
+
+                    member _.Contains(k: KernelId) =
+                        checkLive ()
+                        has k
                 }
 
             kernels <- Some set
@@ -566,10 +621,17 @@ and [<Sealed>] internal CpuHeap(owner: CpuDeviceBackend, layout: HeapLayout, mem
         GpuTelemetry.bytesMoved owner.Backend "copy" src.Bytes
 
     interface IGpuHeap with
-        member _.Layout = layout
-        member _.Table = table
+        member _.Layout =
+            owner.CheckLive()
+            layout
+
+        member _.Table =
+            owner.CheckLive()
+            table
 
         member _.WriteTable(t: SealedTable) =
+            owner.CheckLive()
+
             if table.IsSome then
                 Fail.contract "the tensor table is written once"
 
@@ -581,12 +643,14 @@ and [<Sealed>] internal CpuHeap(owner: CpuDeviceBackend, layout: HeapLayout, mem
             GpuTelemetry.bytesMoved owner.Backend "upload" Heap.TableBytes
 
         member _.Upload(slot: int, offset: int64, data: ReadOnlySpan<byte>) =
-            Dispatch.checkTransfer layout false slot offset (int64 data.Length)
+            owner.CheckLive()
+            Ranges.transfer layout false slot offset (int64 data.Length)
             data.CopyTo(Span(memory.Buffer slot, int offset, data.Length))
             GpuTelemetry.bytesMoved owner.Backend "upload" (int64 data.Length)
 
         member _.UploadFrom(slot: int, offset: int64, source: Stream, length: int64) =
-            Dispatch.checkTransfer layout false slot offset length
+            owner.CheckLive()
+            Ranges.transfer layout false slot offset length
 
             if isNull source then
                 nullArg "source"
@@ -603,7 +667,8 @@ and [<Sealed>] internal CpuHeap(owner: CpuDeviceBackend, layout: HeapLayout, mem
             GpuTelemetry.bytesMoved owner.Backend "upload" length
 
         member _.Download(slot: int, offset: int64, destination: Span<byte>) =
-            Dispatch.checkTransfer layout true slot offset (int64 destination.Length)
+            owner.CheckLive()
+            Ranges.transfer layout true slot offset (int64 destination.Length)
 
             match memory.TryBuffer slot with
             | null ->
@@ -625,6 +690,8 @@ and [<Sealed>] internal CpuCommandList(owner: CpuDeviceBackend) =
     let mutable closed = false
 
     let checkOpen () =
+        owner.CheckLive()
+
         if closed then
             Fail.contract "the command list was already submitted"
 
@@ -710,7 +777,7 @@ and [<Sealed>] internal CpuCommandList(owner: CpuDeviceBackend) =
 
         member _.Copy(source: BufferRange, destination: BufferRange) =
             checkOpen ()
-            Dispatch.checkCopy (owner.HeapOrFail :> IGpuHeap).Layout source destination
+            Ranges.copy owner.HeapOrFail.Layout source destination
             // Copy is a full barrier on both sides.
             pending.Clear()
             commands.Add(CpuCommand.Copy(source, destination))

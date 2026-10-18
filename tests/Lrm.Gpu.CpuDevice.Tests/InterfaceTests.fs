@@ -131,25 +131,26 @@ let tests =
 
             testCase "every catalog kernel has an emulator; the kernel set's hash names the emulators and the model"
             <| fun () ->
-                let setOf cpu =
+                // The set is used while its backend lives: after Dispose its calls raise.
+                let hashOf cpu =
                     use g = CpuDevice.create cpu (DeviceOptions.For ExecutionBackend.CpuDevice)
-                    g.LoadKernels(Shaders.embedded ())
+                    g.LoadKernels(Shaders.embedded ()).ShaderSetHash
 
-                let k = setOf CpuDeviceOptions.Default
+                use g = fresh ()
+                let k = g.LoadKernels(Shaders.embedded ())
 
                 for i in 0 .. Kernels.all.Length - 1 do
                     Expect.isTrue (k.Contains(KernelId i)) Kernels.all[i].Name
 
                 Expect.isFalse (k.Contains(KernelId Kernels.all.Length)) "past the catalog"
                 Expect.isFalse (k.Contains(KernelId -1)) "negative"
-                Expect.equal (setOf CpuDeviceOptions.Default).ShaderSetHash k.ShaderSetHash "stable"
+                Expect.equal (hashOf CpuDeviceOptions.Default) k.ShaderSetHash "stable"
 
                 Expect.notEqual
-                    (setOf
+                    (hashOf
                         { CpuDeviceOptions.Default with
                             CanonicalNaN = true
                         })
-                        .ShaderSetHash
                     k.ShaderSetHash
                     "the model changes the hash"
 
@@ -262,6 +263,29 @@ let tests =
                 raisesContract "past the" (fun () -> f.Heap.Download(1, page, Span(Array.zeroCreate<byte> 4)))
                 raisesContract "holds no page" (fun () -> f.Heap.Download(9, 0L, Span(Array.zeroCreate<byte> 4)))
 
+            testCase "transfers and copies whose end overflows int64 raise GpuContractException"
+            <| fun () ->
+                // offset + bytes wraps negative for an offset near Int64.MaxValue: the range is still past the page.
+                let f = small ()
+                let near = Int64.MaxValue - 3L
+                let eight = Array.zeroCreate<byte> 8
+                raisesContract "past the" (fun () -> f.Heap.Upload(1, near, ReadOnlySpan eight))
+                raisesContract "past the" (fun () -> f.Heap.UploadFrom(1, near, new MemoryStream(eight), 4L))
+                raisesContract "past the" (fun () -> f.Heap.Download(1, near, Span eight))
+                raisesContract "past the" (fun () -> f.Heap.Download(0, near, Span eight))
+                let x = f.Row "x"
+
+                let at (offset: int64) : BufferRange =
+                    {
+                        Slot = x.Slot
+                        Offset = offset
+                        Bytes = 4L
+                    }
+
+                let c = f.Gpu.Begin()
+                raisesContract "past the" (fun () -> c.Copy(at near, at 0L))
+                raisesContract "past the" (fun () -> c.Copy(at 0L, at near))
+
             testCase "Download of slot 0 returns the table image; unwritten memory reads as the uninitialized word"
             <| fun () ->
                 let f = small ()
@@ -332,7 +356,68 @@ let tests =
                 g.Dispose()
                 Expect.throwsT<ObjectDisposedException> (fun () -> g.Begin() |> ignore) "Begin"
                 Expect.throwsT<ObjectDisposedException> (fun () -> g.ExecutionClass |> ignore) "class"
+                Expect.throwsT<ObjectDisposedException> (fun () -> g.Info |> ignore) "Info"
+                Expect.throwsT<ObjectDisposedException> (fun () -> g.CreateHeap(oneLayout ()) |> ignore) "CreateHeap"
+
+                Expect.throwsT<ObjectDisposedException>
+                    (fun () -> g.LoadKernels(Shaders.embedded ()) |> ignore)
+                    "LoadKernels"
+
+                Expect.throwsT<ObjectDisposedException> (fun () -> g.Wait(Submission 1UL) |> ignore) "Wait"
                 g.Dispose()
+
+            testCase "after Dispose the heap, the kernel set and a list begun before it raise ObjectDisposedException"
+            <| fun () ->
+                // A use after Dispose would touch freed device memory on D3D12 or Vulkan; on CpuDevice it raises, and
+                // never quietly allocates a fresh page or returns the uninitialized words.
+                let f = small ()
+                let x = f.Row "x"
+                let y = f.Row "y"
+                f.UploadF32("x", Array.create 1024 1.0f)
+                let begun = f.Gpu.Begin()
+                let timed = f.Gpu.Begin()
+                let timer = timed.BeginTimer("gpu.open", [])
+                let four = Array.zeroCreate<byte> 4
+
+                let range (row: TensorRow) : BufferRange =
+                    {
+                        Slot = row.Slot
+                        Offset = int64 row.ByteOffset
+                        Bytes = 4L
+                    }
+
+                f.Gpu.Dispose()
+
+                let disposed (what: string) (call: unit -> unit) =
+                    Expect.throwsT<ObjectDisposedException> call what
+
+                disposed "Upload" (fun () -> f.Heap.Upload(x.Slot, int64 x.ByteOffset, ReadOnlySpan four))
+
+                disposed "UploadFrom" (fun () ->
+                    f.Heap.UploadFrom(x.Slot, int64 x.ByteOffset, new MemoryStream(four), 4L))
+
+                disposed "Download" (fun () -> f.Heap.Download(x.Slot, int64 x.ByteOffset, Span four))
+                disposed "Download of the table" (fun () -> f.Heap.Download(0, 0L, Span four))
+                disposed "WriteTable" (fun () -> f.Heap.WriteTable((TensorTable(f.Table.Layout)).Seal()))
+                disposed "Layout" (fun () -> f.Heap.Layout |> ignore)
+                disposed "Table" (fun () -> f.Heap.Table |> ignore)
+
+                disposed "Dispatch" (fun () ->
+                    Kernels.ScaleF32.dispatch begun (scaleArgs (f.Token "x") (f.Token "y") 16u 2.0f))
+
+                disposed "Barrier" (fun () -> begun.Barrier())
+                disposed "Copy" (fun () -> begun.Copy(range x, range y))
+                disposed "BeginTimer" (fun () -> begun.BeginTimer("gpu.late", []) |> ignore)
+                disposed "EndTimer" (fun () -> timed.EndTimer timer)
+                disposed "Submit" (fun () -> f.Gpu.Submit begun |> ignore)
+
+            testCase "after Dispose the kernel set raises ObjectDisposedException"
+            <| fun () ->
+                let g = fresh ()
+                let k = g.LoadKernels(Shaders.embedded ())
+                g.Dispose()
+                Expect.throwsT<ObjectDisposedException> (fun () -> k.Contains Kernels.ScaleF32.Id |> ignore) "Contains"
+                Expect.throwsT<ObjectDisposedException> (fun () -> k.ShaderSetHash |> ignore) "ShaderSetHash"
 
             testCase "telemetry: mem.arena, gpu.heap.slots, gpu.bytes_moved, gpu.dispatches, gpu.wait, gpu.dispatch"
             <| fun () ->
