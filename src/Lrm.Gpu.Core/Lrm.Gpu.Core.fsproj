@@ -7,8 +7,10 @@
     <Compile Include="ArgBlock.fs" />
     <Compile Include="Catalog.fs" />
     <Compile Include="SourceConvention.fs" />
+    <Compile Include="Spirv.fs" />
     <Compile Include="ShaderSet.fs" />
     <Compile Include="Backend.fs" />
+    <Compile Include="SpirvInspector.fs" />
     <Compile Include="Kernels.g.fs" />
     <Compile Include="Dispatch.fs" />
     <Compile Include="RecordingBackend.fs" />

@@ -195,48 +195,6 @@ module Dxbc =
                     None)
         | Error _ -> None
 
-/// Minimal reader of SPIR-V modules.
-[<RequireQualifiedAccess>]
-module Spirv =
-    /// The SPIR-V magic number.
-    [<Literal>]
-    let Magic = 0x07230203u
-
-    /// True for a whole number of words starting with the magic number.
-    let isModule (b: byte[]) =
-        not (isNull b)
-        && b.Length >= 20
-        && b.Length % 4 = 0
-        && BinaryPrimitives.ReadUInt32LittleEndian(ReadOnlySpan(b, 0, 4)) = Magic
-
-    /// The LocalSize execution mode (OpExecutionMode, opcode 16, mode 17), if there is exactly one.
-    let localSize (b: byte[]) : (int * int * int) option =
-        if not (isModule b) then
-            None
-        else
-            let word i =
-                BinaryPrimitives.ReadUInt32LittleEndian(ReadOnlySpan(b, 4 * i, 4))
-
-            let n = b.Length / 4
-            let found = ResizeArray<int * int * int>()
-            let mutable i = 5
-            let mutable ok = true
-
-            while ok && i < n do
-                let w = word i
-                let count = int (w >>> 16)
-                let opcode = w &&& 0xFFFFu
-
-                if count < 1 || i + count > n then
-                    ok <- false
-                else
-                    if opcode = 16u && count >= 6 && word (i + 2) = 17u then
-                        found.Add(int (word (i + 3)), int (word (i + 4)), int (word (i + 5)))
-
-                    i <- i + count
-
-            if ok && found.Count = 1 then Some found[0] else None
-
 [<RequireQualifiedAccess>]
 module ShaderSet =
     /// The domain tag of ShaderSetHash.

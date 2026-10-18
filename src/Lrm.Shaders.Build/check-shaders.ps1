@@ -16,8 +16,14 @@
          prunes its blobs; a helper with a wave op or a path include is refused.
       6. Pinning: the compile step refuses a missing DXC and a DXC whose version line differs (the Windows Kits dxc
          when it is installed, otherwise another executable).
-    Prints a Markdown summary (DXC, ShaderSetHash per target, kernels, missing sources) and appends it to
-    $GITHUB_STEP_SUMMARY on CI. Exit code 0 when every check holds, otherwise 1.
+      7. The SPIR-V inspector (contracts-v1.1) over the built set: every SPIR-V blob has exactly one resource variable
+         at set 0 binding 0, the catalog's push-block offsets, names and types, the catalog's LocalSize, no atomics,
+         no 16-bit types, no wave ops and at most 32 KiB of groupshared. The compile step already refuses a blob that
+         breaks a rule; this reruns the inspector on the built files and keeps its table for the summary.
+      8. The inspector's negative fixtures (src/Lrm.Shaders.Build/fixtures/spirv), compiled by the pinned DXC: each
+         must break exactly the rules its header names, and the positive control none.
+    Prints a Markdown summary (DXC, ShaderSetHash per target, kernels, missing sources, the SPIR-V inspector table)
+    and appends it to $GITHUB_STEP_SUMMARY on CI. Exit code 0 when every check holds, otherwise 1.
 
 .EXAMPLE
     pwsh src/Lrm.Shaders.Build/check-shaders.ps1
@@ -207,6 +213,26 @@ finally {
     Remove-Item -LiteralPath $scratch -Recurse -Force -ErrorAction SilentlyContinue
 }
 
+# 7. The SPIR-V inspector over the built set.
+$spirvTable = New-Scratch 'spirv'
+$spirvTable = "$spirvTable.md"
+$spirvMd = ''
+try {
+    $r = Invoke-Tool @('inspect-spirv', '--repo', $repo, '--dir', $built, '--markdown', $spirvTable)
+    if ($r.Output) { Write-Host $r.Output }
+    Check ($r.Code -eq 0) 'the SPIR-V inspector passes every built SPIR-V blob (inspect-spirv)'
+    if (Test-Path -LiteralPath $spirvTable) { $spirvMd = [IO.File]::ReadAllText($spirvTable) }
+}
+finally {
+    Remove-Item -LiteralPath $spirvTable -Force -ErrorAction SilentlyContinue
+}
+
+# 8. The negative fixtures, compiled by the pinned DXC.
+$r = Invoke-Tool @('spirv-fixtures', '--repo', $repo, '--dxc', $dxc, '--dxc-version', $versionLine, '--toolchain', $toolchainPath)
+if ($r.Output) { Write-Host $r.Output }
+Check ($r.Code -eq 0) 'every SPIR-V fixture breaks exactly the rules it expects (spirv-fixtures)'
+$fixtureLine = @($r.Output -split "`n" | Where-Object { $_ -match '^spirv-fixtures:' }) | Select-Object -Last 1
+
 # Summary.
 $m = Get-Content -Raw -LiteralPath $manifestPath | ConvertFrom-Json
 $md = [System.Text.StringBuilder]::new()
@@ -223,6 +249,12 @@ foreach ($t in @('dxil', 'spirv')) {
 [void]$md.AppendLine('')
 $missing = @($m.missing)
 [void]$md.AppendLine("Missing sources ($($missing.Count)): $(if ($missing) { $missing -join ', ' } else { 'none' }).")
+[void]$md.AppendLine('')
+[void]$md.AppendLine('#### SPIR-V inspector')
+[void]$md.AppendLine('')
+if ($spirvMd) { [void]$md.Append($spirvMd.Replace("`r`n", "`n")) } else { [void]$md.AppendLine('(no table)') }
+[void]$md.AppendLine('')
+[void]$md.AppendLine("Fixtures: $(if ($fixtureLine) { $fixtureLine.Trim() } else { 'not run' })")
 $verdict = if ($failures.Count -gt 0) { "FAILED ($($failures.Count))" } else { 'PASSED' }
 [void]$md.AppendLine('')
 [void]$md.AppendLine("Checks: **$verdict**")

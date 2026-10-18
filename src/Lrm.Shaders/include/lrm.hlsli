@@ -1,8 +1,9 @@
-// lrm.hlsli: the one header every LRM kernel includes first (ShaderBuildAndSourceConvention contract,
+// lrm.hlsli: the one header every LRM kernel includes first (ShaderBuildAndSourceConvention contract v1.1,
 // docs/contracts/shader-build.md). It gives a kernel its arguments (LRM_ARGS), the bindless heap (LRM_BUF, lrm_buf)
 // and the tensor table (lrm_tensor), the same way on both targets:
 //   - DXIL (cs_6_6): ResourceDescriptorHeap, with 32 root constants at b0 (rootsig/rootsig.hlsl).
-//   - SPIR-V (vulkan1.3): one explicit runtime array at set 0, binding 0, and a push-constant block at offset 0.
+//   - SPIR-V (vulkan1.3): one explicit runtime array at set 0, binding 0, and a push-constant block at offset 0,
+//     bound to the resource heap by the Vulkan recipe (VulkanHeapRecipe, docs/decisions/R1-heap-recipe.md).
 //
 // Every LRM_BUF index is dynamically uniform: a slot comes from a tensor row that a token from LRM_ARGS selects, so
 // there is no NonUniformResourceIndex anywhere.
@@ -34,16 +35,24 @@
 // The f32 quiet NaN that kernels write for undefined results (for example an out-of-range embedding id).
 #define LRM_F32_QUIET_NAN_BITS 0x7FC00000u
 
-// ---- bindings ----------------------------------------------------------------------------------------------------
+// ---- bindings (contracts-v1.1, final) ----------------------------------------------------------------------------
+// The heap. LRM_BUF(slot) is descriptor `slot` of the one resource heap:
+//   - DXIL: ResourceDescriptorHeap[slot] (CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED, rootsig/rootsig.hlsl).
+//   - SPIR-V: g_buf[slot], the only resource variable: a runtime array of raw buffers at set 0, binding 0
+//     (SpirvBinding in Lrm.Gpu.Core). The Vulkan backend maps set 0, binding 0 onto the heap with
+//     VK_EXT_descriptor_heap: HEAP_WITH_CONSTANT_OFFSET, heapOffset 0, heapArrayStride = bufferDescriptorSize, so
+//     g_buf[slot] is the descriptor at byte slot * bufferDescriptorSize. No emulation flag decides this binding.
+// The arguments. lrm_args is the kernel's generated block (LRM_ARGS(kernel)): the 32 root constants at b0 on DXIL,
+// push data at offset 0 on SPIR-V (vkCmdPushDataEXT pushes the whole 128-byte ArgBlock). Argument word i sits at
+// byte 4 * i in both layouts; the SPIR-V inspector checks every kernel's offsets, names and types against the
+// catalog. [[vk::push_constant]] appears only under __spirv__: DXIL ignores it, and -WX makes that warning an error.
 #ifdef __spirv__
-// PROVISIONAL (contracts-v1): the statically verified explicit array. R4b replaces this block with R1's ADR
-// recipe (VulkanHeapRecipe) as contracts-v1.1; kernels do not change, because they use only LRM_BUF and lrm_buf.
 [[vk::binding(0, 0)]] RWByteAddressBuffer g_buf[] : register(u0, space0);
 #define LRM_BUF(slot) g_buf[(slot)]
-#define LRM_ARGS(kernel) [[vk::push_constant]] ConstantBuffer<lrm_args_##kernel> lrm_args : register(b0);
+#define LRM_ARGS(kernel) [[vk::push_constant]] ConstantBuffer<lrm_args_##kernel> lrm_args : register(b0, space0);
 #else
 #define LRM_BUF(slot) ResourceDescriptorHeap[(slot)]
-#define LRM_ARGS(kernel) ConstantBuffer<lrm_args_##kernel> lrm_args : register(b0);
+#define LRM_ARGS(kernel) ConstantBuffer<lrm_args_##kernel> lrm_args : register(b0, space0);
 #endif
 
 // [numthreads] of a kernel, from the catalog.

@@ -14,6 +14,7 @@ let tiers: TestTiers =
                 ArgBlockTests.tests
                 CatalogTests.tests
                 ShaderTests.tests
+                SpirvTests.tests
                 BackendTests.tests
             ]
     }

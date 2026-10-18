@@ -158,7 +158,9 @@ let cacheKey (shadersDir: string) (dxcVersion: string) (headers: string list) (j
         ))
 
 /// Checks a compiled blob and returns its numthreads: DXIL is a signed DXBC container with a DXIL part and numthreads
-/// in PSV0; SPIR-V is a module with exactly one LocalSize. Either must equal the catalog's threads.
+/// in PSV0; SPIR-V passes every rule of the SPIR-V inspector (one resource variable at set 0 binding 0, the catalog's
+/// push-block offsets and LocalSize, no float atomics, no 16-bit types, ...), and its report is emitted as telemetry.
+/// Either must have the catalog's threads.
 let checkBlob (job: Job) (bytes: byte[]) : int * int * int =
     let where = sprintf "%s (%s)" job.Kernel.Name (ShaderTarget.name job.Target)
 
@@ -178,10 +180,17 @@ let checkBlob (job: Job) (bytes: byte[]) : int * int * int =
                 | Some t -> t
                 | None -> fail "%s: PSV0 has no numthreads" where
         | ShaderTarget.Spirv ->
-            if not (Spirv.isModule bytes) then
-                fail "%s: not a SPIR-V module" where
+            let report = SpirvInspector.inspect job.Kernel bytes
+            SpirvInspector.record report
 
-            match Spirv.localSize bytes with
+            if not report.Passed then
+                fail
+                    "%s: the SPIR-V inspector found %d problem(s):\n  %s"
+                    where
+                    report.Findings.Length
+                    (report.Findings |> List.map SpirvInspector.describe |> String.concat "\n  ")
+
+            match report.Facts |> Option.bind _.LocalSize with
             | Some t -> t
             | None -> fail "%s: no single LocalSize execution mode" where
 
@@ -264,6 +273,11 @@ let loadCatalog (repo: string) =
 /// stale blobs and write shaders.manifest.json into `outDir`.
 let compile (repo: string) (outDir: string) (dxc: string) (expectedVersion: string) (toolchain: string option) =
     let clock = Stopwatch.StartNew()
+
+    match SpirvBinding.spirvFlagProblems (flagsOf ShaderTarget.Spirv) with
+    | [] -> ()
+    | ps -> fail "%s" (String.concat "\n" ps)
+
     let dxcVersion = verifyDxc dxc expectedVersion toolchain
     let shadersDir = Path.Combine(repo, "src", "Lrm.Shaders")
     let catalog = loadCatalog repo
@@ -440,5 +454,10 @@ let compile (repo: string) (outDir: string) (dxc: string) (expectedVersion: stri
 
     for t in ShaderTarget.all do
         printfn "Lrm.Shaders.Build: ShaderSetHash %s %s" (ShaderTarget.name t) (ShaderSet.setHash t set).Hex
+
+    printfn
+        "Lrm.Shaders.Build: SPIR-V inspector: %d blob(s) pass all %d rules"
+        (ShaderSet.blobsFor ShaderTarget.Spirv set).Length
+        SpirvRule.all.Length
 
     set
