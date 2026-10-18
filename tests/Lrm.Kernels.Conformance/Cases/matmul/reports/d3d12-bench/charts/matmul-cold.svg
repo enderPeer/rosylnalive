@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="378" viewBox="0 0 720 378" role="img" aria-labelledby="matmul-cold-title matmul-cold-desc">
+<title id="matmul-cold-title">Cold dispatches X1 makes</title>
+<desc id="matmul-cold-desc">Bar chart of time for 9 shape and m values, 2 series.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="378" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="377" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Cold dispatches X1 makes</text>
+<text class="t2" x="16" y="45" font-size="12">Slowest of 2 dispatches, each after 3.00 s idle, and the fastest warm one; budget 100 ms</text>
+<rect class="fserious" x="19" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="38" y="66" font-size="12">cold, slowest</text>
+<rect class="fn" x="135.32" y="57" width="10" height="10" rx="2"/>
+<text class="t2" x="154.32" y="66" font-size="12">warm</text>
+<line class="grid" x1="156.56" y1="98" x2="156.56" y2="332" stroke-width="1"/>
+<line class="grid" x1="317.71" y1="98" x2="317.71" y2="332" stroke-width="1"/>
+<line class="grid" x1="478.85" y1="98" x2="478.85" y2="332" stroke-width="1"/>
+<line class="grid" x1="640" y1="98" x2="640" y2="332" stroke-width="1"/>
+<text class="t3" x="156.56" y="349" font-size="11" text-anchor="middle">0</text>
+<text class="t3" x="317.71" y="349" font-size="11" text-anchor="middle">10 ms</text>
+<text class="t3" x="478.85" y="349" font-size="11" text-anchor="middle">20 ms</text>
+<text class="t3" x="640" y="349" font-size="11" text-anchor="middle">30 ms</text>
+<text class="t3" x="156.56" y="88" font-size="11" text-anchor="start">shape and m</text>
+<text class="t3" x="398.28" y="368" font-size="11" text-anchor="middle">time</text>
+<text class="t2" x="148.56" y="115" font-size="12" text-anchor="end">q_proj, m = 4000</text>
+<path class="fserious" d="M156.56 102H406.04Q410.04 102 410.04 106V106Q410.04 110 406.04 110H156.56Z"><title>q_proj, m = 4000, cold, slowest: 15.73 ms</title></path>
+<path class="fn" d="M156.56 112H170.41Q174.41 112 174.41 116V116Q174.41 120 170.41 120H156.56Z"><title>q_proj, m = 4000, warm: 1.11 ms</title></path>
+<text class="t2" x="148.56" y="141" font-size="12" text-anchor="end">kv_proj, m = 4000</text>
+<path class="fserious" d="M156.56 128H274.19Q278.19 128 278.19 132V132Q278.19 136 274.19 136H156.56Z"><title>kv_proj, m = 4000, cold, slowest: 7.55 ms</title></path>
+<path class="fn" d="M156.56 138H161.73Q165.73 138 165.73 142V142Q165.73 146 161.73 146H156.56Z"><title>kv_proj, m = 4000, warm: 569.34 µs</title></path>
+<text class="t2" x="148.56" y="167" font-size="12" text-anchor="end">o_proj, m = 4000</text>
+<path class="fserious" d="M156.56 154H416.81Q420.81 154 420.81 158V158Q420.81 162 416.81 162H156.56Z"><title>o_proj, m = 4000, cold, slowest: 16.40 ms</title></path>
+<path class="fn" d="M156.56 164H170.76Q174.76 164 174.76 168V168Q174.76 172 170.76 172H156.56Z"><title>o_proj, m = 4000, warm: 1.13 ms</title></path>
+<text class="t2" x="148.56" y="193" font-size="12" text-anchor="end">gate_up_proj, m = 4000</text>
+<path class="fserious" d="M156.56 180H536.78Q540.78 180 540.78 184V184Q540.78 188 536.78 188H156.56Z"><title>gate_up_proj, m = 4000, cold, slowest: 23.84 ms</title></path>
+<path class="fn" d="M156.56 190H179.26Q183.26 190 183.26 194V194Q183.26 198 179.26 198H156.56Z"><title>gate_up_proj, m = 4000, warm: 1.66 ms</title></path>
+<text class="t2" x="148.56" y="219" font-size="12" text-anchor="end">down_proj, m = 4000</text>
+<path class="fserious" d="M156.56 206H567.06Q571.06 206 571.06 210V210Q571.06 214 567.06 214H156.56Z"><title>down_proj, m = 4000, cold, slowest: 25.72 ms</title></path>
+<path class="fn" d="M156.56 216H180.41Q184.41 216 184.41 220V220Q184.41 224 180.41 224H156.56Z"><title>down_proj, m = 4000, warm: 1.73 ms</title></path>
+<text class="t2" x="148.56" y="245" font-size="12" text-anchor="end">lm_head, m = 1</text>
+<path class="fserious" d="M156.56 232H441.85Q445.85 232 445.85 236V236Q445.85 240 441.85 240H156.56Z"><title>lm_head, m = 1, cold, slowest: 17.95 ms</title></path>
+<path class="fn" d="M156.56 242H163.04Q167.04 242 167.04 246V246Q167.04 250 163.04 250H156.56Z"><title>lm_head, m = 1, warm: 650.24 µs</title></path>
+<text class="t2" x="148.56" y="271" font-size="12" text-anchor="end">lm_head, m = 4</text>
+<path class="fserious" d="M156.56 258H425.54Q429.54 258 429.54 262V262Q429.54 266 425.54 266H156.56Z"><title>lm_head, m = 4, cold, slowest: 16.94 ms</title></path>
+<path class="fn" d="M156.56 268H163.15Q167.15 268 167.15 272V272Q167.15 276 163.15 276H156.56Z"><title>lm_head, m = 4, warm: 657.41 µs</title></path>
+<text class="t2" x="148.56" y="297" font-size="12" text-anchor="end">lm_head, m = 16</text>
+<path class="fserious" d="M156.56 284H457.06Q461.06 284 461.06 288V288Q461.06 292 457.06 292H156.56Z"><title>lm_head, m = 16, cold, slowest: 18.90 ms</title></path>
+<path class="fn" d="M156.56 294H164.59Q168.59 294 168.59 298V298Q168.59 302 164.59 302H156.56Z"><title>lm_head, m = 16, warm: 746.50 µs</title></path>
+<text class="t2" x="148.56" y="323" font-size="12" text-anchor="end">lm_head, m = 64</text>
+<path class="fserious" d="M156.56 310H486.48Q490.48 310 490.48 314V314Q490.48 318 486.48 318H156.56Z"><title>lm_head, m = 64, cold, slowest: 20.72 ms</title></path>
+<path class="fn" d="M156.56 320H174.01Q178.01 320 178.01 324V324Q178.01 328 174.01 328H156.56Z"><title>lm_head, m = 64, warm: 1.33 ms</title></path>
+<line class="axis" x1="156.56" y1="98" x2="156.56" y2="98" stroke-width="1"/>
+<line class="axis" x1="156.56" y1="98" x2="156.56" y2="332" stroke-width="1"/>
+</svg>

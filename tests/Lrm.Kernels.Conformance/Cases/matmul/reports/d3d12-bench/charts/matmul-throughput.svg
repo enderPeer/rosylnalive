@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" role="img" aria-labelledby="matmul-throughput-title matmul-throughput-desc">
+<title id="matmul-throughput-title">Throughput by m</title>
+<desc id="matmul-throughput-desc">Line chart of FLOP/s against m, rows of x (log): 6 series, 63 points.</desc>
+<style>text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.bg{fill:#fcfcfb}.frame{fill:none;stroke:#e6e5e0}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#6f6e69}.grid{stroke:#e1e0d9}.axis{stroke:#c3c2b7}.ref{stroke:#52514e}.band{fill:#f0efec}.ring{stroke:#fcfcfb}.gap{stroke:#fcfcfb}.qx{fill:#f0efec}.qz{fill:#fcfcfb;stroke:#52514e}.emph{stroke:#52514e}.fn{fill:#a3a29c}.sn{stroke:#a3a29c}.f0{fill:#2a78d6}.s0{stroke:#2a78d6}.f1{fill:#eb6834}.s1{stroke:#eb6834}.f2{fill:#1baf7a}.s2{stroke:#1baf7a}.f3{fill:#eda100}.s3{stroke:#eda100}.f4{fill:#e87ba4}.s4{stroke:#e87ba4}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#6250d6}.s6{stroke:#6250d6}.f7{fill:#e34948}.s7{stroke:#e34948}.q0{fill:#cde2fb}.q1{fill:#b7d3f6}.q2{fill:#9ec5f4}.q3{fill:#86b6ef}.q4{fill:#6da7ec}.q5{fill:#5598e7}.q6{fill:#3987e5}.q7{fill:#2a78d6}.q8{fill:#256abf}.q9{fill:#1c5cab}.q10{fill:#184f95}.q11{fill:#104281}.q12{fill:#0d366b}.fgood{fill:#0ca30c}.sgood{stroke:#0ca30c}.fwarn{fill:#fab219}.swarn{stroke:#fab219}.fserious{fill:#ec835a}.sserious{stroke:#ec835a}.fcrit{fill:#d03b3b}.scrit{stroke:#d03b3b}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.frame{fill:none;stroke:#2c2c2a}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.t3{fill:#898781}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ref{stroke:#c3c2b7}.band{fill:#242423}.ring{stroke:#1a1a19}.gap{stroke:#1a1a19}.qx{fill:#242423}.qz{fill:#1a1a19;stroke:#c3c2b7}.emph{stroke:#c3c2b7}.fn{fill:#6f6e69}.sn{stroke:#6f6e69}.f0{fill:#3987e5}.s0{stroke:#3987e5}.f1{fill:#d95926}.s1{stroke:#d95926}.f2{fill:#199e70}.s2{stroke:#199e70}.f3{fill:#c98500}.s3{stroke:#c98500}.f4{fill:#d55181}.s4{stroke:#d55181}.f5{fill:#008300}.s5{stroke:#008300}.f6{fill:#9085e9}.s6{stroke:#9085e9}.f7{fill:#e66767}.s7{stroke:#e66767}.q0{fill:#0d366b}.q1{fill:#104281}.q2{fill:#184f95}.q3{fill:#1c5cab}.q4{fill:#256abf}.q5{fill:#2a78d6}.q6{fill:#3987e5}.q7{fill:#5598e7}.q8{fill:#6da7ec}.q9{fill:#86b6ef}.q10{fill:#9ec5f4}.q11{fill:#b7d3f6}.q12{fill:#cde2fb}}</style>
+<rect class="bg" x="0" y="0" width="720" height="380" rx="8"/>
+<rect class="frame" x="0.5" y="0.5" width="719" height="379" rx="8"/>
+<text class="t1" x="16" y="26" font-size="15" font-weight="600">Throughput by m</text>
+<text class="t2" x="16" y="45" font-size="12">FLOP/s (2mnk over the faster dispatch) per Qwen3-0.6B weight shape</text>
+<rect class="f0" x="16" y="61" width="16" height="2.5" rx="1"/>
+<text class="t2" x="38" y="66" font-size="12">q_proj</text>
+<rect class="f1" x="90.56" y="61" width="16" height="2.5" rx="1"/>
+<text class="t2" x="112.56" y="66" font-size="12">kv_proj</text>
+<rect class="f2" x="171.84" y="61" width="16" height="2.5" rx="1"/>
+<text class="t2" x="193.84" y="66" font-size="12">o_proj</text>
+<rect class="f3" x="246.4" y="61" width="16" height="2.5" rx="1"/>
+<text class="t2" x="268.4" y="66" font-size="12">gate_up_proj</text>
+<rect class="f4" x="358.4" y="61" width="16" height="2.5" rx="1"/>
+<text class="t2" x="380.4" y="66" font-size="12">down_proj</text>
+<rect class="f5" x="456.72" y="61" width="16" height="2.5" rx="1"/>
+<text class="t2" x="478.72" y="66" font-size="12">lm_head</text>
+<line class="grid" x1="45.58" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="37.58" y="338" font-size="11" text-anchor="end">0</text>
+<line class="grid" x1="45.58" y1="275" x2="696" y2="275" stroke-width="1"/>
+<text class="t3" x="37.58" y="279" font-size="11" text-anchor="end">5T</text>
+<line class="grid" x1="45.58" y1="216" x2="696" y2="216" stroke-width="1"/>
+<text class="t3" x="37.58" y="220" font-size="11" text-anchor="end">10T</text>
+<line class="grid" x1="45.58" y1="157" x2="696" y2="157" stroke-width="1"/>
+<text class="t3" x="37.58" y="161" font-size="11" text-anchor="end">15T</text>
+<line class="grid" x1="45.58" y1="98" x2="696" y2="98" stroke-width="1"/>
+<text class="t3" x="37.58" y="102" font-size="11" text-anchor="end">20T</text>
+<text class="t3" x="45.58" y="351" font-size="11" text-anchor="middle">1</text>
+<text class="t3" x="226.15" y="351" font-size="11" text-anchor="middle">10</text>
+<text class="t3" x="406.72" y="351" font-size="11" text-anchor="middle">100</text>
+<text class="t3" x="587.29" y="351" font-size="11" text-anchor="middle">1,000</text>
+<line class="axis" x1="45.58" y1="334" x2="696" y2="334" stroke-width="1"/>
+<text class="t3" x="45.58" y="88" font-size="11" text-anchor="start">FLOP/s</text>
+<text class="t3" x="370.79" y="370" font-size="11" text-anchor="middle">m, rows of x (log)</text>
+<path class="line s0" d="M45.58 332.58 L154.29 328.14 L263.01 313.1 L328.75 302.07 L371.72 287.13 L426.08 241.66 L480.43 184.93 L534.79 181.24 L589.15 169.57 L643.5 157.56 L696 155.32"><title>q_proj</title></path>
+<path class="line s1" d="M45.58 333.29 L154.29 331.07 L263.01 323.55 L328.75 318.03 L371.72 310.57 L426.08 287.13 L480.43 240.26 L534.79 184.93 L589.15 180.3 L643.5 169.02 L696 160.14"><title>kv_proj</title></path>
+<path class="line s2" d="M45.58 333.28 L154.29 331.07 L263.01 323.41 L328.75 317.89 L371.72 310.39 L426.08 286.77 L480.43 239.55 L534.79 184.02 L589.15 177.38 L643.5 167.36 L696 158.72"><title>o_proj</title></path>
+<path class="line s3" d="M45.58 331.87 L154.29 325.47 L263.01 302.65 L328.75 286.1 L371.72 263.7 L426.08 222.19 L480.43 215.03 L534.79 177.38 L589.15 170.48 L643.5 158.7 L696 154.77"><title>gate_up_proj</title></path>
+<path class="line s4" d="M45.58 333.28 L154.29 331.07 L263.01 323.36 L328.75 317.84 L371.72 310.21 L426.08 286.41 L480.43 239.31 L534.79 181.87 L589.15 177.38 L643.5 167.17 L696 162.2"><title>down_proj</title></path>
+<path class="line s5" d="M45.58 328.35 L154.29 311.66 L263.01 255.3 L371.72 157.47 L426.08 157.54 L480.43 157.37 L534.79 158.47 L589.15 158.95"><title>lm_head</title></path>
+<circle class="f0 ring" cx="45.58" cy="332.58" r="4" stroke-width="2"><title>q_proj, m, rows of x (log) 1: 120.47G</title></circle>
+<circle class="f0 ring" cx="154.29" cy="328.14" r="4" stroke-width="2"><title>q_proj, m, rows of x (log) 4.00e+00: 496.48G</title></circle>
+<circle class="f0 ring" cx="263.01" cy="313.1" r="4" stroke-width="2"><title>q_proj, m, rows of x (log) 1.60e+01: 1.77T</title></circle>
+<circle class="f0 ring" cx="328.75" cy="302.07" r="4" stroke-width="2"><title>q_proj, m, rows of x (log) 3.70e+01: 2.71T</title></circle>
+<circle class="f0 ring" cx="371.72" cy="287.13" r="4" stroke-width="2"><title>q_proj, m, rows of x (log) 6.40e+01: 3.97T</title></circle>
+<circle class="f0 ring" cx="426.08" cy="241.66" r="4" stroke-width="2"><title>q_proj, m, rows of x (log) 1.28e+02: 7.83T</title></circle>
+<circle class="f0 ring" cx="480.43" cy="184.93" r="4" stroke-width="2"><title>q_proj, m, rows of x (log) 2.56e+02: 12.63T</title></circle>
+<circle class="f0 ring" cx="534.79" cy="181.24" r="4" stroke-width="2"><title>q_proj, m, rows of x (log) 5.12e+02: 12.95T</title></circle>
+<circle class="f0 ring" cx="589.15" cy="169.57" r="4" stroke-width="2"><title>q_proj, m, rows of x (log) 1.02e+03: 13.93T</title></circle>
+<circle class="f0 ring" cx="643.5" cy="157.56" r="4" stroke-width="2"><title>q_proj, m, rows of x (log) 2.05e+03: 14.95T</title></circle>
+<circle class="f0 ring" cx="696" cy="155.32" r="4" stroke-width="2"><title>q_proj, m, rows of x (log) 4.00e+03: 15.14T</title></circle>
+<circle class="f1 ring" cx="45.58" cy="333.29" r="4" stroke-width="2"><title>kv_proj, m, rows of x (log) 1: 60.24G</title></circle>
+<circle class="f1 ring" cx="154.29" cy="331.07" r="4" stroke-width="2"><title>kv_proj, m, rows of x (log) 4.00e+00: 248.24G</title></circle>
+<circle class="f1 ring" cx="263.01" cy="323.55" r="4" stroke-width="2"><title>kv_proj, m, rows of x (log) 1.60e+01: 885.62G</title></circle>
+<circle class="f1 ring" cx="328.75" cy="318.03" r="4" stroke-width="2"><title>kv_proj, m, rows of x (log) 3.70e+01: 1.35T</title></circle>
+<circle class="f1 ring" cx="371.72" cy="310.57" r="4" stroke-width="2"><title>kv_proj, m, rows of x (log) 6.40e+01: 1.99T</title></circle>
+<circle class="f1 ring" cx="426.08" cy="287.13" r="4" stroke-width="2"><title>kv_proj, m, rows of x (log) 1.28e+02: 3.97T</title></circle>
+<circle class="f1 ring" cx="480.43" cy="240.26" r="4" stroke-width="2"><title>kv_proj, m, rows of x (log) 2.56e+02: 7.94T</title></circle>
+<circle class="f1 ring" cx="534.79" cy="184.93" r="4" stroke-width="2"><title>kv_proj, m, rows of x (log) 5.12e+02: 12.63T</title></circle>
+<circle class="f1 ring" cx="589.15" cy="180.3" r="4" stroke-width="2"><title>kv_proj, m, rows of x (log) 1.02e+03: 13.03T</title></circle>
+<circle class="f1 ring" cx="643.5" cy="169.02" r="4" stroke-width="2"><title>kv_proj, m, rows of x (log) 2.05e+03: 13.98T</title></circle>
+<circle class="f1 ring" cx="696" cy="160.14" r="4" stroke-width="2"><title>kv_proj, m, rows of x (log) 4.00e+03: 14.73T</title></circle>
+<circle class="f2 ring" cx="45.58" cy="333.28" r="4" stroke-width="2"><title>o_proj, m, rows of x (log) 1: 61.13G</title></circle>
+<circle class="f2 ring" cx="154.29" cy="331.07" r="4" stroke-width="2"><title>o_proj, m, rows of x (log) 4.00e+00: 248.24G</title></circle>
+<circle class="f2 ring" cx="263.01" cy="323.41" r="4" stroke-width="2"><title>o_proj, m, rows of x (log) 1.60e+01: 897.75G</title></circle>
+<circle class="f2 ring" cx="328.75" cy="317.89" r="4" stroke-width="2"><title>o_proj, m, rows of x (log) 3.70e+01: 1.37T</title></circle>
+<circle class="f2 ring" cx="371.72" cy="310.39" r="4" stroke-width="2"><title>o_proj, m, rows of x (log) 6.40e+01: 2.00T</title></circle>
+<circle class="f2 ring" cx="426.08" cy="286.77" r="4" stroke-width="2"><title>o_proj, m, rows of x (log) 1.28e+02: 4.00T</title></circle>
+<circle class="f2 ring" cx="480.43" cy="239.55" r="4" stroke-width="2"><title>o_proj, m, rows of x (log) 2.56e+02: 8.00T</title></circle>
+<circle class="f2 ring" cx="534.79" cy="184.02" r="4" stroke-width="2"><title>o_proj, m, rows of x (log) 5.12e+02: 12.71T</title></circle>
+<circle class="f2 ring" cx="589.15" cy="177.38" r="4" stroke-width="2"><title>o_proj, m, rows of x (log) 1.02e+03: 13.27T</title></circle>
+<circle class="f2 ring" cx="643.5" cy="167.36" r="4" stroke-width="2"><title>o_proj, m, rows of x (log) 2.05e+03: 14.12T</title></circle>
+<circle class="f2 ring" cx="696" cy="158.72" r="4" stroke-width="2"><title>o_proj, m, rows of x (log) 4.00e+03: 14.85T</title></circle>
+<circle class="f3 ring" cx="45.58" cy="331.87" r="4" stroke-width="2"><title>gate_up_proj, m, rows of x (log) 1: 180.71G</title></circle>
+<circle class="f3 ring" cx="154.29" cy="325.47" r="4" stroke-width="2"><title>gate_up_proj, m, rows of x (log) 4.00e+00: 722.82G</title></circle>
+<circle class="f3 ring" cx="263.01" cy="302.65" r="4" stroke-width="2"><title>gate_up_proj, m, rows of x (log) 1.60e+01: 2.66T</title></circle>
+<circle class="f3 ring" cx="328.75" cy="286.1" r="4" stroke-width="2"><title>gate_up_proj, m, rows of x (log) 3.70e+01: 4.06T</title></circle>
+<circle class="f3 ring" cx="371.72" cy="263.7" r="4" stroke-width="2"><title>gate_up_proj, m, rows of x (log) 6.40e+01: 5.96T</title></circle>
+<circle class="f3 ring" cx="426.08" cy="222.19" r="4" stroke-width="2"><title>gate_up_proj, m, rows of x (log) 1.28e+02: 9.48T</title></circle>
+<circle class="f3 ring" cx="480.43" cy="215.03" r="4" stroke-width="2"><title>gate_up_proj, m, rows of x (log) 2.56e+02: 10.08T</title></circle>
+<circle class="f3 ring" cx="534.79" cy="177.38" r="4" stroke-width="2"><title>gate_up_proj, m, rows of x (log) 5.12e+02: 13.27T</title></circle>
+<circle class="f3 ring" cx="589.15" cy="170.48" r="4" stroke-width="2"><title>gate_up_proj, m, rows of x (log) 1.02e+03: 13.86T</title></circle>
+<circle class="f3 ring" cx="643.5" cy="158.7" r="4" stroke-width="2"><title>gate_up_proj, m, rows of x (log) 2.05e+03: 14.86T</title></circle>
+<circle class="f3 ring" cx="696" cy="154.77" r="4" stroke-width="2"><title>gate_up_proj, m, rows of x (log) 4.00e+03: 15.19T</title></circle>
+<circle class="f4 ring" cx="45.58" cy="333.28" r="4" stroke-width="2"><title>down_proj, m, rows of x (log) 1: 61.44G</title></circle>
+<circle class="f4 ring" cx="154.29" cy="331.07" r="4" stroke-width="2"><title>down_proj, m, rows of x (log) 4.00e+00: 248.24G</title></circle>
+<circle class="f4 ring" cx="263.01" cy="323.36" r="4" stroke-width="2"><title>down_proj, m, rows of x (log) 1.60e+01: 901.87G</title></circle>
+<circle class="f4 ring" cx="328.75" cy="317.84" r="4" stroke-width="2"><title>down_proj, m, rows of x (log) 3.70e+01: 1.37T</title></circle>
+<circle class="f4 ring" cx="371.72" cy="310.21" r="4" stroke-width="2"><title>down_proj, m, rows of x (log) 6.40e+01: 2.02T</title></circle>
+<circle class="f4 ring" cx="426.08" cy="286.41" r="4" stroke-width="2"><title>down_proj, m, rows of x (log) 1.28e+02: 4.03T</title></circle>
+<circle class="f4 ring" cx="480.43" cy="239.31" r="4" stroke-width="2"><title>down_proj, m, rows of x (log) 2.56e+02: 8.02T</title></circle>
+<circle class="f4 ring" cx="534.79" cy="181.87" r="4" stroke-width="2"><title>down_proj, m, rows of x (log) 5.12e+02: 12.89T</title></circle>
+<circle class="f4 ring" cx="589.15" cy="177.38" r="4" stroke-width="2"><title>down_proj, m, rows of x (log) 1.02e+03: 13.27T</title></circle>
+<circle class="f4 ring" cx="643.5" cy="167.17" r="4" stroke-width="2"><title>down_proj, m, rows of x (log) 2.05e+03: 14.14T</title></circle>
+<circle class="f4 ring" cx="696" cy="162.2" r="4" stroke-width="2"><title>down_proj, m, rows of x (log) 4.00e+03: 14.56T</title></circle>
+<circle class="f5 ring" cx="45.58" cy="328.35" r="4" stroke-width="2"><title>lm_head, m, rows of x (log) 1: 478.54G</title></circle>
+<circle class="f5 ring" cx="154.29" cy="311.66" r="4" stroke-width="2"><title>lm_head, m, rows of x (log) 4.00e+00: 1.89T</title></circle>
+<circle class="f5 ring" cx="263.01" cy="255.3" r="4" stroke-width="2"><title>lm_head, m, rows of x (log) 1.60e+01: 6.67T</title></circle>
+<circle class="f5 ring" cx="371.72" cy="157.47" r="4" stroke-width="2"><title>lm_head, m, rows of x (log) 6.40e+01: 14.96T</title></circle>
+<circle class="f5 ring" cx="426.08" cy="157.54" r="4" stroke-width="2"><title>lm_head, m, rows of x (log) 1.28e+02: 14.95T</title></circle>
+<circle class="f5 ring" cx="480.43" cy="157.37" r="4" stroke-width="2"><title>lm_head, m, rows of x (log) 2.56e+02: 14.97T</title></circle>
+<circle class="f5 ring" cx="534.79" cy="158.47" r="4" stroke-width="2"><title>lm_head, m, rows of x (log) 5.12e+02: 14.88T</title></circle>
+<circle class="f5 ring" cx="589.15" cy="158.95" r="4" stroke-width="2"><title>lm_head, m, rows of x (log) 1.02e+03: 14.84T</title></circle>
+</svg>
