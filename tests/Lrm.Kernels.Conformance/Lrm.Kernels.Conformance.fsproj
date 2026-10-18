@@ -1,6 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Owner: E1. References come only from docs/project-graph.json; this file lists files. -->
+  <!--
+    Owner: E1. References come only from docs/project-graph.json; this file lists files.
+    Case files are found by the glob below, so K1 to K3 add Cases/basic, Cases/matmul and Cases/attention without
+    touching this file: each case file is a module Lrm.Kernels.Conformance.Cases.<Name> with a public
+    `cases: KernelCase list` (ConformanceHarness contract, "Backends and cases").
+  -->
   <ItemGroup>
+    <Compile Include="Harness/Case.fs" />
+    <Compile Include="Harness/Poison.fs" />
+    <Compile Include="Harness/References.fs" />
+    <Compile Include="Harness/Session.fs" />
+    <Compile Include="Harness/Discovery.fs" />
+    <Compile Include="Cases/**/*.fs" />
+    <Compile Include="HarnessTests.fs" />
+    <Compile Include="Suites.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 </Project>
