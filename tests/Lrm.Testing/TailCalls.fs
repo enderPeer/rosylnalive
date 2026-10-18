@@ -1,4 +1,4 @@
-namespace Lrm.Gpu.D3D12.Interop
+namespace Lrm.Testing
 
 open System
 open System.IO
@@ -19,8 +19,9 @@ type TailCallSite =
 
 /// Finds IL tail. prefixes in an assembly (ADR R3-0001). A tail call frees the caller's frame before the callee runs,
 /// so a callee that receives the address of a caller's local (NativePtr.toNativeInt &&x, or a span over it) reads a
-/// dead stack slot. The generated wrappers cannot be tail-called (they take `this` by reference); projects that
-/// also pass stack addresses to their own functions build with Tailcalls=false and check the result with `scan`.
+/// dead stack slot. Directory.Build.props builds every GPU, interop and backend project, and every test exe and app
+/// that reaches one, with Tailcalls=false; their tests check the result with `scan` (an empty list). Written by R3 for
+/// the D3D12 interop, moved here so that every backend's tests can scan their own assemblies.
 [<RequireQualifiedAccess>]
 module TailCalls =
     let private opcodes =

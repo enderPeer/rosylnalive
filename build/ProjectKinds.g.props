@@ -4,11 +4,13 @@
     <LrmGraphName>Lrm.Cli</LrmGraphName>
     <LrmProjectKind>app</LrmProjectKind>
     <LrmOwner>S0</LrmOwner>
+    <LrmReaches>;backends;gpu;interop;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'apps/VkDeviceCheck/VkDeviceCheck.fsproj'">
     <LrmGraphName>VkDeviceCheck</LrmGraphName>
     <LrmProjectKind>app</LrmProjectKind>
     <LrmOwner>R2</LrmOwner>
+    <LrmReaches>;gpu;interop;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'src/Lrm.Cluster/Lrm.Cluster.fsproj'">
     <LrmGraphName>Lrm.Cluster</LrmGraphName>
@@ -29,36 +31,47 @@
     <LrmGraphName>Lrm.Gpu.Core</LrmGraphName>
     <LrmProjectKind>lib</LrmProjectKind>
     <LrmOwner>R4</LrmOwner>
+    <LrmGroups>;gpu;</LrmGroups>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'src/Lrm.Gpu.CpuDevice/Lrm.Gpu.CpuDevice.fsproj'">
     <LrmGraphName>Lrm.Gpu.CpuDevice</LrmGraphName>
     <LrmProjectKind>lib</LrmProjectKind>
     <LrmOwner>E1</LrmOwner>
+    <LrmGroups>;backends;gpu;</LrmGroups>
+    <LrmReaches>;gpu;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'src/Lrm.Gpu.D3D12.Interop/Lrm.Gpu.D3D12.Interop.fsproj'">
     <LrmGraphName>Lrm.Gpu.D3D12.Interop</LrmGraphName>
     <LrmProjectKind>lib</LrmProjectKind>
     <LrmOwner>R3</LrmOwner>
+    <LrmGroups>;gpu;interop;</LrmGroups>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'src/Lrm.Gpu.D3D12/Lrm.Gpu.D3D12.fsproj'">
     <LrmGraphName>Lrm.Gpu.D3D12</LrmGraphName>
     <LrmProjectKind>lib</LrmProjectKind>
     <LrmOwner>D1</LrmOwner>
+    <LrmGroups>;backends;gpu;</LrmGroups>
+    <LrmReaches>;gpu;interop;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'src/Lrm.Gpu.Exec/Lrm.Gpu.Exec.fsproj'">
     <LrmGraphName>Lrm.Gpu.Exec</LrmGraphName>
     <LrmProjectKind>lib</LrmProjectKind>
     <LrmOwner>X1</LrmOwner>
+    <LrmGroups>;gpu;</LrmGroups>
+    <LrmReaches>;gpu;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'src/Lrm.Gpu.Vulkan.Interop/Lrm.Gpu.Vulkan.Interop.fsproj'">
     <LrmGraphName>Lrm.Gpu.Vulkan.Interop</LrmGraphName>
     <LrmProjectKind>lib</LrmProjectKind>
     <LrmOwner>R2</LrmOwner>
+    <LrmGroups>;gpu;interop;</LrmGroups>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'src/Lrm.Gpu.Vulkan/Lrm.Gpu.Vulkan.fsproj'">
     <LrmGraphName>Lrm.Gpu.Vulkan</LrmGraphName>
     <LrmProjectKind>lib</LrmProjectKind>
     <LrmOwner>V1</LrmOwner>
+    <LrmGroups>;backends;gpu;</LrmGroups>
+    <LrmReaches>;gpu;interop;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'src/Lrm.Models.Qwen/Lrm.Models.Qwen.fsproj'">
     <LrmGraphName>Lrm.Models.Qwen</LrmGraphName>
@@ -74,16 +87,21 @@
     <LrmGraphName>Lrm.Serving</LrmGraphName>
     <LrmProjectKind>lib</LrmProjectKind>
     <LrmOwner>C2</LrmOwner>
+    <LrmReaches>;gpu;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'src/Lrm.Shaders.Build/Lrm.Shaders.Build.fsproj'">
     <LrmGraphName>Lrm.Shaders.Build</LrmGraphName>
     <LrmProjectKind>tool</LrmProjectKind>
     <LrmOwner>R4</LrmOwner>
+    <LrmGroups>;gpu;</LrmGroups>
+    <LrmReaches>;gpu;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'src/Lrm.Shaders/Lrm.Shaders.fsproj'">
     <LrmGraphName>Lrm.Shaders</LrmGraphName>
     <LrmProjectKind>lib</LrmProjectKind>
     <LrmOwner>R4</LrmOwner>
+    <LrmGroups>;gpu;</LrmGroups>
+    <LrmReaches>;gpu;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'src/Lrm.Telemetry/Lrm.Telemetry.fsproj'">
     <LrmGraphName>Lrm.Telemetry</LrmGraphName>
@@ -124,51 +142,68 @@
     <LrmGraphName>Lrm.Gate1.Cluster</LrmGraphName>
     <LrmProjectKind>test</LrmProjectKind>
     <LrmOwner>I2</LrmOwner>
+    <LrmReaches>;backends;gpu;interop;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'tests/Lrm.Gate1/Lrm.Gate1.fsproj'">
     <LrmGraphName>Lrm.Gate1</LrmGraphName>
     <LrmProjectKind>test</LrmProjectKind>
     <LrmOwner>I1</LrmOwner>
+    <LrmReaches>;backends;gpu;interop;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'tests/Lrm.Gpu.Core.Tests/Lrm.Gpu.Core.Tests.fsproj'">
     <LrmGraphName>Lrm.Gpu.Core.Tests</LrmGraphName>
     <LrmProjectKind>test</LrmProjectKind>
     <LrmOwner>R4</LrmOwner>
+    <LrmGroups>;gpu;</LrmGroups>
+    <LrmReaches>;gpu;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'tests/Lrm.Gpu.CpuDevice.Tests/Lrm.Gpu.CpuDevice.Tests.fsproj'">
     <LrmGraphName>Lrm.Gpu.CpuDevice.Tests</LrmGraphName>
     <LrmProjectKind>test</LrmProjectKind>
     <LrmOwner>E1</LrmOwner>
+    <LrmGroups>;gpu;</LrmGroups>
+    <LrmReaches>;backends;gpu;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'tests/Lrm.Gpu.D3D12.Interop.Tests/Lrm.Gpu.D3D12.Interop.Tests.fsproj'">
     <LrmGraphName>Lrm.Gpu.D3D12.Interop.Tests</LrmGraphName>
     <LrmProjectKind>test</LrmProjectKind>
     <LrmOwner>R3</LrmOwner>
+    <LrmGroups>;gpu;</LrmGroups>
+    <LrmReaches>;gpu;interop;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'tests/Lrm.Gpu.D3D12.Tests/Lrm.Gpu.D3D12.Tests.fsproj'">
     <LrmGraphName>Lrm.Gpu.D3D12.Tests</LrmGraphName>
     <LrmProjectKind>test</LrmProjectKind>
     <LrmOwner>D1</LrmOwner>
+    <LrmGroups>;gpu;</LrmGroups>
+    <LrmReaches>;backends;gpu;interop;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'tests/Lrm.Gpu.Exec.Tests/Lrm.Gpu.Exec.Tests.fsproj'">
     <LrmGraphName>Lrm.Gpu.Exec.Tests</LrmGraphName>
     <LrmProjectKind>test</LrmProjectKind>
     <LrmOwner>X1</LrmOwner>
+    <LrmGroups>;gpu;</LrmGroups>
+    <LrmReaches>;backends;gpu;interop;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'tests/Lrm.Gpu.Vulkan.Interop.Tests/Lrm.Gpu.Vulkan.Interop.Tests.fsproj'">
     <LrmGraphName>Lrm.Gpu.Vulkan.Interop.Tests</LrmGraphName>
     <LrmProjectKind>test</LrmProjectKind>
     <LrmOwner>R2</LrmOwner>
+    <LrmGroups>;gpu;</LrmGroups>
+    <LrmReaches>;gpu;interop;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'tests/Lrm.Gpu.Vulkan.Tests/Lrm.Gpu.Vulkan.Tests.fsproj'">
     <LrmGraphName>Lrm.Gpu.Vulkan.Tests</LrmGraphName>
     <LrmProjectKind>test</LrmProjectKind>
     <LrmOwner>V1</LrmOwner>
+    <LrmGroups>;gpu;</LrmGroups>
+    <LrmReaches>;backends;gpu;interop;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'tests/Lrm.Kernels.Conformance/Lrm.Kernels.Conformance.fsproj'">
     <LrmGraphName>Lrm.Kernels.Conformance</LrmGraphName>
     <LrmProjectKind>test</LrmProjectKind>
     <LrmOwner>E1</LrmOwner>
+    <LrmReaches>;backends;gpu;interop;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'tests/Lrm.Models.Qwen.Tests/Lrm.Models.Qwen.Tests.fsproj'">
     <LrmGraphName>Lrm.Models.Qwen.Tests</LrmGraphName>
@@ -179,6 +214,7 @@
     <LrmGraphName>Lrm.Serving.Tests</LrmGraphName>
     <LrmProjectKind>test</LrmProjectKind>
     <LrmOwner>C2</LrmOwner>
+    <LrmReaches>;backends;gpu;interop;</LrmReaches>
   </PropertyGroup>
   <PropertyGroup Condition="'$(LrmProjectPath)' == 'tests/Lrm.Telemetry.Tests/Lrm.Telemetry.Tests.fsproj'">
     <LrmGraphName>Lrm.Telemetry.Tests</LrmGraphName>

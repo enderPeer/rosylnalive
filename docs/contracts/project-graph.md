@@ -17,7 +17,7 @@ Owner: S0 (S0a; the hygiene layering check and its fixtures are S0b's). Status: 
   - The file name is `<name>.fsproj`, and paths use forward slashes.
   - Every fsproj in the repo is registered, except those under `spikes/**`.
 - **Generated files.** `tools/ci/gen-project-graph.ps1` validates the graph and writes three files. The output is byte-deterministic (UTF-8 without BOM, LF).
-  - `build/ProjectKinds.g.props`: identity, kind and owner, imported by `Directory.Build.props`.
+  - `build/ProjectKinds.g.props`: identity, kind and owner, imported by `Directory.Build.props`. It also gives each project its group membership: `LrmGroups` lists the groups whose patterns match the project's name, and `LrmReaches` the groups that its references reach, transitively. Both are `;`-wrapped and sorted (`;backends;gpu;interop;`) and absent when empty, so a root setting tests one group with `$(LrmGroups.Contains(';gpu;'))`.
   - `build/ProjectGraph.g.props`: the reference items, imported by `Directory.Build.targets`.
   - `Lrm.slnx`: every registered project and nothing else.
 
@@ -51,7 +51,8 @@ These are checked on the transitive closure of `refs` and `buildRefs`:
   - warnings are errors;
   - `Deterministic`;
   - `InvariantGlobalization=false`;
-  - output under `artifacts/<bin|obj>/<project>/<config>/`.
+  - output under `artifacts/<bin|obj>/<project>/<config>/`;
+  - **no F# tail calls in GPU code** (ADR R3-0001, D3D12ComIdiom rule 3): `Tailcalls=false` for every project in the `gpu`, `interop` or `backends` group, and for every test exe and app whose references reach one of those groups. A tail call frees the caller's frame before the callee runs, so a stack address passed in tail position is read after its frame is gone. The root owns `Tailcalls`; no `.lrm.targets` sets it. `Lrm.Testing`'s `TailCalls.scan` lists an assembly's `tail.` call sites, and the cpu tier checks the D3D12 interop, its tests, `Lrm.Gpu.Core`, `Lrm.Shaders` and `Lrm.Gpu.Core.Tests` with it (Lrm.Core, outside the groups, is the control that still has tail calls).
 - **Reproducible builds.** With `CI=true` the build sets `ContinuousIntegrationBuild`, which maps source and obj paths to `/_/`.
   - One commit then builds to identical binaries in every clone whose path has the same length.
   - F# 10.0.402 sizes the PE CodeView entry from the full PDB path, so clones at other path lengths differ only in that zero padding. IL, metadata, resources and PDBs are identical.
@@ -76,7 +77,7 @@ These are checked on the transitive closure of `refs` and `buildRefs`:
 - **CI.** These steps fail the build-test job:
   - `gen-project-graph.ps1 -Check` fails on a rule violation, an unregistered fsproj, an fsproj holding more than file items, a stray `.lrm.targets`, or generated files that are out of date;
   - the locked restore fails on stale lock files.
-- **Hygiene.** The `hygiene` job (ubuntu-latest) runs the same validator as its layering check (`tools/ci/check-layering.ps1`), so a layering break fails both required checks. The layering check also scans the MSBuild extension files against the rules under Project files above. The build-time guard cannot do that alone, because a `.lrm.targets` file that sets `LrmIsSpike` switches the guard off. Its self-test (`tools/ci/test-hygiene.ps1`) edits a temporary copy of the graph inputs and proves that each rule fails as designed; the tables below list the cases.
+- **Hygiene.** The `hygiene` job (ubuntu-latest) runs the same validator as its layering check (`tools/ci/check-layering.ps1`), so a layering break fails both required checks. The layering check also scans the MSBuild extension files against the rules under Project files above. The build-time guard cannot do that alone. `Directory.Build.targets` decides spike status from the project's path (`spikes/**`), not from the `LrmIsSpike` property, so a property cannot switch the guard or the `.lrm.targets` import off; the layering scan still refuses a `.lrm.targets` that sets `LrmIsSpike`, which steers the lock-file settings in `Directory.Build.props`. Its self-test (`tools/ci/test-hygiene.ps1`) edits a temporary copy of the graph inputs and proves that each rule fails as designed; the tables below list the cases.
 
 ### Vectors
 
@@ -116,7 +117,7 @@ The MSBuild extension scan has its own cases. Each one writes the files shown in
 | `tests/Directory.Build.props`, `src/Directory.Packages.props`, `tests/Lrm.Core.Tests/DIRECTORY.BUILD.PROPS`, `src/Lrm.Tokenizer/nuget.config`, `tools/global.json` | `a nested … replaces the root one`, five times |
 | `src/Lrm.Tokenizer/Directory.Build.rsp`, `src/Lrm.Tokenizer/Lrm.Tokenizer.fsproj.user`, `Directory.Solution.targets` | `MSBuild reads … by itself` or `MSBuild imports <project>.user` |
 
-Two cases must pass: R4a's shader target with R3's `Tailcalls` switch, and build files under `spikes/**`.
+A `.lrm.targets` that sets `Tailcalls`, to `true` or to `false`, fails with `sets the property Tailcalls, which the root build files own`. Two cases must pass: R4a's shader target with a project-owned compiler switch (`OtherFlags`), and build files under `spikes/**`.
 
 ## Changing the graph
 

@@ -9,6 +9,7 @@
     <Compile Include="ShaderTests.fs" />
     <Compile Include="SpirvTests.fs" />
     <Compile Include="BackendTests.fs" />
+    <Compile Include="TailCallTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 </Project>
