@@ -26,6 +26,14 @@
           "Lrm.Core": "[1.0.0, )"
         }
       },
+      "lrm.gpu.cpudevice": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Gpu.Core": "[1.0.0, )",
+          "Lrm.Tensor.CpuReference": "[1.0.0, )"
+        }
+      },
       "lrm.gpu.d3d12": {
         "type": "Project",
         "dependencies": {
