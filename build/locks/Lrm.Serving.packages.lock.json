@@ -33,9 +33,17 @@
         "dependencies": {
           "FSharp.Core": "[10.1.402, )",
           "Lrm.Core": "[1.0.0, )",
+          "Lrm.Telemetry": "[1.0.0, )",
           "Lrm.Tensor": "[1.0.0, )",
           "Lrm.Tensor.CpuReference": "[1.0.0, )",
           "Lrm.Tokenizer": "[1.0.0, )"
+        }
+      },
+      "lrm.telemetry": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.1.402, )",
+          "Lrm.Core": "[1.0.0, )"
         }
       },
       "lrm.tensor": {
