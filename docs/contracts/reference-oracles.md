@@ -172,11 +172,13 @@ Taps follow ActivationNames. They are captured during a batch-1 prefill with `us
 
 **EOS is ignored in every golden run.**
 
-- **Manual loop (the canonical schedule).** One prefill with the cache, then single-token decode steps. Each step takes `torch.argmax` of the last row, and the margin is the top-1 minus top-2 logit in float64. The loop never checks EOS.
+- **Manual loop (the canonical schedule).** One prefill with the cache, then single-token decode steps. Each step takes `torch.argmax` of the last row in the model's own dtype, and the margin is the top-1 minus top-2 logit in float64. The loop never checks EOS. Its ids are the canonical greedy ids of each oracle, and the ones `greedy.safetensors` stores.
 - **`generate()`.** It gets a fresh `GenerationConfig(do_sample=False, max_new_tokens=64, eos_token_id=None)`. In transformers 5.20.1, `_prepare_generation_config` fills every `None` field of the passed config from `model.generation_config`, which carries the checkpoint's `eos_token_id`. So `eos_token_id=None` alone does not disable EOS. The tool therefore swaps `model.generation_config` for a neutral `GenerationConfig()` during the call and restores it afterwards. It asserts that the effective config has `eos_token_id` None, `do_sample` false and no `min_new_tokens`, and records it. A control run without the swap shows the leak: on the tiny model it stops after 10 tokens, at EOS (`docs/decisions/O1-0001-eos-in-generate.md`).
+- **`generate()` takes its argmax over float32.** In transformers 5.20.1, `GenerationMixin._sample` casts the last logits row to float32 before the logits processors and `torch.argmax` (`generation/utils.py`, line 3229). `greedy_generate` asserts that the pinned source still does this, and records `argmax_dtype: float32`. For torch32 the cast is the identity. For torch64p it is not: `generate()` picks from float32-rounded logits, while the manual loop and the no-cache recompute use float64. So the canonical torch64p ids are the manual loop's, and `generate()` is a cross-check whose agreement is guaranteed only where the float32-rounded row has the same argmax.
+- **The float32 view.** `greedy_manual_detail` records, for every step, whether `argmax(f32(row))` equals the manual loop's choice (`f32_argmax_agrees`) and the margin in float32 ulps of the top logit (`margin_f32_ulps`). The manifest records `f32_argmax_agrees_every_step` and `min_margin_f32_ulps` per prompt and oracle. On the tiny model every step agrees, and the smallest margin is about 59,000 ulps. A gate prompt's margin rule (at least 0.05) keeps full-model margins far above one float32 ulp at Qwen's logit magnitudes too. If a torch64p step ever has `f32_argmax_agrees` false, a `generate()` mismatch from that step on is expected and is not an oracle failure; G2 reports the step instead of failing.
 - **`min_new_tokens`** is never used, because it masks the EOS logits.
 - **No-cache recompute.** Each step runs a full forward over the whole sequence with `use_cache=False`.
-- **Agreement.** The manual loop, `generate()` and the no-cache recompute must give the same ids over all steps. On the tiny model, torch32 and torch64p must also give the same ids.
+- **Agreement.** The manual loop, `generate()` and the no-cache recompute must give the same ids over all steps. For torch64p `generate()`, agreement is required up to the first step where `f32_argmax_agrees` is false, if there is one, because `generate()` continues from its own token after that. On the tiny model, torch32 and torch64p must also give the same ids.
 
 ## The tie probe
 
@@ -191,7 +193,7 @@ Every case must return `min(a, b)`. The manifest records `tie_probe` and each gr
 
 Each generator runs its whole computation twice with 8 threads, hashes every output file, and compares the digests. If they differ, it repeats at 1 thread and requires that pair to agree. If 1 thread also disagrees, generation stops. The manifest records the threads used, the digest and every attempt.
 
-Regeneration in a fresh process (`--check`) must reproduce every committed byte. On the generation machine (AVX2, MKL, 8 threads), torch32 is bit-reproducible run to run, so both checks pass in v1.
+Regeneration in a fresh process (`--check`) must reproduce every committed byte. On the generation machine (AVX2, MKL, 8 threads), torch32 is bit-reproducible run to run, so both checks pass in v1. The manifests record the machine (`env`) and what the data root holds, so `--check` is a check for the same machine and the same `LRM_DATA`; on a mismatch it names every JSON path that differs (GoldenSet contract, Verification).
 
 ## Gradients and the optimizer (Phase 2 oracles)
 
@@ -217,10 +219,10 @@ Timestamps go only to the run log, never into goldens.
 | `Torch64pPatches()` | The patches, as a context manager; `.record()` returns the manifest entries |
 | `torch_inv_freq_bits(config)`, `t_spec(bits, max_pos)`, `t_spec_crosscheck(...)` | RoPE |
 | `forward_taps(model, ids)` | ActivationNames taps and the cache check |
-| `greedy_manual`, `greedy_generate`, `greedy_no_cache`, `greedy_generate_without_neutral_config` | Greedy and the EOS control |
+| `greedy_manual`, `greedy_manual_detail`, `greedy_generate`, `greedy_no_cache`, `greedy_generate_without_neutral_config` | Greedy, the float32 view of each step, and the EOS control |
 | `tie_probe()`, `double_run(build)` | Tie probe and double runs |
 | `cross_entropy_grads(model, ids)`, `adamw_step(params, grads)` | Phase 2 oracles |
-| `safetensors_bytes`, `read_safetensors`, `json_bytes`, `file_entry`, `sha256sums_bytes`, `compare_tree` | GoldenSet writers |
+| `safetensors_bytes`, `read_safetensors`, `json_bytes`, `file_entry`, `sha256sums_bytes`, `compare_tree`, `json_diff_paths` | GoldenSet writers, and the `--check` comparison with the JSON paths that differ |
 | `DetRng`, `stream_of`, `bf16_narrow_rne` | Lrm.Core-compatible random numbers and bf16 |
 | `RunLog` | Telemetry |
 

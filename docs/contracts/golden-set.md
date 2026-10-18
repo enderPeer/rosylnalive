@@ -26,7 +26,7 @@ LRM_DATA/golden/<set>/g<N>/<files>    large files, listed in the manifest with l
 
 - **Names.** `<set>` is a lowercase safe name (`tiny`, `tokenizer`, `qwen3-0.6b`). `g<N>` counts from `g1`.
 - **Versions coexist.** A new version is a new folder next to the old one. The old one stays until no consumer reads it.
-- **What lives in the repo.** Committed files are at most 2 MiB each (2,097,152 bytes). The committed size of a set is capped by its budget: `tiny` 5 MiB, `tokenizer` 2 MiB, `qwen3-0.6b` 10 MiB. O1's two sets plus `goldens/README.md` stay under 5 MiB together; v1 uses 4.70 MiB.
+- **What lives in the repo.** Committed files are at most 2 MiB each (2,097,152 bytes). The committed size of a set is capped by its budget: `tiny` 5 MiB, `tokenizer` 2 MiB, `qwen3-0.6b` 10 MiB. O1's two sets plus `goldens/README.md` stay under 5 MiB together; v1 uses 4.73 MiB.
 - **What lives in LRM_DATA.** Anything larger goes under `LRM_DATA/golden/` and is never committed. The repo uses no Git LFS and no release assets (AP-7 declined).
 - **Line endings.** Text files are LF with a final newline. Binary files are `.safetensors`, which `.gitattributes` marks binary.
 
@@ -102,9 +102,13 @@ A set that ships a model has `model/` with exactly these files:
 | `encode` | `text`, `ids` | `Encode(text)` = `ids` |
 | `encode_bytes` | `bytes` (lowercase hex), `text`, `ids` | `text` is `bytes` decoded as UTF-8 with one U+FFFD per maximal invalid subpart, the Unicode recommended practice that Python `errors="replace"` and .NET `UTF8Encoding` both follow. `Encode(text)` = `ids` |
 | `decode` | `ids`, `bytes` (hex), `text` | `DecodeBytes(ids)` = `bytes`, and `Decode(ids)` = `text`, the bytes decoded with errors=replace |
-| `encode_reject` | `text`, `error` | `Encode(text)` raises, because the text holds a lone surrogate |
+| `encode_reject` | `utf16` (hex), `error` | The text is the UTF-16 code units in `utf16`. `Encode(text)` raises, because the text holds a lone surrogate |
 
 Every case has `id` (`<category>-<4 digits>`, unique) and `cat`. Inputs are unique per kind. M1's cpu-tier test runs every line and emits one `tokenizer.case` check per case.
+
+- **Every string in the file is valid UTF-16.** No `text` field holds a lone surrogate, so `System.Text.Json` (`JsonDocument` and `GetString`) reads every line. It throws on a lone-surrogate escape such as `"\ud800"`, which is why an `encode_reject` case has no `text`.
+- **`utf16` is authoritative for `encode_reject`.** It is the text's UTF-16 code units, big-endian, as lowercase hex with 4 digits per unit: `"0061d8000062"` is `a`, U+D800, `b`. In F#: `String(Array.init (h.Length / 4) (fun i -> char (Convert.ToUInt16(h.Substring(4 * i, 4), 16))))`. A high surrogate followed by a low one forms a pair, as in any .NET string. Every `encode_reject` text holds at least one surrogate that is not part of a pair.
+- **Decode covers the empty list and the rows with no token.** `[]` decodes to no bytes. Ids 151,669 to 151,935 are rows of the real `lm_head` (vocab_size 151,936) that have no token. HF drops them, so they add no bytes, even between the bytes of one UTF-8 character: `[160, 151700, 116, 255]` decodes to `中`. Ids below 0, or at 151,936 and above, are outside the model and outside the corpus; M1 may reject them.
 
 ## The tiny set, `goldens/tiny/g1`
 
@@ -132,12 +136,19 @@ The scales are:
 | Tensors | scale |
 | --- | --- |
 | embedding | 0.1 |
-| q, k, v, gate and up | 1/√fan_in |
-| o_proj and down | 2/√fan_in |
+| q, k, v, gate and up | `fan_in ** -0.5` |
+| o_proj and down | `2.0 * fan_in ** -0.5` |
 | `model.norm` | 4 |
 | other norms | 1 |
 
-The manifest lists each tensor's kind and scale.
+The scale is a float64 value computed exactly as written: `pow(fan_in, -0.5)`, then times 2.0 where the table says so. It is not `1 / sqrt(fan_in)`, which is one ulp lower for fan_in 128. Python's `**` and .NET's `Math.Pow` give the same values:
+
+| fan_in | Tensors | scale | float64 bits |
+| ---: | --- | --- | --- |
+| 64 | q, k, v, gate, up | 0.125 | `3fc0000000000000` |
+| 128 | o_proj, down | 0.1767766952966369 (2 × 0.08838834764831845) | `3fc6a09e667f3bcd` |
+
+The manifest lists each tensor's kind and scale under `model.weights.scales`. Those values are authoritative.
 
 ### The prompt and EOS rules
 
@@ -182,25 +193,29 @@ The manifest lists each tensor's kind and scale.
 
 ## The tokenizer set, `goldens/tokenizer/g1`
 
-- **Corpus.** 5,313 cases in 21 categories: 4,669 encode, 141 encode_bytes, 495 decode and 8 encode_reject.
+- **Corpus.** 5,597 cases in 22 categories: 4,929 encode, 141 encode_bytes, 519 decode and 8 encode_reject.
+- **Number classes.** `\p{N}` in the Split regex covers Nd, Nl and No alike. The `number-class` category puts Nl characters (Ⅻ, 〇, U+10140 and others) and No characters (½, ², ①, ₀, U+0F33, U+2189 and others) after a space, between letters and next to each other. In a mutation test on HF tokenizers, a Split regex that treats only Nd as a number changes the ids of 103 cases; one that misses Nl changes 30, and one that misses No changes 73.
 - **Oracle.** tokenizers 0.23.3 on `tokenizer.json`, with SHA-256 `aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4` at revision `c1899de289a04d12100db370d81485cdf75e47ca`.
-- **Manifest.** It records the counts, the 26 added tokens with ids and special flags, the real vocabulary size of 151,669, the normalizer, pre-tokenizer and decoder JSON, and these checks:
+- **Manifest.** It records the counts, the 26 added tokens with ids and special flags, the real vocabulary size of 151,669 and the model's 151,936 rows, the normalizer, pre-tokenizer and decoder JSON, and these checks:
   - no BOS on every encode;
   - `decode(encode(text)) == NFC(text)` on every encode;
   - every decode equals errors=replace;
   - every reject raised;
-  - transformers' `Qwen2Tokenizer` agrees on all 4,810 encode and encode_bytes cases.
-- **Digest.** `cases.jsonl` is 964,352 bytes with SHA-256 `33b0dbd14d9138bef7e2edaedfdb9e13eecf5c0bcccba3b21682ff401184fb67`.
+  - transformers' `Qwen2Tokenizer` agrees on all 5,070 encode and encode_bytes cases.
+- **Digest.** `cases.jsonl` is 995,340 bytes with SHA-256 `35ff0c43a1bc4325588b1a22953f861784e4ca76e0f3f863a5f70ff9ceb16c66`.
 
 ## Verification
 
 - **Double run.** Each generator runs twice in-process and compares output digests, at 8 threads with a 1-thread fallback (ReferenceOracles).
 - **`--check`.** `make_tiny.py --check` and `make_tokenizer.py --check` regenerate in a fresh process and compare every byte with the committed tree. Both pass for v1 on the generation machine.
+  - **Same machine, same data root.** The manifest records the machine (`env`: processor, CPU capability, torch config hash and more) and the threads. The tiny set's safetensors self-test adds `real_header_rebuilt`, `real_entries` and `real_data_offset` only when `LRM_DATA` holds the Qwen3-0.6B weights. So `--check` passes only on the generation machine with the same `LRM_DATA`. Elsewhere the tensor files can be bit-identical while `manifest.json` differs.
+  - **Diagnostics.** When a JSON file differs, `--check` prints every JSON path whose value changed, with the committed and the regenerated value (for example `env.processor`). It also says when every difference is a machine or data-root field: `env.*`, `double_run.*`, `threads` or `selftests.safetensors.real_*`.
 - **`verify_goldens.py`.** Uses only the standard library, so any Python works, CI's included. It checks every manifest:
   - schema and folder names;
   - each repo file's size and SHA-256;
   - no unlisted files;
   - the 2 MiB limit;
   - SHA256SUMS and REVISION;
+  - the tokenizer corpus line rules: compact sorted JSON, the fields of each kind and no others, unique ids, and no string with a lone surrogate;
   - the budgets.
 - **`Goldens.open`** (O2) verifies the SHA-256 of every file it reads against the manifest before use, and rejects unknown `schema` values.

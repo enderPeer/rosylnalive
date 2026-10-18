@@ -32,6 +32,6 @@ The tiny model is what CI checks on every PR, since the real weights stay local.
 
 ## Consequences
 
-- **Budget.** The tiny set is 3.76 MiB, the tokenizer set 0.93 MiB and the README 6 KB: 4.70 MiB in all, under 5 MiB. A larger tiny model, or more taps prompts, would not fit. A new version would have to drop the AdamW moments first.
+- **Budget.** The tiny set is 3.76 MiB, the tokenizer set 0.96 MiB and the README 8 KB: 4.73 MiB in all, under 5 MiB. A larger tiny model, or more taps prompts, would not fit. A new version would have to drop the AdamW moments first.
 - **Margins.** The minimum margins are 0.057 (p0) and 0.098 (p1). The logits have a standard deviation of about 4, so a GPU logit error at the GPU floor (max |Δlogit| 1e-2) stays below every margin.
 - **What the tiny model does not exercise.** It does not reach the real model's long-context positions. G2's full-model goldens and T_spec 0..8191 cover those.
