@@ -7,10 +7,11 @@ D3D12 and DXGI COM interop for the D3D12 backend, plus the device check. Owner: 
 | `AbiAttributes.fs` | `CStruct`, `CEnum` and `CArray`: the C names the ABI oracle checks |
 | `D3D12.g.fs` | Generated: enums, structs, marker interfaces, `Iids`, `Slots`, `Fn` delegates |
 | `Com.fs` | `ComPtr<'I>`, `Vtbl.get` (cached delegates), `Com` (IUnknown, live references, `check`), `D3D12Exception`, `HResult` |
-| `D3D12Methods.g.fs` | Generated: typed extension methods per interface, with `…Raw` HRESULT forms |
+| `D3D12Methods.g.fs` | Generated: typed extension methods per interface (`this` by reference, spans for arrays), with `…Raw` C-shaped forms |
 | `Native.fs` | `D3D12CreateDevice`, `D3D12GetDebugInterface`, `CreateDXGIFactory2`, and their typed forms |
 | `Desc.fs` | Description builders: buffers, heaps, raw UAVs, barriers, pipelines, query heaps |
 | `DeviceCheck.fs` | Adapter discovery and the SM 6.6 / binding tier 3 verdict |
+| `TailCalls.fs` | `TailCalls.scan`: every IL `tail.` call site of an assembly, for projects that check their own build (ADR R3-0001) |
 
 ```fsharp
 open Lrm.Gpu.D3D12.Interop
@@ -20,6 +21,12 @@ use adapter: ComPtr<IDXGIAdapter1> = factory.EnumAdapterByGpuPreference(0u, DXGI
 use dev = D3D12Api.createDevice<IDXGIAdapter1, ID3D12Device> adapter D3D_FEATURE_LEVEL.LEVEL_11_0
 let qdesc = Desc.commandQueue D3D12_COMMAND_LIST_TYPE.COMPUTE
 use queue: ComPtr<ID3D12CommandQueue> = dev.CreateCommandQueue(&qdesc)
+
+// Arrays are spans; one element can be passed on its own.
+let b = Desc.transition buffer D3D12_RESOURCE_STATES.COMMON D3D12_RESOURCE_STATES.UNORDERED_ACCESS
+list.ResourceBarrier &b
+list.SetComputeRoot32BitConstants(0u, ReadOnlySpan args, 0u)
+queue.ExecuteCommandLists list
 ```
 
-Callers that pass `NativePtr.toNativeInt &&local` must build with `<Tailcalls>false</Tailcalls>` in their `.lrm.targets` (ADR R3-0001).
+No wrapper call is ever a tail call, because every wrapper takes `this` by reference. So passing a stack address to a wrapper is safe whatever the caller's `Tailcalls` setting. That covers a span over a local and `NativePtr.toNativeInt &&local`. Direct `Vtbl.get` and `Fn` delegate calls are not protected. A project that passes `&&local` between its own functions should set `<Tailcalls>false</Tailcalls>` and check its assembly with `TailCalls.scan` (ADR R3-0001).
