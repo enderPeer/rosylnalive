@@ -1,5 +1,5 @@
 {
-  "about": "Layering fixtures, run by tools/ci/test-hygiene.ps1. Each case copies the files gen-project-graph.ps1 reads (docs/project-graph.json, Directory.Packages.props, every registered fsproj and .lrm.targets, and the generated outputs) into a temporary root, applies its edits, and runs the layering check there. edits: addRef / addBuildRef (project, ref), addPackage (project, package), addProject (project object). files: path -> content, written over the copy. The unmodified copy must pass first.",
+  "about": "Layering fixtures, run by tools/ci/test-hygiene.ps1. Each case copies the files gen-project-graph.ps1 reads (docs/project-graph.json, Directory.Packages.props, every registered fsproj and .lrm.targets, and the generated outputs) plus the root Directory.Build.props/targets and build/*.props into a temporary root, applies its edits, and runs the layering check there: the generator and the MSBuild extension scan. edits: addRef / addBuildRef (project, ref), addPackage (project, package), addProject (project object). files: path -> content, written over the copy. The unmodified copy must pass first.",
   "cases": [
     {
       "name": "unmodified-copy",
@@ -115,6 +115,131 @@
       "edits": [ { "op": "addRef", "project": "Lrm.Tokenizer", "ref": "Lrm.Telemetry" } ],
       "expect": "fail",
       "match": [ "^build/ProjectGraph\\.g\\.props is out of date" ]
+    },
+    {
+      "name": "lrm-targets-switches-off-guard",
+      "why": "a .lrm.targets cannot mark its project a spike, unlock the restore or add a reference (the evasion of the S0b review)",
+      "files": {
+        "src/Lrm.Tokenizer/Lrm.Tokenizer.lrm.targets": "<Project>\n  <PropertyGroup>\n    <LrmIsSpike>true</LrmIsSpike>\n    <RestoreLockedMode>false</RestoreLockedMode>\n  </PropertyGroup>\n  <ItemGroup>\n    <ProjectReference Include=\"../Lrm.Gpu.D3D12/Lrm.Gpu.D3D12.fsproj\" />\n  </ItemGroup>\n</Project>\n"
+      },
+      "expect": "fail",
+      "match": [ "^src/Lrm\\.Tokenizer/Lrm\\.Tokenizer\\.lrm\\.targets: sets the property LrmIsSpike, which the root build files own", "^src/Lrm\\.Tokenizer/Lrm\\.Tokenizer\\.lrm\\.targets: sets the property RestoreLockedMode,", "^src/Lrm\\.Tokenizer/Lrm\\.Tokenizer\\.lrm\\.targets: <ProjectReference> is a reference item; references come only from docs/project-graph\\.json" ],
+      "errors": 3
+    },
+    {
+      "name": "lrm-targets-case-variants",
+      "why": "MSBuild property and item names ignore case, and so does the scan",
+      "files": {
+        "src/Lrm.Tokenizer/Lrm.Tokenizer.lrm.targets": "<Project>\n  <PropertyGroup>\n    <lrmisspike>true</lrmisspike>\n    <NUGETLOCKFILEPATH>x.json</NUGETLOCKFILEPATH>\n  </PropertyGroup>\n  <ItemGroup>\n    <packagereference Include=\"Newtonsoft.Json\" />\n  </ItemGroup>\n</Project>\n"
+      },
+      "expect": "fail",
+      "match": [ "sets the property lrmisspike,", "sets the property NUGETLOCKFILEPATH,", "<packagereference> is a reference item" ],
+      "errors": 3
+    },
+    {
+      "name": "lrm-targets-task-output",
+      "why": "a target that adds a reference through a task Output is caught like an item element",
+      "files": {
+        "src/Lrm.Tokenizer/Lrm.Tokenizer.lrm.targets": "<Project>\n  <Target Name=\"Sneak\" BeforeTargets=\"ResolveProjectReferences\">\n    <CreateItem Include=\"../Lrm.Gpu.D3D12/Lrm.Gpu.D3D12.fsproj\" AdditionalMetadata=\"LrmGraph=true\">\n      <Output TaskParameter=\"Include\" ItemName=\"ProjectReference\" />\n    </CreateItem>\n    <CreateProperty Value=\"false\">\n      <Output TaskParameter=\"Value\" PropertyName=\"RestoreLockedMode\" />\n    </CreateProperty>\n  </Target>\n</Project>\n"
+      },
+      "expect": "fail",
+      "match": [ "a task Output adds the reference item ProjectReference", "a task Output sets the property RestoreLockedMode" ],
+      "errors": 2
+    },
+    {
+      "name": "lrm-targets-guard-items",
+      "why": "a target that empties the guard's snapshot (_LrmHand*) or adds analyzers is caught",
+      "files": {
+        "src/Lrm.Tokenizer/Lrm.Tokenizer.lrm.targets": "<Project>\n  <Target Name=\"Sneak\" BeforeTargets=\"LrmCheckProjectGraph\">\n    <ItemGroup>\n      <_LrmHandProjectReference Remove=\"@(_LrmHandProjectReference)\" />\n      <Analyzer Include=\"x.dll\" />\n      <PackageDownload Include=\"X\" Version=\"[1.0.0]\" />\n    </ItemGroup>\n  </Target>\n</Project>\n"
+      },
+      "expect": "fail",
+      "match": [ "<_LrmHandProjectReference> is a reference item", "<Analyzer> is a reference item", "<PackageDownload> is a reference item" ],
+      "errors": 3
+    },
+    {
+      "name": "lrm-targets-import",
+      "why": "a .lrm.targets imports nothing, so no MSBuild code escapes the scan",
+      "files": {
+        "src/Lrm.Tokenizer/Lrm.Tokenizer.lrm.targets": "<Project>\n  <Import Project=\"evil.props\" />\n  <ImportGroup>\n    <Import Project=\"evil2.props\" />\n  </ImportGroup>\n</Project>\n",
+        "src/Lrm.Tokenizer/evil.props": "<Project>\n  <ItemGroup>\n    <ProjectReference Include=\"../Lrm.Gpu.D3D12/Lrm.Gpu.D3D12.fsproj\" />\n  </ItemGroup>\n</Project>\n"
+      },
+      "expect": "fail",
+      "match": [ "^src/Lrm\\.Tokenizer/Lrm\\.Tokenizer\\.lrm\\.targets: <Import> is not allowed; a \\.lrm\\.targets file imports nothing", "<ImportGroup> is not allowed" ]
+    },
+    {
+      "name": "lrm-targets-root-properties",
+      "why": "a .lrm.targets never overrides a property the root build files set (warnings as errors, the DXC pin)",
+      "files": {
+        "src/Lrm.Tokenizer/Lrm.Tokenizer.lrm.targets": "<Project>\n  <PropertyGroup>\n    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>\n    <LrmDxcExe>C:/evil/dxc.exe</LrmDxcExe>\n    <InvariantGlobalization>true</InvariantGlobalization>\n  </PropertyGroup>\n</Project>\n"
+      },
+      "expect": "fail",
+      "match": [ "sets the property TreatWarningsAsErrors,", "sets the property LrmDxcExe,", "sets the property InvariantGlobalization," ],
+      "errors": 3
+    },
+    {
+      "name": "lrm-targets-sdk-attribute",
+      "why": "a .lrm.targets cannot pull in an SDK or shield properties from the command line",
+      "files": {
+        "src/Lrm.Tokenizer/Lrm.Tokenizer.lrm.targets": "<Project Sdk=\"Evil.Sdk\" TreatAsLocalProperty=\"CI\">\n</Project>\n"
+      },
+      "expect": "fail",
+      "match": [ "<Project Sdk=\\.\\.\\.> is not allowed", "<Project TreatAsLocalProperty=\\.\\.\\.> is not allowed" ],
+      "errors": 2
+    },
+    {
+      "name": "compile-outside-project",
+      "why": "a Compile item, in the fsproj or its .lrm.targets, names only files inside its own project; code from another project comes through a reference",
+      "files": {
+        "src/Lrm.Tokenizer/Lrm.Tokenizer.fsproj": "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <ItemGroup>\n    <Compile Include=\"Placeholder.fs\" />\n    <Compile Include=\"$(LrmRepoRoot)src/Lrm.Gpu.D3D12/Device.fs\" />\n  </ItemGroup>\n</Project>\n",
+        "src/Lrm.Tokenizer/Lrm.Tokenizer.lrm.targets": "<Project>\n  <ItemGroup>\n    <Compile Include=\"../Lrm.Gpu.D3D12/Device.fs\" />\n  </ItemGroup>\n</Project>\n"
+      },
+      "expect": "fail",
+      "match": [ "^src/Lrm\\.Tokenizer/Lrm\\.Tokenizer\\.fsproj: <Compile Include=\"\\$\\(LrmRepoRoot\\)src/Lrm\\.Gpu\\.D3D12/Device\\.fs\"> reaches outside the project directory", "^src/Lrm\\.Tokenizer/Lrm\\.Tokenizer\\.lrm\\.targets: <Compile Include=\"\\.\\./Lrm\\.Gpu\\.D3D12/Device\\.fs\"> reaches outside the project directory" ],
+      "errors": 2
+    },
+    {
+      "name": "nested-directory-build-targets",
+      "why": "a nested Directory.Build.targets replaces the root one for its subtree (the second evasion of the S0b review)",
+      "files": {
+        "src/Lrm.Tokenizer/Directory.Build.targets": "<Project>\n  <ItemGroup>\n    <ProjectReference Include=\"../Lrm.Gpu.D3D12/Lrm.Gpu.D3D12.fsproj\" />\n  </ItemGroup>\n</Project>\n"
+      },
+      "expect": "fail",
+      "match": [ "^src/Lrm\\.Tokenizer/Directory\\.Build\\.targets: a nested Directory\\.Build\\.targets replaces the root one for everything below src/Lrm\\.Tokenizer/" ],
+      "errors": 1
+    },
+    {
+      "name": "nested-props-and-packages",
+      "why": "nested Directory.Build.props, Directory.Packages.props, NuGet.Config and global.json are refused, whatever their case",
+      "files": { "tests/Directory.Build.props": "<Project>\n</Project>\n", "src/Directory.Packages.props": "<Project>\n</Project>\n", "tests/Lrm.Core.Tests/DIRECTORY.BUILD.PROPS": "<Project>\n</Project>\n", "src/Lrm.Tokenizer/nuget.config": "<configuration />\n", "tools/global.json": "{ }\n" },
+      "expect": "fail",
+      "match": [ "^tests/Directory\\.Build\\.props: a nested Directory\\.Build\\.props", "^src/Directory\\.Packages\\.props: a nested Directory\\.Packages\\.props", "^tests/Lrm\\.Core\\.Tests/DIRECTORY\\.BUILD\\.PROPS: a nested DIRECTORY\\.BUILD\\.PROPS", "^src/Lrm\\.Tokenizer/nuget\\.config: a nested nuget\\.config", "^tools/global\\.json: a nested global\\.json" ],
+      "errors": 5
+    },
+    {
+      "name": "response-and-user-files",
+      "why": "Directory.Build.rsp adds command-line switches and <proj>.user is imported into the project; neither is allowed",
+      "files": { "src/Lrm.Tokenizer/Directory.Build.rsp": "-p:LrmIsSpike=true\n", "src/Lrm.Tokenizer/Lrm.Tokenizer.fsproj.user": "<Project>\n</Project>\n", "Directory.Solution.targets": "<Project>\n</Project>\n" },
+      "expect": "fail",
+      "match": [ "^src/Lrm\\.Tokenizer/Directory\\.Build\\.rsp: MSBuild reads Directory\\.Build\\.rsp by itself", "^src/Lrm\\.Tokenizer/Lrm\\.Tokenizer\\.fsproj\\.user: MSBuild imports <project>\\.user", "^Directory\\.Solution\\.targets: MSBuild reads Directory\\.Solution\\.targets by itself" ],
+      "errors": 3
+    },
+    {
+      "name": "lrm-targets-allowed",
+      "why": "positive control: R4a's shader target (its own Lrm* properties and items, a task reading ProjectReference, EmbeddedResource) and R3's Tailcalls switch pass",
+      "files": {
+        "src/Lrm.Shaders/Lrm.Shaders.lrm.targets": "<Project>\n  <ItemGroup>\n    <LrmShaderInput Include=\"$(MSBuildThisFileDirectory)hlsl/**/*.hlsl\" />\n    <LrmShaderInput Include=\"$(LrmRepoRoot)src/Lrm.Gpu.Core/Catalog/catalog.json\" />\n  </ItemGroup>\n  <Target Name=\"LrmResolveShaderTool\" DependsOnTargets=\"ResolveProjectReferences\">\n    <MSBuild Projects=\"@(ProjectReference)\" Condition=\"'%(ProjectReference.LrmBuildOnly)' == 'true'\" Targets=\"GetTargetPath\">\n      <Output TaskParameter=\"TargetOutputs\" PropertyName=\"LrmShadersBuildDll\" />\n    </MSBuild>\n    <PropertyGroup>\n      <LrmShadersOut>$(IntermediateOutputPath)shaders</LrmShadersOut>\n      <LrmDotnet>$(DOTNET_HOST_PATH)</LrmDotnet>\n      <LrmDxcStamp>$(LrmShadersOut)/dxc.stamp</LrmDxcStamp>\n    </PropertyGroup>\n  </Target>\n  <Target Name=\"LrmCompileShaders\" DependsOnTargets=\"LrmResolveShaderTool\" BeforeTargets=\"PrepareResourceNames\" Condition=\"'$(LrmIsSpike)' != 'true'\">\n    <Exec Command=\"&quot;$(LrmDotnet)&quot; &quot;$(LrmShadersBuildDll)&quot; compile\" />\n    <ItemGroup>\n      <_LrmShaderFile Include=\"$(LrmShadersOut)/dxil/*.dxil\" LrmPrefix=\"lrm.shaders/dxil/\" />\n      <EmbeddedResource Include=\"@(_LrmShaderFile)\" LogicalName=\"%(_LrmShaderFile.LrmPrefix)%(_LrmShaderFile.Filename)%(_LrmShaderFile.Extension)\" />\n      <FileWrites Include=\"$(LrmShadersOut)/**/*\" />\n    </ItemGroup>\n  </Target>\n</Project>\n",
+        "src/Lrm.Gpu.D3D12.Interop/Lrm.Gpu.D3D12.Interop.lrm.targets": "<Project>\n  <PropertyGroup>\n    <Tailcalls>false</Tailcalls>\n  </PropertyGroup>\n</Project>\n"
+      },
+      "expect": "pass"
+    },
+    {
+      "name": "spikes-are-free",
+      "why": "positive control: spikes/** is outside the graph, so its build files are not scanned",
+      "files": {
+        "spikes/vk-heap/Directory.Build.props": "<Project>\n  <PropertyGroup>\n    <RestoreLockedMode>false</RestoreLockedMode>\n  </PropertyGroup>\n</Project>\n",
+        "spikes/vk-heap/Spike.lrm.targets": "<Project>\n  <Import Project=\"x.props\" />\n</Project>\n"
+      },
+      "expect": "pass"
     }
   ]
 }

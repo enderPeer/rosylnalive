@@ -90,6 +90,20 @@
       "entries": [ { "path": "third_party/Vulkan-Headers", "size": 0, "type": "commit" } ],
       "expect": "fail",
       "match": [ "^third_party/Vulkan-Headers is a submodule" ]
+    },
+    {
+      "name": "forbidden-case-variants",
+      "why": "forbidden rules ignore case: on Windows foo.DLL is a binary and .claude/Settings.json is the allowlist",
+      "entries": [ { "path": "tools/goldens/evil.DLL", "size": 100 }, { "path": "apps/x/Foo.Exe", "size": 100 }, { "path": "src/Lrm.Core/model.SafeTensors", "size": 100 }, { "path": "tools/Bin/Debug/a.txt", "size": 100 }, { "path": ".claude/Settings.json", "size": 100 }, { "path": "tools/vk.XML", "size": 100 } ],
+      "expect": "fail",
+      "match": [ "^tools/goldens/evil\\.DLL must not be committed", "^apps/x/Foo\\.Exe must not be committed", "^src/Lrm\\.Core/model\\.SafeTensors must not be committed", "^tools/Bin/Debug/a\\.txt must not be committed", "^\\.claude/Settings\\.json must not be committed", "^tools/vk\\.XML must not be committed" ],
+      "errors": 6
+    },
+    {
+      "name": "case-variant-exception",
+      "why": "positive control: the except globs ignore case too, so a golden in goldens/ stays allowed",
+      "entries": [ { "path": "goldens/tiny/g1/model/Model.SafeTensors", "size": 100 } ],
+      "expect": "pass"
     }
   ]
 }

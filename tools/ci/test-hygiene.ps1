@@ -105,11 +105,21 @@ try {
 
     # ---- 2. cases through the pure functions ----------------------------------------------------
     Write-Host 'cases (pure functions)' -ForegroundColor Cyan
+    # map: the checked-out map (coverage); policyMap: the merge base's map that judges the branch ('repo' for
+    # docs/ownership.json, 'none' for a merge base without a map, else a fixture file; default: the same as map).
+    function Get-FixtureMap([string]$Name) {
+        if ($Name -ceq 'repo') { return $map }
+        if ($Name -ceq 'none') { return $null }
+        Read-OwnershipMap (Join-Path $fixtures "ownership/$Name") -Partial
+    }
     foreach ($c in Read-Cases 'ownership') {
-        $m = if (Get-Prop $c 'map') { Read-OwnershipMap (Join-Path $fixtures "ownership/$($c.map)") } else { $map }
+        $m = if (Get-Prop $c 'map') { Get-FixtureMap $c.map } else { $map }
         $known = $null -ne $c.PSObject.Properties['labels']
-        $r = Test-Ownership -Map $m -Tracked @(Get-Prop $c 'tracked' @()) -Branch ([string](Get-Prop $c 'branch' '')) `
-            -Changes @(Get-Prop $c 'changes' @() | ForEach-Object { ConvertTo-Change $_ }) -Labels @(Get-Prop $c 'labels' @()) -LabelsKnown $known
+        $policyArgs = @{}
+        if ($null -ne $c.PSObject.Properties['policyMap']) { $policyArgs['PolicyMap'] = Get-FixtureMap $c.policyMap; $policyArgs['PolicySource'] = "fixture $($c.policyMap)" }
+        $r = Test-Ownership -Map $m @policyArgs -Tracked @(Get-Prop $c 'tracked' @()) -Branch ([string](Get-Prop $c 'branch' '')) `
+            -Changes @(Get-Prop $c 'changes' @() | ForEach-Object { ConvertTo-Change $_ }) -Labels @(Get-Prop $c 'labels' @()) -LabelsKnown $known `
+            -Verify ([bool](Get-Prop $c 'verify' $false)) -Author ([string](Get-Prop $c 'author' '')) -ExceptionActor ([string](Get-Prop $c 'exceptionActor' ''))
         $produced.Add($r)
         Add-Outcome 'ownership' $c.name $c.expect (Compare-Expectation $c $r) (Get-Detail $c $r)
     }
@@ -141,7 +151,9 @@ try {
     # ---- 3. layering on temporary copies of the graph inputs ------------------------------------
     Write-Host 'layering (gen-project-graph.ps1 -Check on edited copies)' -ForegroundColor Cyan
     $graphJson = Get-Content -Raw -LiteralPath (Join-Path $repo 'docs/project-graph.json')
-    $inputs = @('docs/project-graph.json', 'Directory.Packages.props', 'build/ProjectKinds.g.props', 'build/ProjectGraph.g.props', 'Lrm.slnx')
+    # The generator's inputs and outputs, plus the root build files whose properties a .lrm.targets may not override.
+    $inputs = @('docs/project-graph.json', 'Directory.Build.props', 'Directory.Build.targets', 'Directory.Packages.props', 'Lrm.slnx')
+    $inputs += @(Get-ChildItem -LiteralPath (Join-Path $repo 'build') -File | Where-Object { $_.Extension -in @('.props', '.targets') } | ForEach-Object { "build/$($_.Name)" })
     $inputs += @(($graphJson | ConvertFrom-Json).projects | ForEach-Object path)
     $inputs += @(Get-ChildItem -LiteralPath $repo -Recurse -Filter *.lrm.targets -File | ForEach-Object { [IO.Path]::GetRelativePath($repo, $_.FullName).Replace('\', '/') } |
             Where-Object { -not ($_.StartsWith('artifacts/') -or $_.StartsWith('spikes/')) })
@@ -221,15 +233,15 @@ try {
         Git $Root @('add', '-A')
         Git $Root @('commit', '-q', '-m', "fixture $Branch")
     }
-    # Runs a check script in a child process; expectCode 0 or 1, and a pattern its output must contain.
+    # Runs a check script in a child process; expectCode 0, 1 or 2, and a pattern its output must contain.
     function Test-Script([string]$Name, [string]$Script, [string[]]$Arguments, [int]$ExpectCode, [string]$Pattern) {
         $out = & $pwsh -NoProfile -NonInteractive -File (Join-Path $PSScriptRoot $Script) @Arguments 2>&1 | Out-String
         $code = $LASTEXITCODE
         $p = @()
         if ($code -ne $ExpectCode) { $p += "exit $code, expected $ExpectCode; output: $($out.Trim() -replace '\s+', ' ')" }
         if ($Pattern -and $out -cnotmatch $Pattern) { $p += "output does not match /$Pattern/: $($out.Trim() -replace '\s+', ' ')" }
-        $detail = if ($ExpectCode -eq 1) { "exit 1 as designed" } else { 'exit 0' }
-        Add-Outcome 'e2e' $Name $(if ($ExpectCode -eq 1) { 'fail' } else { 'pass' }) $p $detail
+        $detail = if ($ExpectCode -ne 0) { "exit $ExpectCode as designed" } else { 'exit 0' }
+        Add-Outcome 'e2e' $Name $(if ($ExpectCode -ne 0) { 'fail' } else { 'pass' }) $p $detail
     }
 
     $ownershipJson = Get-Content -Raw -LiteralPath (Join-Path $repo 'docs/ownership.json')
@@ -244,17 +256,41 @@ try {
     Commit-Branch $o 'ws/S1-fixture-good' { Set-FixtureFile $o 'src/Lrm.Core/Hash.fs' "module Hash`n// S1 owns this`n" }
     Commit-Branch $o 'ws/O1-fixture-append' { Set-FixtureFile $o 'docs/contracts/CHANGELOG.md' ($changelog + "- **GoldenSet v1** (``golden-set.md``, O1): first version.`n") }
     Commit-Branch $o 'ws/O1-fixture-rewrite' { Set-FixtureFile $o 'docs/contracts/CHANGELOG.md' $changelog.Replace('first version', 'rewritten') }
+    Commit-Branch $o 'ws/O1-fixture-insert' { Set-FixtureFile $o 'docs/contracts/CHANGELOG.md' $changelog.Replace("## 2026-10-18`n", "## 2026-10-18`n`n- **GoldenSet v0** (``golden-set.md``, O1): back-dated.`n") }
+    # The self-grant: the branch's own map hands O1 the map and Lrm.Core, drops Lrm.Core from the contract files and
+    # renames the freeze tag; then O1 edits Lrm.Core.
+    $grant = $ownershipJson | ConvertFrom-Json
+    $grant.families.S0.paths = @($grant.families.S0.paths | Where-Object { $_ -cne 'docs/ownership.json' })
+    $grant.families.S1.paths = @($grant.families.S1.paths | Where-Object { $_ -cne 'src/Lrm.Core/**' })
+    $grant.families.O1.paths = @($grant.families.O1.paths) + @('src/Lrm.Core/**', 'docs/ownership.json')
+    $grant.contract.files = @($grant.contract.files | Where-Object { $_ -cne 'src/Lrm.Core/**' })
+    $grant.contract.freezeTag = 'contracts-v999'
+    $grantJson = ($grant | ConvertTo-Json -Depth 20) + "`n"
+    Commit-Branch $o 'ws/O1-fixture-self-grant' { Set-FixtureFile $o 'docs/ownership.json' $grantJson; Set-FixtureFile $o 'src/Lrm.Core/Hash.fs' "module Hash`n// O1 granted itself this file`n" }
+    Commit-Branch $o 'ws/O1-fixture-checker' { Set-FixtureFile $o 'tools/ci/Hygiene.psm1' "# switched off`n" }
     Commit-Branch $o 'ws/O1-fixture-move' { Git $o @('mv', 'goldens/README.md', 'src/Lrm.Core/README.md') }
     Test-Script 'ownership-fixture-branch' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-bad', '-Base', 'main', '-Head', 'ws/O1-fixture-bad', '-Labels', '') 1 'src/Lrm\.Core/Hash\.fs is owned by family S1, not by family O1'
     Test-Script 'ownership-own-path' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/S1-fixture-good', '-Base', 'main', '-Head', 'ws/S1-fixture-good', '-Labels', '') 0 'ownership: OK'
-    Test-Script 'ownership-changelog-append' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-append', '-Base', 'main', '-Head', 'ws/O1-fixture-append') 0 'shared append-only path; this change only adds lines'
+    Test-Script 'ownership-changelog-append' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-append', '-Base', 'main', '-Head', 'ws/O1-fixture-append') 0 'shared append-only path; this change only appends lines at the end'
     Test-Script 'ownership-changelog-rewrite' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-rewrite', '-Base', 'main', '-Head', 'ws/O1-fixture-rewrite') 1 'is shared append-only'
     Test-Script 'ownership-move-into-other-family' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-move', '-Base', 'main', '-Head', 'ws/O1-fixture-move') 1 'src/Lrm\.Core/README\.md is owned by family S1, not by family O1 \(branch ws/O1-fixture-move, status A\)'
+    Test-Script 'ownership-changelog-insert' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-insert', '-Base', 'main', '-Head', 'ws/O1-fixture-insert') 1 'inserts lines after line [34] of 5; entries are appended at the end'
+    Test-Script 'ownership-self-granted-map' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-self-grant', '-Base', 'main', '-Head', 'ws/O1-fixture-self-grant', '-Labels', '') 1 '(?s)(?=.*docs/ownership\.json is a governance path)(?=.*src/Lrm\.Core/Hash\.fs is owned by family S1, not by family O1)'
+    Test-Script 'ownership-self-grant-with-exception' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-self-grant', '-Base', 'main', '-Head', 'ws/O1-fixture-self-grant', '-Labels', 'ownership-exception') 1 '(?s)(?=.*docs/ownership\.json is a governance path)(?=.*not O1; accepted by the .ownership-exception. label)'
+    Test-Script 'ownership-checker-edit' 'check-ownership.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-checker', '-Base', 'main', '-Head', 'ws/O1-fixture-checker', '-Labels', 'ownership-exception') 1 'tools/ci/Hygiene\.psm1 is a governance path'
+    # hygiene.ps1 itself, with -Only as one comma-joined argument: the self-granted map fails ownership and, after the
+    # freeze, the contract label (the branch renamed the tag and dropped Lrm.Core from its own contract files).
+    Git $o @('tag', 'contracts-v1', 'main')
+    $hygOut = Join-Path $tmpRoot 'hygiene-out'
+    Test-Script 'hygiene-self-granted-map' 'hygiene.ps1' @('-RepoRoot', $o, '-Branch', 'ws/O1-fixture-self-grant', '-Base', 'main', '-Head', 'ws/O1-fixture-self-grant', '-Labels', '', '-Only', 'ownership,contract-label', '-OutDir', $hygOut) 1 '(?s)(?=.*hygiene\.ownership \| \*\*FAIL\*\*)(?=.*hygiene\.contract_label \| \*\*FAIL\*\*)(?=.*without the .contract-change. label: src/Lrm\.Core/Hash\.fs)'
+    Test-Script 'hygiene-unknown-check' 'hygiene.ps1' @('-RepoRoot', $o, '-Only', 'ownership,typo', '-OutDir', $hygOut) 2 'unknown check\(s\) .typo.'
+    Git $o @('tag', '-d', 'contracts-v1')
     Test-Script 'ownership-current-branch' 'check-ownership.ps1' @('-RepoRoot', $o, '-Base', 'main') 1 'branch ws/O1-fixture-move \(family O1\)'
 
     # Layering: the script itself on an unmodified copy and on the hand-written reference.
     Test-Script 'layering-unmodified' 'check-layering.ps1' @('-RepoRoot', $layeringRoots['unmodified-copy']) 0 'layering: OK'
     Test-Script 'layering-bad-project-reference' 'check-layering.ps1' @('-RepoRoot', $layeringRoots['handwritten-project-reference']) 1 '<ProjectReference> is not allowed'
+    Test-Script 'layering-lrm-targets-evasion' 'check-layering.ps1' @('-RepoRoot', $layeringRoots['lrm-targets-switches-off-guard']) 1 '(?s)(?=.*sets the property LrmIsSpike)(?=.*sets the property RestoreLockedMode)(?=.*<ProjectReference> is a reference item)'
 
     # Sizes: a real 1.5 MiB blob, outside and inside goldens/.
     $big = [byte[]]::new(1572864)
@@ -286,6 +322,13 @@ try {
     Set-FixtureFile $c 'docs/contracts/CHANGELOG.md' ($changelog + "- **LrmCore v2** (``lrm-core.md``, S1): DType 9 = U16.`n")
     Git $c @('commit', '-q', '-am', 'changelog entry')
     Test-Script 'contract-complete' 'check-contract-label.ps1' ($args1 + @('-Labels', 'contract-change')) 0 'contract-label: OK'
+    # The branch's own map cannot thaw the freeze: the merge base's contract section applies.
+    $thaw = $ownershipJson | ConvertFrom-Json
+    $thaw.contract.freezeTag = 'contracts-v999'
+    $thaw.contract.files = @('src/Nothing/**')
+    $thawJson = ($thaw | ConvertTo-Json -Depth 20) + "`n"
+    Commit-Branch $c 'ws/S1-fixture-thaw' { Set-FixtureFile $c 'docs/ownership.json' $thawJson; Set-FixtureFile $c 'docs/contracts/lrm-core.md' "# LrmCore`n`nDType 10 = I8.`n" }
+    Test-Script 'contract-own-map-cannot-thaw' 'check-contract-label.ps1' @('-RepoRoot', $c, '-Base', 'main', '-Head', 'ws/S1-fixture-thaw', '-Labels', '') 1 'without the .contract-change. label: docs/contracts/lrm-core\.md'
 }
 finally {
     if (-not $Keep) { Remove-Item -LiteralPath $tmpRoot -Recurse -Force -ErrorAction SilentlyContinue }

@@ -10,7 +10,7 @@ This contract decides two things: who may change which path, and how a contract 
   - Slices (ids with an a/b suffix, such as R4a and R4b) share their family's paths.
   - A glob with a leading `!` removes paths from that family. For example, R4 owns `src/Lrm.Shaders/**` except the three kernel folders, which K1, K2 and K3 own.
 - **Exactly one owner.** Every tracked file is owned by exactly one family. A file that no family owns, or that two families own, fails the ownership check on every branch, `main` included.
-- **No mid-plan handovers.** A family's globs change only through an integrator (`int/`) PR to `docs/ownership.json`.
+- **No mid-plan handovers.** A family's globs change only through an integrator (`int/`) PR to `docs/ownership.json`. This is enforced: a branch is judged by the map at its merge base, and the map is a governance path (see Trust below).
 - **Where a family writes its documents:**
   - contract texts in `docs/contracts/<name>.md` (the names are in `docs/contracts/README.md`);
   - ADRs in `docs/decisions/<family>-*.md`; the cross-cutting ADRs `docs/decisions/0000-*.md` and `0001-*.md` belong to S0;
@@ -18,7 +18,7 @@ This contract decides two things: who may change which path, and how a contract 
 
 ### Glob syntax
 
-Paths are repo-relative, use `/`, and are compared case-sensitively, as git stores them.
+Paths are repo-relative, use `/`, and are compared case-sensitively, as git stores them. The one exception is the forbidden-file rules of the size check (`tools/ci/hygiene.json`), which ignore case: on Windows, `foo.DLL` is a binary and `.claude/Settings.json` is the allowlist.
 
 | Pattern | Matches |
 | --- | --- |
@@ -32,7 +32,7 @@ Brackets, braces and backslashes are rejected, so a glob never silently means so
 
 ### Shared paths
 
-`shared` lists paths that any family may change in one way, without owning them. The only mode is `append`: a branch of another family may add lines but must delete or rewrite none, and may not delete the file.
+`shared` lists paths that any family may change in one way, without owning them. The only mode is `append`: a branch of another family may add lines after the last line of the file as it is at the merge base, but must insert nothing earlier, delete or rewrite no line, and not delete the file. The check reads the positions from the `-U0` hunks of the diff.
 
 | Path | Mode | Why |
 | --- | --- | --- |
@@ -46,7 +46,7 @@ The owner (S0) and the integrator may edit a shared path freely.
 | --- | --- | --- |
 | `ws/<id>-<slug>` | the agent of workstream `<id>` | the paths of `<id>`'s family, plus appends to shared paths |
 | `ws/<id>-fix-<slug>` | a fix session for `<id>` | the same as `ws/<id>-<slug>` |
-| `int/<slug>` | the integrator | any path |
+| `int/<slug>` | the integrator | any path; in CI the PR author must be listed under `integrators` |
 | `main` | nobody pushes directly | changes arrive through reviewed PRs, so only coverage is checked |
 
 The exact grammar:
@@ -54,21 +54,38 @@ The exact grammar:
 - `<slug>` is lowercase letters and digits joined by single hyphens: `[a-z0-9]+(-[a-z0-9]+)*`. An `int/` slug may also use dots.
 - Any other branch name fails the ownership check.
 
+## Trust: what judges a branch
+
+A branch never chooses the rules it is checked by:
+- **The merge base's policy.** The branch grammar, the out-of-path rule, the shared paths, the integrators, the contract files, the labels and the freeze tag come from `docs/ownership.json` as it is at the merge base. The size rules come from `tools/ci/hygiene.json` there. A change to either file takes effect for the PRs after it.
+  - Coverage is the exception: it uses the checked-out map, because that map must describe the checked-out tree.
+  - When the merge base has no `docs/ownership.json`, every `ws/` and `int/` branch fails: rebase onto `origin/main`.
+  - When the merge base's map has no `contract` section (S0a's first map) or there is no `hygiene.json` yet, the checked-out one is used, and the summary says so.
+- **Governance paths.** `docs/ownership.json`, `tools/ci/**` and `.github/**` change only on S0 branches (`ws/S0a-…`, `ws/S0b-…`) and `int/` branches. This holds whatever any map says, and the exception label does not lift it.
+- **The base commit's checker.** On a pull request that changes `tools/ci/**`, the hygiene job also runs the base commit's `tools/ci/hygiene.ps1` on the same tree. A branch that edits the checks to switch them off is still judged by the old ones.
+- **Generated and validator code.** The layering check runs the checked-out `gen-project-graph.ps1`, so an S0 PR that changes the generator is checked by its new version. The governance rule fails any other family's change to it.
+
 ## The ownership check
 
 `check-ownership.ps1` runs these steps:
 
-1. **Coverage.** Every file in the checked-out tree has exactly one owning family.
-2. **Branch.** The branch name resolves as in the table above.
+1. **Coverage.** Every file in the checked-out tree has exactly one owning family in the checked-out map.
+2. **Branch.** The branch name resolves as in the table above, against the merge base's map.
 3. **Diff.** On a `ws/` branch, the changed paths are those from the merge base of the PR's base and head to the head (`git diff --no-renames base...head`).
    - A rename counts as a deletion plus an addition, so both paths must be the family's.
    - Deleting another family's file is an out-of-path edit, like changing it.
-4. **Out-of-path edits.** Every changed path must be owned by the branch's family, or be a shared path that the change only appends to. Anything else is an error that names the path, its owner and the branch.
+4. **Governance paths.** Outside family S0, a change to a governance path is an error, whatever the map and the labels say.
+5. **Out-of-path edits.** Every other changed path must be owned by the branch's family in the merge base's map, or be a shared path that the change only appends to, at the end. Anything else is an error that names the path, its owner and the branch.
+
+An `int/` branch skips steps 4 and 5. Every `int/` run is listed as a warning in the hygiene summary, and in CI the PR author must be one of the `integrators` in the merge base's map.
 
 **The exception label.** The integrator may accept a reviewed out-of-path edit by putting the label `ownership-exception` on the PR. An example is an agent's additive edit to `docs/project-graph.json` for its own projects.
 - With the label, those paths are reported as warnings, not errors, and the hygiene summary still lists every one of them.
-- Only the integrator sets this label. Agents never do.
-- Without known PR labels (outside a pull request), the exception never applies.
+- Only the integrator sets this label. Agents never do. In CI the label counts only when whoever last applied it (the PR's issue events, read through `gh api`) is one of the `integrators`. If that cannot be read, the label does not count.
+- The label never covers a governance path.
+- Without known PR labels (outside a pull request), the exception never applies. Outside CI, who set the label and who opened an `int/` PR are not verified; the result says so as a warning.
+
+**Limits of the author check.** `integrators` lists GitHub logins (`enderPeer`). Today every session, the integrator's and the agents', acts through that one account, so the login check separates nothing yet. What protects the plan is that agents never use `int/` branches or the exception label (AgentPermissions), and that the hygiene summary lists every use as a warning for the integrator to review. If agents later get their own account, the check starts to separate them without a code change.
 
 ## Contract files
 
@@ -90,12 +107,12 @@ Kernels, the CPU reference, the cluster's internals and other implementation fil
 
 ### Freeze and contract-change PRs
 
-The tag `contracts-v1` freezes the contracts (`contract.freezeTag`). Before the tag exists, contract files are drafts and change freely. After it exists, a contract file changes only through a **contract-change PR**, which has these properties:
+The tag `contracts-v1` freezes the contracts (`contract.freezeTag`). Before the tag exists, contract files are drafts and change freely. The tag freezes every contract file on `main` at that point, not only the contracts the plan names for it. After it exists, any change to a contract file, including a draft text that lands later, goes only through a **contract-change PR**, which has these properties:
 
 1. **It carries the label `contract-change`.** The PR author sets it, and an agent may set it on its own PR.
 2. **It adds a CHANGELOG entry.** The entry goes in `docs/contracts/CHANGELOG.md` and names every contract text the PR touches by its file name, for example `` `lrm-core.md` ``.
 3. **It updates the known-answer vectors** of every contract whose encoding or semantics change. The vectors live in the contract text and its tests, and the integrator reviews them.
-4. **A breaking change bumps the contract's version** (v1 to v2, and the `Status:` line of the text). It merges in one PR together with the consumer fixes, so `main` stays green.
+4. **A breaking change bumps the contract's version** (v1 to v2, and the `Status:` line of the text). It merges in one PR together with the consumer fixes, so `main` stays green. The consumer fixes sit in other families' paths, so that PR either is an `int/` branch, or is the owner's `ws/` branch carrying `ownership-exception`, which the integrator sets after reviewing the fixes.
 5. **An additive change**, such as a new catalog kernel, a new optional field or a new reserved tag, keeps the major version. Its entry says "additive", and it gets same-day review.
 
 A new contract text written after the freeze, such as a wave-2 workstream's first version, also goes through a contract-change PR. Its CHANGELOG entry records it as v1.
@@ -108,11 +125,13 @@ A new contract text written after the freeze, such as a wave-2 workstream's firs
 - when the label is set but the PR adds no line to `docs/contracts/CHANGELOG.md`;
 - when the label is set and a touched contract text is not named in the added CHANGELOG lines.
 
-Labels are read when the job runs, through `gh api`, with the event payload as a fallback. Label events do not start CI, so **after adding or removing a label, re-run the `hygiene` job.** Outside a pull request the labels are unknown: the label rules are then reported as warnings and are not enforced.
+Labels are read when the job runs, through `gh api`, with the event payload as a fallback. Adding or removing a label starts a new CI run (`labeled` and `unlabeled` events), so the result always reflects the current labels. Outside a pull request the labels are unknown: the label rules are then reported as warnings and are not enforced.
+
+The contract files, the label names and the freeze tag are those of the merge base's map, so a branch cannot drop its files from `contract.files` or rename the tag to escape the rule.
 
 ## The CHANGELOG
 
-`docs/contracts/CHANGELOG.md` records every contract version, oldest first. Entries are appended at the end, under a `## YYYY-MM-DD` heading for the merge date. Each entry is one bullet with these parts:
+`docs/contracts/CHANGELOG.md` records every contract version, oldest first. Entries are appended at the end, under a `## YYYY-MM-DD` heading for the merge date; the ownership check fails another family's lines inserted anywhere else. The integrator corrects the heading date at merge when it differs from the date the entry was written. Each entry is one bullet with these parts:
 
 ```markdown
 - **<Contract> v<N>** (`<file>.md`, <owner>, <PR>): <what changed, or "first version">. Vectors: <what changed, or none>. Consumers: <who must act, or none>.
@@ -181,11 +200,13 @@ These known answers hold for `docs/ownership.json` at v1. `tools/ci/fixtures/own
 
 `tools/ci/test-hygiene.ps1` runs before the checks in every hygiene job, and checks the following:
 - the vectors above;
-- 19 ownership and 10 contract-label fixtures, run through the pure functions. Each failing fixture must produce errors matching its designed messages;
+- 33 ownership and 10 contract-label fixtures, run through the pure functions. Each failing fixture must produce errors matching its designed messages. They cover the self-granted map, a merge base without a map, governance paths with and without the exception label, an insert into the middle of the CHANGELOG, and `int/` authors and exception actors who are and are not integrators;
 - end-to-end fixture git repositories, checked by the real scripts in child processes:
   - a `ws/O1-…` fixture branch that edits `src/Lrm.Core/Hash.fs` fails the ownership check, and a `ws/S1-…` branch passes;
-  - an append to the CHANGELOG passes, and a rewrite of it fails;
+  - an append to the CHANGELOG passes; a rewrite of it fails, and so does a back-dated entry inserted into an older section;
   - a move into another family's path fails;
-  - contract changes behave as specified before and after a `contracts-v1` tag, with and without the label and the CHANGELOG entry.
+  - a branch that rewrites its own map to grant itself `docs/ownership.json` and `src/Lrm.Core/**`, and then edits `Hash.fs`, fails, with and without the exception label; through `hygiene.ps1 -Only ownership,contract-label` it fails both checks after the freeze;
+  - a branch outside S0 that edits `tools/ci/Hygiene.psm1` fails;
+  - contract changes behave as specified before and after a `contracts-v1` tag, with and without the label and the CHANGELOG entry, and a branch's own map cannot thaw the freeze.
 
 A mutation run, which disabled the out-of-path rule and the CRLF rule, made 16 fixtures fail the self-test, so the fixtures do detect broken rules.

@@ -5,7 +5,10 @@ name: ci
 on:
   push:
     branches: [main]
+  # labeled and unlabeled re-run hygiene when contract-change or ownership-exception changes. They re-run build-test
+  # too: skipping it on a label event would leave a cancelled run behind a skipped (passing) required check.
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   workflow_dispatch:
 
 concurrency:
@@ -100,14 +103,15 @@ jobs:
           if-no-files-found: ignore
 
   # Ownership, layering, sizes, EOL and the contract-change label (OwnershipAndContractChange contract, S0b).
-  # The checkers' self-test runs first: every fixture must fail as designed. Labels are read live, so after adding or
-  # removing a label, re-run this job (label events do not start CI).
+  # The checkers' self-test runs first: every fixture must fail as designed. Labels are read live, and a label change
+  # starts a new run. The branch is judged by docs/ownership.json and tools/ci/hygiene.json at its merge base.
   hygiene:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: read
+      issues: read
     defaults:
       run:
         shell: pwsh
@@ -124,6 +128,29 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: ./tools/ci/hygiene.ps1 -Ci
+
+      # The step above runs this PR's own tools/ci. A branch outside S0 that edits it fails the ownership check, unless
+      # the edit switches that check off too; so the base commit's checker also judges the same tree.
+      - name: Hygiene checks with the base commit's checker
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          $base = $env:BASE_SHA
+          git cat-file -e "${base}:tools/ci/hygiene.ps1" 2>$null
+          if ($LASTEXITCODE -ne 0) { Write-Host "The base commit $base has no tools/ci/hygiene.ps1 yet; only this PR's checker ran."; exit 0 }
+          git diff --quiet $base HEAD -- tools/ci
+          if ($LASTEXITCODE -eq 0) { Write-Host "tools/ci is the same as in the base commit $base; the step above already ran that checker."; exit 0 }
+          $dir = Join-Path $env:RUNNER_TEMP 'hygiene-base'
+          $tar = Join-Path $env:RUNNER_TEMP 'hygiene-base.tar'
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          git archive --format=tar -o $tar $base tools/ci
+          if ($LASTEXITCODE -ne 0) { exit 2 }
+          tar -xf $tar -C $dir
+          if ($LASTEXITCODE -ne 0) { exit 2 }
+          & (Join-Path $dir 'tools/ci/hygiene.ps1') -Ci -RepoRoot $env:GITHUB_WORKSPACE -OutDir (Join-Path $env:GITHUB_WORKSPACE 'artifacts/hygiene/base')
+          exit $LASTEXITCODE
 
       - name: Upload hygiene summary
         if: always()
