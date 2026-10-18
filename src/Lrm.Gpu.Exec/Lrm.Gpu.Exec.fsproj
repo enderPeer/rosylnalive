@@ -1,6 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Owner: X1. References come only from docs/project-graph.json; this file lists files. -->
   <ItemGroup>
-    <Compile Include="Placeholder.fs" />
+    <Compile Include="Options.fs" />
+    <Compile Include="Trace.fs" />
+    <Compile Include="Plan.fs" />
+    <Compile Include="GpuForwardOps.fs" />
   </ItemGroup>
 </Project>
