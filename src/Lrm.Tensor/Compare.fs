@@ -265,7 +265,7 @@ module Metrics =
 /// [Rows, Cols] (the first dimension and the product of the rest).
 [<RequireQualifiedAccess>]
 module Compare =
-    /// Builds the result for a measured value and emits golden.compare with metric, measured, bound, op and elements,
+    /// Builds the result for a measured value and emits golden.compare with metric, measured, bound, direction and elements,
     /// then the caller's attributes.
     let check (metric: string) (op: BoundOp) (measured: float) (bound: float) (elements: int64) (attrs: Attr list) =
         let passed =
@@ -281,7 +281,7 @@ module Compare =
                 Attr.str "metric" metric
                 Attr.float "measured" measured
                 Attr.float "bound" bound
-                Attr.str "op" (BoundOp.name op)
+                Attr.str "direction" (BoundOp.name op)
                 Attr.int64 "elements" elements
              ]
              @ attrs)

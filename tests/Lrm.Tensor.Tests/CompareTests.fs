@@ -107,6 +107,8 @@ let tests =
                     Expect.equal (floatAttr "measured" r) res.Measured "measured"
                     Expect.equal (floatAttr "bound" r) res.Bound "bound"
                     Expect.equal (strAttr "pair" r) (Some "cpu32-vs-torch32") "caller attrs"
+                    Expect.equal (strAttr "direction" r) (Some(BoundOp.name res.Op)) "direction"
+                    Expect.equal (r.Attrs |> List.distinctBy _.Key).Length r.Attrs.Length "unique keys"
 
             testCase "a NaN measurement never passes, in either direction"
             <| fun () ->
